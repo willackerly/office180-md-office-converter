@@ -14,6 +14,13 @@ Two small command-line tools, no server, no framework:
   Word (or Google Docs) and converting it back doesn't silently lose or
   invent content.
 
+The same deterministic-mapping and provenance ideas also apply to editable
+presentations. The companion
+**[SVG to Editable PowerPoint playbook](SVG-TO-EDITABLE-PPTX.md)** documents
+the reconstruction, stable-object-ID, round-trip diff, render QA, and native
+PowerPoint validation workflow. It is a reusable operator/agent method, not a
+third command-line converter.
+
 ---
 
 ## Install
@@ -181,6 +188,7 @@ scripts/check-contract-refs.sh      # CONTRACT: refs resolve to real files
 scripts/check-todos.sh              # no untracked TODO: comments
 scripts/check-ground-truth.sh       # METRICS.md matches the repo
 scripts/check-compliance.sh         # rebar badge / tier / contract maturity
+scripts/check-freshness.sh          # freshness markers are current
 ```
 
 See `QUICKCONTEXT.md` for current project state, `TODO.md` for open work,

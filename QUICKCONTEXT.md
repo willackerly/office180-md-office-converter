@@ -1,8 +1,8 @@
 # Quick Context
 
 <!-- FRESHNESS: Update this date every time you modify this file -->
-<!-- freshness: 2026-07-08 -->
-<!-- last-synced: 2026-07-08 — date this file was verified against code -->
+<!-- freshness: 2026-07-25 -->
+<!-- last-synced: 2026-07-25 — date this file was verified against code -->
 
 **Current state of the project for agents starting a new session.**
 
@@ -54,6 +54,10 @@ and this is the baseline for future work.
   fix (the flag was accepted but not wired to the converter before this
   release)
 - Rebar Tier 3 enforcement (`.rebarrc`, `.rebar-version`, `scripts/check-*.sh`, `METRICS.md`)
+- `SVG-TO-EDITABLE-PPTX.md` — an SDK-neutral companion playbook for
+  reconstructing SVG designs as editable PowerPoint objects, preserving
+  stable source IDs and provenance, validating in native PowerPoint, and
+  reconciling later slide edits back to the canonical source
 
 **Blocked:**
 - None currently.
@@ -90,6 +94,11 @@ and this is the baseline for future work.
 documentation in Markdown but need a themed, print-quality Word document
 (and, less commonly, need to bring Word edits back into Markdown).
 
+The repository also carries one documentation-only companion workflow:
+`SVG-TO-EDITABLE-PPTX.md`. It applies the same deterministic mapping,
+provenance, and reverse-inspection principles to SVG-to-PowerPoint
+reconstruction. It does not add a presentation CLI or runtime dependency.
+
 **User personas:** a developer or technical writer converting one-off
 Markdown files to DOCX for a non-technical audience; someone who wants a
 DOCX round-trip because a collaborator only edits in Word or Google Docs.
@@ -119,6 +128,8 @@ external services, databases, or APIs.
 - `architecture/` — the three contracts + registry
 - `scripts/` — rebar Tier 3 enforcement
 - `tests/` — round-trip test suite + kitchen-sink fixture
+- `SVG-TO-EDITABLE-PPTX.md` — presentation reconstruction and round-trip
+  playbook (documentation only)
 
 **Dependencies:**
 - `python-docx` (runtime)
@@ -149,5 +160,5 @@ external services, databases, or APIs.
 
 ---
 
-**Last updated by:** initial public release (2026-07-08)
+**Last updated by:** editable PowerPoint companion playbook (2026-07-25)
 **Next review:** when packaging (`pyproject.toml`) lands or the AST rewrite starts
