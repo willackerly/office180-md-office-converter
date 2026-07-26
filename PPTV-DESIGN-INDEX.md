@@ -46,12 +46,17 @@ Read these documents in order:
    Defines the TypeScript-first package architecture, agent CLI, native PPTV
    visual editor, optional `.editable.pptv.html`, and selective OpenDocKit reuse.
 
-5. **[`SVG-TO-EDITABLE-PPTX.md`](SVG-TO-EDITABLE-PPTX.md)**  
+5. **[`PPTV-AGENT-GUIDE.md`](PPTV-AGENT-GUIDE.md)**  
+   Defines the proposed `pptv-agent/1` operating profile: minimum-view selection,
+   semantic patch discipline, trust boundaries, task recipes, failure behavior,
+   and validation/reporting rules.
+
+6. **[`SVG-TO-EDITABLE-PPTX.md`](SVG-TO-EDITABLE-PPTX.md)**  
    Provides the practical reconstruction and QA playbook that motivated PPTV:
    hybrid native/asset conversion, stable PowerPoint object names, source maps,
    render comparison, and reverse inspection.
 
-6. **[`examples/minimal-deck.pptv.html`](examples/minimal-deck.pptv.html)**  
+7. **[`examples/minimal-deck.pptv.html`](examples/minimal-deck.pptv.html)**  
    A deliberately small browser-openable specimen showing manifest-defined slide
    order, inert slide sources, multiple inert themes, stable IDs, and the final
    reference viewer runtime.
