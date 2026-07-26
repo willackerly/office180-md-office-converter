@@ -7,7 +7,7 @@
 | Track | Canonical source | Office artifact | Status |
 |---|---|---|---|
 | Markdown / Word | `.md` | `.docx` | Implemented and tested |
-| PPTV / PowerPoint | `.pptv.svg` | `.pptx` | Design proposal; no converter yet |
+| PPTV / PowerPoint | `.pptv.svg` / `.pptv.html` | `.pptx` | Detailed design packet; no converter yet |
 
 ## What ships
 
@@ -24,18 +24,30 @@ framework:
 
 ## PowerPoint design track
 
-The same mapping and provenance ideas can support editable presentations:
+The same mapping and provenance ideas can support editable presentations. Start
+with the **[PPTV Design Index](PPTV-DESIGN-INDEX.md)**, then follow the focused
+proposals:
 
+- **[PPTV PowerPoint Vector Profile](PPTV-PROFILE.md)** defines a constrained
+  `.pptv.svg` source with stable identities, native-versus-asset intent,
+  DOM-order z-order, source maps, and reverse patches.
+- **[PPTV HTML Container](PPTV-HTML-CONTAINER.md)** proposes a portable
+  manifest-first `.pptv.html` deck with inert slide templates, named themes,
+  reusable definitions, and one fixed non-authoritative browser runtime.
+- **[PPTV Processing API](PPTV-PROCESSING-API.md)** specifies lazy scanning,
+  source-range indexing, semantic projections, stable-ID transactional patches,
+  serialization, diagnostics, caching, and agent-efficiency obligations.
+- **[PPTV Tooling and Editor Architecture](PPTV-TOOLING-AND-EDITOR.md)** defines
+  a TypeScript-first toolchain, native SVG editor, optional
+  `.editable.pptv.html`, and selective OpenDocKit reuse.
 - **[SVG to Editable PowerPoint playbook](SVG-TO-EDITABLE-PPTX.md)** documents
   the reconstruction, stable-object-ID, round-trip diff, render QA, and native
-  PowerPoint validation workflow.
-- **[PPTV PowerPoint Vector Profile](PPTV-PROFILE.md)** proposes a constrained
-  `.pptv.svg` source that declares stable identities, native-versus-asset
-  intent, and DOM-order z-order for a future `pptv2pptx.py` /
-  `pptx2pptv.py` pair.
+  PowerPoint validation workflow that motivated the profile.
+- **[`examples/minimal-deck.pptv.html`](examples/minimal-deck.pptv.html)** is a
+  browser-openable specimen of manifest-driven order and theme activation.
 
-These documents are reusable design and operator guidance. This repository
-does not yet ship a PowerPoint converter.
+These files are reusable design and operator guidance. This repository does not
+yet ship a PPTV parser, editor, or PowerPoint converter.
 
 ---
 
@@ -192,9 +204,11 @@ CommonMark AST rewrite, wide-table strategies, image support, JSONC
 themes with an `extends` chain, and the rest of the symmetry track
 (custom-XML source embedding, 3-way merge, a fidelity report).
 
-**PowerPoint roadmap:** `PPTV-PROFILE.md` defines the proposed source profile,
-ordering model, CLI surface, reverse patch semantics, and test strategy. Its
-normative behavior will require a versioned contract before implementation.
+**PowerPoint roadmap:** `PPTV-DESIGN-INDEX.md` is the entry point for the
+proposed SVG/HTML source model, processing API, tooling, native editor,
+PowerPoint adapter, reverse patch semantics, and conformance path. Normative
+behavior will require versioned contracts and executable fixtures before
+implementation.
 
 ---
 
