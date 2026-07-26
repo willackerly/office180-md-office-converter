@@ -19,9 +19,10 @@
 
 ### Project Context
 - **Project type:** CLI tool (two Python scripts + JSON themes)
-- **Companion method:** `SVG-TO-EDITABLE-PPTX.md` documents an SDK-neutral
-  SVG-to-editable-PowerPoint reconstruction and round-trip workflow; it is
-  guidance, not a third converter or runtime surface
+- **Companion methods:** `SVG-TO-EDITABLE-PPTX.md` documents an SDK-neutral
+  reconstruction workflow, and `PPTV-PROFILE.md` proposes a constrained SVG
+  source profile for deterministic conversion; both are guidance, not a third
+  converter or runtime surface
 - **Team size:** Solo (Will Ackerly)
 - **Rebar tier:** 3 (Enforced) — contract refs, TODO tracking, freshness,
   ground truth, and compliance all enforced; see `.rebarrc` for why the

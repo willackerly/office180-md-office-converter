@@ -58,6 +58,9 @@ and this is the baseline for future work.
   reconstructing SVG designs as editable PowerPoint objects, preserving
   stable source IDs and provenance, validating in native PowerPoint, and
   reconciling later slide edits back to the canonical source
+- `PPTV-PROFILE.md` — a documentation-only design proposal for a constrained
+  `.pptv.svg` source profile, deterministic DOM-order z-order, explicit
+  native-versus-asset authoring, and a future forward/reverse Python tool pair
 
 **Blocked:**
 - None currently.
@@ -94,10 +97,12 @@ and this is the baseline for future work.
 documentation in Markdown but need a themed, print-quality Word document
 (and, less commonly, need to bring Word edits back into Markdown).
 
-The repository also carries one documentation-only companion workflow:
-`SVG-TO-EDITABLE-PPTX.md`. It applies the same deterministic mapping,
-provenance, and reverse-inspection principles to SVG-to-PowerPoint
-reconstruction. It does not add a presentation CLI or runtime dependency.
+The repository also carries documentation-only presentation material:
+`SVG-TO-EDITABLE-PPTX.md` applies the same deterministic mapping, provenance,
+and reverse-inspection principles to SVG-to-PowerPoint reconstruction, while
+`PPTV-PROFILE.md` proposes the constrained source format that could make the
+workflow automatable. Neither adds a presentation CLI or runtime dependency,
+and PPTV is not yet an implemented contract.
 
 **User personas:** a developer or technical writer converting one-off
 Markdown files to DOCX for a non-technical audience; someone who wants a
@@ -130,6 +135,8 @@ external services, databases, or APIs.
 - `tests/` — round-trip test suite + kitchen-sink fixture
 - `SVG-TO-EDITABLE-PPTX.md` — presentation reconstruction and round-trip
   playbook (documentation only)
+- `PPTV-PROFILE.md` — proposed PowerPoint Vector source profile
+  (documentation only)
 
 **Dependencies:**
 - `python-docx` (runtime)
@@ -160,5 +167,5 @@ external services, databases, or APIs.
 
 ---
 
-**Last updated by:** editable PowerPoint companion playbook (2026-07-25)
+**Last updated by:** PPTV source-profile proposal (2026-07-25)
 **Next review:** when packaging (`pyproject.toml`) lands or the AST rewrite starts

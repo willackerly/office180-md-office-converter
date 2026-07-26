@@ -23,6 +23,11 @@ blind path-by-path conversion creates hundreds of fragile Office objects.
 This workflow preserves the editability people actually need while keeping
 the original visual language intact.
 
+For SVG authored specifically for deterministic conversion, see the
+companion [`PPTV PowerPoint Vector Profile`](PPTV-PROFILE.md) proposal. PPTV
+encodes object identity, native-versus-asset intent, and DOM-order z-order
+directly in a conforming `.pptv.svg` source.
+
 ## How it complements Markdown and DOCX
 
 The DOCX pair in this repository uses deterministic Word styles as a semantic

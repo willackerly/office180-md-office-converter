@@ -21,6 +21,12 @@ the reconstruction, stable-object-ID, round-trip diff, render QA, and native
 PowerPoint validation workflow. It is a reusable operator/agent method, not a
 third command-line converter.
 
+The related **[PPTV PowerPoint Vector Profile](PPTV-PROFILE.md)** is a design
+proposal for making that method deterministic and automatable: a constrained
+`.pptv.svg` source declares stable identities, native-versus-asset intent, and
+DOM-order z-order for a future `pptv2pptx.py` / `pptx2pptv.py` pair. No PPTV
+implementation is shipped yet.
+
 ---
 
 ## Install
