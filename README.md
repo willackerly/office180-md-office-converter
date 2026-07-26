@@ -1,10 +1,18 @@
-# md2docx
+# office180-md-office-converter
 
 > **rebar v3.0.0** | **Tier 3: ENFORCED** | [What is rebar?](https://github.com/willackerly/rebar)
 
-**Markdown ⇄ DOCX, themed by a JSON template, with a round-trip story.**
+**Deterministic, provenance-aware source ⇄ Microsoft Office workflows.**
 
-Two small command-line tools, no server, no framework:
+| Track | Canonical source | Office artifact | Status |
+|---|---|---|---|
+| Markdown / Word | `.md` | `.docx` | Implemented and tested |
+| PPTV / PowerPoint | `.pptv.svg` | `.pptx` | Design proposal; no converter yet |
+
+## What ships
+
+The implemented product is two small command-line tools, with no server or
+framework:
 
 - **`md2docx.py`** — converts Markdown to a styled `.docx`, themed by a JSON
   file. Headings, lists, tables, fenced code, inline formatting, blockquotes,
@@ -14,6 +22,21 @@ Two small command-line tools, no server, no framework:
   Word (or Google Docs) and converting it back doesn't silently lose or
   invent content.
 
+## PowerPoint design track
+
+The same mapping and provenance ideas can support editable presentations:
+
+- **[SVG to Editable PowerPoint playbook](SVG-TO-EDITABLE-PPTX.md)** documents
+  the reconstruction, stable-object-ID, round-trip diff, render QA, and native
+  PowerPoint validation workflow.
+- **[PPTV PowerPoint Vector Profile](PPTV-PROFILE.md)** proposes a constrained
+  `.pptv.svg` source that declares stable identities, native-versus-asset
+  intent, and DOM-order z-order for a future `pptv2pptx.py` /
+  `pptx2pptv.py` pair.
+
+These documents are reusable design and operator guidance. This repository
+does not yet ship a PowerPoint converter.
+
 ---
 
 ## Install
@@ -22,15 +45,15 @@ Two small command-line tools, no server, no framework:
 pip install python-docx
 ```
 
-That's the only dependency. Then run either script directly:
+That is the only runtime dependency for the shipped DOCX converters. Then run
+either script directly:
 
 ```bash
 python3 md2docx.py notes.md
 python3 docx2md.py notes.docx
 ```
 
-(No packaging/entry-point yet — see `ROADMAP.md` §0 for the planned
-`pyproject.toml` + `pipx install md2docx`.)
+(No packaging or entry point yet; see `ROADMAP.md` §0.)
 
 ---
 
@@ -71,7 +94,7 @@ Markdown next to the input, or to the path given with `-o`.
 
 ---
 
-## Theme system
+## DOCX theme system
 
 Every visual choice — fonts, colors, table shading, code block fill,
 blockquote border, footer text, the marking banner's styling — lives in a
@@ -112,7 +135,7 @@ files are plain JSON with an informal `_comment` string key.
 
 ---
 
-## Provenance stamp
+## DOCX provenance stamp
 
 Every generated `.docx` gets a compact JSON stamp written into its DOCX
 core properties (`docProps/core.xml` — a standard Office Open XML part
@@ -139,7 +162,7 @@ DOCX was generated. Full field-by-field spec:
 
 ---
 
-## Round-trip story
+## DOCX round trip
 
 `md2docx` and `docx2md` are designed as a pair, not two independent tools:
 the forward converter applies Word styles as a *deterministic function* of
@@ -164,10 +187,14 @@ are demoted rather than preserved as real hyperlinks, and 3-way merge
 tooling doesn't exist yet — are documented in `ROADMAP.md` §7.5 and in
 `architecture/CONTRACT-C3-ROUNDTRIP.1.0.md`.
 
-**Where this is headed:** `ROADMAP.md` is the full hand-off plan — a
+**DOCX roadmap:** `ROADMAP.md` is the full hand-off plan — a
 CommonMark AST rewrite, wide-table strategies, image support, JSONC
 themes with an `extends` chain, and the rest of the symmetry track
 (custom-XML source embedding, 3-way merge, a fidelity report).
+
+**PowerPoint roadmap:** `PPTV-PROFILE.md` defines the proposed source profile,
+ordering model, CLI surface, reverse patch semantics, and test strategy. Its
+normative behavior will require a versioned contract before implementation.
 
 ---
 
@@ -181,6 +208,7 @@ scripts/check-contract-refs.sh      # CONTRACT: refs resolve to real files
 scripts/check-todos.sh              # no untracked TODO: comments
 scripts/check-ground-truth.sh       # METRICS.md matches the repo
 scripts/check-compliance.sh         # rebar badge / tier / contract maturity
+scripts/check-freshness.sh          # freshness markers are current
 ```
 
 See `QUICKCONTEXT.md` for current project state, `TODO.md` for open work,
