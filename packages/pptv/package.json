@@ -1,6 +1,6 @@
 {
   "name": "@office180/pptv",
-  "version": "0.1.0",
+  "version": "0.1.0-alpha.1",
   "description": "Source-preserving PPTV scanner, editor foundation, strict PPTX canary, and CLI",
   "type": "module",
   "license": "MIT",
