@@ -1,6 +1,6 @@
 # PPTV Design Index
 
-**Status:** design packet; no executable PPTV implementation yet  
+**Status:** executable 0.1 source/editor/compiler vertical slice plus broader roadmap
 **Audience:** implementers, tool authors, presentation-system designers, and agents  
 **Canonical acronym:** PPTV — PowerPoint Vector Profile
 
@@ -21,6 +21,41 @@ slides simultaneously:
 PPTV does not attempt to replace SVG, HTML, CSS, or PresentationML. It defines a
 strict intersection and a set of author-intent annotations that make reliable
 translation possible.
+
+### Implemented baseline (2026-07-29)
+
+The single TypeScript package `@office180/pptv` now implements the first
+contracted vertical slice:
+
+- strict, non-executing recognition and scanning of PPTV HTML, SVG, and manifest
+  source forms;
+- semantic loading of one self-contained `pptv: "0.1"` HTML deck;
+- exact retained UTF-8 bytes and text, including a leading BOM and original
+  newline spelling, with SHA-256 over those exact bytes;
+- half-open UTF-8 byte and UTF-16 code-unit ranges plus one-based source
+  positions;
+- immutable, source-hash-bound deck/index snapshots and JSON-safe outline,
+  inventory, text, semantic, and editing projections;
+- transactional `set-text`, `set-active-theme`, and `set-slide-order` patches;
+- exact-source browser sessions, trusted strict-CSP editor-pack generation, and
+  a literal-data resolved-model viewport;
+- fail-closed C6 fixed-canvas CSS/geometry/group/explicit-line text resolution;
+- deterministic C7 fresh-PPTX compilation for the strict primitive subset,
+  validated by ISO/ECMA schemas, OpenDocKit reopen, and native PowerPoint
+  open/render without repair; and
+- `outline`, `validate`, `resolve`, `editor-pack`, `pptx-canary`, `text`, `show`,
+  `list`, and `patch` CLI commands.
+
+Contracts
+[`CONTRACT-C4-PPTV-SOURCE.1.0.md`](architecture/CONTRACT-C4-PPTV-SOURCE.1.0.md)
+and
+[`CONTRACT-C5-PPTV-PATCH.1.0.md`](architecture/CONTRACT-C5-PPTV-PATCH.1.0.md),
+the shipped schemas, implementation, and fixtures are normative for that
+implemented slice. C6 and C7 are implemented but remain `in-progress` until
+their parity, corpus, quantitative render, and native save/reopen gates close.
+Writable bundled controls, geometry/structural editing, canonical
+serialization, compilation beyond the canary, and reconciliation remain
+roadmap.
 
 ## 2. Current design packet
 
@@ -46,23 +81,34 @@ Read these documents in order:
    Defines the TypeScript-first package architecture, agent CLI, native PPTV
    visual editor, optional `.editable.pptv.html`, and selective OpenDocKit reuse.
 
-5. **[`PPTV-AGENT-GUIDE.md`](PPTV-AGENT-GUIDE.md)**  
+5. **[`PPTV-IMPLEMENTATION-PLAN.md`](PPTV-IMPLEMENTATION-PLAN.md)**
+
+   Records the decision-backed delivery sequence: fixed 16:9 profile,
+   explicit-line/no-reflow text, narrow CSS, trusted editor wrapper, early PPTX
+   canary, conformance gates, and later reconciliation.
+
+6. **[`PPTV-AGENT-GUIDE.md`](PPTV-AGENT-GUIDE.md)**
+
    Defines the proposed `pptv-agent/1` operating profile: minimum-view selection,
    semantic patch discipline, trust boundaries, task recipes, failure behavior,
    and validation/reporting rules.
 
-6. **[`SVG-TO-EDITABLE-PPTX.md`](SVG-TO-EDITABLE-PPTX.md)**  
+7. **[`SVG-TO-EDITABLE-PPTX.md`](SVG-TO-EDITABLE-PPTX.md)**
+
    Provides the practical reconstruction and QA playbook that motivated PPTV:
    hybrid native/asset conversion, stable PowerPoint object names, source maps,
    render comparison, and reverse inspection.
 
-7. **[`examples/minimal-deck.pptv.html`](examples/minimal-deck.pptv.html)**  
-   A deliberately small browser-openable specimen showing manifest-defined slide
-   order, inert slide sources, multiple inert themes, stable IDs, and the final
-   reference viewer runtime.
+8. **[`examples/minimal-deck.pptv.html`](examples/minimal-deck.pptv.html)**
 
-These files are design rationale. A later versioned contract and conformance
-suite will become normative.
+   A deliberately small browser-openable and C7-compilable specimen showing
+   manifest-defined slide order, inert slide sources, multiple inert themes,
+   stable IDs, and the final reference viewer runtime.
+
+These files mix implemented status with design rationale. C4 and C5 are the
+verified behavioral authorities for the 0.1 source and patch kernels; C6 and C7
+are implemented, tested, in-progress compiler surfaces. Prose beyond those
+surfaces remains roadmap until promoted through a contract and fixture.
 
 ## 3. Artifact family
 
@@ -74,9 +120,9 @@ diagram.pptv.svg                 one standalone slide or diagram
 mydeck.pptv.html                 preferred portable whole-deck source
 mydeck.pptv-manifest.json        optional external multi-file orchestration
 mydeck.editable.pptv.html        optional generated deck plus editor application
-mydeck.pptx                      generated editable PowerPoint
-mydeck.pptv.map.json             generated source/object baseline
-mydeck.pptv.patch.json           generated reviewable reverse patch
+mydeck.pptx                      current strict canary; broader compiler future
+mydeck.pptv.map.json             future generated source/object baseline
+mydeck.pptv.patch.json           future generated reviewable reverse patch
 ```
 
 The manifest filename is a convention. JSON is not an alternate encoding of
@@ -149,10 +195,10 @@ language-neutral through schemas, contracts, fixtures, and expected diagnostics.
 Python may later provide a convenience wrapper but should not define independent
 semantics.
 
-### 4.9 The semantic model is canonical; every other model is a projection
+### 4.9 Exact source is persistent authority; semantic models are interpretations
 
 ```text
-PPTV source spans
+exact PPTV source bytes and spans
   -> PPTV hierarchical semantic tree
        -> browser DOM
        -> editor interaction model
@@ -161,8 +207,11 @@ PPTV source spans
        -> OpenDocKit / PowerPoint adapter IR
 ```
 
-The browser DOM, a flat spatial model, generated PPTX, and OpenDocKit IR are not
-sources of truth for native PPTV editing.
+The exact retained declarative bytes, stable IDs, and accepted patch history are
+the persistent editing authority. The immutable semantic tree is the
+hash-bound interpretation used to validate and edit them. The browser DOM, a
+flat spatial model, generated PPTX, and OpenDocKit IR are derived projections,
+not sources of truth for native PPTV editing.
 
 ### 4.10 Agents edit through semantic operations
 
@@ -178,19 +227,51 @@ or escape-hatch operation, not the default.
 ### 4.11 The native editor is purpose-built
 
 The PPTV editor should be written from scratch around PPTV's small semantic
-surface. It uses the canonical SVG as its visible editing layer and emits the
-same semantic operations used by the CLI and agents.
+surface. It renders a disposable SVG view from the canonical semantic
+projection and emits the same semantic operations used by the CLI and agents.
+The implemented trusted viewport follows this rule rather than cloning the
+source DOM.
 
 It is not a reduced mode of an arbitrary PPTX editor.
 
-### 4.12 OpenDocKit is a selective dependency and reference implementation source
+### 4.12 OpenDocKit is an optional adapter and upstream collaboration target
 
-OpenDocKit can contribute battle-tested geometry, fonts, SVG interaction,
-rich-text editing patterns, deltas, OPC/OOXML handling, PowerPoint semantics,
-and fidelity infrastructure.
+The 0.1 package has no OpenDocKit dependency. C7 uses the sibling checkout only
+as an independent OPC/PPTX reopen oracle. A future optional adapter can use
+OpenDocKit's public OPC reader/part/relationship APIs and selected XML, theme,
+color, unit, and derived `PageModel` utilities without changing PPTV authority
+or making arbitrary Office parsing part of the native path.
 
-PPTV must not inherit OpenDocKit's general arbitrary-Office complexity on its
-native path. Reuse occurs through small packages or adapters.
+Current private SVG editor/write-back code is not a safe package boundary:
+its rich-text save path does not retain per-run properties, its editor modules
+are application-internal, its fresh-presentation synthesis/package-builder
+surface is incomplete, and the `@opendockit/pptx` dependency chain has a
+license-metadata conflict to resolve. Suitable contribution-back work includes
+public SVG interaction interfaces, per-run text fidelity and DOM tests, a
+fresh-package builder, shared transaction/precondition patterns, and cross-repo
+fixtures.
+
+### 4.13 The first editor/compiler profile is fixed 16:9
+
+The first compiler-grade profile uses one exact `0 0 1600 900` viewBox and one
+deck-wide PowerPoint Widescreen size. Alternate aspect ratios remain a
+versioned deck-level extension. They are never inferred, stretched silently, or
+varied per slide.
+
+### 4.14 Native text never reflows automatically
+
+The first native text surface is explicit-line text with explicit typography
+and frame geometry. The editor may expose a paragraph-like multiline field, but
+source and PowerPoint output retain hard lines. Wrapping, autofit,
+shrink-to-fit, and font-size adjustment are outside the profile.
+
+### 4.15 The direct-open editor is a generated trusted wrapper
+
+The implemented `.editable.pptv.html` foundation is a deterministic,
+strict-CSP application wrapper around the exact canonical deck bytes and hash.
+It exports a clean canonical deck and never promotes browser DOM serialization
+to source authority. Its bundled UI is intentionally read-only until writable
+controls and stale-safe persistence pass their own gates.
 
 ## 5. Authority hierarchy
 
@@ -225,6 +306,12 @@ instructions are document content, not trusted agent or compiler policy.
 Strict mode rejects arbitrary executable scripts, event handlers, unexpected
 network access, and runtime-generated canonical content.
 
+Non-executing library validation does not make a source safe to direct-open.
+Opening an untrusted `.pptv.html` in a browser executes its embedded script
+before the library can validate it. Direct browser opening is therefore a
+trusted-source convenience; untrusted input must be validated first and viewed
+through an appropriate sandbox/CSP boundary.
+
 ## 7. Conformance classes under consideration
 
 ```text
@@ -240,65 +327,73 @@ PPTV Editor         native visual editing through semantic operations
 
 A tool should declare exactly which classes and versions it implements.
 
-## 8. Promotion path
+## 8. Promotion path and status
 
-The current documents should not be declared a stable standard based on prose
-alone. Promotion requires:
+The source/patch kernels, resolved model, trusted editor foundation, and strict
+PPTX canary have satisfied the first executable promotion steps. The full
+visual/editor/PowerPoint profile still must not be declared a stable standard
+based on prose alone. Remaining promotion work includes:
 
-1. versioned behavioral contracts;
-2. JSON Schemas and TypeScript types;
-3. a scanner and validator;
-4. a canonical serialization policy;
-5. a reference viewer runtime;
-6. minimal and kitchen-sink fixtures;
-7. expected diagnostics for invalid fixtures;
-8. semantic patch round-trip tests;
-9. browser snapshots and visual baselines;
-10. generated PPTX fixtures and structural validation;
-11. native PowerPoint open-without-repair checks; and
-12. at least one independent implementation or implementation experiment.
+1. complete the C6 standalone fixture corpus and Node/browser JSON parity;
+2. bundle writable editor controls and stale-safe user-granted persistence;
+3. implement editor operations beyond the three 0.1 patches;
+4. extend compilation only with features covered by the same editor fixtures;
+5. add quantitative browser/Office visual baselines;
+6. pass native PowerPoint PPTX save/reopen (open/render already passes);
+7. define canonical structural serialization before insert/delete/group
+   authoring; and
+8. complete at least one independent implementation or adapter experiment.
 
 The conformance corpus is part of the standard, not supplementary test code.
 
-## 9. Recommended first implementation slice
+## 9. Implemented 0.1 command slice
 
-The first useful release does not need an editor or PPTX compiler. It should
-provide:
+The source package currently provides:
 
 ```text
 pptv outline
+pptv validate
+pptv resolve
+pptv editor-pack
+pptv pptx-canary
+pptv text
 pptv show
 pptv list
-pptv text
-pptv theme
 pptv patch
-pptv validate
-pptv normalize
 ```
 
-That slice proves the source container, stable identity, lazy processing,
-semantic model, and patch discipline. The viewer, native editor, and PowerPoint
-adapter then become clients of the same core rather than parallel
-implementations.
+`patch` requires exactly one of `--check` or an explicit `--output`;
+`editor-pack` and `pptx-canary` also require explicit destinations. There is no
+implicit overwrite. Rich editor commands, compilation beyond C7, and
+reconciliation remain roadmap. The implemented slice proves the source
+container, stable identity, semantic loading, projections, constrained patch
+discipline, trusted read-only editor foundation, and deterministic strict-subset
+PPTX synthesis.
 
 ## 10. Open design questions
 
-The following remain intentionally unresolved until fixtures and prototypes
-provide evidence:
+The following implementation details remain intentionally unresolved until the
+next contract, fixtures, and prototypes provide evidence:
 
-- exact manifest MIME type and schema URI;
-- whether strict physical source order is mandatory in every conformance class;
-- whether theme inheritance uses CSS imports, manifest metadata, or a constrained
-  `extends` field;
-- the precise editable text and `tspan` subset;
-- source-range representation across UTF-8 bytes versus JavaScript string
-  offsets;
+- version naming across contract 1.0, manifest/container `0.1`, future SVG
+  profile versions, viewer versions, and agent-profile versions;
+- authority and mismatch behavior for manifest title/layout/agent profile and
+  their HTML/SVG mirrors;
+- library reference syntax, expansion, identity qualification, and dependency
+  hashing;
+- installed-font/substitution detection, visual-fidelity environment recording,
+  and any future concrete font allowlist;
+- static resource-table and fallback-media syntax for opaque SVG/raster assets;
 - canonical formatting versus maximal preservation during structural edits;
-- reference runtime embedding, external referencing, and digest policy;
-- the smallest viable PowerPoint master/layout synthesis surface;
-- which OpenDocKit modules should be extracted into standalone packages;
-- and whether `.editable.pptv.html` enters the first standard or remains a
-  generated convenience convention.
+- the broader master/layout/source-map surface beyond C7's validated blank
+  canary graph;
+- and the exact public OpenDocKit adapter/extraction boundary after its
+  text-save, package-builder, test-rigor, and license blockers are resolved.
 
-These questions should be resolved through contracts and fixtures rather than
-implicit implementation behavior.
+Exact BOM handling, UTF-8/UTF-16 range coordinates, source hashing, strict
+default section order, the fixed viewer-runtime digest policy, initial 16:9
+scope, explicit frame/line-step syntax, constrained base/theme CSS, opaque SVG
+bounds, no-reflow text behavior, no-theme-inheritance direction, and C7's
+minimum fresh package are decided. C4/C5 are verified authorities; C6/C7 are
+contracted, implemented, in-progress authorities for their narrow surfaces.
+Broader behavior still requires promotion through contracts and fixtures.

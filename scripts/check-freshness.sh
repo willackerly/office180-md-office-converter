@@ -63,7 +63,14 @@ while IFS= read -r file; do
     echo "STALE ($age_days days): $file — freshness: $date_str"
     stale=$((stale + 1))
   fi
-done < <(find . -name "*.md" -not -path "./.git/*" -not -path "*/node_modules/*" -not -path "./.claude/worktrees/*" -type f)
+done < <(find . -name "*.md" \
+  -not -path "./.git/*" \
+  -not -path "./.venv/*" \
+  -not -path "*/node_modules/*" \
+  -not -path "*/dist/*" \
+  -not -path "*/vendor/*" \
+  -not -path "./.claude/*" \
+  -type f)
 
 echo ""
 echo "Checked $total docs with freshness markers, $stale stale (>${MAX_AGE_DAYS} days)."

@@ -1,6 +1,6 @@
 # Architecture Directory
 
-Contracts and the contract registry for md2docx.
+Contracts and the registry for the DOCX and PPTV implementations.
 
 See the [root README](../README.md) for how contracts fit into the overall
 project.
@@ -11,11 +11,12 @@ project.
 # Find all contracts
 ls architecture/CONTRACT-*.md
 
-# Find all code implementing a specific contract
-grep -rn "CONTRACT:C1-THEME-SCHEMA" *.py
+# Find code implementing a specific contract
+rg "CONTRACT:C4-PPTV-SOURCE" packages/pptv/src
 
-# Find what contract a code file implements
+# Find what contract a source file implements
 head -10 md2docx.py
+head -10 packages/pptv/src/core/scan.ts
 
 # Check every CONTRACT: reference resolves to a real file
 scripts/check-contract-refs.sh
@@ -32,9 +33,13 @@ architecture/
   CONTRACT-C1-THEME-SCHEMA.1.0.md   # theme JSON keys, deep-merge, resolution order
   CONTRACT-C2-PROVENANCE.1.0.md     # DOCX core-props provenance stamp
   CONTRACT-C3-ROUNDTRIP.1.0.md      # canonical-MD round-trip guarantees
+  CONTRACT-C4-PPTV-SOURCE.1.0.md    # PPTV exact-source/read model
+  CONTRACT-C5-PPTV-PATCH.1.0.md     # PPTV atomic patch protocol
+  CONTRACT-C6-PPTV-RESOLVED.1.0.md  # PPTV compiler-grade resolved model
+  CONTRACT-C7-PPTX-CANARY.1.0.md    # deterministic primitive-only PPTX canary
 ```
 
-md2docx is a small, solo-maintained CLI tool (see `../.rebarrc`), so it does
+This is a small, solo-maintained repository (see `../.rebarrc`), so it does
 not run the rebar Steward or `compute-registry.sh` — `CONTRACT-REGISTRY.md`
 is hand-maintained and `scripts/check-contract-refs.sh` is the enforcement
 mechanism that keeps `CONTRACT:` references honest.
@@ -49,15 +54,15 @@ CONTRACT-{ID}-{NAME}.{MAJOR}.{MINOR}.md
 |--------|---------|---------|
 | `C` | Component | `C1-THEME-SCHEMA`, `C2-PROVENANCE` |
 
-md2docx is a single-package CLI tool, so every contract so far is a
-`C`-prefixed Component. The `S` (Service), `I` (Interface), and `P`
+Every contract so far is a `C`-prefixed Component. The `S` (Service), `I`
+(Interface), and `P`
 (Protocol) prefixes from the broader rebar convention are reserved for
-future use (e.g., if md2docx grows a plugin interface — see
+future use (e.g., if the repository grows a plugin interface — see
 `ROADMAP.md` §4).
 
 ## Contract Lifecycle
 
-md2docx does not run an automated Steward, so lifecycle is not computed.
+This repository does not run an automated Steward, so lifecycle is not computed.
 Each contract instead **declares** its maturity honestly in a `**Status:**`
 header line:
 
@@ -91,7 +96,8 @@ When bumping major:
 
 ## Code-to-Contract Linking
 
-Every source file declares its contract in a header comment:
+Behavior-bearing source modules declare applicable contracts in a header
+comment:
 
 ```python
 """md2docx — Markdown → styled DOCX, themed by a JSON template.

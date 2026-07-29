@@ -1,6 +1,7 @@
 # PPTV: A PowerPoint Vector Profile
 
-**Status:** design proposal; no executable implementation yet
+**Status:** 0.1 source/patch/resolved/editor-foundation and strict PPTX canary
+implemented for self-contained HTML; broader SVG/editor/compiler profile remains
 
 PPTV is a constrained SVG authoring profile for deterministic conversion to
 editable PowerPoint. A conforming source uses the compound extension
@@ -20,14 +21,49 @@ machine-readable source contract. It deliberately places responsibility on
 the SVG author rather than asking a converter to infer which objects should
 be editable.
 
+## Implemented boundary and version vocabulary
+
+C4 now implements the source/read subset in the single TypeScript package
+`@office180/pptv`, C5 implements three source patches, C6 implements the strict
+fixed-canvas resolved projection, and C7 implements a narrow deterministic
+fresh-PPTX canary. The executable
+format identifier is manifest `pptv: "0.1"` mirrored by HTML
+`data-pptv-version="0.1"`. Contract version `1.0`, viewer
+`pptv-browser/0.1`, and agent profile `pptv-agent/1` are independent version
+lines.
+
+The older “PPTV version 1” language below describes the proposed complete SVG
+to PowerPoint profile, not an implemented file-version alias. In 0.1:
+
+- standalone `.pptv.svg` and external manifests are recognized/inventoried but
+  not semantically loaded;
+- one self-contained `.pptv.html` deck is loaded in manifest slide order;
+- its slide SVGs require one direct root, matching IDs, and C6's exact
+  `0 0 1600 900` `viewBox`;
+- supported native pairs are `rect`/`circle`/`ellipse` shapes, `text`,
+  `line`/`polyline` connectors, `g` groups, and `image`/`g` assets;
+- exact source bytes, including a leading BOM, stable IDs, annotations, and DOM
+  order are retained; and
+- only direct-text replacement, active-theme selection, and complete slide
+  reorder are writable;
+- an exact-source browser session and trusted read-only editor pack exist; and
+- the strict C7 primitive subset compiles through `pptx-canary`.
+
+Geometry/CSS semantics, physical slide size, native groups/connectors, and
+explicit text frames are implemented within C6. C7 generates native PPTX for
+its strict subset and passes schema, independent reopen, and minimal-fixture
+PowerPoint open/render smoke. Libraries, rich `tspan` editing, writable
+geometry/structure controls, compilation beyond C7, quantitative fidelity,
+native PPTX save/reopen, and reverse Office reconciliation remain open.
+
 ## The parallel with Markdown and DOCX
 
 ```text
-document.md          -> md2docx.py    -> document.docx
-diagram.pptv.svg     -> pptv2pptx.py  -> diagram.pptx
+document.md          -> md2docx.py         -> document.docx
+deck.pptv.html       -> C7 PPTX canary     -> deck.pptx
 
-document.docx        -> docx2md.py    -> document.md
-diagram.pptx         -> pptx2pptv.py  -> reviewed changes to diagram.pptv.svg
+document.docx        -> docx2md.py        -> document.md
+diagram.pptx         -> future reconciler -> reviewed PPTV patch
 ```
 
 The common architecture is:
@@ -55,30 +91,32 @@ diagram.edited.pptx       # optional human-edited branch
 diagram.pptv.patch.json   # reverse diff for review or application
 ```
 
-One `.pptv.svg` represents one slide in version 1. A future deck manifest may
-order several slide sources, but multi-slide composition does not belong
-inside SVG.
+One `.pptv.svg` remains the proposed standalone one-slide form. The implemented
+whole-deck form is `.pptv.html`, whose leading manifest orders inert slide SVG
+templates. External multi-file composition remains roadmap.
 
-## Conformance marker
+## Conformance marker and initial canvas decision
 
-The filename is a convention, not proof of conformance. A PPTV source declares
-its profile version and physical slide size on the root SVG:
+The filename is a convention, not proof of conformance. C6 requires this exact
+slide canvas:
 
 ```xml
 <svg
   xmlns="http://www.w3.org/2000/svg"
   viewBox="0 0 1600 900"
-  data-pptv-version="1"
-  data-pptv-slide-width="13.333333"
-  data-pptv-slide-height="7.5"
-  data-pptv-slide-unit="in">
+  data-pptv-version="0.1">
   ...
 </svg>
 ```
 
-The `viewBox` is mandatory and defines the authoring coordinate system. The
-physical dimensions define the PowerPoint slide. Their aspect ratios must
-match within a documented tolerance.
+The implemented C6 HTML resolver maps `1600 × 900` source units exactly to
+PowerPoint Widescreen
+`12192000 × 6858000` EMUs (`13⅓ × 7.5 in`), or `7620` EMUs per source unit.
+Every slide uses that one deck-wide size.
+
+The first compiler rejects another viewBox/aspect ratio rather than stretching
+or inferring it. A future profile may add named alternate deck sizes. It must
+not introduce per-slide sizes or silently change existing geometry.
 
 ## Author annotations
 
@@ -88,7 +126,7 @@ Each object emitted into PowerPoint has:
 - `data-pptv-role`, describing its semantic PowerPoint role; and
 - `data-pptv-export`, declaring its representation.
 
-Version 1 roles:
+The implemented 0.1 loader and proposed complete profile share these roles:
 
 | Role | Meaning |
 |---|---|
@@ -98,7 +136,7 @@ Version 1 roles:
 | `group` | An authored collection with one parent position |
 | `asset` | Artwork treated as one object |
 
-Version 1 export modes:
+They share these export modes:
 
 | Export | Behavior |
 |---|---|
@@ -153,9 +191,15 @@ Example:
 Children of an opaque `svg`, `raster`, or `ignore` subtree do not need PPTV
 annotations. The annotated parent is the object boundary.
 
+For the compiler-grade profile, an opaque SVG/raster asset boundary also
+requires explicit source bounds. Browser-measured `getBBox()` is interaction
+evidence, not canonical compiler geometry. A visual box with editable text is
+instead a native group containing a shape and a text object.
+
 ## Normative z-order model
 
-PPTV version 1 uses **SVG DOM order as the only canonical z-order**.
+The proposed complete profile, and the implemented 0.1 semantic loader, use
+**SVG DOM order as the only canonical z-order**.
 
 SVG already uses a painter's model: earlier rendered siblings are painted
 first and later siblings appear above them. PresentationML uses the same
@@ -186,7 +230,7 @@ Authors may use semantic groups such as `layer.background`,
 `layer.connectors`, and `layer.labels` to make the DOM easy to scan. Their
 names do not override document order.
 
-### Reverse ordering rules
+### Reverse ordering rules (roadmap)
 
 The generated map records the stable-ID sequence for each parent scope. The
 reverse tool compares sequences, not raw numeric positions:
@@ -212,7 +256,7 @@ An intentional PowerPoint reorder becomes a relative patch:
 
 ```json
 {
-  "op": "move_after",
+  "op": "move-after",
   "id": "src.stage.2",
   "after": "src.stage.1",
   "scope": "slide"
@@ -229,7 +273,7 @@ channel.
 
 ## Supported source surface
 
-The strict version 1 native surface should be intentionally small:
+The complete strict native surface should remain intentionally small:
 
 | SVG source | Native PowerPoint result |
 |---|---|
@@ -237,7 +281,7 @@ The strict version 1 native surface should be intentionally small:
 | `circle`, `ellipse` | Ellipse |
 | `line` | Line or connector |
 | `polyline` | Multi-segment line when supported without approximation |
-| `text`, constrained `tspan` | Text box and paragraphs/runs |
+| `text`, constrained line `tspan` | Explicit-line text box |
 | constrained `g` | Native group |
 | `image` with a local PNG/JPEG | Picture |
 
@@ -246,35 +290,59 @@ text on a path, and arbitrary transforms are not silently approximated.
 Authors place those features inside an object exported as `svg`, or validation
 fails.
 
-Version 1 should accept:
+C6 accepts:
 
 - presentation attributes and inline `style`;
-- static local assets whose hashes can be recorded;
-- explicit translate, scale, and rotation transforms that can be flattened
-  deterministically; and
-- direct text plus constrained `tspan` line and run formatting.
+- opaque SVG assets with explicit bounds (C7 does not compile them);
+- finite unitless primitive geometry;
+- one finite `translate(tx ty)` on a native group; and
+- direct one-line text plus direct, non-nested explicit-line `tspan` children.
 
-Version 1 should reject:
+C6 rejects:
 
 - external stylesheets or remote assets;
 - scripting, animation, and event handlers;
 - `foreignObject`;
 - path-outlined text declared as editable;
 - percentage geometry that depends on browser layout;
+- automatic wrapping, autofit, shrink-to-fit, or automatic font sizing;
+- native scale, rotation, skew, or arbitrary matrix transforms;
 - ambiguous or duplicate IDs; and
 - unsupported content outside an opaque asset boundary.
 
+## Explicit-line text model (C6; C7 direct-line subset)
+
+Native PPTV text is positioned authoring data, not a browser paragraph-layout
+request.
+
+- Direct text is exactly one hard line.
+- Multiline text uses one direct `tspan` per line with explicit, validated line
+  positions and line step.
+- Font family, size, approved weight/style, color, anchor, and frame geometry
+  must resolve to concrete values.
+- The editor may expose one multiline paragraph-like control, but commits
+  serialize its newlines back to explicit lines.
+- Longer text may overflow and produce a diagnostic. It never wraps, moves a
+  word, shrinks, changes font size, or resizes geometry automatically.
+- Styled runs, bullets, columns, text paths, and nested spans are deferred.
+
+The current C7 writer accepts exactly one hard line and emits one explicit
+paragraph with contracted/zero margins, `wrap="none"`, and `a:noAutofit`.
+Concrete source syntax for frame/bounds and line step is defined by C6. C7
+rejects multiline text until its native mapping and fidelity fixtures land.
+
 ## Stable identity
 
-The SVG `id` is the canonical semantic identity. The compiler writes the
-PowerPoint Selection Pane name as:
+The SVG `id` is the canonical semantic identity in the implemented source
+kernel. C7 writes the PowerPoint Selection Pane name as:
 
 ```text
 src.<svg-id>
 ```
 
-The mapping is stable across regenerations. Office-generated numeric shape IDs
-are implementation details and are never used for semantic matching.
+That mapping is stable across regenerations. Office-generated
+numeric shape IDs are implementation details and must never be used for
+semantic matching.
 
 Copying a shape in PowerPoint initially copies its semantic name. The reverse
 tool treats duplicate `src.*` names as copied objects requiring newly assigned
@@ -282,46 +350,49 @@ SVG IDs before a new baseline can be established.
 
 ## Forward compiler behavior
 
-The proposed command surface mirrors `md2docx.py`:
+The TypeScript CLI extends the implemented `pptv` command rather than
+introducing independent Python semantics:
 
 ```bash
-python3 pptv2pptx.py --check diagram.pptv.svg
-python3 pptv2pptx.py diagram.pptv.svg
-python3 pptv2pptx.py -o out/ diagram.pptv.svg
-python3 pptv2pptx.py --template corporate.pptx diagram.pptv.svg
+pptv validate deck.pptv.html
+pptv resolve deck.pptv.html
+pptv pptx-canary deck.pptv.html --output deck.pptx
 ```
 
-The compiler:
+Semantic validation/compilation is currently limited to self-contained HTML.
+`pptx-canary` is deliberately strict, fresh-package, and template-free.
+Template-backed or broader `build-pptx` behavior remains roadmap.
+
+The implemented C7 canary:
 
 1. validates the PPTV profile;
-2. resolves and hashes every local dependency;
-3. maps the SVG coordinate system to the declared slide size;
-4. emits objects in normative DOM order;
-5. writes stable object names;
-6. creates a PNG fallback for every embedded SVG;
-7. stamps source, profile, generator, and dependency provenance;
-8. writes `diagram.pptv.map.json`;
-9. validates the OPC package and stable-ID inventory; and
-10. optionally renders and opens a temporary copy for native PowerPoint QA.
+2. maps the exact `1600 × 900` coordinate system to the fixed 16:9 slide size;
+3. emits supported native objects in normative DOM order;
+4. writes stable object names and source/compiler provenance; and
+5. validates its OPC graph before producing deterministic ZIP bytes.
+
+A broader compiler may later hash local dependencies, generate explicit opaque
+asset fallbacks, write a versioned `.pptv.map.json`, and participate in
+render/native-QA workflows. None of those steps is performed implicitly by
+`pptx-canary`; native PowerPoint QA is a separate acceptance action.
 
 Strict behavior is a feature. Unsupported content produces an actionable
 validation error naming the element and the nearest valid opaque boundary.
 There is no silent fallback from `native` to raster.
 
-## Reverse inspector and patcher
+## Reverse inspector and patcher (roadmap)
 
 The proposed reverse command requires both the edited presentation and its
 canonical source:
 
 ```bash
-python3 pptx2pptv.py diagram.edited.pptx \
+pptv reconcile diagram.edited.pptx \
   --source diagram.pptv.svg \
-  --report diagram.pptv.patch.json
-
-python3 pptx2pptv.py diagram.edited.pptx \
-  --source diagram.pptv.svg \
-  --apply
+  --baseline diagram.pptv.map.json
 ```
+
+`reconcile` is not implemented. C5 currently patches PPTV source directly and
+does not inspect PowerPoint.
 
 The source hash in the presentation must match the comparison baseline. If
 the source changed independently, the tool stops and requests reconciliation
@@ -349,26 +420,32 @@ The default action is report-only. `--apply` changes the canonical SVG only
 after validation confirms that every selected patch operation is supported.
 The human-edited PPTX is never overwritten.
 
-## Proposed Python structure
+## TypeScript package boundary
 
-The repository can retain paired entry points while sharing a small internal
-model:
+The implementation deliberately uses one package:
 
 ```text
-pptv.py             # profile parser, validation, mapping, and diff model
-pptv2pptx.py        # forward CLI
-pptx2pptv.py        # reverse CLI
+@office180/pptv
+  core              exact source, scanner, manifest, semantic deck
+  ops               projections and C5 patch transactions
+  node/cli           explicit host I/O and commands
+  future adapter     optional PPTX/OpenDocKit integration
 ```
 
-`python-pptx` can provide native shapes, text, and presentation properties.
-A bounded Open XML helper will likely be needed for embedded SVG, its PNG
-fallback, stable metadata surfaces, and any connector behavior not exposed by
-the public API.
+Splitting CSS, browser, editor, or PPTX packages is deferred until distinct
+consumers justify those dependency boundaries. A future PowerPoint adapter may
+use selected public OpenDocKit OPC/OOXML/theme utilities, but must remain
+optional and cannot replace the exact PPTV source/semantic model.
 
 ## Test strategy
 
-A `kitchen-sink.pptv.svg` fixture should exercise every supported object,
-export mode, group scope, and z-order transition.
+The current TypeScript suite covers exact UTF-8/UTF-16 ranges, BOM/CRLF/non-BMP
+behavior, strict non-executing source scanning, manifest/deck hierarchy,
+supported/opaque objects, projections and queries, three atomic patch
+operations, and explicit CLI output.
+
+A future `kitchen-sink.pptv.svg` or HTML fixture should exercise every complete
+compiler-profile object, export mode, group scope, and z-order transition.
 
 The minimum automated cascade is:
 
@@ -384,19 +461,25 @@ The minimum automated cascade is:
 10. regeneration and structural/render comparison; and
 11. desktop PowerPoint open-without-repair smoke validation where available.
 
-## Promotion to an implementation contract
+## Contracts and remaining promotion
 
-Before executable PPTV code lands, the normative source surface, ordering
-rules, identity rules, error behavior, and round-trip guarantees should move
-into `architecture/CONTRACT-C4-PPTV-PROFILE.1.0.md`.
+C4 is the verified behavioral authority for the implemented 0.1 source/read
+surface, C5 governs the constrained patch path, C6 governs the implemented
+resolved profile, and C7 governs the strict fresh-PPTX canary. This document
+remains the author-facing rationale and broader compiler/reconciliation roadmap.
 
-This proposal should remain the design rationale and author-facing overview.
-The contract should become the versioned behavioral authority.
+Before claiming general editable PowerPoint conformance, expand the native
+fixture, add source-map/reverse comparison, quantitative render fidelity, and
+native PPTX save/reopen. C6/C7 already contract physical mapping, no-reflow
+intent, constrained CSS/theme resolution, normalized geometry/text frames,
+fresh package construction, stable object naming, and minimal-fixture
+PowerPoint open without repair.
 
 ## References
 
 - [W3C SVG 2 rendering model](https://www.w3.org/TR/SVG/render.html)
 - [Microsoft PowerPoint shape z-order](https://learn.microsoft.com/en-us/office/vba/api/powerpoint.shape.zorder)
+- [Microsoft PowerPoint slide sizes](https://support.microsoft.com/en-us/powerpoint/change-the-size-of-your-powerpoint-slides)
 - [PresentationML shape tree](https://learn.microsoft.com/en-us/dotnet/api/documentformat.openxml.presentation.shapetree)
 - [Microsoft Office SVG picture storage](https://learn.microsoft.com/en-us/openspecs/office_standards/ms-odrawxml/7e1f1524-1569-4aa2-a6c9-aab2d855bd48)
 - [`python-pptx` image API](https://python-pptx.readthedocs.io/en/stable/api/image.html)

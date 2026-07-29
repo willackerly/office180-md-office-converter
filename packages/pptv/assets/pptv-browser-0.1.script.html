@@ -1,0 +1,51 @@
+<script data-pptv-runtime="pptv-browser/0.1">
+(() => {
+  "use strict";
+
+  const manifestNode = document.querySelector("#pptv-manifest");
+  const output = document.querySelector("[data-pptv-output]");
+  const manifest = JSON.parse(manifestNode.textContent);
+
+  const baseStyleNode = document.querySelector('[data-pptv-style="base"]');
+  if (!baseStyleNode) throw new Error("Missing PPTV base style");
+
+  const themeNode = document.querySelector(
+    `[data-pptv-theme="${CSS.escape(manifest.theme)}"]`
+  );
+  if (!themeNode) throw new Error(`Unknown PPTV theme: ${manifest.theme}`);
+
+  const viewerStyle = document.createElement("style");
+  viewerStyle.dataset.pptvViewerChrome = "";
+  viewerStyle.textContent = `
+html, body { margin: 0; background: #dfe5e2; }
+[data-pptv-output] { display: grid; gap: 32px; padding: 32px; }
+.pptv-slide {
+  width: min(100%, 1280px);
+  margin: 0 auto;
+  box-shadow: 0 16px 48px rgb(0 0 0 / 24%);
+}
+.pptv-slide > svg { display: block; width: 100%; height: auto; }
+`;
+  document.head.append(viewerStyle);
+
+  const activeStyle = document.createElement("style");
+  activeStyle.dataset.pptvActiveTheme = manifest.theme;
+  activeStyle.textContent = `${baseStyleNode.textContent}\n${themeNode.textContent}`;
+  document.head.append(activeStyle);
+
+  for (const slideRef of manifest.slides) {
+    if (typeof slideRef === "object" && slideRef.hidden === true) continue;
+    const id = typeof slideRef === "string" ? slideRef : slideRef.id;
+    const source = document.querySelector(
+      `template[data-pptv-slide="${CSS.escape(id)}"]`
+    );
+    if (!source) throw new Error(`Unknown PPTV slide: ${id}`);
+
+    const section = document.createElement("section");
+    section.className = "pptv-slide";
+    section.dataset.pptvRenderedSlide = id;
+    section.append(source.content.cloneNode(true));
+    output.append(section);
+  }
+})();
+</script>

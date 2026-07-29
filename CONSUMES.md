@@ -1,17 +1,16 @@
 # CONSUMES — external contract dependencies
 
-<!-- last-synced: 2026-07-08 -->
+<!-- last-synced: 2026-07-29 -->
 <!-- format: rebar-consumes-v1 -->
 
 This file declares which **external contracts** (owned by other rebar
-repos) md2docx depends on.
+repos) this converter repository depends on.
 
-**Current state: no entries.** md2docx is a standalone, single-repo
-project — its three contracts (`architecture/CONTRACT-C1-THEME-SCHEMA.1.0.md`,
-`CONTRACT-C2-PROVENANCE.1.0.md`, `CONTRACT-C3-ROUNDTRIP.1.0.md`) are all
-owned locally, and it doesn't consume any contract from another rebar
-repo. The file is kept (rather than deleted) so the format is documented
-here for whoever adds the first real entry, and so
+**Current state: no entries.** All seven C1–C7 contracts are owned locally, and
+neither the DOCX track nor `@office180/pptv` consumes a contract from another
+rebar repository. In particular, OpenDocKit is not a current runtime or
+contract dependency; future integration stays behind an optional adapter. This
+file is kept so the format is documented for the first real entry and so
 `scripts/check-compliance.sh`'s federation check (Check 8) has something
 to find and correctly report as "present, no entries" rather than
 "missing."
@@ -70,13 +69,13 @@ encoding "extends" semantics in this file.
   real entry. `scripts/check-compliance.sh` (Check 8) verifies drift-check
   is wired into CI *once* an entry exists — with zero entries, that check
   is a no-op.
-- **Owner-side `scan-consumers.sh`** (not shipped in this repo — md2docx
+- **Owner-side `scan-consumers.sh`** (not shipped in this repo — the converter
   is a consumer, not a rebar-contract owner other repos would scan for)
 
 ---
 
 ## Adoption
 
-If md2docx ever depends on a contract from another rebar-adopting repo,
+If this repository ever depends on a contract from another rebar-adopting repo,
 add a `## <owner>/<contract>.<version>` section here following the format
 above. Until then, this file intentionally has no entries.
