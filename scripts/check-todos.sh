@@ -3,8 +3,7 @@
 # rebar-scripts: 2026.03.20
 #
 # Usage: ./scripts/check-todos.sh [directories...]
-# Default: repo root (md2docx.py, docx2md.py, tests/ all live at top level —
-# this is a flat, single-package CLI tool, not a src/-layout project)
+# Default: repo root (covers the flat Python tools and packages/pptv/src)
 #
 # Rules:
 #   - TODO: in code = untracked = BLOCKS COMMIT
@@ -22,21 +21,25 @@ fi
 
 # Count untracked TODOs (exclude TRACKED-TASK lines and comments about the system)
 untracked=$(grep -rn "TODO:" \
+  --exclude-dir=".git" --exclude-dir=".venv" --exclude-dir="node_modules" \
+  --exclude-dir="dist" --exclude-dir="vendor" --exclude-dir=".claude" \
   --include="*.py" --include="*.go" --include="*.ts" --include="*.tsx" \
   --include="*.js" --include="*.rs" --include="*.jsx" \
   "${DIRS[@]}" 2>/dev/null \
   | grep -v "TRACKED-TASK:" \
   | grep -v "TODO\.md" \
   | grep -v "check-todos" \
-  | grep -v "node_modules\|vendor\|dist\|\.git/\|\.claude/worktrees" \
+  | grep -v "node_modules\|vendor\|dist\|\.venv/\|\.git/\|\.claude/worktrees" \
   || true)
 
 # Count tracked tasks (informational)
 tracked=$(grep -rn "TRACKED-TASK:" \
+  --exclude-dir=".git" --exclude-dir=".venv" --exclude-dir="node_modules" \
+  --exclude-dir="dist" --exclude-dir="vendor" --exclude-dir=".claude" \
   --include="*.py" --include="*.go" --include="*.ts" --include="*.tsx" \
   --include="*.js" --include="*.rs" --include="*.jsx" \
   "${DIRS[@]}" 2>/dev/null \
-  | grep -v "node_modules\|vendor\|dist\|\.git/\|\.claude/worktrees" \
+  | grep -v "node_modules\|vendor\|dist\|\.venv/\|\.git/\|\.claude/worktrees" \
   || true)
 
 tracked_count=$(echo "$tracked" | grep -c . 2>/dev/null || echo 0)

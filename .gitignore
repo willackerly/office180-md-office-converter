@@ -2,6 +2,13 @@
 __pycache__/
 *.py[cod]
 *$py.class
+.venv/
+
+# TypeScript / Node
+node_modules/
+dist/
+coverage/
+*.tsbuildinfo
 
 # OS cruft
 .DS_Store

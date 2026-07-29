@@ -7,12 +7,12 @@
 | Track | Canonical source | Office artifact | Status |
 |---|---|---|---|
 | Markdown / Word | `.md` | `.docx` | Implemented and tested |
-| PPTV / PowerPoint | `.pptv.svg` / `.pptv.html` | `.pptx` | Detailed design packet; no converter yet |
+| PPTV / PowerPoint | `.pptv.svg` / `.pptv.html` | `.pptx` | TypeScript vertical slice, trusted editor foundation, and strict PPTX canary implemented |
 
 ## What ships
 
-The implemented product is two small command-line tools, with no server or
-framework:
+The implemented product has three command-line surfaces—two Python scripts and
+one TypeScript package/CLI—with no server:
 
 - **`md2docx.py`** — converts Markdown to a styled `.docx`, themed by a JSON
   file. Headings, lists, tables, fenced code, inline formatting, blockquotes,
@@ -21,6 +21,12 @@ framework:
   inverting the same style choices, so editing the generated document in
   Word (or Google Docs) and converting it back doesn't silently lose or
   invent content.
+- **`@office180/pptv`** — a TypeScript source kernel and CLI for non-executing
+  `.pptv.html` scan/validation, manifest and semantic projections, stable-ID
+  queries, atomic source-preserving text/theme/slide-order patches, exact-source
+  editor sessions, deterministic trusted editor wrappers, and strict
+  compiler-grade CSS/geometry/text resolution. Its Node boundary also emits a
+  deterministic, fail-closed native-shape PPTX canary.
 
 ## PowerPoint design track
 
@@ -40,36 +46,87 @@ proposals:
 - **[PPTV Tooling and Editor Architecture](PPTV-TOOLING-AND-EDITOR.md)** defines
   a TypeScript-first toolchain, native SVG editor, optional
   `.editable.pptv.html`, and selective OpenDocKit reuse.
+- **[PPTV Implementation Plan](PPTV-IMPLEMENTATION-PLAN.md)** fixes the initial
+  16:9/no-reflow profile direction and sequences the trusted browser editor,
+  early PPTX canary, full compiler, OpenDocKit collaboration, and reconciliation
+  with explicit acceptance gates.
 - **[SVG to Editable PowerPoint playbook](SVG-TO-EDITABLE-PPTX.md)** documents
   the reconstruction, stable-object-ID, round-trip diff, render QA, and native
   PowerPoint validation workflow that motivated the profile.
 - **[`examples/minimal-deck.pptv.html`](examples/minimal-deck.pptv.html)** is a
-  browser-openable specimen of manifest-driven order and theme activation.
+  browser-openable two-slide specimen that also compiles through the current C7
+  canary subset.
 
-These files are reusable design and operator guidance. This repository does not
-yet ship a PPTV parser, editor, or PowerPoint converter.
+The C4/C5 source-and-patch kernel now ships with a browser-safe editor session
+and read-only trusted wrapper. The in-progress C6 profile also has an executable
+fail-closed resolver for fixed 16:9 geometry, hard-line text, groups, opaque SVG
+bounds, complete theme tokens, constrained CSS, and provenance. C7 compiles its
+strict primitive subset into a fresh deterministic PPTX; the minimal canary
+artifact passes ISO/ECMA schema validation, independent OpenDocKit reopen, and
+native PowerPoint open/render without repair. Ellipse and translated-group
+mappings currently have structural tests rather than native fixture coverage.
+Browser parity fixtures, writable bundled controls, broader compilation,
+quantitative render comparison, and native PPTX save/reopen remain open gates.
 
 ---
 
 ## Install
 
 ```bash
-pip install python-docx
+python3 -m venv .venv
+.venv/bin/python -m pip install python-docx
+pnpm install
 ```
 
-That is the only runtime dependency for the shipped DOCX converters. Then run
-either script directly:
+`python-docx` is the DOCX runtime dependency. The PPTV package requires
+Node.js 20+ and uses `parse5`, `jsonc-parser`, and exactly `jszip@3.10.1`. Run
+the Python scripts through the local environment:
 
 ```bash
-python3 md2docx.py notes.md
-python3 docx2md.py notes.docx
+.venv/bin/python md2docx.py notes.md
+.venv/bin/python docx2md.py notes.docx
 ```
 
-(No packaging or entry point yet; see `ROADMAP.md` §0.)
+(The Python pair has no packaging or entry point yet; see `ROADMAP.md` §0.)
 
 ---
 
 ## Usage
+
+### PPTV TypeScript tools
+
+```bash
+pnpm pptv outline examples/minimal-deck.pptv.html
+pnpm pptv validate examples/minimal-deck.pptv.html
+pnpm pptv resolve examples/minimal-deck.pptv.html
+pnpm pptv editor-pack examples/minimal-deck.pptv.html \
+  --output minimal-deck.editable.pptv.html
+pnpm pptv pptx-canary examples/minimal-deck.pptv.html \
+  --output minimal-deck.pptx
+pnpm pptv text examples/minimal-deck.pptv.html --slide cover --format json
+pnpm pptv show examples/minimal-deck.pptv.html cover.title --view editing
+pnpm pptv list examples/minimal-deck.pptv.html --role connector
+```
+
+Patches are bound to the source SHA-256 and are all-or-nothing. The CLI never
+overwrites implicitly:
+
+```bash
+pnpm pptv patch deck.pptv.html change.pptv.patch.json --check
+pnpm pptv patch deck.pptv.html change.pptv.patch.json \
+  --output deck.updated.pptv.html
+```
+
+Version 0.1 applies direct-text, active-theme, and slide-order transactions to
+self-contained `.pptv.html`; the browser-safe session uses those same
+transactions for exact undo/redo, while `editor-pack` emits a strict-CSP,
+read-only trusted shell around inert canonical bytes and reconstructs its
+preview only from literal resolved data. Standalone SVG and external manifests
+are recognition-only; CSS token editing, geometry/rich-text editing, writable
+bundled controls, PPTX features beyond the strict C7 subset, quantitative
+render fidelity, reconciliation, and native PPTX save/reopen remain outside the
+verified surface. See
+[`packages/pptv/README.md`](packages/pptv/README.md).
 
 ### Markdown → DOCX
 
@@ -205,18 +262,27 @@ themes with an `extends` chain, and the rest of the symmetry track
 (custom-XML source embedding, 3-way merge, a fidelity report).
 
 **PowerPoint roadmap:** `PPTV-DESIGN-INDEX.md` is the entry point for the
-proposed SVG/HTML source model, processing API, tooling, native editor,
-PowerPoint adapter, reverse patch semantics, and conformance path. Normative
-behavior will require versioned contracts and executable fixtures before
-implementation.
+broader SVG/HTML source model, processing API, native editor, PowerPoint
+adapter, reverse-patch semantics, and conformance path. Contracts C4 and C5,
+their schemas, and executable tests define the implemented 0.1 source/read/patch
+subset. C6 and C7 are implemented, in-progress resolver/compiler surfaces with
+explicit parity, fidelity, and native save/reopen gates. The broader writable
+editor, full compiler, and reconciliation surface remains forward design until
+promoted the same way.
 
 ---
 
 ## Development
 
 ```bash
-pip install python-docx
-python3 tests/test_roundtrip.py     # 7 tests, no test framework required
+python3 -m venv .venv
+.venv/bin/python -m pip install python-docx
+pnpm install
+pnpm format:check
+pnpm typecheck
+pnpm test                          # runs the PPTV and DOCX suites
+pnpm build
+pnpm pack:check                    # verify the publishable PPTV package contents
 scripts/setup.sh                    # installs the pre-commit hook (once)
 scripts/check-contract-refs.sh      # CONTRACT: refs resolve to real files
 scripts/check-todos.sh              # no untracked TODO: comments

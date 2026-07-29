@@ -19,9 +19,7 @@ fi
 broken=0
 total=0
 
-# Find all CONTRACT: references in source files (md2docx is a Python
-# project — .py is the only extension that matters here, but the other
-# extensions are kept for anyone vendoring non-Python tooling into scripts/).
+# Find all CONTRACT: references in Python and TypeScript source files.
 while IFS= read -r line; do
   file=$(echo "$line" | cut -d: -f1)
   lineno=$(echo "$line" | cut -d: -f2)
@@ -40,6 +38,8 @@ while IFS= read -r line; do
     broken=$((broken + 1))
   fi
 done < <(grep -rn "CONTRACT:[A-Za-z0-9_-]*\.[0-9]*\.[0-9]*" \
+  --exclude-dir=".git" --exclude-dir=".venv" --exclude-dir="node_modules" \
+  --exclude-dir="dist" --exclude-dir="vendor" --exclude-dir=".claude" \
   --include="*.py" --include="*.go" --include="*.ts" --include="*.tsx" \
   --include="*.js" --include="*.rs" --include="*.jsx" \
   . 2>/dev/null | grep -v "node_modules\|vendor\|dist\|\.git\|\.claude/worktrees")

@@ -2,8 +2,8 @@
 # check-ground-truth.sh — Verify METRICS.md matches codebase reality.
 # rebar-scripts: 2026.03.20
 #
-# Computes md2docx's project metrics from the repo and compares against the
-# claims in the "Ground Truth (machine-verified)" block of METRICS.md.
+# Computes the converter project's Python and TypeScript metrics and compares
+# them against the "Ground Truth (machine-verified)" block of METRICS.md.
 # Catches "silent success" drift where everything works but documented
 # numbers describe a different reality.
 #
@@ -29,12 +29,16 @@ YELLOW='\033[1;33m'
 NC='\033[0m'
 exit_code=0
 
-# ── md2docx's metrics — kept in sync with METRICS.md's "Ground Truth" table ──
+# ── Project metrics — kept in sync with METRICS.md's "Ground Truth" table ──
 compute_metrics() {
   echo "python_source_files=$(ls -- *.py 2>/dev/null | wc -l | tr -d ' ')"
   echo "test_files=$(ls tests/test_*.py 2>/dev/null | wc -l | tr -d ' ')"
   echo "test_functions=$(grep -c '^def test_' tests/test_roundtrip.py 2>/dev/null | tr -d ' ')"
+  echo "typescript_source_files=$(find packages/pptv/src -type f -name '*.ts' ! -path '*/__tests__/*' | wc -l | tr -d ' ')"
+  echo "typescript_test_files=$(find packages/pptv/src/__tests__ -type f -name '*.test.ts' | wc -l | tr -d ' ')"
+  echo "typescript_test_cases=$(grep -rhE --include='*.test.ts' '^[[:space:]]*(it|test)[(]' packages/pptv/src/__tests__ | wc -l | tr -d ' ')"
   echo "contracts=$(ls architecture/CONTRACT-C*.md 2>/dev/null | grep -v TEMPLATE | wc -l | tr -d ' ')"
+  echo "published_schemas=$(find schemas -maxdepth 1 -type f -name '*.json' | wc -l | tr -d ' ')"
   echo "shipped_themes=$(ls themes/*.json 2>/dev/null | wc -l | tr -d ' ')"
 }
 

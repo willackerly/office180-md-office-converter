@@ -112,13 +112,16 @@ fi
 echo ""
 echo "=== Untracked TODOs in Code ==="
 
-# md2docx.py / docx2md.py live at repo root, not under src/ — scan root + tests/.
+# Scan the Python converters and TypeScript PPTV package, excluding generated
+# and local-environment directories.
 UNTRACKED=$(grep -rn "TODO:" \
-  --include="*.py" \
-  . tests/ 2>/dev/null \
+  --exclude-dir=".git" --exclude-dir=".venv" --exclude-dir="node_modules" \
+  --exclude-dir="dist" --exclude-dir="vendor" --exclude-dir=".claude" \
+  --include="*.py" --include="*.ts" --include="*.tsx" \
+  . 2>/dev/null \
   | grep -v "TRACKED-TASK" \
   | grep -v "TODO\.md" \
-  | grep -v "\.git/" \
+  | grep -v "node_modules\|dist\|\.venv/\|\.git/" \
   | head -10 || true)
 
 if [[ -n "$UNTRACKED" ]]; then
@@ -147,14 +150,19 @@ fi
 if [[ "${1:-}" == "--test-baseline" || "${2:-}" == "--test-baseline" ]]; then
   echo ""
   echo "=== Test Health Baseline ==="
-  echo "Running: python3 tests/test_roundtrip.py"
-  if python3 tests/test_roundtrip.py 2>&1 | tail -20; then
+  echo "Running: pnpm test"
+  if pnpm test 2>&1 | tail -30; then
     ok "Test suite passed"
   else
     err "Test suite has failures — fix before starting work"
+    exit 1
   fi
 fi
 
 echo ""
 echo "=== Summary ==="
-echo "Run 'scripts/refresh-context.sh --test-baseline' to also verify tests pass"
+if [[ "${1:-}" == "--test-baseline" || "${2:-}" == "--test-baseline" ]]; then
+  echo "Context and both test suites verified"
+else
+  echo "Run 'scripts/refresh-context.sh --test-baseline' to also verify both test suites"
+fi

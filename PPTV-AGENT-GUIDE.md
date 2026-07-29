@@ -1,14 +1,16 @@
 # PPTV Agent Operating Guide
 
-**Status:** design guidance for a future toolchain; the referenced `pptv` CLI is
-not implemented yet  
+**Status:** operational for the 0.1 source/query/patch kernel, C6 resolver,
+trusted editor foundation, and strict C7 PPTX canary; broader editing and
+PowerPoint translation remain roadmap
 **Profile identifier:** `pptv-agent/1`  
 **Architecture:** [`PPTV-PROCESSING-API.md`](PPTV-PROCESSING-API.md)
 
 ## 1. Purpose
 
 This guide defines how an agent should inspect and edit PPTV efficiently and
-safely once a conforming toolchain exists.
+safely with the implemented 0.1 kernel, while identifying operations that
+remain roadmap.
 
 The central rule is:
 
@@ -48,6 +50,11 @@ A source declaration such as:
 selects a known installed profile. It does not authorize the document to define
 new agent behavior.
 
+Do not direct-open an untrusted `.pptv.html` in a browser. Browser opening
+executes its embedded script before the non-executing library can validate it.
+Validate untrusted bytes first and use a sandbox/CSP-isolated renderer if a
+visual view is required. Direct-open is a trusted-source convenience only.
+
 ## 3. Standard workflow
 
 For every ordinary task:
@@ -60,7 +67,8 @@ For every ordinary task:
 5. validate the entire transaction without applying it
 6. apply the patch atomically
 7. validate affected scopes
-8. render only when visual confirmation is material
+8. use a separately trusted/sandboxed browser renderer only when visual
+   confirmation is material
 9. report changed IDs, source hash, and diagnostics
 ```
 
@@ -79,10 +87,11 @@ Use this to learn:
 - deck title;
 - active theme;
 - slide order;
-- slide IDs and layouts;
-- object IDs, roles, and short text;
-- connector summaries; and
-- validation warnings visible at outline level.
+- slide IDs, layouts, and hidden flags; and
+- whether control-plane validation succeeds.
+
+Use `show`, `list`, or `text` for objects and content; the 0.1 outline does not
+include object inventories or connector summaries.
 
 ### 4.2 Retrieve one object
 
@@ -96,11 +105,6 @@ Escalate only when needed:
 ```bash
 pptv show deck.pptv.html architecture.node.authorization \
   --view editing --format json
-```
-
-```bash
-pptv show deck.pptv.html architecture.node.authorization \
-  --view resolved --format json
 ```
 
 ### 4.3 Search by meaning
@@ -120,8 +124,8 @@ Use for:
 - deck summaries;
 - slide ordering;
 - locating a concept;
-- counting slides or objects;
-- identifying themes and layouts; and
+- counting slides;
+- identifying the active theme and layouts; and
 - deciding what to inspect next.
 
 ### Semantic
@@ -129,39 +133,39 @@ Use for:
 Use for:
 
 - changing labels or body text;
-- understanding diagram relationships;
 - finding nodes, groups, and connectors;
 - summarizing slide meaning; and
 - most agent planning.
 
 This is the default view.
 
-### Editing
+### Editing projection
+
+Use to inspect raw attributes/classes, source ranges, hierarchy, and the slide
+`viewBox`. In 0.1 this is a richer read projection, not authorization for
+geometry/class/structure changes.
+
+### Resolved (implemented C6)
+
+```bash
+pptv resolve deck.pptv.html --format json
+```
 
 Use for:
-
-- moving or resizing objects;
-- changing classes;
-- editing text runs;
-- changing connector endpoints;
-- grouping or reordering objects;
-- deciding whether to change a theme token, component rule, or local override;
-  and
-- creating new supported objects.
-
-### Resolved
-
-Use only for:
 
 - CSS cascade debugging;
 - font and text-layout investigation;
 - transform or coordinate problems;
-- asset resolution;
+- asset-boundary diagnosis;
 - browser-versus-PowerPoint fidelity debugging;
 - unsupported-feature diagnosis; and
 - inspecting exact source fragments.
 
-Resolved output may be substantially larger.
+The C6 resolver is deliberately constrained: it requires the exact `1600 ×
+900` canvas, finite primitive/group geometry, explicit one-line text, supported
+CSS, and self-contained references. It reports unsupported SVG and raster
+assets rather than resolving or fetching them. Resolved output may be
+substantially larger.
 
 ## 6. Semantic patch discipline
 
@@ -203,9 +207,9 @@ This prevents overwriting a concurrent human or agent edit.
 
 ### 6.3 Use one transaction for one logical change
 
-A change that moves a node and updates its connector geometry should be one
-patch transaction. The patch should either succeed completely or change
-nothing.
+Every related set of supported text/theme/order edits should be one patch
+transaction. The patch either succeeds completely or changes nothing. Future
+node/connector editing must preserve the same property.
 
 ### 6.4 Preview before apply
 
@@ -216,24 +220,30 @@ pptv patch deck.pptv.html change.pptv.patch.json --output deck.updated.pptv.html
 
 Never use unsafe hash bypass for ordinary work.
 
+The 0.1 library and CLI provide no unsafe hash bypass.
+
 ### 6.5 Prefer semantic order operations
 
-Use:
+For deck order, use the implemented complete-permutation operation:
 
 ```json
 {
-  "op": "move-after",
-  "id": "architecture.node.authorization",
-  "after": "architecture.node.identity",
-  "parentId": "architecture.layer.nodes"
+  "op": "set-slide-order",
+  "oldOrder": ["cover", "architecture"],
+  "order": ["architecture", "cover"]
 }
 ```
 
-Do not invent numeric z-index values. SVG DOM order is canonical object order.
+Within-slide `move-before`/`move-after` is roadmap. Do not invent numeric
+z-index values or hand-edit order under the guise of a supported patch. SVG DOM
+order remains canonical object order.
 
 ## 7. Style editing rules
 
-Before changing a visual property, inspect its origin:
+The 0.1 CLI has no `theme` command or token patch. The implemented `resolve`
+command exposes the constrained computed style and provenance needed for
+read-only cascade diagnosis. Future writable style tooling should make the same
+property origin available through a focused command:
 
 ```bash
 pptv theme deck.pptv.html \
@@ -248,7 +258,7 @@ computed: #6f5cff
 origin: theme dapple.light
 ```
 
-Then choose deliberately:
+Then it should let a caller choose deliberately:
 
 - **theme token:** change every intended consumer of the shared design token;
 - **component rule:** change one semantic class across the deck;
@@ -273,10 +283,14 @@ Do not move slide template blocks merely to reorder the deck.
 1. Locate the stable ID in outline or semantic view.
 2. Retrieve the selected text object.
 3. Apply `set-text` with `oldText`.
-4. Validate text profile and overflow diagnostics.
-5. Render the slide only when wrapping or fit may change.
+4. Validate the resulting deck.
+5. Perform a trusted/sandboxed visual check when wrapping or fit may change;
+   overflow diagnostics are not implemented in 0.1.
 
 ### 8.3 Move a diagram node
+
+Not supported by 0.1. Do not fabricate a `move` operation. When geometry
+patches are contracted:
 
 1. Retrieve the node in editing view.
 2. Inspect connected connectors.
@@ -287,12 +301,17 @@ Do not move slide template blocks merely to reorder the deck.
 
 ### 8.4 Change the deck accent color
 
+Not supported by 0.1. `set-active-theme` may select an existing theme; it does
+not edit a theme token. When token patches are contracted:
+
 1. Inspect the active theme and token consumers.
 2. Change the recognized shared token with `set-token`.
 3. Validate contrast and target-theme mapping diagnostics.
 4. Render representative slides, not necessarily the full deck.
 
 ### 8.5 Duplicate a component
+
+Not supported by 0.1. When duplication is contracted:
 
 1. Retrieve the complete semantic subtree.
 2. Use `duplicate` with a requested new semantic root ID or an allocation policy.
@@ -302,8 +321,9 @@ Do not move slide template blocks merely to reorder the deck.
 
 ### 8.6 Add a connector
 
-Use `add-connector` with semantic endpoints and explicit parent layer. Do not
-construct an arbitrary SVG path unless the routing is intentionally custom.
+Not supported by 0.1. A future `add-connector` operation should use semantic
+endpoints and an explicit parent layer rather than an arbitrary SVG path unless
+routing is intentionally custom.
 
 ### 8.7 Summarize a deck
 
@@ -362,21 +382,26 @@ patch. Do not strip the source hash to force application.
 Run structural validation after every write:
 
 ```bash
-pptv validate deck.updated.pptv.html --strict --format json
+pptv validate deck.updated.pptv.html --format json
 ```
 
-Render when the change can affect visual layout:
+There is no 0.1 `render` command. For trusted decks, the fixed embedded viewer
+can provide a manual browser check; for untrusted decks, use a separate
+sandboxed renderer. Text and active-theme changes usually merit such a visual
+check when available. Slide reordering can often be confirmed structurally.
+
+The strict C7 subset can be compiled explicitly:
 
 ```bash
-pptv render deck.updated.pptv.html --slide architecture
+pptv pptx-canary deck.pptv.html --output deck.pptx
 ```
 
-Text changes, geometry changes, font changes, theme changes, connector changes,
-and group reordering usually merit a render. Manifest title changes or metadata
-changes may not.
-
-PPTX output requires additional package, stable-ID, render, and native
-PowerPoint validation as defined by the PPTV PowerPoint design documents.
+It produces a deterministic fresh package for supported native rectangles,
+ellipses, straight lines/connectors, translated groups, and one-line explicit
+text. It fails closed on unsupported semantics and does not replace the broader
+compiler, source-map, render-comparison, or reconciliation roadmap. Native
+PowerPoint evidence must be reported only when that separate check was
+actually performed.
 
 ## 13. Reporting changes
 
@@ -397,12 +422,28 @@ Do not claim a visual or native PowerPoint check occurred when it did not.
 
 ## 14. Current repository reality
 
-This guide currently records intended behavior only. Until a conforming tool
-exists:
+The repository now implements the C4-C7 vertical slice in one
+`@office180/pptv` package:
 
-- treat the design documents as proposals, not implemented guarantees;
-- do not fabricate `pptv` command output;
-- preserve PPTV examples carefully when editing by hand;
-- validate ordinary HTML/SVG syntax with available tools; and
-- promote behavior into a versioned contract and executable fixture before
-  calling it stable.
+- commands: `outline`, `validate`, `resolve`, `editor-pack`, `pptx-canary`,
+  `text`, `show`, `list`, and `patch`;
+- views: semantic, editing, and C6 resolved, plus outline/inventory/text
+  projections;
+- writes: direct `set-text`, `set-active-theme`, and complete
+  `set-slide-order`;
+- source authority: exact retained UTF-8 bytes and hash, including a leading
+  BOM, with byte and UTF-16 ranges; and
+- write safety: asynchronous trusted-base reconstruction, whole-transaction
+  validation, candidate reload on apply, and explicit atomic output.
+
+The browser-safe `EditorSession` provides exact-source selection, the three
+contracted write intents, validation, and hash-preserving undo/redo. The trusted
+`editor-pack` wrapper holds exact source as inert data under a strict CSP,
+renders literal resolved SVG data, and downloads clean canonical bytes. The C7
+canary provides the narrow native subset described above.
+
+Do not fabricate `theme`, `normalize`, `render`, general visual-editor, general
+PPTX, source-map, or reconciliation behavior. Geometry/class/style/token edits,
+rich text, connector/group editing, duplication, library expansion, canonical
+serialization, broader assets, and reverse PowerPoint translation require
+future contracts and fixtures.

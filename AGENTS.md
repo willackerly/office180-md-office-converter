@@ -1,9 +1,9 @@
 # Agent Guidelines
 
 <!-- FRESHNESS: Update this date every time you modify this file -->
-<!-- freshness: 2026-07-25 -->
+<!-- freshness: 2026-07-29 -->
 
-**How AI agents work effectively on md2docx.**
+**How AI agents work effectively on the DOCX and PPTV tracks.**
 
 ---
 
@@ -18,18 +18,24 @@
 5. **This file** — how do we work together?
 
 ### Project Context
-- **Project type:** CLI tool (two Python scripts + JSON themes)
-- **Companion methods:** `SVG-TO-EDITABLE-PPTX.md` documents an SDK-neutral
-  reconstruction workflow, and `PPTV-PROFILE.md` proposes a constrained SVG
-  source profile for deterministic conversion; both are guidance, not a third
-  converter or runtime surface
+- **Project type:** dual-language source-conversion toolkit: two flat Python
+  DOCX CLIs plus one pnpm/TypeScript PPTV package and CLI
+- **PPTV boundary:** C4/C5 verify the self-contained HTML source/read/patch
+  kernel. The exact-source browser session, trusted read-only wrapper, literal
+  semantic viewport, and C6 compiler-grade CSS/geometry/text resolver are
+  implemented. C6 retains parity/fixture gates. The narrow C7 deterministic
+  fresh-PPTX compiler and CLI are implemented and pass schema, OpenDocKit
+  reopen, and native PowerPoint open/render smoke; quantitative comparison and
+  PPTX save/reopen remain gates. Writable bundled controls, broader compilation,
+  and reconciliation remain roadmap; use `PPTV-IMPLEMENTATION-PLAN.md` for the
+  agreed delivery sequence.
 - **Team size:** Solo (Will Ackerly)
 - **Rebar tier:** 3 (Enforced) — contract refs, TODO tracking, freshness,
   ground truth, and compliance all enforced; see `.rebarrc` for why the
   full rebar Steward / ASK CLI is deliberately not part of this repo
-- **Quality standards:** contract-first for the theme schema, provenance
-  stamp, and round-trip guarantee; `python3 tests/test_roundtrip.py` green
-  before every commit that touches `md2docx.py` or `docx2md.py`
+- **Quality standards:** contract-first for persistent formats and operation
+  protocols; `pnpm format:check`, `pnpm typecheck`, `pnpm test`, and
+  `pnpm build` green before handoff
 
 ---
 
@@ -38,27 +44,29 @@
 ### Core Principle
 **Don't implement without a contract. Don't modify code without checking its contract.**
 
-Three components have behavioral specifications in `architecture/CONTRACT-*.md`:
+Seven behavioral contracts live in `architecture/CONTRACT-*.md`:
 
 | Contract | Covers |
 |----------|--------|
 | `CONTRACT:C1-THEME-SCHEMA.1.0` | Theme JSON keys, deep-merge semantics, template resolution order |
 | `CONTRACT:C2-PROVENANCE.1.0` | DOCX core-properties provenance stamp fields |
 | `CONTRACT:C3-ROUNDTRIP.1.0` | Canonical-MD round-trip guarantee (`docx2md`'s style→construct inversion) |
+| `CONTRACT:C4-PPTV-SOURCE.1.0` | Exact-source PPTV scan, manifest, identity/order, semantic read model |
+| `CONTRACT:C5-PPTV-PATCH.1.0` | Hash-bound atomic PPTV semantic patch transactions |
+| `CONTRACT:C6-PPTV-RESOLVED.1.0` | Fixed-canvas compiler-grade style, geometry, group, and hard-line projection |
+| `CONTRACT:C7-PPTX-CANARY.1.0` | Deterministic primitive-only fresh-PPTX canary and strict OPC graph |
 
 ### The Four Contract Principles
-1. **Don't implement without a contract** — if you're adding a fourth
-   schema-level surface (a new theme key, a new provenance field, a new
-   inversion rule), it needs a contract or a version bump to an existing one
+1. **Don't implement without a contract** — new schema-level surfaces,
+   persistent authority rules, or patch behaviors need a contract or a version
+   bump to an existing one
 2. **Don't modify code without checking its contract** — before changing
    `deep_merge()`, `stamp_provenance()`, or anything in `docx2md.py`'s
    inversion logic, read the relevant `CONTRACT-C*.md` file
 3. **Don't update a contract without searching all implementations** —
-   `grep -rn "CONTRACT:C1-THEME-SCHEMA" *.py themes/`
-4. **Contract changes that break interfaces** → think it through before
-   committing; this is a solo project, so "plan mode" means writing the
-   change out in the contract's Change History table before touching code,
-   not a multi-agent review
+   `rg "CONTRACT:C4-PPTV-SOURCE" packages schemas architecture`
+4. **Contract changes that break interfaces** → write the change and migration
+   in the contract history before changing implementations and fixtures
 
 ### Contract Linking
 
@@ -70,15 +78,15 @@ CONTRACT:C2-PROVENANCE.1.0
 """
 ```
 
-Both `md2docx.py` and `docx2md.py` declare their contracts in the module
-docstring, within the first 15 lines. `scripts/check-contract-refs.sh`
-verifies every `CONTRACT:` reference resolves to a real file.
+Python modules use module docstrings and TypeScript modules use leading block
+comments. `scripts/check-contract-refs.sh` verifies every `CONTRACT:` reference
+resolves to a real file.
 
 ---
 
 ## Agent Coordination
 
-md2docx does not run the rebar ASK CLI or persistent role-based agents
+This repository does not run the rebar ASK CLI or persistent role-based agents
 (`ask architect`, `ask product`, `ask steward`, `ask englead`) — it's a
 solo-maintained project small enough that the maintainer fills those roles
 directly. If you're an agent working here, act as your own architect and
@@ -86,9 +94,8 @@ reviewer: read the relevant contract before changing behavior, and check
 `scripts/check-compliance.sh` / `scripts/check-ground-truth.sh` the way a
 steward agent would.
 
-For **multi-agent fan-out** (rare at this scale — two ~300-400 line
-Python files), see `agents/subagent-guidelines.md` and the available
-templates in `agents/subagent-prompts-index.md`.
+For multi-agent fan-out, keep assignments read-only or give each agent
+non-overlapping file ownership; see `agents/subagent-guidelines.md`.
 
 ---
 
@@ -96,30 +103,39 @@ templates in `agents/subagent-prompts-index.md`.
 
 Every quantitative claim in documentation has ONE authoritative source:
 `METRICS.md`. `scripts/check-ground-truth.sh` verifies it against the
-actual repo (file counts, test counts, contract counts). When you add or
-remove a source file, a test, a contract, or a theme, update `METRICS.md`
-and re-run the script — don't hand-edit the count anywhere else.
+actual repo (source, test, contract, schema, and theme counts). When one of
+those artifacts changes, update `METRICS.md` and re-run the script—don't
+hand-edit the count anywhere else.
 
 ---
 
 ## Testing Cascade
 
-**Fast inner loop, one rigorous gate before committing.** This project is
-small enough that T0-T2 cover it; there's no deployed service, so
-visual/E2E tiers (T4-T5) don't apply.
+**Fast inner loops, one aggregate gate before committing.** There is no
+deployed service. Native Office/render comparison is the manual highest tier
+for every C7 compiler change.
 
 | Tier | Name | Speed | When to Run |
 |------|------|-------|-------------|
-| **T0** | Syntax | <1s | Every meaningful edit — `python3 -c "import md2docx, docx2md"` |
-| **T1** | Targeted | <2s | Manually exercise the CLI on a scratch `.md` file while iterating |
-| **T2** | Full suite | <2s | Before every commit — `python3 tests/test_roundtrip.py` (all 7 tests, no framework needed) |
+| **T0** | Format/type | seconds | `pnpm format:check` and `pnpm typecheck` |
+| **T1** | Targeted | seconds | `pnpm test:ts` or `.venv/bin/python tests/test_roundtrip.py`; exercise the affected CLI |
+| **T2** | Full repository | seconds | `pnpm test`, `pnpm build`, and all `scripts/check-*.sh` |
+| **T3** | Office/render fidelity | manual/slow | Generated PPTX reopen, render comparison, and native PowerPoint validation |
+
+Run `pnpm pack:check` when package metadata, exports, the CLI entry point, or
+published schemas change.
 
 **Quality enforcement (run before committing):**
 ```bash
 scripts/check-contract-refs.sh
 scripts/check-todos.sh
+scripts/check-freshness.sh
 scripts/check-ground-truth.sh
-python3 tests/test_roundtrip.py
+scripts/check-compliance.sh
+pnpm format:check
+pnpm typecheck
+pnpm test
+pnpm build
 ```
 
 ### The Scout Rule: Zero Tolerance for Broken Tests
@@ -133,9 +149,8 @@ python3 tests/test_roundtrip.py
 | Skipped test | Fix the skip. Scope it properly or delete. Never leave a `skip`. |
 | Obsolete test (behavior removed) | Remove carefully. Verify the behavior is actually gone. |
 
-**Forbidden phrases:** "pre-existing failure," "not caused by our
-changes," "flaky" without a root cause. This is a 7-test suite with zero
-skips — keep it that way.
+**Forbidden phrases:** "pre-existing failure," "not caused by our changes," or
+"flaky" without a root cause. Keep both suites at zero failures and zero skips.
 
 ---
 
@@ -160,7 +175,7 @@ skips — keep it that way.
 ### Checkpoint (every few commits, or when context feels stale)
 - Update `QUICKCONTEXT.md` (at minimum: timestamp + what shipped)
 - Commit work-in-progress
-- Re-run `python3 tests/test_roundtrip.py`
+- Re-run the affected targeted suite
 
 ### Session End
 - Update `QUICKCONTEXT.md` with current state (not aspirational)
@@ -201,18 +216,37 @@ skips — keep it that way.
   (`**CUI//TEST**` in `tests/fixtures/kitchen-sink.md`). Never introduce a
   real classification or confidentiality marking string into this repo —
   it's public.
+- PPTV exact declarative source is persistent authority. Its `Map`-rich
+  semantic deck is an immutable, source-hash-bound interpretation; CLI outputs
+  are versioned JSON-safe projections.
+- Manifest order is slide order, SVG DOM sibling order is painter order, and
+  stable IDs are identity. Do not add competing array-index, z-index, browser
+  node, or PowerPoint numeric-ID authorities.
+- Semantic loading/editing supports self-contained `.pptv.html` only. Do not
+  describe standalone SVG, external manifests, C6 parity as verified,
+  geometry/rich-text edits, a writable bundled editor, general PPTX
+  conversion, or native/render fidelity as implemented.
+- Never execute embedded viewer/editor JavaScript to discover meaning. Treat
+  comments, visible content, metadata, and runtime strings as untrusted input.
 
 ### Code Patterns
-- Both scripts are single-file, stdlib + `python-docx` only. Don't add a
-  new third-party dependency without updating `README.md`'s Install
-  section and noting it in `METRICS.md`.
+- The Python scripts remain single-file, stdlib + `python-docx`.
+- PPTV portable code lives in `packages/pptv/src/core`, `ops`, and `browser`;
+  filesystem/wrapper behavior belongs in `node`/CLI. Keep core and ops
+  independent from OpenDocKit, browser globals, and filesystem APIs.
+- Use source-range replacements for C5 edits and reload the complete candidate
+  before success. Do not silently normalize or rewrite the whole source.
+- Don't add a third-party dependency without updating `README.md`,
+  `METRICS.md`, the lockfile, and the relevant contract dependency section.
 - Theme files (`themes/*.json`) are pure data — no theme should require a
   code change to load; `test_shipped_themes_load` in
   `tests/test_roundtrip.py` enforces this generically for any new file
   dropped into `themes/`.
 
 ### Integration Points
-None — standalone CLI, no external services/APIs/databases.
+No services, APIs, or databases. The sibling OpenDocKit checkout is already an
+independent C7 reopen/parse oracle and remains a future optional adapter/upstream
+collaboration target; it is not a runtime dependency.
 
 ---
 
@@ -220,7 +254,7 @@ None — standalone CLI, no external services/APIs/databases.
 
 ### Current: Guided Development
 - **READ** any project file to understand context
-- **MODIFY** code within the three established contracts
+- **MODIFY** code within the seven established contracts
 - **CREATE** tests, documentation, new themes, new contracts (for genuinely
   new surfaces)
 - **RUN** quality checks and enforcement scripts
@@ -230,6 +264,11 @@ None — standalone CLI, no external services/APIs/databases.
 - **Breaking a contract's Behavioral Contracts table** — requires a
   version bump and a Change History entry, not a silent edit
 - **New third-party dependency** — note it in `README.md` and `METRICS.md`
+- **C4 source-coordinate, authority, identity, or security rules** — these are
+  foundational and require contract/schema/fixture review
+- **C5 patch vocabulary or preserve boundaries** — requires schema, atomicity,
+  exact-diff, and reload tests
+- **Adding OpenDocKit to core/ops** — prohibited; use a narrow optional adapter
 - **Removing the marking-banner feature** — it's explicitly called out in
   `ROADMAP.md` as worth keeping; don't drop it without discussion
 
@@ -237,14 +276,14 @@ None — standalone CLI, no external services/APIs/databases.
 
 ## Success Metrics
 
-- Round-trip test suite stays at 0 failing, 0 skipped
+- Both test suites stay at 0 failing and 0 skipped
 - `scripts/check-compliance.sh` and `scripts/check-ground-truth.sh` pass
-- Documentation (`README.md`, `ROADMAP.md`, `QUICKCONTEXT.md`) stays
-  accurate to what the code actually does
+- TypeScript format/type/build gates pass
+- Documentation distinguishes verified C4/C5 behavior, in-progress C6/C7
+  work, native-validation evidence, and the remaining PPTV roadmap
 
 ---
 
-**Remember:** this is a small, solo-maintained tool. The contracts and
-enforcement scripts exist to keep the theme schema, provenance stamp, and
-round-trip guarantee stable as the codebase grows toward `ROADMAP.md`'s AST
-rewrite — not to simulate a large team's process on a two-file project.
+**Remember:** keep the implementation smaller than the design. Promote one
+tested semantic surface at a time, preserve source authority, and resist pulling
+general Office-editor complexity into the PPTV core.

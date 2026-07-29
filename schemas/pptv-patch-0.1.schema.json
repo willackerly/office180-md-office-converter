@@ -1,0 +1,73 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://office180.dev/schemas/pptv-patch-0.1.schema.json",
+  "title": "PPTV Patch 0.1",
+  "type": "object",
+  "required": ["schema", "baseSha256", "ops"],
+  "properties": {
+    "schema": { "const": "pptv-patch/0.1" },
+    "baseSha256": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$"
+    },
+    "transactionId": { "type": "string" },
+    "author": { "type": "string" },
+    "timestamp": { "type": "string", "format": "date-time" },
+    "ops": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "oneOf": [
+          {
+            "type": "object",
+            "required": ["op", "id", "value"],
+            "properties": {
+              "op": { "const": "set-text" },
+              "id": { "$ref": "#/$defs/stableId" },
+              "oldText": { "type": "string" },
+              "value": { "type": "string" }
+            },
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "required": ["op", "theme"],
+            "properties": {
+              "op": { "const": "set-active-theme" },
+              "theme": { "$ref": "#/$defs/stableId" },
+              "oldTheme": { "$ref": "#/$defs/stableId" }
+            },
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "required": ["op", "order"],
+            "properties": {
+              "op": { "const": "set-slide-order" },
+              "order": {
+                "type": "array",
+                "minItems": 1,
+                "items": { "$ref": "#/$defs/stableId" },
+                "uniqueItems": true
+              },
+              "oldOrder": {
+                "type": "array",
+                "items": { "$ref": "#/$defs/stableId" }
+              }
+            },
+            "additionalProperties": false
+          }
+        ]
+      }
+    }
+  },
+  "$defs": {
+    "stableId": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 128,
+      "pattern": "^[A-Za-z][A-Za-z0-9._:-]*$"
+    }
+  },
+  "additionalProperties": false
+}

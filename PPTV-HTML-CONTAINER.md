@@ -1,6 +1,7 @@
 # PPTV HTML Container
 
-**Status:** design proposal; no executable implementation yet
+**Status:** source container, C6 resolution, trusted editor foundation, and
+strict C7 PPTX canary implemented; broader composition/editing remain roadmap
 
 PPTV HTML is a declarative, single-file deck container for PPTV slides. It keeps
 canonical slide content web-native and browser-viewable while making deck order,
@@ -21,6 +22,24 @@ mydeck.pptv-manifest.json
 
 The manifest is orchestration metadata, not a JSON encoding of PPTV itself.
 
+## Implemented 0.1 boundary
+
+`@office180/pptv` implements the self-contained HTML read/edit kernel described
+by C4 and C5. It retains the exact decoded source and exact UTF-8 bytes,
+including a leading BOM and original newline spelling; computes SHA-256 over
+those bytes; records half-open UTF-8 byte and UTF-16 code-unit ranges; validates
+the fixed viewer by version and content digest without executing it; loads the
+manifest-selected slide order and SVG DOM hierarchy; and supports only
+`set-text`, `set-active-theme`, and `set-slide-order` writes.
+
+Standalone SVG and external manifests are recognized and inventoried but are
+not semantically loaded or patched in 0.1. Libraries and theme blocks are
+indexed and security-checked; libraries are not expanded. C6 parses the strict
+base/component CSS plus complete selected-theme token map, resolves concrete
+styles/provenance, and requires exact `0 0 1600 900`/16:9 dimensions. Metadata
+mirrors, theme-list authority, and library reference semantics remain outside
+the implemented contract.
+
 ## Design goals
 
 1. **Simple base case.** One portable HTML file may contain the whole deck.
@@ -28,7 +47,7 @@ The manifest is orchestration metadata, not a JSON encoding of PPTV itself.
    component libraries, and browser runtime.
 3. **No duplicate truth.** The manifest defines deck order; SVG DOM order defines
    z-order inside each slide.
-4. **Browser useful.** Opening the file renders a readable deck without PowerPoint.
+4. **Browser useful.** A trusted file can render a readable deck without PowerPoint.
 5. **Compiler deterministic.** PPTX compilers parse declarations directly and never
    execute the embedded runtime.
 6. **Agent efficient.** Tools expose compact semantic projections and ID-addressed
@@ -38,7 +57,7 @@ The manifest is orchestration metadata, not a JSON encoding of PPTV itself.
 
 ## Source forms
 
-A conforming implementation may accept three related source forms:
+The scanner recognizes three related source forms:
 
 ```text
 diagram.pptv.svg              # one standalone slide or diagram
@@ -46,9 +65,9 @@ mydeck.pptv.html              # one portable browser-viewable deck
 mydeck.pptv-manifest.json     # optional external multi-file assembly
 ```
 
-The HTML container is the preferred whole-deck authoring surface. The external
-manifest is appropriate for generated projects, independently maintained slides,
-or reusable template bundles.
+The HTML container is the implemented whole-deck authoring surface. Semantic
+loading for the other two forms and external dependency resolution are future
+work.
 
 ## Canonical source order
 
@@ -63,9 +82,11 @@ Strict `.pptv.html` sources use this physical order:
 7. exactly one fixed reference runtime;
 8. end of document.
 
-This source order is normative for strict conformance. It lets humans and agents
-open the file and immediately see the deck hierarchy and active configuration,
-and lets streaming tools stop before expensive sections they do not need.
+This source order is normative for strict 0.1 HTML conformance and is enforced
+by default. It keeps the deck hierarchy and active configuration near the
+front. The current scanner builds a non-executing parse tree and inventories
+the whole document, including hashing the viewer runtime; it is not yet a
+streaming early-stop scanner.
 
 ## Minimal deck
 
@@ -233,8 +254,9 @@ library templates:
 </template>
 ```
 
-Authoring tools may use these definitions conveniently. A normalizer expands or
-otherwise resolves them into deterministic, uniquely identified compiler input.
+The 0.1 scanner indexes these library blocks but does not interpret references
+or expand them. The reference syntax, ID qualification, dependency hashes, and
+deterministic normalizer are roadmap requirements.
 
 ## Themes at the end
 
@@ -259,8 +281,12 @@ sources:
 </script>
 ```
 
-Only the manifest-selected theme is active. Inactive themes must not participate
-in the CSS cascade.
+The 0.1 manifest validator requires the selected theme to exist exactly once.
+The source kernel stores each theme as inert CSS text. C6 independently parses a
+narrow base/component cascade, requires every theme to provide the same complete
+token map, selects only the active theme, and retains token/style provenance. It
+does not yet emit native PowerPoint theme bindings; C7 writes concrete resolved
+colors/fonts.
 
 Using inert data blocks rather than live style elements permits the canonical
 source order while avoiding accidental cross-theme cascade behavior. The browser
@@ -305,10 +331,22 @@ Strict conformance rejects:
 A validator may verify the reference runtime by version and digest, replace it
 with the canonical implementation, or omit it from non-browser outputs.
 
-## Logical normalization
+The implemented strict scanner accepts the registered
+`pptv-browser/0.1` runtime only when its inline content matches the installed
+digest (with CRLF normalized solely for that digest check). It does not execute
+the runtime.
+
+That non-executing validator is not a browser security boundary. Directly
+opening an untrusted `.pptv.html` executes its script before library validation.
+Direct-open is therefore for trusted source only. Validate untrusted bytes
+first, then use a sandbox/CSP-isolated viewer if browser rendering is required.
+
+## Logical normalization (C6 subset implemented; broader roadmap)
 
 The normalized PPTV object model is a compiler representation, not necessarily
-another user-visible file. A loader should:
+another user-visible file. C6 currently performs steps 1–3 for the strict
+self-contained profile, fixed primitive/group geometry, explicit hard-line
+text, and opaque SVG bounds. The broader loader should:
 
 1. parse the manifest without executing scripts;
 2. select referenced slide templates in manifest order;
@@ -326,13 +364,19 @@ to manage generated core files.
 
 ## Agent-efficient processing
 
+The 0.1 implementation exposes outline, text, semantic, editing, and C6 resolved
+projections. The resolved view includes constrained style provenance, finite
+geometry, connector references, groups, and explicit text. Library expansion,
+raster resources, richer relationship semantics, and canonical normalization
+remain roadmap.
+
 Raw HTML, SVG, CSS, and embedded artwork are often the wrong interface for an
 agent. PPTV tooling should expose progressively richer projections.
 
 ### Outline view
 
 ```bash
-python3 -m pptv outline dapple-overview.pptv.html
+pnpm pptv outline dapple-overview.pptv.html
 ```
 
 Example output:
@@ -346,12 +390,13 @@ theme: dapple.light
 3 trust-boundaries
 ```
 
-The outline command should ordinarily need only the leading manifest block.
+The current outline command scans and validates the container and manifest but
+does not semantically parse slide bodies or resolve CSS/assets.
 
 ### Semantic view
 
 ```bash
-python3 -m pptv show dapple-overview.pptv.html \
+pnpm pptv show dapple-overview.pptv.html \
   trust-boundaries --view semantic
 ```
 
@@ -359,82 +404,79 @@ Example output:
 
 ```json
 {
-  "slide": "trust-boundaries",
+  "schema": "pptv-slide/0.1",
+  "id": "trust-boundaries",
   "layout": "architecture",
   "objects": [
-    {"id": "trust-boundaries.title", "role": "text",
-     "text": "Trust boundaries"},
+    {"id": "trust-boundaries.title", "role": "text", "export": "native",
+     "element": "text", "text": "Trust boundaries", "children": []},
     {"id": "trust-boundaries.zone.client", "role": "group",
-     "kind": "trust-zone", "label": "Client environment"},
+     "export": "native", "element": "g", "children": []},
     {"id": "trust-boundaries.edge.client.dapple", "role": "connector",
-     "from": "trust-boundaries.zone.client",
-     "to": "trust-boundaries.zone.dapple",
-     "kind": "encrypted"}
+     "export": "native", "element": "line", "children": []}
   ]
 }
 ```
 
-The semantic view omits CSS declarations, path geometry, inactive themes,
-runtime JavaScript, embedded icons, and provenance unless explicitly requested.
+The semantic projection omits attributes, classes, source ranges, theme/runtime
+contents, and unrelated CSS. It retains the supported hierarchy, roles, export
+modes, element names, and decoded, whitespace-preserving text.
 
 ### Editing view
 
-An editing projection adds selected geometry, classes, children, connector
-relationships, and token references. A resolved diagnostic view may additionally
-include computed CSS, transforms, font resolution, source fragments, and asset
-details.
+The 0.1 editing projection adds raw attributes, classes, source ranges, and the
+slide `viewBox`; it intentionally stays close to source. Use the separate C6
+`resolve` projection for validated geometry, connector references, token
+provenance, concrete styles/fonts, translated groups, text frames, and opaque
+SVG bounds.
 
 ### Semantic patches
 
-Agents should normally edit through stable-ID operations rather than rewriting
-XML:
+Agents should normally edit through the three stable-ID/source-bound 0.1
+operations rather than rewriting XML:
 
 ```json
 {
+  "schema": "pptv-patch/0.1",
+  "baseSha256": "<exact-source-sha256>",
   "ops": [
     {
-      "op": "set_text",
+      "op": "set-text",
       "id": "architecture.node.authorization.title",
+      "oldText": "Authorization service",
       "value": "Policy and authorization"
     },
     {
-      "op": "move",
-      "id": "architecture.node.authorization",
-      "dx": 80,
-      "dy": 0
+      "op": "set-active-theme",
+      "oldTheme": "dapple.light",
+      "theme": "dapple.dark"
     },
     {
-      "op": "set_token",
-      "name": "--pptv-accent-1",
-      "value": "#7257ff"
+      "op": "set-slide-order",
+      "oldOrder": ["cover", "architecture"],
+      "order": ["architecture", "cover"]
     }
   ]
 }
 ```
 
-The patcher owns escaping, ID validation, geometry updates, connector behavior,
-source formatting, provenance, dependency hashes, and post-edit validation.
+Both validation and application are asynchronous because the patch engine
+reconstructs a trusted deck from the snapshot's retained source before it
+resolves ranges. `validatePatch()` validates the complete edit plan.
+`applyPatch()` additionally builds, rescans, and semantically reloads the
+candidate before returning success. Failed transactions return no replacement
+source or deck.
 
-An initial patch vocabulary should include:
+The implemented vocabulary is:
 
 ```text
-set_text
-set_attribute
-set_class
-add_class
-remove_class
-set_token
-move
-resize
-reorder
-delete
-duplicate
-add_shape
-add_text
-add_connector
-group
-ungroup
+set-text
+set-active-theme
+set-slide-order
 ```
+
+Attribute/class/token/geometry/connector/grouping/duplication operations require
+new smallest-safe replacement contracts and tests before implementation.
 
 ## Agent guidance and trust
 
@@ -462,17 +504,31 @@ A non-normative source comment may point humans toward the toolchain:
 
 This avoids turning embedded document comments into a prompt-injection channel.
 
-## Suggested CLI surface
+## CLI surface
+
+Implemented in 0.1:
 
 ```text
 pptv outline
-pptv show
-pptv query
-pptv patch
 pptv validate
+pptv resolve
+pptv editor-pack
+pptv pptx-canary
+pptv text
+pptv show
+pptv list
+pptv patch
+```
+
+`patch` requires exactly one of `--check` or an explicit `--output`;
+`editor-pack` and `pptx-canary` also require explicit atomic destinations. The
+broader roadmap is:
+
+```text
+pptv theme
 pptv normalize
 pptv render
-pptv build
+pptv build-pptx
 pptv inspect-pptx
 pptv reconcile
 pptv bundle
@@ -484,7 +540,7 @@ The CLI is the universal substrate. MCP servers, editor integrations, and agent
 skills should call the same underlying library rather than implement independent
 parsers.
 
-## Conformance boundary
+## Implemented conformance boundary
 
 A `.pptv.html` document is conforming when:
 
@@ -493,10 +549,11 @@ A `.pptv.html` document is conforming when:
 - stable IDs are unique across the deck;
 - slide order derives only from the manifest;
 - object z-order derives only from SVG DOM order;
-- the selected theme exists and inactive themes do not cascade;
+- the selected theme exists exactly once (C6 separately enforces the strict
+  complete-token cascade);
 - all canonical content is declarative;
 - the runtime is known and non-authoritative;
-- parsing and compilation require no network access by default; and
+- parsing requires no network access; and
 - unsupported constructs produce actionable errors rather than silent fallback.
 
 ## Relationship to the PPTV SVG profile
@@ -511,6 +568,7 @@ orchestration layer without changing the central SVG rules:
 - SVG DOM order still defines object z-order; and
 - reverse conversion still produces a reviewable semantic patch.
 
-The HTML container should eventually become its own versioned contract. Until a
-validator, reference runtime, compiler, and test corpus exist, this document
-remains design rationale rather than a claim of implemented conformance.
+The implemented source-container behavior is governed by C4, safe writes by C5,
+the fixed resolved projection/editor viewport by C6, and the strict fresh-PPTX
+canary by C7. Broader writable-editor, compiler, and reconciliation claims
+remain design rationale until promoted through their own contracts and fixtures.
