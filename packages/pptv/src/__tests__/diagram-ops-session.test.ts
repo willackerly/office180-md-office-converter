@@ -6,6 +6,10 @@ import { describe, expect, it } from "vitest";
 
 import { EditorSession } from "../browser/session.js";
 import { loadDiagram } from "../core/deck.js";
+import {
+  addPptvDiagramDiscoveryComment,
+  PPTV_DIAGRAM_DISCOVERY_COMMENT,
+} from "../core/extract.js";
 import { applyPatch, validatePatch } from "../ops/patch.js";
 import {
   extractDiagramText,
@@ -288,7 +292,9 @@ describe("standalone diagram preserve patches", () => {
 
 describe("standalone diagram editor session", () => {
   it("commits text, preserves exact undo/redo, and rejects deck-only intents", async () => {
-    const source = `\uFEFF${await readMinimalDiagram()}`;
+    const source = `\uFEFF${addPptvDiagramDiscoveryComment(
+      await readMinimalDiagram(),
+    )}`;
     const session = await EditorSession.open({
       kind: "text",
       text: source,
@@ -310,6 +316,7 @@ describe("standalone diagram editor session", () => {
     expect(result.applied).toBe(true);
     expect(result.diagram).toBeDefined();
     expect(session.state.sourceText).toContain(">Authorization</text>");
+    expect(session.state.sourceText).toContain(PPTV_DIAGRAM_DISCOVERY_COMMENT);
 
     const changedSource = session.state.sourceText;
     const changedHash = session.state.sourceSha256;

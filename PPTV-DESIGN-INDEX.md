@@ -1,6 +1,7 @@
 # PPTV Design Index
 
-**Status:** executable 0.1 source/editor/compiler vertical slice plus broader roadmap
+**Status:** executable 0.1 source/editor/compiler vertical slice, banked 0.1.1
+text-resilience direction, plus broader roadmap
 **Audience:** implementers, tool authors, presentation-system designers, and agents  
 **Canonical acronym:** PPTV — PowerPoint Vector Profile
 
@@ -66,7 +67,8 @@ implemented slice. C4, C5, and C6 are verified. C7 and C8 remain
 `in-progress` until their native calibration, quantitative render, and native
 save/reopen gates close. Geometry/structural editing, external composition,
 canonical serialization, compilation beyond the canary, and reconciliation
-remain roadmap.
+remain roadmap. The planned 0.1.1 text-resilience behavior is banked separately
+and is not accepted by current loaders or compilers.
 
 ## 2. Current design packet
 
@@ -98,26 +100,33 @@ Read these documents in order:
    explicit-line/no-reflow text, narrow CSS, trusted editor wrapper, early PPTX
    canary, conformance gates, and later reconciliation.
 
-6. **[`PPTV-AGENT-GUIDE.md`](PPTV-AGENT-GUIDE.md)**
+6. **[`PPTV-TEXT-RESILIENCE-0.1.1.md`](PPTV-TEXT-RESILIENCE-0.1.1.md)**
+
+   Banks a future source/profile move that keeps explicit SVG lines
+   authoritative while adding paragraph intent, reliability-versus-editability
+   PowerPoint export policies, and a conservative baseline-free import
+   heuristic. It is design, not current executable behavior.
+
+7. **[`PPTV-AGENT-GUIDE.md`](PPTV-AGENT-GUIDE.md)**
 
    Defines the operational `pptv-agent/1` profile: minimum-view selection,
    semantic patch discipline, trust boundaries, task recipes, failure behavior,
    and validation/reporting rules.
 
-7. **[`SVG-TO-EDITABLE-PPTX.md`](SVG-TO-EDITABLE-PPTX.md)**
+8. **[`SVG-TO-EDITABLE-PPTX.md`](SVG-TO-EDITABLE-PPTX.md)**
 
    Provides the practical reconstruction and QA playbook that motivated PPTV:
    hybrid native/asset conversion, stable PowerPoint object names, source maps,
    render comparison, and reverse inspection.
 
-8. **[`examples/minimal-diagram.pptv.svg`](examples/minimal-diagram.pptv.svg)
+9. **[`examples/minimal-diagram.pptv.svg`](examples/minimal-diagram.pptv.svg)
    and [`examples/minimal-deck.pptv.html`](examples/minimal-deck.pptv.html)**
 
    The first is the smallest standalone arbitrary-viewBox atom. The second is
    a browser-openable/C7-compilable aggregation showing manifest order, inert
    slide sources, themes, extraction, and the reference viewer runtime.
 
-9. **[`.agents/skills/pptv-authoring/SKILL.md`](.agents/skills/pptv-authoring/SKILL.md)**
+10. **[`.agents/skills/pptv-authoring/SKILL.md`](.agents/skills/pptv-authoring/SKILL.md)**
 
    The repo-scoped, auto-discovered operational workflow defaults to a
    standalone diagram for one figure and HTML for deck/PPTX work. It covers
@@ -284,12 +293,20 @@ no physical size. The first PowerPoint compiler profile uses exact
 remain a versioned extension; they are never inferred, stretched, or varied
 silently per slide.
 
-### 4.14 Native text never reflows automatically
+### 4.14 Executable 0.1 native text never reflows automatically
 
 The first native text surface is explicit-line text with explicit typography
 and frame geometry. The editor may expose a paragraph-like multiline field, but
 source and PowerPoint output retain hard lines. Wrapping, autofit,
 shrink-to-fit, and font-size adjustment are outside the profile.
+
+The banked
+[`PPTV-TEXT-RESILIENCE-0.1.1.md`](PPTV-TEXT-RESILIENCE-0.1.1.md)
+direction does not weaken source authority. It may add explicit `paragraph`
+intent while serialized SVG lines remain deterministic. A future PowerPoint
+exporter can choose a measured expanded-frame `reliable` policy or an authored
+tight-frame `editable` policy; neither is implemented in 0.1, and neither
+permits autofit or silent source reflow.
 
 ### 4.15 The direct-open editor is a generated trusted wrapper
 
@@ -300,6 +317,22 @@ data, supports the current typed patch vocabulary, exports clean source, and
 never promotes DOM serialization to authority. A user-selected file may be
 overwritten once by explicit picker consent; later saves compare its disk hash
 with the editor's last saved hash and refuse stale writes.
+
+### 4.16 Atom-to-deck composition will be an explicit transform
+
+The standalone atom and deck lanes are intended to be bridgeable, but the
+bridge is future work and is separate from the banked 0.1.1 text move. An
+eventual composition operation must declare its source hash, target placement,
+and transform/scaling policy. Identity is allowed for an atom already
+compatible with the target deck coordinate space. The first non-identity
+policy should permit only explicit uniform scale plus translation when source
+and target aspect ratios agree; an aspect mismatch fails closed. PPTV never
+silently stretches, crops, letterboxes, or infers physical size from an
+arbitrary atom viewBox.
+
+Capability, root, qualified-ID, dependency-hash, and cycle rules must land with
+that operation. Until then, extraction remains deck-to-atom only and C7 remains
+deck-only.
 
 ## 5. Authority hierarchy
 
@@ -365,13 +398,15 @@ based on prose alone. Remaining promotion work includes:
 
 1. calibrate representative C8 lines against native PowerPoint while retaining
    environment-specific Node/browser identities;
-2. implement editor operations beyond the current typed patch vocabulary;
-3. extend compilation only with features covered by the same editor fixtures;
-4. add quantitative browser/Office visual baselines;
-5. pass native PowerPoint PPTX save/reopen (open/render already passes);
-6. define canonical structural serialization before insert/delete/group
+2. promote the banked 0.1.1 text behavior only through successor
+   source/patch/resolved/compiler contracts and conformance fixtures;
+3. implement editor operations beyond the current typed patch vocabulary;
+4. extend compilation only with features covered by the same editor fixtures;
+5. add quantitative browser/Office visual baselines;
+6. pass native PowerPoint PPTX save/reopen (open/render already passes);
+7. define canonical structural serialization before insert/delete/group
    authoring; and
-7. complete at least one independent implementation or adapter experiment.
+8. complete at least one independent implementation or adapter experiment.
 
 The conformance corpus is part of the standard, not supplementary test code.
 
@@ -407,8 +442,9 @@ strict-subset PPTX synthesis.
 The following implementation details remain intentionally unresolved until the
 next contract, fixtures, and prototypes provide evidence:
 
-- version naming across contract 1.1, source/container `0.1`, future SVG
-  profile versions, viewer versions, and agent-profile versions;
+- compatibility negotiation and exact migration rules from executable
+  source/container `0.1` to the banked source/profile `0.1.1`; package,
+  contract, viewer, compiler, and agent-profile versions remain independent;
 - authority and mismatch behavior for manifest title/layout/agent profile and
   their HTML/SVG mirrors;
 - library reference syntax, expansion, identity qualification, and dependency
@@ -426,8 +462,10 @@ Exact BOM handling, UTF-8/UTF-16 range coordinates, source hashing, strict
 default section order, the fixed viewer-runtime digest policy, arbitrary
 diagram canvases versus the initial 16:9 deck scope, explicit frame/line-step
 syntax, constrained base/theme CSS, opaque SVG
-bounds, no-reflow text behavior, no-theme-inheritance direction, and C7's
-minimum fresh package are decided. C4/C5/C6 are verified authorities; C7/C8
+bounds, executable 0.1 no-reflow text behavior, no-theme-inheritance
+direction, and C7's minimum fresh package are decided. The 0.1.1
+paragraph-intent/resilience direction is banked but not executable.
+C4/C5/C6 are verified authorities; C7/C8
 are contracted, implemented, in-progress authorities for their narrow native
 fidelity surfaces. Broader behavior still requires promotion through contracts
 and fixtures.

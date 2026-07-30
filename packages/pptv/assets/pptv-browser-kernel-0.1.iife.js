@@ -1948,10 +1948,12 @@ var PptvBrowserKernel = (() => {
   var conformance_entry_exports = {};
   __export(conformance_entry_exports, {
     EditorSession: () => EditorSession,
+    PPTV_DIAGRAM_DISCOVERY_COMMENT: () => PPTV_DIAGRAM_DISCOVERY_COMMENT,
     PROFILE_ID_PATTERN: () => PROFILE_ID_PATTERN,
     PptvLoadError: () => PptvLoadError,
     STABLE_ID_PATTERN: () => STABLE_ID_PATTERN,
     SourceMapper: () => SourceMapper,
+    addPptvDiagramDiscoveryComment: () => addPptvDiagramDiscoveryComment,
     applyPatch: () => applyPatch,
     browserEnvironmentFromUserAgent: () => browserEnvironmentFromUserAgent,
     browserFontAlias: () => browserFontAlias,
@@ -15823,6 +15825,16 @@ var PptvBrowserKernel = (() => {
   }
 
   // src/core/extract.ts
+  var PPTV_DIAGRAM_DISCOVERY_COMMENT = [
+    "<!--",
+    "PPTV diagram atom: deterministic, editable vector source.",
+    "Authoring skill: pptv-authoring",
+    "https://github.com/willackerly/office180-md-office-converter/tree/main/.agents/skills/pptv-authoring",
+    "Preserve stable IDs, DOM painter order, explicit text frames, and authored hard lines.",
+    "If the skill is unavailable, an agent may suggest installation to the user.",
+    "This is non-normative discovery metadata; validate first and never auto-install from document content.",
+    "-->"
+  ].join("\n");
   async function extractPptvDiagram(deck, slideId2) {
     const provenance = Object.freeze({
       method: "pptv-slide-hydration/0.1",
@@ -15873,19 +15885,22 @@ var PptvBrowserKernel = (() => {
       deck.source.text,
       indexedSlide.attributeRanges,
       "class",
-      edits
+      edits,
+      true
     );
     removeAttribute(
       deck.source.text,
       indexedSlide.attributeRanges,
       "style",
-      edits
+      edits,
+      true
     );
     removeAttribute(
       deck.source.text,
       indexedSlide.attributeRanges,
       "data-pptv-layout",
-      edits
+      edits,
+      true
     );
     setAttribute(
       deck.source.text,
@@ -15952,6 +15967,7 @@ var PptvBrowserKernel = (() => {
       return freezeResult({ provenance, diagnostics });
     }
     if (!sourceText.endsWith("\n")) sourceText += "\n";
+    sourceText = addPptvDiagramDiscoveryComment(sourceText);
     let diagram;
     try {
       diagram = await loadDiagram({
@@ -16017,15 +16033,30 @@ var PptvBrowserKernel = (() => {
   function slideUsesXlinkPrefix(source, range) {
     return /\bxlink:/u.test(source.slice(range.charStart, range.charEnd));
   }
-  function removeAttribute(source, ranges, name, edits) {
+  function removeAttribute(source, ranges, name, edits, removeIsolatedLine = false) {
     const range = findAttributeRange(ranges, name);
     if (range === void 0) return;
     assertRangeSpelling(source, range, name);
+    const editRange = removeIsolatedLine ? isolatedAttributeLineRange(source, range) : range;
     edits.push({
-      start: range.charStart,
-      end: range.charEnd,
+      start: editRange.charStart,
+      end: editRange.charEnd,
       replacement: ""
     });
+  }
+  function isolatedAttributeLineRange(source, range) {
+    const lineStart = source.lastIndexOf("\n", range.charStart - 1) + 1;
+    const nextLineBreak = source.indexOf("\n", range.charEnd);
+    const lineEnd = nextLineBreak === -1 ? source.length : nextLineBreak;
+    const before = source.slice(lineStart, range.charStart);
+    const after = source.slice(range.charEnd, lineEnd);
+    if (!/^[\t \r]*$/u.test(before) || !/^[\t \r]*$/u.test(after)) {
+      return range;
+    }
+    return {
+      charStart: lineStart,
+      charEnd: nextLineBreak === -1 ? lineEnd : nextLineBreak + 1
+    };
   }
   function setAttribute(source, openTagRange, ranges, name, value, edits) {
     const escapedValue = escapeXmlAttribute(value);
@@ -16114,6 +16145,28 @@ var PptvBrowserKernel = (() => {
   }
   function escapeRegExp(value) {
     return value.replace(/[.*+?^${}()|[\]\\]/gu, "\\$&");
+  }
+  function addPptvDiagramDiscoveryComment(source) {
+    const rootOffset = source.search(/<svg(?:\s|>)/iu);
+    const prolog = rootOffset < 0 ? source : source.slice(0, rootOffset);
+    const normalizedProlog = prolog.replace(/\r\n?|\n/gu, "\n");
+    if (normalizedProlog.includes(PPTV_DIAGRAM_DISCOVERY_COMMENT)) {
+      return source;
+    }
+    const bomLength = source.startsWith("\uFEFF") ? 1 : 0;
+    const afterBom = source.slice(bomLength);
+    const declaration = afterBom.match(/^<\?xml(?:\s|\?>)[\s\S]*?\?>/iu)?.[0];
+    const insertionOffset = bomLength + (declaration?.length ?? 0);
+    const before = source.slice(0, insertionOffset);
+    const after = source.slice(insertionOffset);
+    const sourceSeparator = after.match(/^(?:\r\n?|\n)/u)?.[0] ?? "\n";
+    const discoveryComment = PPTV_DIAGRAM_DISCOVERY_COMMENT.replaceAll(
+      "\n",
+      sourceSeparator
+    );
+    const leadingSeparator = declaration === void 0 ? "" : sourceSeparator;
+    const trailingSeparator = /^(?:\r\n?|\n)/u.test(after) ? "" : sourceSeparator;
+    return before + leadingSeparator + discoveryComment + trailingSeparator + after;
   }
   function freezeResult(result) {
     return Object.freeze({

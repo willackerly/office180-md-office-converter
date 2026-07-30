@@ -15,7 +15,9 @@ export {
   validateDiagram,
 } from "./deck.js";
 export {
+  addPptvDiagramDiscoveryComment,
   extractPptvDiagram,
+  PPTV_DIAGRAM_DISCOVERY_COMMENT,
   type PptvDiagramExtractionProvenance,
   type PptvDiagramExtractionResult,
 } from "./extract.js";

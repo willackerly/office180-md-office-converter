@@ -51,6 +51,12 @@ filesystem/wrapper/PPTX boundary.
 External `.pptv-manifest.json` remains a scan/parse inventory form rather than
 a semantic document in 0.1.
 
+PPTV source/profile 0.1.1 text resilience is
+[banked design](../../PPTV-TEXT-RESILIENCE-0.1.1.md), not implemented package
+behavior. The installed package remains `@office180/pptv@0.1.0-alpha.3`, current
+loaders accept exactly source/container `0.1`, and the active contract revisions
+remain independent at 1.1.
+
 ## CLI
 
 From the repository root:
@@ -104,6 +110,23 @@ Publication is atomic and refuses to overwrite an existing output.
 Paths are relative to the map. Add one entry for every used
 family/weight/style. The command returns nonzero for definite overflow or any
 unverified line; it never wraps, resizes, substitutes, or changes source.
+There is no installed-package default font alias today. Callers must source and
+license-check their exact fonts and pass a map. An explicitly selected,
+redistributable OFL default environment and a public `pptv new diagram|deck`
+scaffold are follow-ups; neither may silently discover or substitute a system
+font. The current starter scripts live only in the repository-scoped authoring
+skill.
+
+`editor-pack` outputs are large, deterministic generated applications around
+the canonical source, not the source itself. Unless a project intentionally
+distributes a wrapper, keep these build artifacts out of version control:
+
+```gitignore
+*.editable.html
+*.editable.pptv.html
+```
+
+Continue to track the underlying `.pptv.svg` or `.pptv.html`.
 
 Patches never overwrite their input implicitly. Check one without writing:
 
@@ -271,9 +294,16 @@ Not implemented yet:
 
 - external manifests/slides/assets, dependency resolution, or an embedded
   source editor runtime;
+- atom-to-deck composition; the chosen future direction requires an explicit
+  hash-bound target placement and identity or uniform-scale-plus-translation
+  policy, with aspect mismatch failing rather than silently stretching;
 - theme-token patches;
 - rich `tspan` editing;
 - geometry and structural operations;
+- source/profile 0.1.1 paragraph intent, reliable expanded-frame versus
+  editable tight-frame PPTX export, or bounded baseline-free import grace;
+- a packaged default exact-font environment or installed-package source
+  scaffolding;
 - canonical serialization or multi-resource dependency hashing;
 - general drag/resize/alignment interaction components;
 - PPTX compilation beyond the strict C7 primitive subset, native save/reopen,

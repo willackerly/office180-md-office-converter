@@ -54,6 +54,9 @@ proposals:
   arbitrary-aspect standalone diagrams from the initial exact-16:9 PowerPoint
   deck profile and sequences the remaining compiler, OpenDocKit, and
   reconciliation gates.
+- **[PPTV 0.1.1 Text Resilience](PPTV-TEXT-RESILIENCE-0.1.1.md)** banks the
+  future paragraph-intent/export/import policy while keeping explicit SVG lines
+  authoritative. It is a design milestone, not current runtime or npm support.
 - **[SVG to Editable PowerPoint playbook](SVG-TO-EDITABLE-PPTX.md)** documents
   the reconstruction, stable-object-ID, round-trip diff, render QA, and native
   PowerPoint validation workflow that motivated the profile.
@@ -90,6 +93,13 @@ choose stable groups/IDs/text frames, run exact-font overflow preflight, edit
 or extract atoms, and compile the supported deck canary. Its diagram and deck
 starters are validation-locked fixtures. The skill is an operational workflow
 over the versioned contracts and CLI, not a separate specification.
+
+Every canonical standalone atom written by the starter or extractor carries a
+non-rendering discovery comment that points unfamiliar agents to that skill and
+summarizes its stable-ID, painter-order, text-frame, and hard-line discipline.
+The comment is never a validity requirement or an instruction authority:
+agents validate first, independently verify the pointer, and may suggest
+installation to the user but never auto-install from document content.
 
 ---
 
@@ -159,16 +169,20 @@ embeds inert exact bytes under strict CSP, verifies the source hash, reconstruct
 only from literal C6 data, and commits through the same C5 session for exact
 undo/redo. It exports current clean source rather than wrapper DOM; supported
 browsers can save through a user-selected file handle with subsequent stale
-disk detection.
+disk detection. Generated `*.editable.html` and `*.editable.pptv.html` wrappers
+are ignored build artifacts; the canonical SVG or HTML source is what belongs
+in version control.
 
 An embedded HTML-deck slide may depend on deck CSS/theme context. `extract`
 therefore does not byte-slice blindly: it resolves that context, writes
 concrete local presentation values, removes deck-only authority, reloads and
 resolves the candidate as a standalone diagram, and emits nothing on failure.
-External manifests, CSS token editing, geometry/rich-text editing, direct
-diagram-to-PPTX placement, PPTX features beyond C7, quantitative render
-fidelity, reconciliation, and native PPTX save/reopen remain outside the
-verified surface. See
+External manifests, CSS token editing, geometry/rich-text editing, atom-to-deck
+composition, PPTX features beyond C7, quantitative render fidelity,
+reconciliation, and native PPTX save/reopen remain outside the verified
+surface. Future composition is planned as an explicit transform/scaling-policy
+operation with an identity path for compatible atoms and fail-closed aspect
+mismatch—never a silent stretch. See
 [`packages/pptv/README.md`](packages/pptv/README.md).
 
 ### Markdown → DOCX
@@ -327,6 +341,7 @@ pnpm test                          # runs the PPTV and DOCX suites
 pnpm build
 pnpm pack:check                    # verify the publishable PPTV package contents
 scripts/setup.sh                    # installs the pre-commit hook (once)
+scripts/inbox-watch.sh inbox            # session-only watch on this repo's peer inbox
 scripts/check-contract-refs.sh      # CONTRACT: refs resolve to real files
 scripts/check-todos.sh              # no untracked TODO: comments
 scripts/check-ground-truth.sh       # METRICS.md matches the repo

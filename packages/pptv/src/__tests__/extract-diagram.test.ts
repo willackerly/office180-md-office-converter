@@ -3,7 +3,10 @@
 import { describe, expect, it } from "vitest";
 
 import { loadDeck } from "../core/deck.js";
-import { extractPptvDiagram } from "../core/extract.js";
+import {
+  extractPptvDiagram,
+  PPTV_DIAGRAM_DISCOVERY_COMMENT,
+} from "../core/extract.js";
 import {
   resolvePptvDeck,
   resolvePptvDiagram,
@@ -37,7 +40,12 @@ describe("deck-slide diagram extraction", () => {
     });
 
     const source = first.sourceText!;
-    expect(source).toMatch(/^<svg id="architecture"/u);
+    expect(
+      source.startsWith(
+        `${PPTV_DIAGRAM_DISCOVERY_COMMENT}\n<svg id="architecture"`,
+      ),
+    ).toBe(true);
+    expect(source.split(PPTV_DIAGRAM_DISCOVERY_COMMENT)).toHaveLength(2);
     expect(source).toContain('data-pptv-version="0.1"');
     expect(source).toContain('xmlns="http://www.w3.org/2000/svg"');
     expect(source).not.toContain("xmlns:xlink");
@@ -62,6 +70,14 @@ describe("deck-slide diagram extraction", () => {
     expect(normalizeDeckObjects(sourceSlide?.objects ?? [])).toEqual(
       normalizeDiagramObjects(diagramModel?.objects ?? []),
     );
+
+    const rootOffset = source.indexOf("<svg");
+    const rootOpenTag = source.slice(
+      rootOffset,
+      source.indexOf(">", rootOffset) + 1,
+    );
+    expect(rootOpenTag).not.toMatch(/\n[ \t]+\n/u);
+    expect(rootOpenTag).not.toContain("data-pptv-layout");
   });
 
   it("fails without emitting partial source when the slide is absent", async () => {

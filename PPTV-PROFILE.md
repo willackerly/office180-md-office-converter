@@ -2,7 +2,8 @@
 
 **Status:** 0.1 standalone diagram atom, HTML deck aggregation, source-preserving
 editing, C6 resolution, hydration, browser conformance, and writable trusted
-editor implemented; C7 remains a strict deck-only PPTX canary
+editor implemented; C7 remains a strict deck-only PPTX canary; 0.1.1 text
+resilience is banked design only
 
 PPTV is a constrained SVG authoring profile for deterministic conversion to
 editable PowerPoint. A conforming source uses the compound extension
@@ -34,6 +35,14 @@ root `data-pptv-version="0.1"` for a diagram or manifest `pptv: "0.1"` mirrored
 by HTML `data-pptv-version="0.1"`. Contract version `1.1`, viewer
 `pptv-browser/0.1`, and agent profile `pptv-agent/1` are independent version
 lines.
+
+[`PPTV-TEXT-RESILIENCE-0.1.1.md`](PPTV-TEXT-RESILIENCE-0.1.1.md)
+banks the next source/profile capability name. It does not change the current
+accepted marker, npm package version, contracts, schemas, examples, or compiler.
+The future 0.1.1 source may declare paragraph intent while keeping explicit SVG
+lines authoritative, then choose measured expanded-frame `reliable` or authored
+tight-frame `editable` PowerPoint export. Current tools must reject that syntax
+until successor contracts and fixtures land.
 
 The older “PPTV version 1” language below describes the proposed complete SVG
 to PowerPoint profile, not an implemented file-version alias. In 0.1:
@@ -135,6 +144,14 @@ Every slide uses that one deck-wide size.
 The first compiler rejects another viewBox/aspect ratio rather than stretching
 or inferring it. A future profile may add named alternate deck sizes. It must
 not introduce per-slide sizes or silently change existing geometry.
+
+The intended future atom-to-deck bridge is likewise explicit rather than
+inferred. A composition declaration will name the atom hash, target rectangle,
+and transform/scaling policy. Identity is permitted for an already-compatible
+atom; the first non-identity policy should permit only uniform scale plus
+translation when aspect ratios match and otherwise fail closed. Silent
+stretch, crop, letterbox, and physical-size inference remain prohibited. This
+composition work is separate from 0.1.1 text resilience and is not implemented.
 
 ## Author annotations
 
@@ -330,8 +347,8 @@ C6 rejects:
 
 ## Explicit-line text model (C6; C7 direct-line subset)
 
-Native PPTV text is positioned authoring data, not a browser paragraph-layout
-request.
+Executable 0.1 native PPTV text is positioned authoring data, not a browser
+paragraph-layout request.
 
 - Direct text is exactly one hard line.
 - Multiline text uses one direct `tspan` per line with explicit, validated line
@@ -348,6 +365,16 @@ The current C7 writer accepts exactly one hard line and emits one explicit
 paragraph with contracted/zero margins, `wrap="none"`, and `a:noAutofit`.
 Concrete source syntax for frame/bounds and line step is defined by C6. C7
 rejects multiline text until its native mapping and fidelity fixtures land.
+
+The banked 0.1.1 extension adds intent, not a second text authority. A planned
+`data-pptv-text-intent="paragraph"` object still serializes every visible line
+explicitly. Its future PowerPoint mapping retains authored breaks and
+`a:noAutofit`; `reliable` derives an output-only wider frame from exact-font
+evidence, while `editable` retains the authored tight frame. A baseline-free
+importer may later tolerate a bounded measured overrun before creating a new
+line, preferring a diagnosed small bleed to a surprise wrap. The exact default,
+up to a banked maximum of `2ch`, remains pending native calibration. None of
+these behaviors is part of the current C6/C7 surface.
 
 ## Stable identity
 
@@ -387,6 +414,10 @@ localizes deck context, then independently reloads/resolves the SVG candidate;
 it is not a blind subtree copy. `pptx-canary` is deliberately deck-only,
 strict, fresh-package, and template-free. Template-backed, direct diagram
 placement, or broader `build-pptx` behavior remains roadmap.
+
+The future composition bridge does not implicitly admit an arbitrary atom to
+this command. Atom placement must first become an explicit, hash-bound
+identity-or-uniform-transform operation with aspect mismatch refusal.
 
 The implemented C7 canary:
 
@@ -494,6 +525,11 @@ strict fresh-PPTX canary and C8 the non-mutating exact-font preflight; both
 remain `in-progress` while their stated native-fidelity gates are open. This
 document remains the author-facing rationale and broader
 compiler/reconciliation roadmap.
+
+PPTV source/profile 0.1.1 text resilience remains banked prose until C4 source,
+C5 patch, C6 resolved, C7/compiler, C8 evidence, and separate future-import
+contracts and fixtures promote it. Its name is independent from
+`@office180/pptv@0.1.0-alpha.3` and the current contract `1.1` revisions.
 
 Before claiming general editable PowerPoint conformance, expand the native
 fixture, add source-map/reverse comparison, quantitative render fidelity, and

@@ -7,6 +7,9 @@ adoption. See the [root README](../README.md) for the project itself and
 The reusable scripts come from the released Rebar bootstrap and retain their
 `rebar-scripts:` provenance marker. Project-specific scripts preserve the
 converter's Python/TypeScript exclusions and machine-verified metrics.
+`inbox-watch.sh` additionally carries a clearly marked office180 safety delta
+pending REBAR upstream: atomic non-symlink lock directories, duplicate-watch
+refusal, convention-shaped filenames, and bounded control-sanitized previews.
 
 ## Enforcement Checks
 
@@ -35,6 +38,7 @@ Each script is standalone, runs in a few seconds, and exits 0 (pass) or 1 (fail)
 | `pre-commit.sh` | Git hook — runs every enforcement script, format/type/build checks, and both test suites |
 | `setup.sh` | One-time: symlinks `pre-commit.sh` as `.git/hooks/pre-commit` |
 | `refresh-context.sh` | Session start / checkpoint — QUICKCONTEXT freshness + worktree state |
+| `inbox-watch.sh [--preview] [inbox ...]` | Session-scoped held-inbox monitor; reports new append-only peer memos after arming. Watch only inboxes this repo holds, run it through a persistent monitor, and never wire it into CI. A live holder, unsafe lock, invalid filename, or non-regular memo fails closed |
 
 ## Installation
 

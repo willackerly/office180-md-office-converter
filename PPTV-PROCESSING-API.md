@@ -803,7 +803,10 @@ error-free deck and a valid C6 resolution. It retains the selected SVG root,
 stable IDs, hierarchy, painter order, geometry, authored hard lines, and opaque
 SVG payloads; removes deck-only classes/control attributes; materializes
 resolved paint and typography as local inline presentation values; and adds the
-standard XLink namespace only if retained source uses that prefix.
+standard XLink namespace only if retained source uses that prefix. It prepends
+the canonical non-normative `pptv-authoring` discovery comment after any XML
+declaration. The comment is writer metadata, not source authority or a validity
+requirement.
 
 The candidate is reloaded through the standalone C4 XML/semantic gate and C6
 diagram resolver. Only a context-free valid `.pptv.svg` is returned, together
