@@ -1,6 +1,6 @@
 ---
 name: pptv-authoring
-description: Create, edit, inspect, validate, and compile strict no-reflow PPTV diagrams and presentations. Use when asked to author a standalone PPTV SVG diagram or PPTV HTML deck, turn a brief into editable vector source, repair PPTV structure, choose stable IDs/groups/connectors/text frames, audit text overflow, prepare a browser editor pack, or compile a supported deck to the native PPTX canary.
+description: Create, edit, inspect, validate, hydrate, and compile strict no-reflow PPTV diagrams and presentations. Use when asked to author or repair a standalone PPTV SVG atom or PPTV HTML deck, turn a brief into editable vector source, choose stable IDs/groups/connectors/text frames, audit text overflow, extract a deck slide into an independent atom, prepare a writable trusted browser editor, or compile a supported deck to the native PPTX canary.
 ---
 
 # PPTV Authoring
@@ -69,19 +69,24 @@ manifest, theme block, or runtime.
 10. Prefer integer coordinates, dimensions, strokes, font sizes, and line steps
    so C7's exact SVG-unit/point mapping cannot require rounding.
 
+Treat a standalone atom as strict namespace-aware XML 1.0, not forgiving HTML.
+Require exactly one SVG root, balanced tags, unique attributes, declared
+prefixes, and valid XML characters. Permit only an optional XML declaration,
+comments, and whitespace outside the root. Reject DOCTYPE/DTD and custom named
+entities; use normal XML escaping, the five predefined entities, or valid
+numeric character references. The semantic validator enforces these rules
+before the SVG profile is considered.
+
 Never add wrapping, autofit, shrink-to-fit, automatic line breaking, or
 character-count fit guesses. If content does not fit, warn and ask the author
 to change the words, font size, or declared geometry explicitly.
 
 ## Inspect and edit efficiently
 
-The standalone commands below require a checkout that implements the pending
-C4/C5/C6 1.1 diagram surfaces. If `validate` does not accept the generated
-atom, report that implementation gap and do not claim semantic validation.
-
 Use the narrowest semantic command that answers the question:
 
 ```bash
+pnpm pptv validate source.pptv.svg --format json
 pnpm pptv outline source.pptv.svg --format json
 pnpm pptv text source.pptv.svg --format jsonl
 pnpm pptv list source.pptv.svg --role text
@@ -105,6 +110,47 @@ Do not invent geometry, grouping, connector, or class patch operations. Hand
 edit source only when authoring new structure or when the requested operation
 is outside the current patch surface, then run every gate.
 
+## Hydrate one deck slide into an atom
+
+Do not copy a slide template out of HTML: it may depend on deck CSS and the
+active theme. Use the deterministic extractor:
+
+```bash
+pnpm pptv extract deck.pptv.html \
+  --slide architecture \
+  --output architecture.pptv.svg \
+  --format json
+pnpm pptv validate architecture.pptv.svg --format json
+pnpm pptv resolve architecture.pptv.svg --format json
+```
+
+Extraction resolves deck-only style authority into local declarations,
+preserves stable IDs, hierarchy, painter order, geometry, and hard lines, then
+reloads and resolves the result as an independent diagram. It refuses invalid
+or unresolved input and an existing destination. Report its output hash and
+provenance. Never add a manifest or synthetic slide identity to the atom.
+
+## Use the writable trusted editor
+
+For source the user trusts, create the deterministic offline editor wrapper:
+
+```bash
+pnpm pptv editor-pack source.pptv.svg \
+  --output source.editable.pptv.html \
+  --font-map fonts.json
+```
+
+The pack supports object selection, direct-text Apply, exact-source undo/redo,
+diagnostics, source inspection, and clean current-source download for either
+source kind. Deck packs additionally expose active-theme/slide-order controls
+and hydrated selected-slide download. The app never serializes the browser DOM
+as source. A payload hash mismatch makes it read-only; optional file-handle
+saves require user authorization and refuse a stale on-disk hash.
+
+Geometry, connector, group, structured-line/rich-text, style-rule, insertion,
+and deletion controls remain unsupported. Treat direct-open and file-handle
+features as trusted-source-only.
+
 ## Run the gates
 
 From the `office180-md-office-converter` repository root:
@@ -114,9 +160,10 @@ python3 .agents/skills/pptv-authoring/scripts/pptv_gates.py \
   source.pptv.svg --repo . --font-map fonts.json
 ```
 
-With the C4/C6 1.1 implementation present, the helper detects deck versus
-diagram from matching suffix and content, validates, resolves, inspects
-outline/text projections, runs exact-font text fit, and builds a trusted editor
+The helper detects deck versus diagram from matching suffix and content,
+validates, resolves, inspects outline/text projections, runs exact-font
+source-kind-specific C8 text fit, and builds a writable trusted editor pack.
+When `--font-map` is present, the same exact font evidence is embedded in the
 pack. For an HTML deck it also compiles the strict PPTX canary. For a standalone
 diagram it always reports a C7 skip: `*.pptv.svg` is not a presentation compiler
 input, even at a 16:9 ratio. Without `--font-map`, the helper explicitly skips

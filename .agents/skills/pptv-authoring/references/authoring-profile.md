@@ -23,6 +23,21 @@ All four root declarations are required. The viewBox may use any finite origin,
 width, and height, with strictly positive width and height. Do not add root
 presentation, behavior, physical-size, or external-resource attributes.
 
+The atom is namespace-aware XML 1.0, not browser-recovered HTML. It must have
+exactly one SVG root with balanced tags, unique attributes, declared prefixes,
+and valid XML characters. Outside the root, permit only an optional XML
+declaration, comments, and whitespace. Reject multiple roots, DOCTYPE/DTD,
+custom entity declarations, omitted or mismatched end tags, duplicate
+attributes, undeclared prefixes, and invalid control characters. The predefined
+`amp`, `lt`, `gt`, `apos`, and `quot` entities plus valid numeric character
+references remain XML syntax. Never depend on parser recovery to supply or
+normalize authoritative bytes.
+
+The strict root attribute allowlist is `id`, `data-pptv-version`, `viewBox`,
+and the default SVG `xmlns`, plus the standard XLink namespace declaration only
+when required. Keep active/external content, event handlers, behavior
+attributes, and external resource URLs out of an atom.
+
 Use one self-contained `*.pptv.html` resource when authoring a deck:
 
 ```text
@@ -172,3 +187,39 @@ inside a deck.
 Use semantic projections for inspection and hash-bound patches for supported
 changes. Theme/order operations are deck-only. A raw source edit must retain
 canonical physical/painter order and pass validation plus resolution afterward.
+
+## Hydration and writable editor
+
+An embedded deck slide is not automatically an independent atom because its
+classes may depend on the deck's base CSS and active theme. Hydrate it through:
+
+```bash
+pnpm pptv extract deck.pptv.html \
+  --slide architecture \
+  --output architecture.pptv.svg \
+  --format json
+```
+
+The extractor requires a complete valid deck and fully resolved selected
+slide. It localizes supported class/theme values, removes deck-only class and
+layout authority, preserves stable IDs, hierarchy, DOM order, geometry, hard
+lines, and opaque spelling, and adds only required standalone root metadata.
+It returns source only after strict XML/C4 reload and C6 diagram resolution.
+It is deterministic for the same deck hash, active theme, and slide ID and
+refuses to overwrite an existing destination. Validate and resolve the emitted
+atom independently; report its hash and extraction provenance.
+
+For trusted source, `editor-pack` creates a deterministic offline
+`*.editable.pptv.html` wrapper with exact canonical bytes stored as inert data,
+their SHA-256, fresh projections, strict CSP, and a fixed editor app. It supports
+object selection, direct-text Apply, exact-source undo/redo, diagnostics, source
+inspection, and clean source download for both kinds. Deck packs additionally
+support active-theme/slide-order controls and hydrated selected-slide download.
+The editor never serializes the browser DOM as PPTV source.
+
+A mismatched embedded source hash makes the editor read-only. File System
+Access persistence is optional, requires explicit user authorization, and
+compares the on-disk hash with the last successful save before each write.
+Geometry, connector, group, structured-line/rich-text, style-rule, insertion,
+and deletion controls are not implemented. Use editor direct-open and file
+handles only for trusted source.

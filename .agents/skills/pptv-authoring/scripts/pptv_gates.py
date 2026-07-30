@@ -79,16 +79,16 @@ def source_suffix_kind(source: Path) -> SourceKind:
 def content_kind(source: Path) -> SourceKind:
     text = source.read_text(encoding="utf-8")
     remaining = text.removeprefix("\ufeff").lstrip()
-    while remaining.startswith("<!--"):
-        comment_end = remaining.find("-->")
-        if comment_end < 0:
-            raise SystemExit("source begins with an unterminated comment")
-        remaining = remaining[comment_end + 3 :].lstrip()
     if remaining.startswith("<?xml"):
         declaration_end = remaining.find("?>")
         if declaration_end < 0:
             raise SystemExit("source begins with an unterminated XML declaration")
         remaining = remaining[declaration_end + 2 :].lstrip()
+    while remaining.startswith("<!--"):
+        comment_end = remaining.find("-->")
+        if comment_end < 0:
+            raise SystemExit("source begins with an unterminated comment")
+        remaining = remaining[comment_end + 3 :].lstrip()
     lowered = remaining.lower()
     if re.match(r"<svg(?:\s|>)", lowered):
         return "diagram"
@@ -120,6 +120,8 @@ def run_artifact_gates(
     source: Path,
     kind: SourceKind,
     output: Path,
+    font_map: Path | None,
+    near_limit: float,
 ) -> None:
     stem = source_stem(source, kind)
     editor_pack = output / f"{stem}.editable.pptv.html"
@@ -129,18 +131,24 @@ def run_artifact_gates(
     for artifact in artifacts:
         if artifact.exists():
             raise SystemExit(f"refusing to overwrite existing artifact: {artifact}")
-    run(
-        repo,
-        [
-            "editor-pack",
-            str(source),
-            "--output",
-            str(editor_pack),
-            "--format",
-            "json",
-        ],
-    )
-    print(f"editor pack: {editor_pack}")
+    editor_arguments = [
+        "editor-pack",
+        str(source),
+        "--output",
+        str(editor_pack),
+    ]
+    if font_map is not None:
+        editor_arguments.extend(
+            [
+                "--font-map",
+                str(font_map),
+                "--near-limit",
+                str(near_limit),
+            ]
+        )
+    editor_arguments.extend(["--format", "json"])
+    run(repo, editor_arguments)
+    print(f"writable trusted editor pack: {editor_pack}")
     if kind == "diagram":
         print(
             "SKIP PPTX canary: standalone PPTV diagrams are not C7 "
@@ -213,9 +221,23 @@ def main() -> int:
 
     if artifacts_dir is None:
         with tempfile.TemporaryDirectory(prefix="pptv-gates-") as temporary:
-            run_artifact_gates(repo, source, kind, Path(temporary))
+            run_artifact_gates(
+                repo,
+                source,
+                kind,
+                Path(temporary),
+                font_map,
+                args.near_limit,
+            )
     else:
-        run_artifact_gates(repo, source, kind, artifacts_dir)
+        run_artifact_gates(
+            repo,
+            source,
+            kind,
+            artifacts_dir,
+            font_map,
+            args.near_limit,
+        )
 
     print("All configured PPTV authoring gates passed.")
     return 0

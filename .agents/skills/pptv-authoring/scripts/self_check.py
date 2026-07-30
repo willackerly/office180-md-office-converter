@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Check the skill's deterministic starters and source-kind routing."""
+"""Check deterministic starters, source-kind routing, and gate command policy."""
 
 from __future__ import annotations
 
@@ -110,6 +110,17 @@ def main() -> int:
             gates.detect_source_kind(diagram) == "diagram",
             "diagram routing failed",
         )
+        prolog = root / "prolog.pptv.svg"
+        prolog.write_text(
+            '<?xml version="1.0"?>\n<!-- trusted atom -->\n'
+            + diagram.read_text(encoding="utf-8"),
+            encoding="utf-8",
+            newline="",
+        )
+        require(
+            gates.detect_source_kind(prolog) == "diagram",
+            "XML declaration/comment diagram routing failed",
+        )
         mismatched = root / "mismatched.pptv.html"
         mismatched.write_bytes(diagram.read_bytes())
         try:
@@ -118,6 +129,58 @@ def main() -> int:
             pass
         else:
             raise SystemExit("suffix/content mismatch was accepted")
+
+        captured: list[list[str]] = []
+        original_run = gates.run
+
+        def capture_run(
+            repo: Path,
+            arguments: list[str],
+            show_output: bool = False,
+        ) -> None:
+            del repo, show_output
+            captured.append(arguments)
+
+        gates.run = capture_run
+        artifacts = root / "artifacts"
+        artifacts.mkdir()
+        font_map = root / "fonts.json"
+        try:
+            gates.run_artifact_gates(
+                root,
+                diagram,
+                "diagram",
+                artifacts,
+                font_map,
+                0.87,
+            )
+            require(len(captured) == 1, "diagram gates attempted C7 compilation")
+            require(
+                captured[0][0] == "editor-pack",
+                "diagram gates did not build an editor pack",
+            )
+            require(
+                captured[0][4:8]
+                == ["--font-map", str(font_map), "--near-limit", "0.87"],
+                "diagram editor pack did not retain exact-font options",
+            )
+
+            captured.clear()
+            gates.run_artifact_gates(
+                root,
+                deck,
+                "deck",
+                artifacts,
+                None,
+                0.9,
+            )
+            require(
+                [arguments[0] for arguments in captured]
+                == ["editor-pack", "pptx-canary"],
+                "deck gates did not retain the editor-plus-C7 path",
+            )
+        finally:
+            gates.run = original_run
 
     print("PPTV authoring skill self-check passed.")
     return 0

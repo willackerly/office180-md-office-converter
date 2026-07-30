@@ -1,4 +1,4 @@
 interface:
   display_name: "PPTV Authoring"
-  short_description: "Create no-reflow PPTV diagrams and decks"
-  default_prompt: "Use $pptv-authoring to create and preflight an editable PPTV diagram or deck."
+  short_description: "Author, hydrate, and edit no-reflow PPTV"
+  default_prompt: "Use $pptv-authoring to create, hydrate, preflight, or edit a strict no-reflow PPTV atom or deck."

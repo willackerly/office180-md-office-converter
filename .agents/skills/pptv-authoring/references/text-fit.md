@@ -60,6 +60,7 @@ Run C8 with an explicit map of every used face/style:
 
 ```bash
 pnpm pptv text-fit source.pptv.svg --font-map fonts.json
+pnpm pptv text-fit deck.pptv.html --font-map fonts.json
 ```
 
 ```json
@@ -100,9 +101,14 @@ verifies identity.
 7. Never modify text, size, frame, or line breaks automatically.
 
 For trusted source, a browser check after `document.fonts.ready` using SVG
-`getComputedTextLength()` is valuable environment evidence. It is not a
-portable guarantee unless the font bytes and rendering environment are pinned.
-Native PowerPoint render/reopen remains the highest fidelity gate.
+`getComputedTextLength()` is implemented through the explicit-byte browser
+adapter. It loads caller-supplied bytes under SHA-derived aliases, requires
+precomputed glyph coverage, and labels the engine/version. Missing or unchecked
+coverage remains `unverified`; browser fallback never becomes exact evidence.
+Chromium and Firefox match the current exact-font kerned calibration, while the
+checked WebKit capture follows the unkerned oracle despite explicit kerning.
+Treat that as recorded environment variance, not universal parity. Native
+PowerPoint render/reopen remains the highest fidelity gate.
 
 Character counts, average-character estimates, CSS width heuristics, and
 browser fallback fonts are not acceptable proof.
@@ -113,12 +119,13 @@ The portable API is:
 
 ```ts
 preflightTextFit(resolvedDeck, measurer)
+preflightDiagramTextFit(resolvedDiagram, measurer)
 ```
 
 The exact-font Node adapter uses pinned `fontkit@2.0.4`. Each portable
 preflight line result includes:
 
-- slide ID and object ID;
+- slide ID or diagram ID, plus object ID;
 - measured width and anchor-aware capacity;
 - utilization and overrun;
 - font family, size, weight, and style;
@@ -132,6 +139,13 @@ preflight intentionally normalizes away adapter-specific fields.
 
 The CLI returns success for clear/near-limit lines and failure for definite
 overflow or any unverified line.
+
+`editor-pack` accepts the same explicit font map. It embeds only the selected
+exact font bytes, their identity and coverage, and matching Node C8 evidence.
+The writable browser editor measures those bytes and displays the worse current
+Node/browser status. A text edit invalidates embedded Node evidence for that
+line, so the editor keeps it `unverified` until exact Node evidence is
+recomputed; browser measurement alone does not promote it to clear.
 
 OpenDocKit's current `FontMetricsDB` and pinned bundle are a useful deterministic
 warning substrate. They provide advances and limited kerning, but not complete
