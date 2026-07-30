@@ -20,6 +20,24 @@ line against the horizontal capacity implied by its frame and anchor, records
 the exact font evidence used, and warns without wrapping, shrinking, moving,
 rewriting, or otherwise repairing source.
 
+## Who needs this
+
+- Authors who need to catch line overruns before a no-reflow deck reaches
+  PowerPoint.
+- Editors and CI systems that must distinguish exact-font evidence from
+  substitution-prone environment measurements.
+- Compiler maintainers who need deterministic warnings without changing source
+  text, font size, line breaks, or geometry.
+
+## Scenarios
+
+- Measure every authored hard line with explicitly mapped font bytes and report
+  clear, near-limit, overflow, or unverified evidence.
+- Preserve start, middle, and end anchor semantics when computing available
+  horizontal capacity.
+- Refuse to certify a line when the requested face or required glyph coverage
+  cannot be proven.
+
 ## Interfaces
 
 The portable operation is synchronous and pure. Font loading, shaping, browser

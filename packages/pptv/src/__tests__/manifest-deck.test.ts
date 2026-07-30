@@ -1,3 +1,5 @@
+// Tests: CONTRACT:C4-PPTV-SOURCE.1.0
+
 import { describe, expect, it } from "vitest";
 
 import { loadDeck } from "../core/deck.js";

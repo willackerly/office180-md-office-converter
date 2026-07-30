@@ -1,8 +1,8 @@
 # Quick Context
 
 <!-- FRESHNESS: Update this date every time you modify this file -->
-<!-- freshness: 2026-07-29 -->
-<!-- last-synced: 2026-07-29 — verified against the current workspace -->
+<!-- freshness: 2026-07-30 -->
+<!-- last-synced: 2026-07-30 — verified against the current workspace -->
 
 **Current state for an agent starting a new session.**
 
@@ -44,27 +44,33 @@ See `METRICS.md` for authoritative counts.
 
 This is the single source of truth for priority ordering:
 
-1. **Complete the C8 fidelity lane:** lock the worked TDFLite overflow
-   regression, add browser/editor warnings using environment-labeled
-   measurement, and calibrate representative lines against native PowerPoint.
-2. **Complete the C6 fixture gates:** add standalone kitchen-sink/invalid
-   corpora and normalized Node/browser JSON parity locks.
-3. **Activate writable trusted editor controls:** the exact-byte strict-CSP
+1. **Promote standalone `.pptv.svg` to the first-class diagram atom:** add a
+   distinct semantic document model, arbitrary explicit viewBox, direct-text
+   patches, diagram resolution/text-fit/editor pack, and CLI support without
+   synthesizing a deck or relaxing C7's explicit 16:9 HTML-deck boundary.
+2. **Complete the C6/browser fixture gates:** move the trusted editor onto the
+   shared TypeScript session/resolver and lock normalized Node/browser output
+   across the standalone kitchen-sink/invalid corpora.
+3. **Complete the C8 fidelity lane:** lock a redistributable exact-font
+   calibration fixture plus the hashed TDFLite inventory regression, add
+   browser/editor warnings with captured environment identity, and calibrate
+   representative lines against native PowerPoint.
+4. **Activate writable trusted editor controls:** the exact-byte strict-CSP
    wrapper, literal C6 viewport, semantic navigation, clean download, and C5
    exact-source session exist; bundle text/theme/order controls, surface C8
    warnings, and add stale-safe user-granted file save.
-4. **Expand editor and compiler together:** add typed geometry/order/explicit
+5. **Expand editor and compiler together:** add typed geometry/order/explicit
    line operations and atomic SVG assets only when the same fixtures pass
    browser and PowerPoint gates. C7 already proves native connectors and
    translated groups for its strict subset.
-5. **Complete the remaining C7 fidelity lane:** add quantitative SVG/PDF render
+6. **Complete the remaining C7 fidelity lane:** add quantitative SVG/PDF render
    comparison and native PPTX save/reopen on an automation path that produces a
    non-empty ZIP. PowerPoint 16.111.2 AppleScript Save As is a zero-byte no-op
    even for a known-good control, so do not treat it as evidence.
-6. **Contribute shared foundations to OpenDocKit:** extract a small stable
+7. **Contribute shared foundations to OpenDocKit:** extract a small stable
    metrics surface with explicit face/substitution/missing-glyph evidence, then
    continue the editing-rigor, SVG-interaction, and fresh-package work.
-7. **Continue the DOCX roadmap:** package the Python tools, replace the regex
+8. **Continue the DOCX roadmap:** package the Python tools, replace the regex
    Markdown parser with `markdown-it-py`, then add real hyperlinks and Word
    numbering.
 
@@ -72,9 +78,10 @@ Task detail and known blockers live in `TODO.md`.
 
 ## Active work
 
-**Current milestone:** C8 exact-font preflight implemented; worked-deck/browser
-calibration, C6 parity fixtures, and writable trusted-editor warnings/controls
-are the next delivery slice.
+**Current milestone:** alpha.2 is a release candidate with C8 exact-font
+preflight and current Rebar Tier 3 enforcement. Standalone diagram semantics,
+the shared browser runtime/parity harness, calibration, and writable controls
+are the active autonomous delivery sequence.
 
 Implemented:
 
@@ -117,6 +124,9 @@ Implemented:
 - packaged, digest-locked `pptv-browser/0.1` reference runtime snippet
 - repo-scoped `$pptv-authoring` workflow with a test-locked canonical starter,
   strict authoring profile, text-fit guidance, and one-command validation pack
+- Rebar `v3.0.0-beta` Tier 3 adopter surface: SessionStart health hook, reusable
+  workflow skills, generated registry, contract/JTBD/doc/decay gates, Steward,
+  installed pre-commit hook, and GitHub Actions product gates
 - C4/C5 verified contracts, in-progress C6/C7/C8 contracts, and manifest/patch
   JSON Schemas
 
@@ -265,5 +275,6 @@ Dependencies:
 6. Update this file, `TODO.md`, and `METRICS.md` when repository truth changes.
 
 **Last updated by:** PPTV C8 exact-font text-fit preflight, C7 scale correction,
-alpha.2 release state, and repo-scoped authoring skill (2026-07-29)
-**Next review:** after C8 browser/native calibration or C6 parity fixtures
+alpha.2 candidate state, repo-scoped authoring skill, and Rebar Tier 3 upgrade
+(2026-07-30)
+**Next review:** after standalone diagram semantics land

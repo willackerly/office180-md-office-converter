@@ -1,3 +1,5 @@
+// Tests: CONTRACT:C4-PPTV-SOURCE.1.0, CONTRACT:C6-PPTV-RESOLVED.1.0
+
 import { readFile } from "node:fs/promises";
 
 import { describe, expect, it } from "vitest";

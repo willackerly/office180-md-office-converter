@@ -1,7 +1,7 @@
 # Project Metrics
 
 <!-- FRESHNESS: Update this date every time you modify this file -->
-<!-- freshness: 2026-07-29 -->
+<!-- freshness: 2026-07-30 -->
 
 **Ground-truth metrics for the Python DOCX pair and TypeScript PPTV kernel.**
 
@@ -58,6 +58,9 @@ shipped_themes = 3
   anchor/measurement/font-map/CLI behavior, and CLI atomic writes.
 - **Repo-scoped authoring skill:** structural validation passes; its bundled
   starter is locked byte-for-byte to the canonical minimal deck by Vitest.
+- **Repository enforcement:** Rebar `v3.0.0-beta` Tier 3 reports 14/14 adopter
+  gates passing; the generated Steward sees all eight contracts with
+  implementation and test files and zero discoveries.
 - **Skipped tests:** zero.
 
 Manual C7 1.1 evidence on the exact artifact hash recorded in its contract

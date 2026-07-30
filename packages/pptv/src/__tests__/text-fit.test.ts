@@ -1,3 +1,5 @@
+// Tests: CONTRACT:C8-PPTV-TEXT-FIT.1.0
+
 import { describe, expect, it, vi } from "vitest";
 
 import { loadDeck } from "../core/deck.js";

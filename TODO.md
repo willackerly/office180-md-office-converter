@@ -1,13 +1,18 @@
 # TODO
 
 <!-- FRESHNESS: Update this date every time you modify this file -->
-<!-- freshness: 2026-07-29 -->
-<!-- last-synced: 2026-07-29 — verified against the current workspace -->
+<!-- freshness: 2026-07-30 -->
+<!-- last-synced: 2026-07-30 — verified against the current workspace -->
 
 Active tasks only. Priority ordering lives in `QUICKCONTEXT.md`.
 
 ## PPTV next slice
 
+- [ ] Promote standalone `.pptv.svg` to a first-class semantic diagram
+  document with explicit root ID/version/namespace/viewBox, arbitrary aspect
+  ratio, shared object parsing, direct-text patching, diagram resolution,
+  text-fit, editor-pack, CLI projections, and clean SVG download. Do not
+  synthesize a manifest/slide/theme or implicitly admit diagrams to C7.
 - [x] Promote `PPTV-IMPLEMENTATION-PLAN.md` section 2 into C6 and normalize the
   minimal fixture: exact `0 0 1600 900`/16:9 mapping, explicit text-frame/line
   syntax, primitive/group/asset bounds, CSS authority, and capability errors.
@@ -59,7 +64,7 @@ Active tasks only. Priority ordering lives in `QUICKCONTEXT.md`.
   translated groups, and explicit lines are already covered.
 - [ ] Split `@office180/pptv-pptx` only when the real OOXML dependency boundary
   exists; keep the source/browser core independent.
-- [ ] Add standalone `.pptv.svg`, library/`use`, and external-manifest dependency
+- [ ] Add library/`use`, atom composition, and external-manifest dependency
   resolution only after capability, cycle, root, and hash contracts exist.
 - [ ] Define canonical serialization independently from preserve-mode patching.
 - [ ] Extend the implemented source-byte, element/depth, and manifest-complexity
@@ -132,6 +137,9 @@ scans both Python and TypeScript and rejects untracked `TODO:` comments.
 <details>
 <summary><strong>Recently completed</strong></summary>
 
+- [x] Rebar `v3.0.0-beta` Tier 3 upgrade with a SessionStart health hook,
+  generated registry, JTBD/header/doc/decay gates, Steward report, installed
+  pre-commit hook, reusable Claude workflow skills, and GitHub Actions — 2026-07-30
 - [x] Repo-scoped `$pptv-authoring` skill with strict authoring/text-fit
   references, canonical starter parity lock, and end-to-end gate helper —
   2026-07-29

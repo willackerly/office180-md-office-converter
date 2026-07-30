@@ -21,6 +21,24 @@ PowerPoint open without repair now passes; PPTX save/reopen plus quantitative
 source-to-render and baseline-to-glyph comparison remain required before the
 compiler may be described as native-validated.
 
+## Who needs this
+
+- PPTV authors who need deterministic, editable native PowerPoint primitives
+  rather than an opaque screenshot.
+- Compiler maintainers who need a narrow package-writing seam with explicit
+  refusal for every unsupported construct.
+- Independent validators such as OpenDocKit that need a small, reproducible
+  fresh-package specimen.
+
+## Scenarios
+
+- Compile the canonical 16:9 HTML deck into a fresh PPTX with stable object
+  names and deterministic package bytes.
+- Reject unsupported SVG assets, multi-line native text, or invalid numeric
+  mappings before any artifact is returned.
+- Reopen and validate the generated package independently, then extend the
+  subset only when structural and native-render evidence agree.
+
 ## Interfaces
 
 The Node-only compiler is asynchronous only for in-memory ZIP generation and

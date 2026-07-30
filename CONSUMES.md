@@ -1,6 +1,6 @@
 # CONSUMES — external contract dependencies
 
-<!-- last-synced: 2026-07-29 -->
+<!-- last-synced: 2026-07-30 -->
 <!-- format: rebar-consumes-v1 -->
 
 This file declares which **external contracts** (owned by other rebar
@@ -69,8 +69,9 @@ encoding "extends" semantics in this file.
   real entry. `scripts/check-compliance.sh` (Check 8) verifies drift-check
   is wired into CI *once* an entry exists — with zero entries, that check
   is a no-op.
-- **Owner-side `scan-consumers.sh`** (not shipped in this repo — the converter
-  is a consumer, not a rebar-contract owner other repos would scan for)
+- **Owner-side `scan-consumers.sh`** is useful when another repository begins
+  consuming one of this repository's locally owned C1–C8 contracts. It is not
+  required merely because this file currently declares zero external inputs.
 
 ---
 

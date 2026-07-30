@@ -91,7 +91,7 @@ Read these documents in order:
 
 6. **[`PPTV-AGENT-GUIDE.md`](PPTV-AGENT-GUIDE.md)**
 
-   Defines the proposed `pptv-agent/1` operating profile: minimum-view selection,
+   Defines the operational `pptv-agent/1` profile: minimum-view selection,
    semantic patch discipline, trust boundaries, task recipes, failure behavior,
    and validation/reporting rules.
 

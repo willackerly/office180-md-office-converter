@@ -1,3 +1,5 @@
+// Tests: CONTRACT:C8-PPTV-TEXT-FIT.1.0
+
 import { createHash } from "node:crypto";
 import { mkdtemp, rm, truncate, unlink, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";

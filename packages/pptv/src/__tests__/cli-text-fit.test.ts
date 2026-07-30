@@ -1,3 +1,6 @@
+// Tests: CONTRACT:C4-PPTV-SOURCE.1.0, CONTRACT:C6-PPTV-RESOLVED.1.0,
+// CONTRACT:C8-PPTV-TEXT-FIT.1.0
+
 import { mkdtemp, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";

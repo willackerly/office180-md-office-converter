@@ -1,7 +1,7 @@
 # Agent Guidelines
 
 <!-- FRESHNESS: Update this date every time you modify this file -->
-<!-- freshness: 2026-07-29 -->
+<!-- freshness: 2026-07-30 -->
 
 **How AI agents work effectively on the DOCX and PPTV tracks.**
 
@@ -36,9 +36,9 @@ operational workflow; the applicable contracts remain behavioral authority.
   controls, broader compilation, and reconciliation remain roadmap; use
   `PPTV-IMPLEMENTATION-PLAN.md` for the agreed delivery sequence.
 - **Team size:** Solo (Will Ackerly)
-- **Rebar tier:** 3 (Enforced) — contract refs, TODO tracking, freshness,
-  ground truth, and compliance all enforced; see `.rebarrc` for why the
-  full rebar Steward / ASK CLI is deliberately not part of this repo
+- **Rebar tier:** 3 (Enforced) — the `v3.0.0-beta` SessionStart, generated
+  registry, Steward, contract/document gates, ground truth, and compliance
+  surfaces are enabled; persistent ASK roles remain optional for this solo repo
 - **Quality standards:** contract-first for persistent formats and operation
   protocols; `pnpm format:check`, `pnpm typecheck`, `pnpm test`, and
   `pnpm build` green before handoff
@@ -93,13 +93,13 @@ resolves to a real file.
 
 ## Agent Coordination
 
-This repository does not run the rebar ASK CLI or persistent role-based agents
-(`ask architect`, `ask product`, `ask steward`, `ask englead`) — it's a
-solo-maintained project small enough that the maintainer fills those roles
-directly. If you're an agent working here, act as your own architect and
-reviewer: read the relevant contract before changing behavior, and check
-`scripts/check-compliance.sh` / `scripts/check-ground-truth.sh` the way a
-steward agent would.
+This solo-maintained repository does not keep persistent ASK role sessions
+(`ask architect`, `ask product`, `ask steward`, `ask englead`) alive by
+default. It does run the automated Rebar Steward and SessionStart health hook.
+`agents/steward/AGENT.md` defines the read-only health-reporting role without
+requiring a persistent session. If a focused role is started, its conclusions
+remain advisory until reconciled with contracts, tests, and exact current
+source.
 
 For multi-agent fan-out, keep assignments read-only or give each agent
 non-overlapping file ownership; see `agents/subagent-guidelines.md`.

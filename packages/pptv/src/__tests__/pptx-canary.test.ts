@@ -1,3 +1,5 @@
+// Tests: CONTRACT:C7-PPTX-CANARY.1.1
+
 import { spawnSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
 

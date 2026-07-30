@@ -139,12 +139,17 @@ import {
   createFontkitTextMeasurer,
   parseFontMap,
 } from '@office180/pptv/node';
+import { dirname, resolve } from 'node:path';
 
 const deck = await loadDeck({ kind: 'text', text: html });
 const resolved = resolvePptvDeck(deck);
 if (resolved.model === undefined) throw new Error('Deck is outside C6');
 
-const fontMap = parseFontMap(JSON.parse(fontMapJson), process.cwd());
+const fontMapPath = '/absolute/path/to/fonts.json';
+const fontMap = parseFontMap(
+  JSON.parse(fontMapJson),
+  dirname(resolve(fontMapPath)),
+);
 const measurer = await createFontkitTextMeasurer(fontMap.faces);
 const fit = preflightTextFit(resolved.model, measurer, { nearLimit: 0.95 });
 ```

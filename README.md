@@ -1,6 +1,6 @@
 # office180-md-office-converter
 
-> **rebar v3.0.0** | **Tier 3: ENFORCED** | [What is rebar?](https://github.com/willackerly/rebar)
+> **rebar v3.0.0-beta** | **Tier 3: ENFORCED** | [What is rebar?](https://github.com/willackerly/rebar)
 
 **Deterministic, provenance-aware source ⇄ Microsoft Office workflows.**
 
