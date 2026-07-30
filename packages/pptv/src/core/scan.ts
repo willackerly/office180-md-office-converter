@@ -1,7 +1,7 @@
 /**
  * Non-executing PPTV container scanner.
  *
- * CONTRACT:C4-PPTV-SOURCE.1.0
+ * CONTRACT:C4-PPTV-SOURCE.1.1
  */
 
 import {
@@ -75,6 +75,15 @@ const CSS_RESOURCE_ATTRIBUTES = new Set([
 ]);
 const DEFAULT_MAX_ELEMENTS = 100_000;
 const DEFAULT_MAX_DEPTH = 512;
+const SVG_NUMBER_PATTERN = /^[+-]?(?:\d+(?:\.\d*)?|\.\d+)(?:[eE][+-]?\d+)?$/u;
+const SVG_NAMESPACE = "http://www.w3.org/2000/svg";
+const DIAGRAM_ROOT_ATTRIBUTES = new Set([
+  "id",
+  "data-pptv-version",
+  "viewbox",
+  "xmlns",
+  "xmlns:xlink",
+]);
 
 export async function scanPptvSource(
   input: PptvInput,
@@ -324,8 +333,9 @@ function scanSvg(
 
   inspectStructureLimits(svg, mapper, diagnostics, sourceOffset, options);
   inspectSecurity(svg, mapper, diagnostics, sourceOffset);
-  const id =
-    getAttribute(svg, "id") ?? source.name?.replace(/\.pptv\.svg$/i, "");
+  validateDiagramRoot(svg, mapper, diagnostics, sourceOffset);
+  validateDiagramStyleAuthority(svg, mapper, diagnostics, sourceOffset);
+  const id = getAttribute(svg, "id");
   const versionHint = getAttribute(svg, "data-pptv-version");
   return {
     kind: "svg",
@@ -335,6 +345,165 @@ function scanSvg(
     sections: [sectionFromElement("slide", svg, mapper, id, sourceOffset)],
     diagnostics,
   };
+}
+
+function validateDiagramStyleAuthority(
+  svg: ElementNode,
+  mapper: SourceMapper,
+  diagnostics: Diagnostic[],
+  sourceOffset: number,
+): void {
+  walk(svg, (node) => {
+    if (!isElement(node)) return;
+    if (node.tagName === "style") {
+      const range = locationRange(node, mapper, sourceOffset);
+      diagnostics.push({
+        code: "PPTV-DIAGRAM-STYLE",
+        severity: "error",
+        message:
+          "Standalone PPTV diagrams forbid style elements; use local presentation attributes or inline style.",
+        ...(range === undefined ? {} : { range }),
+      });
+    }
+    for (const attribute of node.attrs) {
+      const name = qualifiedAttributeName(attribute);
+      const normalizedName = name.toLowerCase();
+      const reason =
+        normalizedName === "class"
+          ? "class attributes because no class stylesheet authority exists"
+          : normalizedName === "data-pptv-style" ||
+              normalizedName === "data-pptv-theme"
+            ? `diagram control attribute "${name}"`
+            : normalizedName.startsWith("--") ||
+                /var\s*\(|--pptv-/iu.test(attribute.value) ||
+                (normalizedName === "style" &&
+                  /(?:^|;)\s*--[-_A-Za-z0-9]+\s*:/u.test(attribute.value))
+              ? `custom-property or var() styling in attribute "${name}"`
+              : undefined;
+      if (reason === undefined) continue;
+      const location = findAttributeLocation(node, name);
+      diagnostics.push({
+        code: "PPTV-DIAGRAM-STYLE",
+        severity: "error",
+        message: `Standalone PPTV diagrams forbid ${reason}.`,
+        ...(location === undefined
+          ? {}
+          : {
+              range: mapper.range(
+                sourceOffset + location.startOffset,
+                sourceOffset + location.endOffset,
+              ),
+            }),
+      });
+    }
+  });
+}
+
+function validateDiagramRoot(
+  svg: ElementNode,
+  mapper: SourceMapper,
+  diagnostics: Diagnostic[],
+  sourceOffset: number,
+): void {
+  const rootRange = locationRange(svg, mapper, sourceOffset);
+  const id = getAttribute(svg, "id");
+  if (id === undefined || !STABLE_ID_PATTERN.test(id)) {
+    diagnostics.push({
+      code: "PPTV-DIAGRAM-ROOT-ID",
+      severity: "error",
+      message:
+        "Standalone PPTV SVG requires an explicit valid stable ID on its root; filenames never supply semantic identity.",
+      ...(rootRange === undefined ? {} : { range: rootRange }),
+    });
+  }
+
+  const version = getAttribute(svg, "data-pptv-version");
+  if (version !== "0.1") {
+    diagnostics.push({
+      code: "PPTV-DIAGRAM-ROOT-VERSION",
+      severity: "error",
+      message:
+        'Standalone PPTV SVG requires data-pptv-version="0.1" on its root.',
+      ...(rootRange === undefined ? {} : { range: rootRange }),
+    });
+  }
+
+  if (getAttribute(svg, "xmlns") !== SVG_NAMESPACE) {
+    diagnostics.push({
+      code: "PPTV-DIAGRAM-ROOT-NAMESPACE",
+      severity: "error",
+      message: `Standalone PPTV SVG requires xmlns="${SVG_NAMESPACE}" on its root.`,
+      ...(rootRange === undefined ? {} : { range: rootRange }),
+    });
+  }
+
+  if (parseDiagramViewBox(getAttribute(svg, "viewBox")) === undefined) {
+    diagnostics.push({
+      code: "PPTV-SVG-VIEWBOX",
+      severity: "error",
+      message:
+        "Standalone PPTV SVG requires a finite four-number viewBox with positive width and height.",
+      ...(rootRange === undefined ? {} : { range: rootRange }),
+    });
+  }
+
+  for (const attribute of svg.attrs) {
+    const name = qualifiedAttributeName(attribute);
+    const normalizedName = name.toLowerCase();
+    const validXlinkNamespace =
+      normalizedName !== "xmlns:xlink" ||
+      attribute.value === "http://www.w3.org/1999/xlink";
+    if (DIAGRAM_ROOT_ATTRIBUTES.has(normalizedName) && validXlinkNamespace) {
+      continue;
+    }
+    const attributeLocation = findAttributeLocation(svg, name);
+    diagnostics.push({
+      code: "PPTV-DIAGRAM-ROOT-ATTRIBUTES",
+      severity: "error",
+      message: `Standalone PPTV SVG root attribute "${name}" is outside the strict semantic profile.`,
+      ...(attributeLocation === undefined
+        ? rootRange === undefined
+          ? {}
+          : { range: rootRange }
+        : {
+            range: mapper.range(
+              sourceOffset + attributeLocation.startOffset,
+              sourceOffset + attributeLocation.endOffset,
+            ),
+          }),
+    });
+  }
+}
+
+function parseDiagramViewBox(
+  value: string | undefined,
+): [number, number, number, number] | undefined {
+  if (value === undefined) return undefined;
+  const trimmed = value.trim();
+  if (
+    trimmed === "" ||
+    /^\s*,/u.test(value) ||
+    /,\s*$/u.test(value) ||
+    /,\s*,/u.test(value)
+  ) {
+    return undefined;
+  }
+  const tokens = trimmed.split(/[\s,]+/u);
+  if (
+    tokens.length !== 4 ||
+    tokens.some((token) => !SVG_NUMBER_PATTERN.test(token))
+  ) {
+    return undefined;
+  }
+  const values = tokens.map(Number);
+  if (
+    values.some((entry) => !Number.isFinite(entry)) ||
+    (values[2] ?? 0) <= 0 ||
+    (values[3] ?? 0) <= 0
+  ) {
+    return undefined;
+  }
+  return [values[0] ?? 0, values[1] ?? 0, values[2] ?? 0, values[3] ?? 0];
 }
 
 function identifySourceKind(
@@ -1205,7 +1374,7 @@ export function hasAttribute(element: ElementNode, name: string): boolean {
 function qualifiedAttributeName(
   attribute: ElementNode["attrs"][number],
 ): string {
-  return attribute.prefix == null
+  return attribute.prefix == null || attribute.prefix === ""
     ? attribute.name
     : `${attribute.prefix}:${attribute.name}`;
 }
