@@ -9,6 +9,8 @@ node_modules/
 dist/
 coverage/
 *.tsbuildinfo
+packages/pptv/playwright-report/
+packages/pptv/test-results/
 
 # OS cruft
 .DS_Store

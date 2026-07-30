@@ -39,6 +39,7 @@
       "import": "./dist/ops/index.js"
     },
     "./assets/pptv-browser-0.1.script.html": "./assets/pptv-browser-0.1.script.html",
+    "./assets/pptv-browser-kernel-0.1.iife.js": "./assets/pptv-browser-kernel-0.1.iife.js",
     "./schemas/manifest": "./dist/schemas/pptv-manifest-0.1.schema.json",
     "./schemas/patch": "./dist/schemas/pptv-patch-0.1.schema.json"
   },
@@ -48,11 +49,15 @@
     "README.md"
   ],
   "scripts": {
-    "build": "node scripts/prepare-dist.mjs && tsc -p tsconfig.build.json && node scripts/copy-schemas.mjs",
+    "browser:build": "node scripts/build-browser-kernel.mjs",
+    "browser:check": "node scripts/build-browser-kernel.mjs --check",
+    "build": "node scripts/prepare-dist.mjs && pnpm browser:check && tsc -p tsconfig.build.json && node scripts/copy-schemas.mjs",
     "prepack": "pnpm build",
     "pack:check": "npm pack --dry-run",
-    "typecheck": "tsc -p tsconfig.json --noEmit",
-    "test": "vitest run"
+    "typecheck": "tsc -p tsconfig.json --noEmit && tsc -p tsconfig.playwright.json",
+    "test": "vitest run",
+    "test:browser": "playwright test --project=chromium",
+    "test:browser:all": "playwright test"
   },
   "dependencies": {
     "fontkit": "2.0.4",

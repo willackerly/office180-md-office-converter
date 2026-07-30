@@ -1,0 +1,40 @@
+// Verification: CONTRACT:C4-PPTV-SOURCE.1.1
+// Verification: CONTRACT:C6-PPTV-RESOLVED.1.1
+// Verification: CONTRACT:C8-PPTV-TEXT-FIT.1.1
+
+import { defineConfig, devices } from "@playwright/test";
+
+const port = 4178;
+
+export default defineConfig({
+  testDir: "./e2e",
+  fullyParallel: false,
+  forbidOnly: true,
+  retries: 0,
+  workers: 1,
+  reporter: "line",
+  use: {
+    baseURL: `http://127.0.0.1:${port}`,
+    trace: "retain-on-failure",
+  },
+  webServer: {
+    command: "node scripts/serve-browser-conformance.mjs",
+    url: `http://127.0.0.1:${port}/health`,
+    reuseExistingServer: false,
+    timeout: 30_000,
+  },
+  projects: [
+    {
+      name: "chromium",
+      use: { ...devices["Desktop Chrome"] },
+    },
+    {
+      name: "firefox",
+      use: { ...devices["Desktop Firefox"] },
+    },
+    {
+      name: "webkit",
+      use: { ...devices["Desktop Safari"] },
+    },
+  ],
+});
