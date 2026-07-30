@@ -16,3 +16,20 @@ export {
   type EditorSessionState,
   type EditorSnapshot,
 } from "./session.js";
+export {
+  inspectPptvConformance,
+  type PptvBrowserConformanceResult,
+  type PptvBrowserJson,
+} from "./runtime.js";
+export {
+  browserEnvironmentFromUserAgent,
+  browserFontAlias,
+  preparePptvBrowserTextMeasurer,
+  type PreparePptvBrowserTextMeasurerOptions,
+  type PptvBrowserEnvironmentEvidence,
+  type PptvBrowserFontSource,
+  type PptvBrowserGlyphCoverage,
+  type PptvBrowserLoadedFontEvidence,
+  type PptvBrowserTextMeasureRequest,
+  type PptvPreparedBrowserTextMeasurer,
+} from "./text-measurer.js";
