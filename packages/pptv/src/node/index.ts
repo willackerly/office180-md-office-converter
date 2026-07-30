@@ -7,7 +7,11 @@
  * CONTRACT:C8-PPTV-TEXT-FIT.1.1
  */
 
-export { createEditorPack, type EditorPackResult } from "./editor-pack.js";
+export {
+  createEditorPack,
+  type EditorPackOptions,
+  type EditorPackResult,
+} from "./editor-pack.js";
 export {
   createFontkitTextMeasurer,
   parseFontMap,

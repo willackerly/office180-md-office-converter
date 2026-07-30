@@ -49,9 +49,11 @@
     "README.md"
   ],
   "scripts": {
-    "browser:build": "node scripts/build-browser-kernel.mjs",
-    "browser:check": "node scripts/build-browser-kernel.mjs --check",
+    "browser:build": "node scripts/build-browser-kernel.mjs && pnpm editor:build",
+    "browser:check": "node scripts/build-browser-kernel.mjs --check && pnpm editor:check",
     "build": "node scripts/prepare-dist.mjs && pnpm browser:check && tsc -p tsconfig.build.json && node scripts/copy-schemas.mjs",
+    "editor:build": "node scripts/build-editor-app.mjs",
+    "editor:check": "node scripts/build-editor-app.mjs --check",
     "prepack": "pnpm build",
     "pack:check": "npm pack --dry-run",
     "typecheck": "tsc -p tsconfig.json --noEmit && tsc -p tsconfig.playwright.json",

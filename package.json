@@ -6,6 +6,8 @@
     "build": "pnpm --filter @office180/pptv build",
     "browser:build": "pnpm --filter @office180/pptv browser:build",
     "browser:check": "pnpm --filter @office180/pptv browser:check",
+    "editor:build": "pnpm --filter @office180/pptv editor:build",
+    "editor:check": "pnpm --filter @office180/pptv editor:check",
     "pack:check": "pnpm --filter @office180/pptv pack:check",
     "format": "prettier --write \"packages/pptv/src/**/*.ts\" \"packages/pptv/e2e/**/*.ts\" \"packages/pptv/scripts/*.mjs\" \"packages/pptv/*.ts\" \"packages/pptv/*.json\" \"packages/pptv/test-fixtures/**/*.json\" package.json pnpm-workspace.yaml tsconfig.base.json \"schemas/*.json\"",
     "format:check": "prettier --check \"packages/pptv/src/**/*.ts\" \"packages/pptv/e2e/**/*.ts\" \"packages/pptv/scripts/*.mjs\" \"packages/pptv/*.ts\" \"packages/pptv/*.json\" \"packages/pptv/test-fixtures/**/*.json\" package.json pnpm-workspace.yaml tsconfig.base.json \"schemas/*.json\"",
