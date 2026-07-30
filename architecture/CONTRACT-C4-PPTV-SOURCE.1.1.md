@@ -116,7 +116,7 @@ distinct semantic type.
 | Source intent | Semantic nodes retain their original attributes, permitted classes, hierarchy, export intent, and safe replacement ranges. Standalone diagrams reject classes instead of retaining them as an alternate styling authority. |
 | Unsupported constructs | Unsupported native SVG and forbidden executable behavior produce diagnostics; there is no implicit native-to-raster fallback. |
 | Initial conformance scope | Contract 1.1 governs PPTV source format `0.1` and semantically loads either one self-contained `.pptv.html` deck or one self-contained `.pptv.svg` diagram. External-manifest inputs remain recognized and inventoried only. |
-| Snapshot versus output | The Map-rich deck or diagram/index is an immutable, hash-bound in-process snapshot. Versioned CLI/MCP projections use JSON-safe arrays and records and preserve the artifact-kind distinction. |
+| Snapshot versus output | The Map-rich deck or diagram/index is an immutable, hash-bound in-process snapshot. A deck slide index retains both its enclosing template range and exact root-SVG/open-tag/attribute ranges so C6 can hydrate a new standalone artifact without DOM serialization. Versioned CLI/MCP projections use JSON-safe arrays and records and preserve the artifact-kind distinction. |
 
 ## Error Contracts
 

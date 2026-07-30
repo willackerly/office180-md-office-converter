@@ -65,6 +65,15 @@ Resolution returns `pptv-resolved-diagram/0.1` with that exact logical canvas
 and root painter order. It does not invent a slide, active theme, EMU scale, or
 PowerPoint size, and C7 does not accept it.
 
+### Scenario 5 — extract one reusable atom from a deck
+
+An author downloads one HTML-deck slide as `.pptv.svg`. Extraction uses C6 to
+dereference the active deck theme and base-class values into supported local
+declarations, removes deck-only class/layout dependencies, adds the standalone
+root metadata, and reloads the result through the diagram C4/C6 path. Stable
+object IDs, hierarchy, painter order, geometry, and hard lines remain
+semantically equal; no browser style/layout engine participates.
+
 ## Interfaces
 
 Resolution of an already loaded deck is synchronous, pure, and performs no
@@ -108,6 +117,24 @@ function resolvePptvDeck(deck: PptvDeck): PptvResolvedResult;
 function resolvePptvDiagram(
   diagram: PptvDiagram
 ): PptvResolvedDiagramResult;
+
+interface PptvDiagramExtractionResult {
+  sourceText?: string;
+  sourceSha256?: string;
+  diagram?: PptvDiagram;
+  provenance: {
+    method: "pptv-slide-hydration/0.1";
+    sourceDeckSha256: string;
+    sourceSlideId: string;
+    activeTheme: string;
+  };
+  diagnostics: readonly Diagnostic[];
+}
+
+function extractPptvDiagram(
+  deck: PptvDeck,
+  slideId: string
+): Promise<PptvDiagramExtractionResult>;
 ```
 
 `pptv-resolved/0.1` remains the exact deck schema and physical 16:9 profile
@@ -384,6 +411,28 @@ validation.
 - The same deck or diagram produces structurally equal JSON in Node and
   browsers.
 
+### Deck-slide hydration
+
+- Extraction accepts only a complete, error-free C4 deck that resolves fully
+  through C6 and one fully materialized slide ID.
+- It slices the exact indexed root SVG, retains source object markup and stable
+  structure, removes `class` and deck-only root layout state, and writes every
+  emitted object's concrete C6 style as a supported local declaration.
+- It adds or normalizes only the standalone root version and SVG namespace;
+  the authored viewBox remains unchanged.
+- The candidate must reload as `PptvDiagram` and resolve as
+  `pptv-resolved-diagram/0.1` before any source is returned.
+- Extraction is deterministic for the same deck hash, active theme, and slide
+  ID. It performs no browser measurement, reflow, wrapping, font substitution,
+  geometry inference, or hidden filesystem write.
+- Because dereferencing changes lexical bytes, the output is a new exact-source
+  artifact. Result provenance records the source deck hash, slide ID, active
+  theme, and hydration method; it does not claim byte identity with the
+  embedded slide.
+- An opaque asset whose internals still depend on a class or stylesheet fails
+  candidate validation. Extraction never strips an unresolved dependency and
+  silently changes its rendering.
+
 ## Error Contracts
 
 | Error | When | Code |
@@ -407,6 +456,9 @@ validation.
 | Unsupported font | Font family is fallback/generic or weight/style cannot map exactly | `PPTV-PROFILE-FONT` |
 | Missing resource | Raster asset cannot be resolved without fetching | `PPTV-PROFILE-RESOURCE` |
 | Unsupported diagram styling | Diagram contains a class, stylesheet, theme/token state, custom property, or `var()` | `PPTV-PROFILE-DIAGRAM-STYLE` |
+| Invalid extraction base | Deck is partial, invalid, or not fully C6-resolvable | `PPTV-EXTRACT-INVALID-BASE` / `PPTV-EXTRACT-UNRESOLVED` |
+| Missing extraction slide | Requested slide is not fully materialized | `PPTV-EXTRACT-SLIDE` |
+| Invalid hydrated candidate | Dereferenced SVG does not independently pass C4/C6 | `PPTV-EXTRACT-INVALID-CANDIDATE` / `PPTV-EXTRACT-UNRESOLVED-CANDIDATE` |
 
 ## Dependencies
 
@@ -453,6 +505,8 @@ placement/physical-size contract and does not silently broaden C7.
 - `packages/pptv/src/core/styles.ts` — CSS/token parser, cascade, and provenance
 - `packages/pptv/src/core/resolved.ts` — pure geometry/text/object deck/diagram
   projection
+- `packages/pptv/src/core/extract.ts` — deterministic deck-slide
+  hydration/dereference into a standalone atom
 - `packages/pptv/src/core/deck.ts` — standalone semantic diagram input
 - `examples/minimal-deck.pptv.html` — smallest conforming two-slide fixture
 - `examples/minimal-diagram.pptv.svg` — smallest conforming standalone fixture
@@ -479,6 +533,9 @@ placement/physical-size contract and does not silently broaden C7.
   fields
 - [ ] Deck and diagram model schemas cannot be passed through the wrong
   resolver/compiler path
+- [x] Deck slide extraction localizes theme/class values, preserves resolved
+  object semantics, is byte-deterministic, and returns no partial source on
+  failure
 
 ## Retirement / supersession plan
 
