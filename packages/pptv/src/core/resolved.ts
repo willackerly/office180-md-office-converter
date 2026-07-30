@@ -265,7 +265,7 @@ export type PptvResolvedDiagramObject =
 export interface PptvResolvedDiagram {
   readonly schema: "pptv-resolved-diagram/0.1";
   readonly sourceSha256: string;
-  readonly id: string;
+  readonly diagramId: string;
   readonly canvas: {
     readonly viewBox: readonly [number, number, number, number];
   };
@@ -459,7 +459,7 @@ export function resolvePptvDiagram(
   const model: PptvResolvedDiagram = {
     schema: "pptv-resolved-diagram/0.1",
     sourceSha256: diagram.source.sha256,
-    id: diagram.id,
+    diagramId: diagram.id,
     canvas: { viewBox: [...diagram.viewBox] },
     objects: internalObjects.map(toDiagramObject),
   };

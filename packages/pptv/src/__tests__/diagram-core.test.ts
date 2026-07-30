@@ -157,7 +157,7 @@ describe("standalone PPTV diagram core", () => {
     expect(result.model).toMatchObject({
       schema: "pptv-resolved-diagram/0.1",
       sourceSha256: diagram.source.sha256,
-      id: "system-overview",
+      diagramId: "system-overview",
       canvas: { viewBox: [-100, -50, 1200, 800] },
     });
     expect(result.model?.objects.map((object) => object.id)).toEqual([

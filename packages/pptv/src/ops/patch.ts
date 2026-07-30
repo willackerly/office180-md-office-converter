@@ -1,10 +1,10 @@
 /**
  * Hash-bound, all-or-nothing PPTV source patching.
  *
- * CONTRACT:C5-PPTV-PATCH.1.0
+ * CONTRACT:C5-PPTV-PATCH.1.1
  */
 
-import { loadDeck, PptvLoadError } from "../core/deck.js";
+import { loadDeck, loadDiagram, PptvLoadError } from "../core/deck.js";
 import { STABLE_ID_PATTERN } from "../core/manifest.js";
 import { hasErrors } from "../core/source.js";
 import type {
@@ -12,6 +12,7 @@ import type {
   Diagnostic,
   PatchResult,
   PptvDeck,
+  PptvDocument,
   PptvNode,
   PptvOperation,
   PptvPatch,
@@ -32,36 +33,39 @@ interface PatchPlan {
 }
 
 export async function validatePatch(
-  deck: PptvDeck,
+  document: PptvDocument,
   input: unknown,
 ): Promise<Diagnostic[]> {
-  const trusted = await reloadPatchBase(deck);
-  return trusted.deck === undefined
+  const trusted = await reloadPatchBase(document);
+  return trusted.document === undefined
     ? trusted.diagnostics
-    : [...trusted.diagnostics, ...planPatch(trusted.deck, input).diagnostics];
+    : [
+        ...trusted.diagnostics,
+        ...planPatch(trusted.document, input).diagnostics,
+      ];
 }
 
 export async function applyPatch(
-  deck: PptvDeck,
+  document: PptvDocument,
   input: unknown,
 ): Promise<PatchResult> {
-  const trusted = await reloadPatchBase(deck);
-  if (trusted.deck === undefined) {
+  const trusted = await reloadPatchBase(document);
+  if (trusted.document === undefined) {
     return {
       applied: false,
-      originalSha256: deck.source.sha256,
+      originalSha256: document.source.sha256,
       affectedIds: [],
       edits: [],
       diagnostics: trusted.diagnostics,
     };
   }
-  const trustedDeck = trusted.deck;
-  const plan = planPatch(trustedDeck, input);
+  const trustedDocument = trusted.document;
+  const plan = planPatch(trustedDocument, input);
   plan.diagnostics.unshift(...trusted.diagnostics);
   if (plan.patch === undefined || hasErrors(plan.diagnostics)) {
     return {
       applied: false,
-      originalSha256: trustedDeck.source.sha256,
+      originalSha256: trustedDocument.source.sha256,
       affectedIds: [],
       edits: [],
       diagnostics: plan.diagnostics,
@@ -71,7 +75,7 @@ export async function applyPatch(
   const edits = [...plan.edits].sort(
     (left, right) => right.range.charStart - left.range.charStart,
   );
-  let candidateSource = trustedDeck.source.text;
+  let candidateSource = trustedDocument.source.text;
   for (const edit of edits) {
     candidateSource =
       candidateSource.slice(0, edit.range.charStart) +
@@ -80,20 +84,17 @@ export async function applyPatch(
   }
 
   try {
-    const candidateDeck = await loadDeck({
-      kind: "text",
-      text: candidateSource,
-      ...(trustedDeck.source.name === undefined
-        ? {}
-        : { name: trustedDeck.source.name }),
-    });
-    const resultErrors = candidateDeck.diagnostics.filter(
+    const candidateDocument = await reloadCandidate(
+      trustedDocument,
+      candidateSource,
+    );
+    const resultErrors = candidateDocument.diagnostics.filter(
       (diagnostic) =>
         diagnostic.severity === "error" || diagnostic.severity === "fatal",
     );
     if (resultErrors.length > 0) {
       return failedResult(
-        trustedDeck,
+        trustedDocument,
         plan,
         "Candidate source failed PPTV validation; the transaction was not committed.",
         resultErrors,
@@ -102,13 +103,15 @@ export async function applyPatch(
 
     return {
       applied: true,
-      originalSha256: trustedDeck.source.sha256,
+      originalSha256: trustedDocument.source.sha256,
       sourceText: candidateSource,
-      sourceSha256: candidateDeck.source.sha256,
-      deck: candidateDeck,
+      sourceSha256: candidateDocument.source.sha256,
+      ...(candidateDocument.sourceKind === "html"
+        ? { deck: candidateDocument }
+        : { diagram: candidateDocument }),
       affectedIds: plan.affectedIds,
       edits: plan.edits,
-      diagnostics: candidateDeck.diagnostics.filter(
+      diagnostics: candidateDocument.diagnostics.filter(
         (diagnostic) =>
           diagnostic.severity === "info" || diagnostic.severity === "warning",
       ),
@@ -116,7 +119,7 @@ export async function applyPatch(
   } catch (error) {
     const related = error instanceof PptvLoadError ? error.diagnostics : [];
     return failedResult(
-      trustedDeck,
+      trustedDocument,
       plan,
       "Candidate source could not be reloaded; the transaction was not committed.",
       related,
@@ -124,21 +127,21 @@ export async function applyPatch(
   }
 }
 
-function planPatch(deck: PptvDeck, input: unknown): PatchPlan {
+function planPatch(document: PptvDocument, input: unknown): PatchPlan {
   const decoded = decodePatch(input);
   const diagnostics = [...decoded.diagnostics];
   const edits: AppliedSourceEdit[] = [];
   const affectedIds: string[] = [];
   const patch = decoded.patch;
 
-  if (hasErrors(deck.diagnostics)) {
+  if (hasErrors(document.diagnostics)) {
     diagnostics.push({
       code: "PPTV-PATCH-INVALID-BASE",
       severity: "error",
       message: "Patches require a source snapshot with no validation errors.",
     });
   }
-  if (!deck.materialization.complete) {
+  if (document.sourceKind === "html" && !document.materialization.complete) {
     diagnostics.push({
       code: "PPTV-PATCH-INCOMPLETE-SNAPSHOT",
       severity: "error",
@@ -146,18 +149,18 @@ function planPatch(deck: PptvDeck, input: unknown): PatchPlan {
     });
   }
   if (patch === undefined) return { edits, affectedIds, diagnostics };
-  if (patch.baseSha256 !== deck.source.sha256) {
+  if (patch.baseSha256 !== document.source.sha256) {
     diagnostics.push({
       code: "PPTV-PATCH-STALE",
       severity: "error",
-      message: `Patch base ${patch.baseSha256} does not match source ${deck.source.sha256}.`,
+      message: `Patch base ${patch.baseSha256} does not match source ${document.source.sha256}.`,
     });
   }
 
   for (const [operationIndex, operation] of patch.ops.entries()) {
     if (operation.op === "set-text") {
       planSetText(
-        deck,
+        document,
         operation,
         operationIndex,
         edits,
@@ -165,8 +168,14 @@ function planPatch(deck: PptvDeck, input: unknown): PatchPlan {
         diagnostics,
       );
     } else if (operation.op === "set-active-theme") {
+      if (document.sourceKind === "svg") {
+        diagnostics.push(
+          unsupportedDiagramOperation(operationIndex, operation.op),
+        );
+        continue;
+      }
       planSetActiveTheme(
-        deck,
+        document,
         operation,
         operationIndex,
         edits,
@@ -174,8 +183,14 @@ function planPatch(deck: PptvDeck, input: unknown): PatchPlan {
         diagnostics,
       );
     } else {
+      if (document.sourceKind === "svg") {
+        diagnostics.push(
+          unsupportedDiagramOperation(operationIndex, operation.op),
+        );
+        continue;
+      }
       planSetSlideOrder(
-        deck,
+        document,
         operation,
         operationIndex,
         edits,
@@ -214,29 +229,25 @@ function planPatch(deck: PptvDeck, input: unknown): PatchPlan {
   return { patch, edits, affectedIds: [...new Set(affectedIds)], diagnostics };
 }
 
-async function reloadPatchBase(deck: PptvDeck): Promise<{
-  deck?: PptvDeck;
+async function reloadPatchBase(document: PptvDocument): Promise<{
+  document?: PptvDocument;
   diagnostics: Diagnostic[];
 }> {
   try {
-    const reloaded = await loadDeck({
-      kind: "text",
-      text: deck.source.text,
-      ...(deck.source.name === undefined ? {} : { name: deck.source.name }),
-    });
-    if (reloaded.source.sha256 !== deck.source.sha256) {
+    const reloaded = await reloadCandidate(document, document.source.text);
+    if (reloaded.source.sha256 !== document.source.sha256) {
       return {
         diagnostics: [
           {
             code: "PPTV-PATCH-INVALID-BASE",
             severity: "error",
             message:
-              "The supplied deck snapshot hash does not match its retained source text.",
+              "The supplied document snapshot hash does not match its retained source text.",
           },
         ],
       };
     }
-    return { deck: reloaded, diagnostics: [] };
+    return { document: reloaded, diagnostics: [] };
   } catch (error) {
     return {
       diagnostics: [
@@ -244,7 +255,7 @@ async function reloadPatchBase(deck: PptvDeck): Promise<{
           code: "PPTV-PATCH-INVALID-BASE",
           severity: "error",
           message:
-            "The supplied deck source could not be reconstructed as a trusted patch snapshot.",
+            "The supplied document source could not be reconstructed as a trusted patch snapshot.",
           ...(error instanceof PptvLoadError && error.diagnostics.length > 0
             ? {
                 related: error.diagnostics.map((diagnostic) => ({
@@ -261,16 +272,28 @@ async function reloadPatchBase(deck: PptvDeck): Promise<{
   }
 }
 
+function reloadCandidate(
+  source: PptvDocument,
+  text: string,
+): Promise<PptvDocument> {
+  const input = {
+    kind: "text" as const,
+    text,
+    ...(source.source.name === undefined ? {} : { name: source.source.name }),
+  };
+  return source.sourceKind === "html" ? loadDeck(input) : loadDiagram(input);
+}
+
 function planSetText(
-  deck: PptvDeck,
+  document: PptvDocument,
   operation: SetTextOperation,
   operationIndex: number,
   edits: AppliedSourceEdit[],
   affectedIds: string[],
   diagnostics: Diagnostic[],
 ): void {
-  const indexed = deck.index.objects.get(operation.id);
-  const node = findObject(deck, operation.id);
+  const indexed = document.index.objects.get(operation.id);
+  const node = findObject(document, operation.id);
   if (indexed === undefined || node === undefined) {
     diagnostics.push(
       targetDiagnostic(operationIndex, `Unknown object "${operation.id}".`),
@@ -713,9 +736,12 @@ function decodeOperation(
   return undefined;
 }
 
-function findObject(deck: PptvDeck, id: string): PptvNode | undefined {
-  for (const slideId of deck.slideOrder) {
-    const slide = deck.slides.get(slideId);
+function findObject(document: PptvDocument, id: string): PptvNode | undefined {
+  if (document.sourceKind === "svg") {
+    return findNode(document.children, id);
+  }
+  for (const slideId of document.slideOrder) {
+    const slide = document.slides.get(slideId);
     if (slide === undefined) continue;
     const found = findNode(slide.children, id);
     if (found !== undefined) return found;
@@ -736,14 +762,14 @@ function findNode(
 }
 
 function failedResult(
-  deck: PptvDeck,
+  document: PptvDocument,
   plan: PatchPlan,
   message: string,
   related: Diagnostic[],
 ): PatchResult {
   return {
     applied: false,
-    originalSha256: deck.source.sha256,
+    originalSha256: document.source.sha256,
     affectedIds: [],
     edits: [],
     diagnostics: [
@@ -764,6 +790,17 @@ function failedResult(
             }),
       },
     ],
+  };
+}
+
+function unsupportedDiagramOperation(
+  operationIndex: number,
+  operation: "set-active-theme" | "set-slide-order",
+): Diagnostic {
+  return {
+    code: "PPTV-PATCH-UNSUPPORTED",
+    severity: "error",
+    message: `Operation ${operationIndex} uses deck-only op "${operation}" against a standalone diagram.`,
   };
 }
 

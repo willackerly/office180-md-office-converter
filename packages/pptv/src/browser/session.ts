@@ -5,16 +5,18 @@
  * translated to a C5 patch, reloaded through C4, and stored as a complete
  * source/hash snapshot so undo can restore lexical spelling byte-for-byte.
  *
- * CONTRACT:C4-PPTV-SOURCE.1.0
- * CONTRACT:C5-PPTV-PATCH.1.0
+ * CONTRACT:C4-PPTV-SOURCE.1.1
+ * CONTRACT:C5-PPTV-PATCH.1.1
  */
 
-import { loadDeck } from "../core/deck.js";
+import { loadPptvDocument } from "../core/deck.js";
 import { hasErrors } from "../core/source.js";
 import type {
   Diagnostic,
   PatchResult,
   PptvDeck,
+  PptvDiagram,
+  PptvDocument,
   PptvInput,
   PptvNode,
   PptvOperation,
@@ -34,17 +36,31 @@ export interface EditorSessionOptions {
   author?: string;
 }
 
-export interface EditorSnapshot {
+interface EditorSnapshotBase {
   readonly sourceText: string;
   readonly sourceSha256: string;
-  readonly deck: PptvDeck;
 }
 
-export interface EditorSessionState {
+export interface EditorDeckSnapshot extends EditorSnapshotBase {
+  readonly sourceKind: "html";
+  readonly document: PptvDeck;
+  readonly deck: PptvDeck;
+  readonly diagram?: never;
+}
+
+export interface EditorDiagramSnapshot extends EditorSnapshotBase {
+  readonly sourceKind: "svg";
+  readonly document: PptvDiagram;
+  readonly deck?: never;
+  readonly diagram: PptvDiagram;
+}
+
+export type EditorSnapshot = EditorDeckSnapshot | EditorDiagramSnapshot;
+
+interface EditorSessionStateBase {
   readonly sourceText: string;
   readonly sourceSha256: string;
   readonly originalSha256: string;
-  readonly deck: PptvDeck;
   readonly diagnostics: readonly Diagnostic[];
   readonly selectedId?: string;
   readonly dirty: boolean;
@@ -52,6 +68,23 @@ export interface EditorSessionState {
   readonly canUndo: boolean;
   readonly canRedo: boolean;
 }
+
+export interface EditorDeckSessionState extends EditorSessionStateBase {
+  readonly sourceKind: "html";
+  readonly document: PptvDeck;
+  readonly deck: PptvDeck;
+  readonly diagram?: never;
+}
+
+export interface EditorDiagramSessionState extends EditorSessionStateBase {
+  readonly sourceKind: "svg";
+  readonly document: PptvDiagram;
+  readonly deck?: never;
+  readonly diagram: PptvDiagram;
+}
+
+export type EditorSessionState =
+  EditorDeckSessionState | EditorDiagramSessionState;
 
 export class EditorSession {
   readonly originalSha256: string;
@@ -64,20 +97,20 @@ export class EditorSession {
   private selectedId: string | undefined;
   private transactionSequence = 0;
 
-  private constructor(deck: PptvDeck, options: EditorSessionOptions) {
-    this.originalSha256 = deck.source.sha256;
-    this.history = [snapshot(deck)];
+  private constructor(document: PptvDocument, options: EditorSessionOptions) {
+    this.originalSha256 = document.source.sha256;
+    this.history = [snapshot(document)];
     this.historyLimit = normalizeHistoryLimit(options.historyLimit);
     this.author = options.author;
     this.integrityDiagnostics =
       options.expectedSha256 === undefined ||
-      options.expectedSha256 === deck.source.sha256
+      options.expectedSha256 === document.source.sha256
         ? []
         : [
             {
               code: "PPTV-EDITOR-INTEGRITY",
               severity: "error",
-              message: `Embedded source hash ${deck.source.sha256} does not match expected hash ${options.expectedSha256}.`,
+              message: `Embedded source hash ${document.source.sha256} does not match expected hash ${options.expectedSha256}.`,
             },
           ];
   }
@@ -86,20 +119,19 @@ export class EditorSession {
     input: PptvInput,
     options: EditorSessionOptions = {},
   ): Promise<EditorSession> {
-    return new EditorSession(await loadDeck(input), options);
+    return new EditorSession(await loadPptvDocument(input), options);
   }
 
   get state(): EditorSessionState {
     const current = this.current;
     const diagnostics = [
       ...this.integrityDiagnostics,
-      ...current.deck.diagnostics,
+      ...current.document.diagnostics,
     ];
-    return {
+    const common = {
       sourceText: current.sourceText,
       sourceSha256: current.sourceSha256,
       originalSha256: this.originalSha256,
-      deck: current.deck,
       diagnostics,
       ...(this.selectedId === undefined ? {} : { selectedId: this.selectedId }),
       dirty: current.sourceSha256 !== this.originalSha256,
@@ -107,6 +139,19 @@ export class EditorSession {
       canUndo: this.historyIndex > 0,
       canRedo: this.historyIndex < this.history.length - 1,
     };
+    return current.sourceKind === "html"
+      ? {
+          ...common,
+          sourceKind: "html",
+          document: current.document,
+          deck: current.deck,
+        }
+      : {
+          ...common,
+          sourceKind: "svg",
+          document: current.document,
+          diagram: current.diagram,
+        };
   }
 
   select(id?: string): boolean {
@@ -114,7 +159,7 @@ export class EditorSession {
       this.selectedId = undefined;
       return true;
     }
-    if (!hasStableTarget(this.current.deck, id)) return false;
+    if (!hasStableTarget(this.current.document, id)) return false;
     this.selectedId = id;
     return true;
   }
@@ -126,7 +171,7 @@ export class EditorSession {
     const intents = Array.isArray(intent) ? intent : [intent];
     const gateDiagnostics = [
       ...this.integrityDiagnostics,
-      ...current.deck.diagnostics,
+      ...current.document.diagnostics,
     ].filter(
       (diagnostic) =>
         diagnostic.severity === "error" || diagnostic.severity === "fatal",
@@ -141,7 +186,7 @@ export class EditorSession {
     }
 
     const decoded = intents.map((candidate) =>
-      intentToOperation(current.deck, candidate),
+      intentToOperation(current.document, candidate),
     );
     const intentDiagnostics = decoded.flatMap(
       (candidate) => candidate.diagnostics,
@@ -157,7 +202,7 @@ export class EditorSession {
     }
 
     this.transactionSequence += 1;
-    const result = await applyPatch(current.deck, {
+    const result = await applyPatch(current.document, {
       schema: "pptv-patch/0.1",
       baseSha256: current.sourceSha256,
       transactionId: `editor-${this.transactionSequence}`,
@@ -166,17 +211,18 @@ export class EditorSession {
         candidate.operation === undefined ? [] : [candidate.operation],
       ),
     });
-    if (!result.applied || result.deck === undefined) return result;
+    const resultDocument = result.deck ?? result.diagram;
+    if (!result.applied || resultDocument === undefined) return result;
 
     this.history = this.history.slice(0, this.historyIndex + 1);
-    this.history.push(snapshot(result.deck));
+    this.history.push(snapshot(resultDocument));
     if (this.history.length > this.historyLimit) {
       this.history.splice(0, this.history.length - this.historyLimit);
     }
     this.historyIndex = this.history.length - 1;
     if (
       this.selectedId !== undefined &&
-      !hasStableTarget(result.deck, this.selectedId)
+      !hasStableTarget(resultDocument, this.selectedId)
     ) {
       this.selectedId = undefined;
     }
@@ -204,7 +250,7 @@ export class EditorSession {
   private reconcileSelection(): void {
     if (
       this.selectedId !== undefined &&
-      !hasStableTarget(this.current.deck, this.selectedId)
+      !hasStableTarget(this.current.document, this.selectedId)
     ) {
       this.selectedId = undefined;
     }
@@ -217,7 +263,7 @@ interface DecodedIntent {
 }
 
 function intentToOperation(
-  deck: PptvDeck,
+  document: PptvDocument,
   intent: EditorIntent,
 ): DecodedIntent {
   if (intent.kind === "set-active-theme") {
@@ -225,9 +271,9 @@ function intentToOperation(
       operation: {
         op: "set-active-theme",
         theme: intent.theme,
-        ...(deck.activeTheme === undefined
-          ? {}
-          : { oldTheme: deck.activeTheme }),
+        ...(document.sourceKind === "html" && document.activeTheme !== undefined
+          ? { oldTheme: document.activeTheme }
+          : {}),
       },
       diagnostics: [],
     };
@@ -237,13 +283,15 @@ function intentToOperation(
       operation: {
         op: "set-slide-order",
         order: [...intent.order],
-        oldOrder: [...deck.slideOrder],
+        ...(document.sourceKind === "html"
+          ? { oldOrder: [...document.slideOrder] }
+          : {}),
       },
       diagnostics: [],
     };
   }
 
-  const node = findObject(deck, intent.id);
+  const node = findObject(document, intent.id);
   if (node === undefined) {
     return {
       diagnostics: [
@@ -279,12 +327,24 @@ function intentToOperation(
   };
 }
 
-function snapshot(deck: PptvDeck): EditorSnapshot {
-  return Object.freeze({
-    sourceText: deck.source.text,
-    sourceSha256: deck.source.sha256,
-    deck,
-  });
+function snapshot(document: PptvDocument): EditorSnapshot {
+  const common = {
+    sourceText: document.source.text,
+    sourceSha256: document.source.sha256,
+  };
+  return document.sourceKind === "html"
+    ? Object.freeze({
+        ...common,
+        sourceKind: "html" as const,
+        document,
+        deck: document,
+      })
+    : Object.freeze({
+        ...common,
+        sourceKind: "svg" as const,
+        document,
+        diagram: document,
+      });
 }
 
 function normalizeHistoryLimit(value: number | undefined): number {
@@ -295,8 +355,11 @@ function normalizeHistoryLimit(value: number | undefined): number {
   return value;
 }
 
-function findObject(deck: PptvDeck, id: string): PptvNode | undefined {
-  for (const slide of deck.slides.values()) {
+function findObject(document: PptvDocument, id: string): PptvNode | undefined {
+  if (document.sourceKind === "svg") {
+    return findNode(document.children, id);
+  }
+  for (const slide of document.slides.values()) {
     const found = findNode(slide.children, id);
     if (found !== undefined) return found;
   }
@@ -315,12 +378,15 @@ function findNode(
   return undefined;
 }
 
-function hasStableTarget(deck: PptvDeck, id: string): boolean {
+function hasStableTarget(document: PptvDocument, id: string): boolean {
+  if (document.sourceKind === "svg") {
+    return document.id === id || document.index.objects.has(id);
+  }
   return (
-    deck.slides.has(id) ||
-    deck.themes.has(id) ||
-    deck.libraries.has(id) ||
-    deck.index.objects.has(id)
+    document.slides.has(id) ||
+    document.themes.has(id) ||
+    document.libraries.has(id) ||
+    document.index.objects.has(id)
   );
 }
 
