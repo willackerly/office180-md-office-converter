@@ -151,10 +151,12 @@ same-kind base instead of trusting caller-mutated indexes.
 ### 4.3 Node host and CLI
 
 The host reads exact bytes and writes only to an explicit destination through a
-temporary peer, fsync, and atomic rename. The CLI exposes `outline`, `validate`,
-`resolve`, `editor-pack`, `pptx-canary`, `text-fit`, `text`, `show`, `list`,
-and `patch`. `editor-pack` and `pptx-canary` require an explicit `--output`;
-`editor-pack` optionally accepts an explicit font map and near-limit threshold
+temporary peer, fsync, and atomic rename or exclusive no-overwrite publication.
+The CLI exposes `outline`, `validate`, `resolve`, `extract`, `editor-pack`,
+`pptx-canary`, `text-fit`, `text`, `show`, `list`, and `patch`. `extract`,
+`editor-pack`, and `pptx-canary` require an explicit `--output`; extraction
+additionally refuses overwrite. `editor-pack` optionally accepts an explicit
+font map and near-limit threshold
 for exact/browser C8 evidence; `text-fit` requires an explicit font map; and
 `patch` requires exactly one of `--check` or `--output`. C7 remains HTML-deck
 only even when a standalone diagram happens to use a 16:9 viewBox.
@@ -454,6 +456,7 @@ Implemented 0.1:
 pptv outline <file> [--format text|json]
 pptv validate <file> [--format text|json]
 pptv resolve <file> [--format text|json]
+pptv extract <file> --slide ID --output PATH [--format text|json]
 pptv editor-pack <file> --output PATH [--font-map PATH] [--near-limit N]
                  [--format text|json]
 pptv pptx-canary <file> --output PATH [--format text|json]
@@ -468,8 +471,10 @@ pptv patch <file> <patch.json> (--check | --output PATH)
 
 The read commands, direct-text patch, text-fit, and editor-pack accept either a
 self-contained `.pptv.html` deck or first-class `.pptv.svg` diagram. Deck-only
-flags and operations fail for diagrams. `pptx-canary` accepts HTML decks only;
-neither the CLI nor editor wraps a diagram into a synthetic slide.
+flags and operations fail for diagrams. `extract` hydrates one HTML-deck slide
+into a validated standalone atom and refuses overwrite; `pptx-canary` also
+accepts HTML decks only. Neither the CLI nor editor wraps a diagram into a
+synthetic slide.
 
 Roadmap:
 
@@ -785,8 +790,8 @@ acceptance-gate authority. This section is only the architecture summary.
   semantic loading for self-contained HTML decks and SVG diagrams, distinct
   JSON-safe projections and stable-ID queries, exact preserve writes for
   direct text in either kind plus deck-only active theme/slide order, and the
-  `outline`, `validate`, `resolve`, `editor-pack`, `pptx-canary`, `text-fit`,
-  `text`, `show`, `list`, and `patch` CLI.
+  `outline`, `validate`, `resolve`, `extract`, `editor-pack`, `pptx-canary`,
+  `text-fit`, `text`, `show`, `list`, and `patch` CLI.
 - **Remaining:** rich-text and token edits, external dependencies,
   geometry/structural operations, and canonical serialization.
 
@@ -821,8 +826,8 @@ canary without claiming a general converter.
   no-wrap/no-autofit text; stable PowerPoint object names; source/compiler
   provenance; a strict blank master/layout/theme graph; ISO/ECMA validation; and
   OpenDocKit reopen.
-- **Native smoke:** the minimal fixture opens read/write in PowerPoint 16.111.2
-  without repair and exports a coherent two-page 16:9 PDF.
+- **Native smoke:** the minimal fixture opens in PowerPoint 16.111.2 without
+  repair and exports a coherent two-page 16:9 PDF.
 - **Remaining:** a versioned source map, expanded native fixture, quantitative
   render comparison, and PPTX save/reopen. AppleScript Save As on the current
   install produces zero-byte output even for a known-good control.

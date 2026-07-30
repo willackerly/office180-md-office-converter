@@ -25,16 +25,17 @@ operational workflow; the applicable contracts remain behavioral authority.
 ### Project Context
 - **Project type:** dual-language source-conversion toolkit: two flat Python
   DOCX CLIs plus one pnpm/TypeScript PPTV package and CLI
-- **PPTV boundary:** C4/C5 verify the self-contained HTML source/read/patch
-  kernel. The exact-source browser session, trusted read-only wrapper, literal
-  semantic viewport, and C6 compiler-grade CSS/geometry/text resolver are
-  implemented. C6 retains parity/fixture gates. The narrow C7 deterministic
-  fresh-PPTX compiler and CLI are implemented and pass schema, OpenDocKit
-  reopen, and native PowerPoint open/render smoke; quantitative comparison and
-  PPTX save/reopen remain gates. C8 exact-font, anchor-aware text-fit preflight
-  is implemented; browser/native calibration remains. Writable bundled
-  controls, broader compilation, and reconciliation remain roadmap; use
-  `PPTV-IMPLEMENTATION-PLAN.md` for the agreed delivery sequence.
+- **PPTV boundary:** C4/C5 verify standalone SVG diagram atoms and
+  self-contained HTML decks through one exact-source read/patch kernel. C6 is
+  verified for arbitrary logical diagram canvases, exact-16:9 deck resolution,
+  slide hydration, and normalized Node/browser parity. The trusted wrapper is
+  writable through the same C5 session and exports only clean source. The
+  narrow C7 fresh-PPTX compiler remains deck-only and passes schema,
+  OpenDocKit reopen, and native PowerPoint open/render smoke; quantitative
+  comparison and PPTX save/reopen remain gates. C8 exact-font, anchor-aware
+  preflight has checked worked-deck and browser evidence; native PowerPoint
+  text calibration remains. Broader compilation and reconciliation stay on
+  the roadmap.
 - **Team size:** Solo (Will Ackerly)
 - **Rebar tier:** 3 (Enforced) — the `v3.0.0-beta` SessionStart, generated
   registry, Steward, contract/document gates, ground truth, and compliance
@@ -57,11 +58,11 @@ Eight behavioral contracts live in `architecture/CONTRACT-*.md`:
 | `CONTRACT:C1-THEME-SCHEMA.1.0` | Theme JSON keys, deep-merge semantics, template resolution order |
 | `CONTRACT:C2-PROVENANCE.1.0` | DOCX core-properties provenance stamp fields |
 | `CONTRACT:C3-ROUNDTRIP.1.0` | Canonical-MD round-trip guarantee (`docx2md`'s style→construct inversion) |
-| `CONTRACT:C4-PPTV-SOURCE.1.0` | Exact-source PPTV scan, manifest, identity/order, semantic read model |
-| `CONTRACT:C5-PPTV-PATCH.1.0` | Hash-bound atomic PPTV semantic patch transactions |
-| `CONTRACT:C6-PPTV-RESOLVED.1.0` | Fixed-canvas compiler-grade style, geometry, group, and hard-line projection |
+| `CONTRACT:C4-PPTV-SOURCE.1.1` | Exact-source PPTV scan, manifest, identity/order, semantic read model |
+| `CONTRACT:C5-PPTV-PATCH.1.1` | Hash-bound atomic PPTV semantic patch transactions |
+| `CONTRACT:C6-PPTV-RESOLVED.1.1` | Fixed-canvas compiler-grade style, geometry, group, and hard-line projection |
 | `CONTRACT:C7-PPTX-CANARY.1.1` | Deterministic primitive-only fresh-PPTX canary and strict OPC graph |
-| `CONTRACT:C8-PPTV-TEXT-FIT.1.0` | Pure anchor-aware text-fit evidence and explicit exact-font adapter |
+| `CONTRACT:C8-PPTV-TEXT-FIT.1.1` | Pure anchor-aware text-fit evidence and explicit exact-font adapter |
 
 ### The Four Contract Principles
 1. **Don't implement without a contract** — new schema-level surfaces,
@@ -126,7 +127,7 @@ for every C7 compiler change.
 |------|------|-------|-------------|
 | **T0** | Format/type | seconds | `pnpm format:check` and `pnpm typecheck` |
 | **T1** | Targeted | seconds | `pnpm test:ts` or `.venv/bin/python tests/test_roundtrip.py`; exercise the affected CLI |
-| **T2** | Full repository | seconds | `pnpm test`, `pnpm build`, and all `scripts/check-*.sh` |
+| **T2** | Full repository | seconds | `pnpm test`, `pnpm build`, `pnpm test:browser`, and all `scripts/check-*.sh` |
 | **T3** | Office/render fidelity | manual/slow | Generated PPTX reopen, render comparison, and native PowerPoint validation |
 
 Run `pnpm pack:check` when package metadata, exports, the CLI entry point, or
@@ -142,6 +143,7 @@ scripts/check-compliance.sh
 pnpm format:check
 pnpm typecheck
 pnpm test
+pnpm test:browser
 pnpm build
 ```
 
@@ -223,17 +225,21 @@ pnpm build
   (`**CUI//TEST**` in `tests/fixtures/kitchen-sink.md`). Never introduce a
   real classification or confidentiality marking string into this repo —
   it's public.
-- PPTV exact declarative source is persistent authority. Its `Map`-rich
-  semantic deck is an immutable, source-hash-bound interpretation; CLI outputs
-  are versioned JSON-safe projections.
+- PPTV exact declarative source is persistent authority. A standalone SVG
+  loads as `PptvDiagram`; HTML loads as `PptvDeck`. Both are immutable,
+  source-hash-bound interpretations and CLI outputs preserve that distinction.
 - Manifest order is slide order, SVG DOM sibling order is painter order, and
   stable IDs are identity. Do not add competing array-index, z-index, browser
   node, or PowerPoint numeric-ID authorities.
-- Semantic loading/editing supports self-contained `.pptv.html` only. Do not
-  describe standalone SVG, external manifests, C6 parity as verified,
-  geometry/rich-text edits, a writable bundled editor, general PPTX
-  conversion, browser/native text-fit parity, or native/render fidelity as
+- Standalone `.pptv.svg` is the default diagram atom; `.pptv.html` is the deck
+  aggregation and only current C7 input. Do not synthesize a deck/slide/theme
+  for a diagram, infer physical size from its arbitrary logical viewBox, or
+  describe external manifests, geometry/rich-text edits, general PPTX
+  conversion, native text calibration, or native/render fidelity as
   implemented.
+- A successful slide extraction is hydration, not a blind byte slice: localize
+  supported resolved style, retain identity/hierarchy/order/hard lines, and
+  independently reload/resolve the result before publishing any SVG bytes.
 - Never execute embedded viewer/editor JavaScript to discover meaning. Treat
   comments, visible content, metadata, and runtime strings as untrusted input.
 
@@ -243,8 +249,9 @@ pnpm build
   filesystem/wrapper behavior belongs in `node`/CLI. Keep core and ops
   independent from OpenDocKit, browser globals, and filesystem APIs.
 - C8 core accepts an injected measurer. Exact font-file loading, hashing, and
-  Fontkit shaping belong in the Node adapter; never add system discovery or
-  silent substitution to the portable preflight.
+  Fontkit shaping belong in the Node adapter; browser evidence uses explicit
+  bytes plus captured engine/font identity. Never add system discovery,
+  downgrade a worse status, or silently substitute.
 - Use source-range replacements for C5 edits and reload the complete candidate
   before success. Do not silently normalize or rewrite the whole source.
 - Don't add a third-party dependency without updating `README.md`,
@@ -290,7 +297,7 @@ collaboration target; it is not a runtime dependency.
 - Both test suites stay at 0 failing and 0 skipped
 - `scripts/check-compliance.sh` and `scripts/check-ground-truth.sh` pass
 - TypeScript format/type/build gates pass
-- Documentation distinguishes verified C4/C5 behavior, in-progress C6/C7/C8
+- Documentation distinguishes verified C4/C5/C6 behavior, in-progress C7/C8
   work, native-validation evidence, and the remaining PPTV roadmap
 
 ---

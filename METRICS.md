@@ -14,9 +14,9 @@ source files, tests, contracts, schemas, or themes change.
 python_source_files = 2
 test_files = 1
 test_functions = 7
-typescript_source_files = 22
-typescript_test_files = 14
-typescript_test_cases = 121
+typescript_source_files = 27
+typescript_test_files = 24
+typescript_test_cases = 174
 contracts = 8
 published_schemas = 2
 shipped_themes = 3
@@ -39,32 +39,34 @@ shipped_themes = 3
 - `md2docx.py` — 404 lines.
 - `docx2md.py` — 267 lines.
 - `tests/test_roundtrip.py` — 278 lines.
-- `packages/pptv/src/` — 22 non-test TypeScript modules / 12,032 lines across
+- `packages/pptv/src/` — 27 non-test TypeScript modules / 16,409 lines across
   the portable source/resolved/text-fit kernel, operations, browser session,
-  Node editor/font/compiler boundary, and CLI.
-- `packages/pptv/src/__tests__/` — 14 Vitest files / 4,996 lines (excluding the
+  extraction/editor runtime, Node font/compiler/filesystem boundary, and CLI.
+- `packages/pptv/src/__tests__/` — 24 Vitest files / 7,305 lines (excluding the
   shared helper).
 
 ## Testing Status
 
 - **Python:** 7 passing standalone tests covering theme resolution, provenance,
   forward/reverse conversion, link demotion, and the `--no-footer` regression.
-- **TypeScript:** 169 passing runtime Vitest cases from 121 direct
+- **TypeScript:** 222 passing runtime Vitest cases from 174 direct
   `it()`/`test()` declarations (data-driven cases expand at runtime), covering
   exact UTF-8 source handling, BOM/non-BMP coordinates, non-executing security,
-  strict container/manifest validation, hierarchy/order, JSON-safe projections,
-  atomic preserve-mode operations, exact-source browser sessions/editor packs,
+  strict HTML/XML/container/manifest validation, diagram/deck distinction,
+  hierarchy/order, JSON-safe projections, atomic preserve-mode operations,
+  deterministic slide hydration, exact-source browser sessions/editor packs,
   C6 style/geometry/text resolution, C7 OPC/ZIP/OOXML mappings and failures, C8
-  anchor/measurement/font-map/CLI behavior, and CLI atomic writes.
+  anchor/measurement/font-map/CLI behavior, and race-safe CLI atomic writes.
 - **Repo-scoped authoring skill:** structural validation passes; its bundled
   starter is locked byte-for-byte to the canonical minimal deck by Vitest.
 - **Browser conformance:** the checked ES2022 IIFE is 655,826 bytes with
   SHA-256
   `57a62807006837c8e59d73f69e93f072ae94e8f67cfd8ab587e3fc35e6036533`.
-  Four real-HTTP C4/C6/C8 tests pass in each captured Chromium, Firefox, and
-  WebKit project (12 of 12), including normalized Node/browser equality for
-  the minimal deck, arbitrary-viewBox standalone kitchen sink, and invalid
-  profile.
+  Four real-HTTP C4/C6/C8 tests plus three writable-editor tests pass in each
+  captured Chromium, Firefox, and WebKit project (21 of 21), including
+  normalized Node/browser equality for the minimal deck, arbitrary-viewBox
+  standalone kitchen sink, invalid profile, transactional editing, clean
+  source/slide downloads, undo/redo, and tamper-safe read-only fallback.
 - **Writable trusted editor:** its current generated IIFE is 666,636 bytes with
   SHA-256
   `91caa37d88a5b90f9c15497437df33a121cfcabcd60c7827d31067d539529c3b`;
@@ -156,8 +158,8 @@ contracts retain native fidelity promotion gates.
   it is test/calibration data, not a runtime or source-font default.
 - **OpenDocKit:** no runtime dependency. Its sibling checkout is an independent
   C7 validation oracle plus optional future adapter/upstream-contribution target.
-- **Security vulnerabilities:** `pnpm audit` reported no known runtime or
-  development dependency vulnerabilities on 2026-07-29; no
+- **Security vulnerabilities:** `pnpm audit --audit-level high` reported no
+  known runtime or development dependency vulnerabilities on 2026-07-30; no
   automated dependency scan is configured yet.
 
 ## Quality Metrics

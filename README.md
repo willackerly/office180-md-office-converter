@@ -7,7 +7,8 @@
 | Track | Canonical source | Office artifact | Status |
 |---|---|---|---|
 | Markdown / Word | `.md` | `.docx` | Implemented and tested |
-| PPTV / PowerPoint | self-contained `.pptv.html` | `.pptx` | TypeScript vertical slice, trusted editor foundation, and strict PPTX canary implemented; standalone SVG is inventory-only |
+| PPTV diagrams | standalone `.pptv.svg` atom | SVG / deck input | First-class semantic load, query, text edit, resolve, text-fit, trusted editor, and clean download |
+| PPTV / PowerPoint | `.pptv.html` deck aggregation | `.pptx` | Writable trusted deck editor, slide-to-atom extraction, and strict native-shape PPTX canary implemented |
 
 ## What ships
 
@@ -21,13 +22,15 @@ one TypeScript package/CLI—with no server:
   inverting the same style choices, so editing the generated document in
   Word (or Google Docs) and converting it back doesn't silently lose or
   invent content.
-- **`@office180/pptv@0.1.0-alpha.2`** — a TypeScript source kernel and CLI for
-  non-executing `.pptv.html` scan/validation, manifest and semantic projections,
-  stable-ID queries, atomic source-preserving text/theme/slide-order patches,
-  exact-source editor sessions, deterministic trusted editor wrappers, and
-  strict compiler-grade CSS/geometry/text resolution. Its Node boundary also
-  emits a deterministic, fail-closed native-shape PPTX canary and exact-font,
-  non-mutating text-fit evidence.
+- **`@office180/pptv`** — a TypeScript source kernel and CLI whose default
+  visual atom is a strict, standalone `.pptv.svg` diagram. It also loads
+  `.pptv.html` as a whole-deck aggregation, preserves stable IDs and exact
+  source bytes, applies atomic text edits to either form, applies theme/order
+  edits to decks, resolves compiler-grade geometry/style/hard-line text, warns
+  about exact-font overruns, hydrates any resolvable deck slide back into an
+  independent SVG atom, and generates a writable trusted editor. Its Node
+  boundary emits the narrow fail-closed native-shape PPTX canary for exact
+  16:9 HTML decks.
 
 ## PowerPoint design track
 
@@ -35,9 +38,9 @@ The same mapping and provenance ideas can support editable presentations. Start
 with the **[PPTV Design Index](PPTV-DESIGN-INDEX.md)**, then follow the focused
 proposals:
 
-- **[PPTV PowerPoint Vector Profile](PPTV-PROFILE.md)** defines a constrained
-  `.pptv.svg` source with stable identities, native-versus-asset intent,
-  DOM-order z-order, source maps, and reverse patches.
+- **[PPTV PowerPoint Vector Profile](PPTV-PROFILE.md)** defines the constrained
+  `.pptv.svg` atom with stable identities, native-versus-asset intent,
+  DOM-order z-order, explicit no-reflow text, and exact source maps.
 - **[PPTV HTML Container](PPTV-HTML-CONTAINER.md)** proposes a portable
   manifest-first `.pptv.html` deck with inert slide templates, named themes,
   reusable definitions, and one fixed non-authoritative browser runtime.
@@ -47,41 +50,46 @@ proposals:
 - **[PPTV Tooling and Editor Architecture](PPTV-TOOLING-AND-EDITOR.md)** defines
   a TypeScript-first toolchain, native SVG editor, optional
   `.editable.pptv.html`, and selective OpenDocKit reuse.
-- **[PPTV Implementation Plan](PPTV-IMPLEMENTATION-PLAN.md)** fixes the initial
-  16:9/no-reflow profile direction and sequences the trusted browser editor,
-  early PPTX canary, full compiler, OpenDocKit collaboration, and reconciliation
-  with explicit acceptance gates.
+- **[PPTV Implementation Plan](PPTV-IMPLEMENTATION-PLAN.md)** separates
+  arbitrary-aspect standalone diagrams from the initial exact-16:9 PowerPoint
+  deck profile and sequences the remaining compiler, OpenDocKit, and
+  reconciliation gates.
 - **[SVG to Editable PowerPoint playbook](SVG-TO-EDITABLE-PPTX.md)** documents
   the reconstruction, stable-object-ID, round-trip diff, render QA, and native
   PowerPoint validation workflow that motivated the profile.
-- **[`examples/minimal-deck.pptv.html`](examples/minimal-deck.pptv.html)** is a
-  browser-openable two-slide specimen that also compiles through the current C7
-  canary subset.
+- **[`examples/minimal-diagram.pptv.svg`](examples/minimal-diagram.pptv.svg)**
+  is the smallest first-class diagram atom; the two-slide
+  **[`examples/minimal-deck.pptv.html`](examples/minimal-deck.pptv.html)**
+  demonstrates aggregation, theme/order editing, extraction, and the current
+  C7 canary subset.
 
-The C4/C5 source-and-patch kernel now ships with a browser-safe editor session
-and read-only trusted wrapper. The in-progress C6 profile also has an executable
-fail-closed resolver for fixed 16:9 geometry, hard-line text, groups, opaque SVG
-bounds, complete theme tokens, constrained CSS, and provenance. C7 compiles its
-strict primitive subset into a fresh deterministic PPTX; the minimal canary
-artifact passes ISO/ECMA schema validation, independent OpenDocKit reopen, and
-native PowerPoint open/render without repair. Ellipse and translated-group
-mappings currently have structural tests rather than native fixture coverage.
-C8 now adds exact-font, anchor-aware no-reflow text-fit warnings. Browser parity
-fixtures, writable bundled controls, broader compilation, quantitative render
-comparison, text-fit calibration, and native PPTX save/reopen remain open
-gates.
+C4/C5 now govern both first-class standalone diagrams and HTML decks. C6 is a
+verified fail-closed resolver: diagrams keep an arbitrary finite positive
+logical `viewBox`, while deck slides retain the exact `0 0 1600 900` physical
+PowerPoint mapping. A shared deterministic browser kernel matches Node C4/C6
+output across Chromium, Firefox, and WebKit. The trusted wrapper is writable
+through the same hash-bound session, never serializes DOM, exports clean source,
+and can hydrate/download one current deck slide as a standalone atom.
+
+C7 remains intentionally deck-only and compiles its strict primitive subset
+into a fresh deterministic PPTX; the minimal artifact passes ISO/ECMA schema
+validation, independent OpenDocKit reopen, and native PowerPoint open/render
+without repair. C8 provides exact-font, anchor-aware, no-reflow overrun
+evidence in Node and the editor. Checked browser calibration records an
+engine-specific WebKit kerning variance instead of hiding it. Broader
+compilation, quantitative render comparison, native text calibration, and
+native PPTX save/reopen remain open gates.
 
 ### Repo-scoped PPTV authoring skill
 
 Codex discovers the versioned
 [`$pptv-authoring` skill](.agents/skills/pptv-authoring/SKILL.md) from
-`.agents/skills/` in this repository. Use it to create or repair strict
-no-reflow decks, choose stable groups/IDs/text frames, run exact-font overflow
-preflight, and compile the supported canary. Its bundled starter is
-test-locked byte-for-byte to
-[`examples/minimal-deck.pptv.html`](examples/minimal-deck.pptv.html). The skill
-is an operational workflow over the versioned contracts and CLI, not a
-separate specification or published plugin.
+`.agents/skills/` in this repository. It defaults to a standalone diagram for
+one figure and to HTML only when authoring a deck/PPTX deliverable. Use it to
+choose stable groups/IDs/text frames, run exact-font overflow preflight, edit
+or extract atoms, and compile the supported deck canary. Its diagram and deck
+starters are validation-locked fixtures. The skill is an operational workflow
+over the versioned contracts and CLI, not a separate specification.
 
 ---
 
@@ -94,9 +102,11 @@ pnpm install
 ```
 
 `python-docx` is the DOCX runtime dependency. The PPTV package requires Node.js
-20+ and uses `parse5`, `jsonc-parser`, exactly `jszip@3.10.1`, and exact
-`fontkit@2.0.4` for the explicit-font C8 Node adapter. Run the Python scripts
-through the local environment:
+20+ and uses `parse5`, `jsonc-parser`, exact `saxes@6.0.0` for standalone XML
+well-formedness, exactly `jszip@3.10.1`, and exact `fontkit@2.0.4` for the
+explicit-font C8 Node adapter. Deterministic browser/editor bundles use exact
+`esbuild@0.28.1`; conformance uses exact `@playwright/test@1.62.0`. Run the
+Python scripts through the local environment:
 
 ```bash
 .venv/bin/python md2docx.py notes.md
@@ -112,9 +122,17 @@ through the local environment:
 ### PPTV TypeScript tools
 
 ```bash
+pnpm pptv validate examples/minimal-diagram.pptv.svg
+pnpm pptv outline examples/minimal-diagram.pptv.svg
+pnpm pptv resolve examples/minimal-diagram.pptv.svg
+pnpm pptv editor-pack examples/minimal-diagram.pptv.svg \
+  --output minimal-diagram.editable.html
+
 pnpm pptv outline examples/minimal-deck.pptv.html
 pnpm pptv validate examples/minimal-deck.pptv.html
 pnpm pptv resolve examples/minimal-deck.pptv.html
+pnpm pptv extract examples/minimal-deck.pptv.html \
+  --slide architecture --output architecture.pptv.svg
 pnpm pptv editor-pack examples/minimal-deck.pptv.html \
   --output minimal-deck.editable.pptv.html
 pnpm pptv pptx-canary examples/minimal-deck.pptv.html \
@@ -135,15 +153,22 @@ pnpm pptv patch deck.pptv.html change.pptv.patch.json \
   --output deck.updated.pptv.html
 ```
 
-Version 0.1 applies direct-text, active-theme, and slide-order transactions to
-self-contained `.pptv.html`; the browser-safe session uses those same
-transactions for exact undo/redo, while `editor-pack` emits a strict-CSP,
-read-only trusted shell around inert canonical bytes and reconstructs its
-preview only from literal resolved data. Standalone SVG and external manifests
-are recognition-only; CSS token editing, geometry/rich-text editing, writable
-bundled controls, PPTX features beyond the strict C7 subset, quantitative
-render fidelity, browser/native text-fit parity, reconciliation, and native
-PPTX save/reopen remain outside the verified surface. See
+Version 0.1 applies direct-text transactions to diagrams or decks and keeps
+active-theme/slide-order transactions explicitly deck-only. `editor-pack`
+embeds inert exact bytes under strict CSP, verifies the source hash, reconstructs
+only from literal C6 data, and commits through the same C5 session for exact
+undo/redo. It exports current clean source rather than wrapper DOM; supported
+browsers can save through a user-selected file handle with subsequent stale
+disk detection.
+
+An embedded HTML-deck slide may depend on deck CSS/theme context. `extract`
+therefore does not byte-slice blindly: it resolves that context, writes
+concrete local presentation values, removes deck-only authority, reloads and
+resolves the candidate as a standalone diagram, and emits nothing on failure.
+External manifests, CSS token editing, geometry/rich-text editing, direct
+diagram-to-PPTX placement, PPTX features beyond C7, quantitative render
+fidelity, reconciliation, and native PPTX save/reopen remain outside the
+verified surface. See
 [`packages/pptv/README.md`](packages/pptv/README.md).
 
 ### Markdown → DOCX
@@ -281,13 +306,12 @@ themes with an `extends` chain, and the rest of the symmetry track
 
 **PowerPoint roadmap:** `PPTV-DESIGN-INDEX.md` is the entry point for the
 broader SVG/HTML source model, processing API, native editor, PowerPoint
-adapter, reverse-patch semantics, and conformance path. Contracts C4 and C5,
-their schemas, and executable tests define the implemented 0.1 source/read/patch
-subset. C6, C7, and C8 are implemented, in-progress
-resolver/compiler/verification surfaces with explicit parity, calibration,
-fidelity, and native save/reopen gates. The broader writable editor, full
-compiler, and reconciliation surface remains forward design until promoted the
-same way.
+adapter, reverse-patch semantics, and conformance path. Contracts C4, C5, and
+C6 plus their schemas/fixtures define the verified 0.1 diagram/deck
+source/patch/resolution/hydration surface. C7 and C8 remain in-progress
+native compiler/verification surfaces with explicit calibration, fidelity, and
+save/reopen gates. Typed geometry/structure editing, the full compiler, and
+reconciliation remain forward design until promoted the same way.
 
 ---
 

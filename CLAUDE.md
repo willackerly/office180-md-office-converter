@@ -48,6 +48,9 @@ with the implementation.
 ## PPTV authority and trust boundary
 
 - Exact declarative source bytes are persistent authority.
+- Standalone `.pptv.svg` is the default diagram atom and loads as
+  `PptvDiagram`; `.pptv.html` is the deck aggregation and loads as `PptvDeck`.
+  Never synthesize one artifact kind from the other.
 - Stable IDs are identity, manifest order is slide order, and SVG sibling
   order is painter order.
 - Do not execute embedded source runtimes to infer meaning.
@@ -55,6 +58,12 @@ with the implementation.
   generated editor wrapper as competing authority.
 - Text is explicit-size, explicit-line, no-wrap, and no-autofit. Text-fit may
   warn but never silently repair.
+- A deck slide becomes an independent atom only through deterministic
+  hydration: resolve/localize supported deck style, remove deck-only authority,
+  then reload and resolve the SVG candidate before emitting it.
+- Browser text evidence requires explicit font bytes plus engine/font identity;
+  combine it conservatively with matching Node evidence and never hide
+  engine-specific kerning variance.
 - Unsupported behavior fails closed; do not approximate it.
 
 The current source/editor/compiler state and the next gates are summarized in
@@ -87,6 +96,7 @@ scripts/ci-check.sh --strict
 pnpm format:check
 pnpm typecheck
 pnpm test
+pnpm test:browser
 pnpm build
 pnpm pack:check
 ```

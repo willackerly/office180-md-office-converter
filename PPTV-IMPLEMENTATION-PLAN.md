@@ -79,14 +79,14 @@ introducing arbitrary unit/layout behavior.
 The author declares role and export intent; the resolver derives the concrete
 kind from the SVG element.
 
-| Source boundary | Semantic/editor selection boundary | Future PowerPoint intent (not current C7) |
+| Source boundary | Semantic/editor selection boundary | PowerPoint intent / current C7 status |
 |---|---|---|
-| `rect`, `circle`, or `ellipse`; role `shape`, export `native` | Independent native primitive | Native shape |
-| `text`; role `text`, export `native` | Explicit-line text frame | Native text box |
-| `line`; role `connector`, export `native` | Independent straight edge | Native line/connector |
-| `g`; role `group`, export `native` | Addressable children plus one parent scope | Native PowerPoint group |
-| `g`; role `asset`, export `svg` | One atomic vector image; internals are opaque | SVG picture plus PNG fallback |
-| `image`; role `asset`, export `raster` | One atomic raster image | Native picture |
+| `rect`, `circle`, or `ellipse`; role `shape`, export `native` | Independent native primitive | Native shape; implemented in C7 |
+| `text`; role `text`, export `native` | Explicit-line text frame | Native text box; one hard line implemented in C7 |
+| `line`; role `connector`, export `native` | Independent straight edge | Native line/connector; straight form implemented in C7 |
+| `g`; role `group`, export `native` | Addressable children plus one parent scope | Native PowerPoint group; translated subset implemented in C7 |
+| `g`; role `asset`, export `svg` | One atomic vector image; internals are opaque | SVG picture plus PNG fallback; roadmap |
+| `image`; role `asset`, export `raster` | One atomic raster image | Native picture; roadmap |
 
 A visual “box with text” is a native group containing a rectangle and a text
 object. It is not one inferred compound object. A complex illustration is an
