@@ -209,37 +209,50 @@ precomputed codepoint coverage. It hashes the bytes, loads each face through
 `FontFace` under a private SHA-derived family alias, adds it to the document
 font set, awaits `document.fonts.ready`, and measures a hidden SVG text node
 with `getComputedTextLength()`. Each result identifies the font SHA-256 and
-browser engine/version. An unmapped face, unchecked codepoint, known missing
-glyph, unavailable private alias, or invalid browser width is `unverified`;
-fallback glyphs never become exact evidence.
+browser engine/version, actual platform, device-pixel ratio, and user agent.
+An unmapped face, unchecked codepoint, known missing glyph, unavailable private
+alias, or invalid browser width is `unverified`; fallback glyphs never become
+exact evidence.
 
 Checked evidence in
 `packages/pptv/test-fixtures/c8/browser-calibration-evidence.json` uses exact
 `@playwright/test@1.62.0`, exact `esbuild@0.28.1`, Fontkit 2.0.4, and the
-655,826-byte browser-kernel SHA-256
-`57a62807006837c8e59d73f69e93f072ae94e8f67cfd8ab587e3fc35e6036533`,
+656,582-byte browser-kernel SHA-256
+`6e92938113408ffc0cb5ccecedac88a1c9cc1966f25724c533243259c0472661`,
 and the OFL ABeeZee Regular fixture SHA-256
 `2901c8df256648cc2bb2e3afb381cb8d28e65ed3dbe11de20695ae4d5ffdeda9`.
 Six samples cover kerning, spaces, mixed text, near-limit, exact-boundary, and
 overflow behavior. Acceptance is an absolute delta at or below 0.75 SVG units
 or a relative delta at or below 1%.
 
-| Engine capture | Compared oracle | Maximum absolute delta | Maximum relative delta | Result |
-|---|---:|---:|---:|---|
-| Chromium 151.0.7922.34 | Fontkit kerned | 0.013875 | 0.015974% | pass |
-| Firefox 153.0 | Fontkit kerned | 0.021333 | 0.018960% | pass |
-| WebKit 26.5 | Fontkit unkerned | 0.0000071 | 0.0000059% | recorded variance |
+| Engine capture         | Platform / DPR   |                                 Compared oracle | Maximum absolute delta | Maximum relative delta | Result            |
+| ---------------------- | ---------------- | ----------------------------------------------: | ---------------------: | ---------------------: | ----------------- |
+| Chromium 151.0.7922.34 | macOS / 1        |                                  Fontkit kerned |               0.013875 |              0.015974% | pass              |
+| Firefox 153.0          | macOS / 1        |                                  Fontkit kerned |               0.021333 |              0.018960% | pass              |
+| WebKit 26.5            | macOS / 2        |                                Fontkit unkerned |              0.0000071 |             0.0000059% | recorded variance |
+| Chromium 151.0.7922.34 | Linux x86_64 / 1 | Fontkit kerned plus checked pixel-grid envelope |               2.448000 |              1.900041% | recorded variance |
 
 Despite explicit browser kerning declarations, this WebKit capture follows the
 Fontkit `kern=false` oracle; its maximum delta from Fontkit's kerned oracle is
 6.239998 SVG units / 8.054520%. This is retained as engine-specific evidence,
-not rewritten as kerned parity. The missing-glyph sample U+1F9EA remains
-`unverified`, and standalone-diagram integration produces four ordered,
-verified lines under `pptv-diagram-text-fit/0.1` without slide identity.
+not rewritten as kerned parity.
+
+The Linux Chromium capture returns six exact whole-pixel widths. It is accepted
+only for the recorded engine version, platform, and DPR when every width
+exactly matches the checked capture, remains inside the sum of each Fontkit
+shaped glyph advance's distance to its nearest pixel, and preserves every
+non-boundary fit band. This is a separate
+`pass-with-platform-grid-fitting-variance` result, not a wider global
+tolerance. The exact-boundary sample may conservatively change from boundary
+to overflow; clear, near-limit, and overflow samples may not change band.
+
+The missing-glyph sample U+1F9EA remains `unverified`, and standalone-diagram
+integration produces four ordered, verified lines under
+`pptv-diagram-text-fit/0.1` without slide identity.
 
 The browser evidence file is privacy-safe and shape/inventory locked by
-Vitest. It records browser identities but no local path, username, hostname,
-private source text, or private font bytes.
+Vitest. It records browser identities, actual platform, and DPR but no local
+path, username, hostname, private source text, or private font bytes.
 
 ## Checked worked-deck inventory
 
@@ -303,7 +316,7 @@ C8 remains `in-progress` until every promotion gate is closed:
 - [x] Standalone-diagram ordering, identity, schema, and CLI fixtures pass.
 - [x] The worked TDFLite deck locks its known overrun inventory.
 - [x] Browser advance measurements are compared with the exact-font adapter,
-  including explicit WebKit kerning variance.
+      including explicit WebKit kerning variance.
 - [ ] Representative lines are calibrated against native PowerPoint rendering.
 
 No gate may be promoted by automatically changing an authored line.
@@ -339,9 +352,9 @@ No gate may be promoted by automatically changing an authored line.
 - [x] Strict font-map parsing, exact face metadata, content hash, and shaping
 - [x] CLI JSON/text output and exit codes
 - [x] Standalone diagram evidence uses diagram identity/root DOM order and
-  contains no synthetic slide/deck/physical-canvas state
+      contains no synthetic slide/deck/physical-canvas state
 - [x] Diagram CLI emits `pptv-diagram-text-fit/0.1` with the same exact-font
-  classification and exit semantics
+      classification and exit semantics
 - [x] TDFLite worked-deck regression inventory
 - [x] Browser exact-font calibration evidence in Chromium, Firefox, and WebKit
 - [ ] Native PowerPoint calibration evidence
@@ -356,7 +369,7 @@ No gate may be promoted by automatically changing an authored line.
 
 ## Change History
 
-| Version | Date | Change | Migration |
-|---------|------|--------|-----------|
-| 1.0 | 2026-07-29 | Initial exact-font, anchor-aware, non-mutating deck text-fit preflight | — |
-| 1.1 | 2026-07-30 | Add diagram-specific measurement requests and `pptv-diagram-text-fit/0.1` evidence without synthetic slide or physical-canvas state | Existing deck requests/results are unchanged; diagram callers use the dedicated function and schema |
+| Version | Date       | Change                                                                                                                              | Migration                                                                                           |
+| ------- | ---------- | ----------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------- |
+| 1.0     | 2026-07-29 | Initial exact-font, anchor-aware, non-mutating deck text-fit preflight                                                              | —                                                                                                   |
+| 1.1     | 2026-07-30 | Add diagram-specific measurement requests and `pptv-diagram-text-fit/0.1` evidence without synthetic slide or physical-canvas state | Existing deck requests/results are unchanged; diagram callers use the dedicated function and schema |

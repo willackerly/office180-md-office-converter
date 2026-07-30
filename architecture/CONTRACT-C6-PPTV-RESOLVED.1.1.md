@@ -114,9 +114,7 @@ interface PptvResolvedDiagram {
 }
 
 function resolvePptvDeck(deck: PptvDeck): PptvResolvedResult;
-function resolvePptvDiagram(
-  diagram: PptvDiagram
-): PptvResolvedDiagramResult;
+function resolvePptvDiagram(diagram: PptvDiagram): PptvResolvedDiagramResult;
 
 interface PptvDiagramExtractionResult {
   sourceText?: string;
@@ -133,7 +131,7 @@ interface PptvDiagramExtractionResult {
 
 function extractPptvDiagram(
   deck: PptvDeck,
-  slideId: string
+  slideId: string,
 ): Promise<PptvDiagramExtractionResult>;
 ```
 
@@ -165,8 +163,10 @@ interface PptvResolvedObjectBase {
   styleProvenance: PptvStyleProvenance;
 }
 
-interface PptvResolvedDiagramObjectBase
-  extends Omit<PptvResolvedObjectBase, "slideId"> {
+interface PptvResolvedDiagramObjectBase extends Omit<
+  PptvResolvedObjectBase,
+  "slideId"
+> {
   diagramId: string;
 }
 
@@ -213,12 +213,12 @@ slides/libraries and before themes:
 
 ```html
 <script type="text/css" data-pptv-style="base">
-.title {
-  fill: var(--pptv-text-primary);
-  font-family: var(--pptv-font-major);
-  font-size: 64px;
-  font-weight: 700;
-}
+  .title {
+    fill: var(--pptv-text-primary);
+    font-family: var(--pptv-font-major);
+    font-size: 64px;
+    font-weight: 700;
+  }
 </script>
 ```
 
@@ -226,10 +226,10 @@ Every theme is one complete, token-only `:root` rule:
 
 ```html
 <script type="text/css" data-pptv-theme="light">
-:root {
-  --pptv-text-primary: #17211e;
-  --pptv-font-major: Arial;
-}
+  :root {
+    --pptv-text-primary: #17211e;
+    --pptv-font-major: Arial;
+  }
 </script>
 ```
 
@@ -300,27 +300,27 @@ supplies translation.
 
 ### Canvas and finite geometry
 
-| Behavior | Specification |
-|----------|---------------|
-| Deck canvas | Every HTML-deck slide is exactly `viewBox="0 0 1600 900"`; another origin, size, ratio, or presentation-bearing root SVG attribute is rejected. The slide root permits only its mirrored `id`, `viewBox`, optional `data-pptv-layout`, and standard SVG/XLink namespace declarations. |
-| Deck physical mapping | In `pptv-resolved/0.1`, one SVG unit is exactly `7620` EMU; slide size is exactly `12192000 × 6858000` EMU. |
-| Diagram canvas | A standalone diagram retains its C4 root `viewBox` exactly: four finite unitless numbers with strictly positive width and height, with arbitrary origin, dimensions, and aspect ratio. Its root permits only the C4-required `id`, `data-pptv-version`, `xmlns`, and `viewBox`, plus an optional standard XLink namespace declaration. |
-| No diagram physical inference | `pptv-resolved-diagram/0.1` has no EMU, inch, point, DPI, slide-size, or scale field. Resolution never derives physical size from aspect ratio, filename, host viewport, CSS, or a default deck profile. |
-| Numbers | Geometry, transforms, frames, steps, and bounds use finite base-10 SVG numbers with no unit or percentage. Exact authored baseline-delta arithmetic is bounded to 512-character lexemes and a 1024-place scale gap; values beyond that capability fail closed rather than allocating unbounded integers. |
-| Positive values | Shape radii, shape/frame/asset dimensions, and line step are strictly positive. Coordinates/endpoints may be negative. |
-| Determinism | Normalized fields use finite JavaScript numbers and JSON number serialization, never locale formatting. |
+| Behavior                      | Specification                                                                                                                                                                                                                                                                                                                          |
+| ----------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Deck canvas                   | Every HTML-deck slide is exactly `viewBox="0 0 1600 900"`; another origin, size, ratio, or presentation-bearing root SVG attribute is rejected. The slide root permits only its mirrored `id`, `viewBox`, optional `data-pptv-layout`, and standard SVG/XLink namespace declarations.                                                  |
+| Deck physical mapping         | In `pptv-resolved/0.1`, one SVG unit is exactly `7620` EMU; slide size is exactly `12192000 × 6858000` EMU.                                                                                                                                                                                                                            |
+| Diagram canvas                | A standalone diagram retains its C4 root `viewBox` exactly: four finite unitless numbers with strictly positive width and height, with arbitrary origin, dimensions, and aspect ratio. Its root permits only the C4-required `id`, `data-pptv-version`, `xmlns`, and `viewBox`, plus an optional standard XLink namespace declaration. |
+| No diagram physical inference | `pptv-resolved-diagram/0.1` has no EMU, inch, point, DPI, slide-size, or scale field. Resolution never derives physical size from aspect ratio, filename, host viewport, CSS, or a default deck profile.                                                                                                                               |
+| Numbers                       | Geometry, transforms, frames, steps, and bounds use finite base-10 SVG numbers with no unit or percentage. Exact authored baseline-delta arithmetic is bounded to 512-character lexemes and a 1024-place scale gap; values beyond that capability fail closed rather than allocating unbounded integers.                               |
+| Positive values               | Shape radii, shape/frame/asset dimensions, and line step are strictly positive. Coordinates/endpoints may be negative.                                                                                                                                                                                                                 |
+| Determinism                   | Normalized fields use finite JavaScript numbers and JSON number serialization, never locale formatting.                                                                                                                                                                                                                                |
 
 ### Object boundaries, grouping, and order
 
-| Source pair | Resolved kind | Rule |
-|-------------|---------------|------|
-| `rect` + `shape/native` | `rect` | Required `x`, `y`, `width`, `height`; optional finite `rx`, `ry` |
-| `circle` or `ellipse` + `shape/native` | `ellipse` | Required center and positive radius/radii |
-| `text` + `text/native` | `text` | Explicit frame and hard-line rules apply |
-| `line` + `connector/native` | `line` | Straight connector with two distinct endpoints; `polyline` is outside 1.1 |
-| `g` + `group/native` | `group` | Addressable children and one optional translation |
-| `g` + `asset/svg` | `svg-asset` | One atomic vector picture with explicit bounds |
-| `image` + `asset/raster` | reserved `raster-asset` | Atomic bounds/reference grammar is recognized, but dependency-free C6 resolution fails closed with `PPTV-PROFILE-RESOURCE` |
+| Source pair                            | Resolved kind           | Rule                                                                                                                       |
+| -------------------------------------- | ----------------------- | -------------------------------------------------------------------------------------------------------------------------- |
+| `rect` + `shape/native`                | `rect`                  | Required `x`, `y`, `width`, `height`; optional finite `rx`, `ry`                                                           |
+| `circle` or `ellipse` + `shape/native` | `ellipse`               | Required center and positive radius/radii                                                                                  |
+| `text` + `text/native`                 | `text`                  | Explicit frame and hard-line rules apply                                                                                   |
+| `line` + `connector/native`            | `line`                  | Straight connector with two distinct endpoints; `polyline` is outside 1.1                                                  |
+| `g` + `group/native`                   | `group`                 | Addressable children and one optional translation                                                                          |
+| `g` + `asset/svg`                      | `svg-asset`             | One atomic vector picture with explicit bounds                                                                             |
+| `image` + `asset/raster`               | reserved `raster-asset` | Atomic bounds/reference grammar is recognized, but dependency-free C6 resolution fails closed with `PPTV-PROFILE-RESOURCE` |
 
 - A native group accepts no `transform` or exactly one
   `translate(tx ty)`/`translate(tx, ty)`; one-argument translate means
@@ -342,14 +342,14 @@ supplies translation.
 
 ### Explicit text
 
-| Behavior | Specification |
-|----------|---------------|
-| Hard lines | Source line strings and baseline positions are authoritative; no wrapping or line inference exists. |
-| Frame | `data-pptv-frame` is the future PowerPoint text box; resizing it cannot alter text, font size, or line count. |
-| No autofit | The model always means PowerPoint `wrap="none"` plus `a:noAutofit`; it exposes no wrap/shrink/fit switch. |
-| Paragraph editing | An editor may join lines with `\n`, but commit emits direct text or explicit direct `tspan` lines. |
-| Unsupported richness | Nested/styled runs, text paths, `dx`/`dy`, `rotate`, `textLength`, bullets, columns, and ambient non-whitespace text are errors. |
-| Overflow | `CONTRACT:C8-PPTV-TEXT-FIT.1.1` defines deterministic deck- and diagram-specific warning evidence; it never mutates text or geometry and is not required for pure C6 resolution. |
+| Behavior             | Specification                                                                                                                                                                    |
+| -------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Hard lines           | Source line strings and baseline positions are authoritative; no wrapping or line inference exists.                                                                              |
+| Frame                | `data-pptv-frame` is the future PowerPoint text box; resizing it cannot alter text, font size, or line count.                                                                    |
+| No autofit           | The model always means PowerPoint `wrap="none"` plus `a:noAutofit`; it exposes no wrap/shrink/fit switch.                                                                        |
+| Paragraph editing    | An editor may join lines with `\n`, but commit emits direct text or explicit direct `tspan` lines.                                                                               |
+| Unsupported richness | Nested/styled runs, text paths, `dx`/`dy`, `rotate`, `textLength`, bullets, columns, and ambient non-whitespace text are errors.                                                 |
+| Overflow             | `CONTRACT:C8-PPTV-TEXT-FIT.1.1` defines deterministic deck- and diagram-specific warning evidence; it never mutates text or geometry and is not required for pure C6 resolution. |
 
 ### CSS and theme resolution
 
@@ -374,23 +374,23 @@ cannot contain custom properties or `var()`. Diagram `class` and all CSS rules
 are errors, so there is no selector, theme, or token provenance in the diagram
 schema.
 
-| Behavior | Specification |
-|----------|---------------|
-| Theme grammar | Exactly one `:root` rule containing unique `--pptv-*` declarations; no other selector/rule. |
-| Complete themes | Required tokens are the union of `var(--pptv-*)` references in base CSS. Every theme supplies exactly that set, with no missing or extra tokens. |
-| Token values | One literal supported property value; no token chaining, `var()`, or fallback. |
-| Base selectors | HTML deck only: simple single-class selectors such as `.title`; no lists, nesting, combinators, IDs, elements, attributes, universal, or pseudo selectors. Standalone diagrams reject classes and stylesheets. |
-| Base declarations | Supported properties only, no duplicates per rule. A value is one literal or exactly `var(--pptv-token)` with no fallback. |
-| Properties | `fill`, `stroke`, `stroke-width`, `opacity`, `font-family`, `font-size`, `font-weight`, `font-style`, `text-anchor`. |
-| Local declarations | The same properties may be presentation attributes or inline declarations; local custom properties and `!important` are rejected. Inline duplicates follow ordinary last-declaration-wins order. |
-| Paint | `none` or opaque `#RRGGBB`, normalized lowercase; no gradients, paint servers, alpha/named colors, filters, masks, or patterns. |
-| Numeric style | Stroke width is nonnegative unitless/`px`; font size is positive unitless/`px`; opacity is `[0,1]`; percentages are unsupported. |
-| Font | One concrete unquoted or quoted family with no comma/generic fallback; weight `400`/`700`; style `normal`/`italic`. Text requires explicit family and size. |
-| Anchor | `start`, `middle`, or `end`. |
-| Defaults | `fill=#000000`, `stroke=none`, `stroke-width=1`, `opacity=1`, `font-weight=400`, `font-style=normal`, `text-anchor=start`; no font family/size default. |
-| Provenance | Every property records default, attribute, selector/source order, or inline origin and substituted token when applicable. |
-| Prohibited CSS | All at-rules, URLs, animation, transition, `!important`, inheritance keywords, `calc()`, layout units, unsupported declarations, and silent fallback are errors. |
-| No browser authority | CSSOM, `getComputedStyle()`, layout, font fallback, and runtime execution cannot participate. |
+| Behavior             | Specification                                                                                                                                                                                                  |
+| -------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Theme grammar        | Exactly one `:root` rule containing unique `--pptv-*` declarations; no other selector/rule.                                                                                                                    |
+| Complete themes      | Required tokens are the union of `var(--pptv-*)` references in base CSS. Every theme supplies exactly that set, with no missing or extra tokens.                                                               |
+| Token values         | One literal supported property value; no token chaining, `var()`, or fallback.                                                                                                                                 |
+| Base selectors       | HTML deck only: simple single-class selectors such as `.title`; no lists, nesting, combinators, IDs, elements, attributes, universal, or pseudo selectors. Standalone diagrams reject classes and stylesheets. |
+| Base declarations    | Supported properties only, no duplicates per rule. A value is one literal or exactly `var(--pptv-token)` with no fallback.                                                                                     |
+| Properties           | `fill`, `stroke`, `stroke-width`, `opacity`, `font-family`, `font-size`, `font-weight`, `font-style`, `text-anchor`.                                                                                           |
+| Local declarations   | The same properties may be presentation attributes or inline declarations; local custom properties and `!important` are rejected. Inline duplicates follow ordinary last-declaration-wins order.               |
+| Paint                | `none` or opaque `#RRGGBB`, normalized lowercase; no gradients, paint servers, alpha/named colors, filters, masks, or patterns.                                                                                |
+| Numeric style        | Stroke width is nonnegative unitless/`px`; font size is positive unitless/`px`; opacity is `[0,1]`; percentages are unsupported.                                                                               |
+| Font                 | One concrete unquoted or quoted family with no comma/generic fallback; weight `400`/`700`; style `normal`/`italic`. Text requires explicit family and size.                                                    |
+| Anchor               | `start`, `middle`, or `end`.                                                                                                                                                                                   |
+| Defaults             | `fill=#000000`, `stroke=none`, `stroke-width=1`, `opacity=1`, `font-weight=400`, `font-style=normal`, `text-anchor=start`; no font family/size default.                                                        |
+| Provenance           | Every property records default, attribute, selector/source order, or inline origin and substituted token when applicable.                                                                                      |
+| Prohibited CSS       | All at-rules, URLs, animation, transition, `!important`, inheritance keywords, `calc()`, layout units, unsupported declarations, and silent fallback are errors.                                               |
+| No browser authority | CSSOM, `getComputedStyle()`, layout, font fallback, and runtime execution cannot participate.                                                                                                                  |
 
 For an HTML deck, the active theme exists. All themes, not just the active one,
 are validated for grammar and exact token parity so theme switching cannot
@@ -420,9 +420,9 @@ Node/browser equality checks.
 
 The checked browser artifact is
 `packages/pptv/assets/pptv-browser-kernel-0.1.iife.js`, generated by exact
-`esbuild@0.28.1` as an ES2022 IIFE. Its registered size is 655,826 bytes and
+`esbuild@0.28.1` as an ES2022 IIFE. Its registered size is 656,582 bytes and
 its SHA-256 is
-`57a62807006837c8e59d73f69e93f072ae94e8f67cfd8ab587e3fc35e6036533`.
+`6e92938113408ffc0cb5ccecedac88a1c9cc1966f25724c533243259c0472661`.
 `browser:check` regenerates both the IIFE and metadata and compares exact
 bytes. The build metafile must contain the shared core, operations, and browser
 session inputs plus the required browser-safe Saxes parser, and must contain no
@@ -461,30 +461,30 @@ PowerPoint fidelity.
 
 ## Error Contracts
 
-| Error | When | Code |
-|-------|------|------|
-| Invalid C4 base | Deck/diagram has an error, is partial where partial loading exists, or its index is ambiguous | `PPTV-PROFILE-INVALID-BASE` |
-| Unsupported deck canvas | HTML-deck slide viewBox differs from `0 0 1600 900` | `PPTV-PROFILE-VIEWBOX` |
-| Invalid diagram canvas | Diagram viewBox is not the finite-positive C4 form | `PPTV-PROFILE-VIEWBOX` |
-| Invalid number | Required number is missing, non-finite, unit-bearing, malformed, or outside its allowed range | `PPTV-PROFILE-NUMBER` |
-| Unsupported pair | Element/role/export is outside the object table | `PPTV-PROFILE-OBJECT-KIND` |
-| Invalid geometry | Primitive cross-field/reference geometry is inconsistent | `PPTV-PROFILE-GEOMETRY` |
-| Unsupported transform | Transform is not permitted native-group translation | `PPTV-PROFILE-TRANSFORM` |
-| Invalid text frame | Frame or line-step is invalid | `PPTV-PROFILE-TEXT-FRAME` |
-| Invalid hard lines | Text children, positions, newlines, anchor, or baseline deltas violate the grammar | `PPTV-PROFILE-TEXT-LINES` |
-| Missing asset bounds | SVG/raster asset lacks valid explicit bounds | `PPTV-PROFILE-ASSET-BOUNDS` |
-| CSS syntax | CSS cannot be parsed unambiguously by the subset | `PPTV-PROFILE-CSS-SYNTAX` |
-| Unsupported selector | Selector is outside the exact grammar | `PPTV-PROFILE-CSS-SELECTOR` |
-| Unsupported property | Declaration is unknown or forbidden in its location | `PPTV-PROFILE-CSS-PROPERTY` |
-| Unsupported value | Supported property has a value outside its finite grammar | `PPTV-PROFILE-CSS-VALUE` |
-| Theme mismatch | Theme tokens differ, contain extras, or omit requirements | `PPTV-PROFILE-THEME-TOKENS` |
-| Unresolved token | Base reference has no valid active-theme value | `PPTV-PROFILE-UNRESOLVED-TOKEN` |
-| Unsupported font | Font family is fallback/generic or weight/style cannot map exactly | `PPTV-PROFILE-FONT` |
-| Missing resource | Raster asset cannot be resolved without fetching | `PPTV-PROFILE-RESOURCE` |
-| Unsupported diagram styling | Diagram contains a class, stylesheet, theme/token state, custom property, or `var()` | `PPTV-PROFILE-DIAGRAM-STYLE` |
-| Invalid extraction base | Deck is partial, invalid, or not fully C6-resolvable | `PPTV-EXTRACT-INVALID-BASE` / `PPTV-EXTRACT-UNRESOLVED` |
-| Missing extraction slide | Requested slide is not fully materialized | `PPTV-EXTRACT-SLIDE` |
-| Invalid hydrated candidate | Dereferenced SVG does not independently pass C4/C6 | `PPTV-EXTRACT-INVALID-CANDIDATE` / `PPTV-EXTRACT-UNRESOLVED-CANDIDATE` |
+| Error                       | When                                                                                          | Code                                                                   |
+| --------------------------- | --------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------- |
+| Invalid C4 base             | Deck/diagram has an error, is partial where partial loading exists, or its index is ambiguous | `PPTV-PROFILE-INVALID-BASE`                                            |
+| Unsupported deck canvas     | HTML-deck slide viewBox differs from `0 0 1600 900`                                           | `PPTV-PROFILE-VIEWBOX`                                                 |
+| Invalid diagram canvas      | Diagram viewBox is not the finite-positive C4 form                                            | `PPTV-PROFILE-VIEWBOX`                                                 |
+| Invalid number              | Required number is missing, non-finite, unit-bearing, malformed, or outside its allowed range | `PPTV-PROFILE-NUMBER`                                                  |
+| Unsupported pair            | Element/role/export is outside the object table                                               | `PPTV-PROFILE-OBJECT-KIND`                                             |
+| Invalid geometry            | Primitive cross-field/reference geometry is inconsistent                                      | `PPTV-PROFILE-GEOMETRY`                                                |
+| Unsupported transform       | Transform is not permitted native-group translation                                           | `PPTV-PROFILE-TRANSFORM`                                               |
+| Invalid text frame          | Frame or line-step is invalid                                                                 | `PPTV-PROFILE-TEXT-FRAME`                                              |
+| Invalid hard lines          | Text children, positions, newlines, anchor, or baseline deltas violate the grammar            | `PPTV-PROFILE-TEXT-LINES`                                              |
+| Missing asset bounds        | SVG/raster asset lacks valid explicit bounds                                                  | `PPTV-PROFILE-ASSET-BOUNDS`                                            |
+| CSS syntax                  | CSS cannot be parsed unambiguously by the subset                                              | `PPTV-PROFILE-CSS-SYNTAX`                                              |
+| Unsupported selector        | Selector is outside the exact grammar                                                         | `PPTV-PROFILE-CSS-SELECTOR`                                            |
+| Unsupported property        | Declaration is unknown or forbidden in its location                                           | `PPTV-PROFILE-CSS-PROPERTY`                                            |
+| Unsupported value           | Supported property has a value outside its finite grammar                                     | `PPTV-PROFILE-CSS-VALUE`                                               |
+| Theme mismatch              | Theme tokens differ, contain extras, or omit requirements                                     | `PPTV-PROFILE-THEME-TOKENS`                                            |
+| Unresolved token            | Base reference has no valid active-theme value                                                | `PPTV-PROFILE-UNRESOLVED-TOKEN`                                        |
+| Unsupported font            | Font family is fallback/generic or weight/style cannot map exactly                            | `PPTV-PROFILE-FONT`                                                    |
+| Missing resource            | Raster asset cannot be resolved without fetching                                              | `PPTV-PROFILE-RESOURCE`                                                |
+| Unsupported diagram styling | Diagram contains a class, stylesheet, theme/token state, custom property, or `var()`          | `PPTV-PROFILE-DIAGRAM-STYLE`                                           |
+| Invalid extraction base     | Deck is partial, invalid, or not fully C6-resolvable                                          | `PPTV-EXTRACT-INVALID-BASE` / `PPTV-EXTRACT-UNRESOLVED`                |
+| Missing extraction slide    | Requested slide is not fully materialized                                                     | `PPTV-EXTRACT-SLIDE`                                                   |
+| Invalid hydrated candidate  | Dereferenced SVG does not independently pass C4/C6                                            | `PPTV-EXTRACT-INVALID-CANDIDATE` / `PPTV-EXTRACT-UNRESOLVED-CANDIDATE` |
 
 ## Dependencies
 
@@ -554,25 +554,25 @@ placement/physical-size contract and does not silently broaden C7.
 - [x] Exact canvas/EMU constants and alternate-canvas rejection
 - [x] Supported primitives plus finite local/translated world geometry
 - [x] Nested translation, group union, DOM order, opaque atomicity, and
-  transform rejection
+      transform rejection
 - [x] Direct and multiline hard text, exact step/frame, and implicit-layout
-  rejection
+      rejection
 - [x] Base/theme/token/attribute/class/inline cascade and provenance
 - [x] Incomplete/extra themes and prohibited CSS fail closed
 - [x] Node/browser normalized JSON parity
 - [x] Invalid C4 and tested C6 capability errors produce no partial model
 - [x] Minimal and kitchen-sink fixtures resolve without browser execution
 - [x] Arbitrary-origin/size/aspect diagram viewBoxes resolve without physical
-  inference
+      inference
 - [x] Diagram attributes/inline style match deck value semantics while
-  classes/stylesheets/themes/tokens fail closed
+      classes/stylesheets/themes/tokens fail closed
 - [x] Diagram model has root DOM order, diagram identity, and no slide/theme/EMU
-  fields
+      fields
 - [x] Deck and diagram model schemas cannot be passed through the wrong
-  resolver/compiler path
+      resolver/compiler path
 - [x] Deck slide extraction localizes theme/class values, preserves resolved
-  object semantics, is byte-deterministic, and returns no partial source on
-  failure
+      object semantics, is byte-deterministic, and returns no partial source on
+      failure
 
 ## Retirement / supersession plan
 
@@ -585,7 +585,7 @@ placement/physical-size contract and does not silently broaden C7.
 
 ## Change History
 
-| Version | Date | Change | Migration |
-|---------|------|--------|-----------|
-| 1.0 | 2026-07-28 | Initial fixed-canvas, finite-geometry, explicit-line, and deterministic-style profile | Normalize worked examples before enabling compiler output |
-| 1.1 | 2026-07-30 | Add a separate stylesheet-free standalone-diagram resolved profile with arbitrary logical canvas and no physical mapping | Existing deck resolved JSON is unchanged; diagram consumers adopt `pptv-resolved-diagram/0.1` and cannot send it to C7 |
+| Version | Date       | Change                                                                                                                   | Migration                                                                                                              |
+| ------- | ---------- | ------------------------------------------------------------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------- |
+| 1.0     | 2026-07-28 | Initial fixed-canvas, finite-geometry, explicit-line, and deterministic-style profile                                    | Normalize worked examples before enabling compiler output                                                              |
+| 1.1     | 2026-07-30 | Add a separate stylesheet-free standalone-diagram resolved profile with arbitrary logical canvas and no physical mapping | Existing deck resolved JSON is unchanged; diagram consumers adopt `pptv-resolved-diagram/0.1` and cannot send it to C7 |

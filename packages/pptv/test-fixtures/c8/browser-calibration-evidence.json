@@ -1,7 +1,7 @@
 {
   "schema": "pptv-browser-text-calibration-evidence/0.1",
   "capturedOn": "2026-07-30",
-  "overallStatus": "pass-with-explicit-webkit-unkerned-variance",
+  "overallStatus": "pass-with-explicit-engine-and-platform-variance",
   "fixture": "browser-calibration.json",
   "method": {
     "node": "fontkit/2.0.4",
@@ -15,8 +15,8 @@
   "toolchain": {
     "playwright": "1.62.0",
     "esbuild": "0.28.1",
-    "browserKernelSha256": "57a62807006837c8e59d73f69e93f072ae94e8f67cfd8ab587e3fc35e6036533",
-    "browserKernelBytes": 655826,
+    "browserKernelSha256": "6e92938113408ffc0cb5ccecedac88a1c9cc1966f25724c533243259c0472661",
+    "browserKernelBytes": 656582,
     "font": {
       "family": "ABeeZee",
       "sha256": "2901c8df256648cc2bb2e3afb381cb8d28e65ed3dbe11de20695ae4d5ffdeda9"
@@ -30,7 +30,9 @@
     {
       "engine": "chromium",
       "version": "151.0.7922.34",
-      "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/151.0.7922.34 Safari/537.36",
+      "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/151.0.7922.34 Safari/537.36",
+      "platform": "MacIntel",
+      "devicePixelRatio": 1,
       "status": "pass-kerned",
       "kernedOracle": {
         "maxAbsoluteDelta": 0.01387500000001296,
@@ -46,7 +48,9 @@
     {
       "engine": "firefox",
       "version": "153.0",
-      "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:153.0) Gecko/20100101 Firefox/153.0",
+      "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:153.0) Gecko/20100101 Firefox/153.0",
+      "platform": "MacIntel",
+      "devicePixelRatio": 1,
       "status": "pass-kerned",
       "kernedOracle": {
         "maxAbsoluteDelta": 0.021332824707030795,
@@ -63,6 +67,8 @@
       "engine": "webkit",
       "version": "26.5",
       "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.5 Safari/605.1.15",
+      "platform": "MacIntel",
+      "devicePixelRatio": 2,
       "status": "pass-with-unkerned-browser-variance",
       "kernedOracle": {
         "maxAbsoluteDelta": 6.2399979858398495,
@@ -76,6 +82,25 @@
       }
     }
   ],
+  "platformGridFittingCapture": {
+    "engine": "chromium",
+    "version": "151.0.7922.34",
+    "platform": "Linux x86_64",
+    "devicePixelRatio": 1,
+    "status": "pass-with-platform-grid-fitting-variance",
+    "source": "GitHub Actions ubuntu-latest",
+    "maxAbsoluteDelta": 2.4480000000000075,
+    "maxRelativeDelta": 0.019000413052457588,
+    "widths": {
+      "kerning-av": 76,
+      "spaces": 112,
+      "representative": 189,
+      "near-limit": 152,
+      "exact-boundary": 178,
+      "overflow": 121
+    },
+    "behavior": "checked GitHub Actions capture; each integer width must remain inside the nearest-pixel Fontkit advance envelope and preserve every non-boundary fit band"
+  },
   "coverage": {
     "samples": 6,
     "includes": [

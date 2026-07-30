@@ -39,6 +39,8 @@ export interface PptvBrowserEnvironmentEvidence {
   readonly userAgent: string;
   readonly engine: "chromium" | "firefox" | "webkit" | "unknown";
   readonly engineVersion: string;
+  readonly platform: string;
+  readonly devicePixelRatio: number;
 }
 
 export interface PptvBrowserLoadedFontEvidence {
@@ -67,6 +69,10 @@ export interface PreparePptvBrowserTextMeasurerOptions {
   readonly FontFace?: typeof FontFace;
   /** Defaults to navigator.userAgent. */
   readonly userAgent?: string;
+  /** Defaults to navigator.platform and makes host text-stack variance visible. */
+  readonly platform?: string;
+  /** Defaults to the current window devicePixelRatio. */
+  readonly devicePixelRatio?: number;
 }
 
 interface LoadedFace {
@@ -111,7 +117,18 @@ export async function preparePptvBrowserTextMeasurer(
   const userAgent =
     options.userAgent ??
     (globalThis.navigator === undefined ? "" : globalThis.navigator.userAgent);
-  const environment = browserEnvironmentFromUserAgent(userAgent);
+  const platform =
+    options.platform ??
+    (globalThis.navigator === undefined
+      ? "unknown"
+      : globalThis.navigator.platform);
+  const devicePixelRatio =
+    options.devicePixelRatio ?? globalThis.devicePixelRatio ?? 1;
+  const environment = browserEnvironmentFromUserAgent(
+    userAgent,
+    platform,
+    devicePixelRatio,
+  );
   const loadedFaces = new Map<string, LoadedFace>();
   const addedFaces: FontFace[] = [];
 
@@ -270,8 +287,21 @@ export async function preparePptvBrowserTextMeasurer(
 
 export function browserEnvironmentFromUserAgent(
   userAgent: string,
+  platform = "unknown",
+  devicePixelRatio = 1,
 ): PptvBrowserEnvironmentEvidence {
-  const chromium = /\b(?:Chrome|Chromium)\/([\d.]+)/u.exec(userAgent);
+  if (
+    typeof platform !== "string" ||
+    !Number.isFinite(devicePixelRatio) ||
+    devicePixelRatio <= 0
+  ) {
+    throw new Error(
+      "Browser environment evidence requires a platform string and positive finite devicePixelRatio.",
+    );
+  }
+  const chromium = /\b(?:Chrome|Chromium|HeadlessChrome)\/([\d.]+)/u.exec(
+    userAgent,
+  );
   const firefox = /\bFirefox\/([\d.]+)/u.exec(userAgent);
   const webkit =
     /\bAppleWebKit\/([\d.]+)/u.exec(userAgent) === null
@@ -290,6 +320,8 @@ export function browserEnvironmentFromUserAgent(
     userAgent,
     engine,
     engineVersion: version,
+    platform: platform.trim() || "unknown",
+    devicePixelRatio,
   });
 }
 
@@ -512,6 +544,8 @@ function fontIdentity(
     `weight=${font.weight}`,
     `style=${font.style}`,
     `engine=${environment.engine}@${environment.engineVersion}`,
+    `platform=${encodeURIComponent(environment.platform)}`,
+    `dpr=${environment.devicePixelRatio}`,
     `userAgent=${encodeURIComponent(environment.userAgent)}`,
   ].join(";");
 }

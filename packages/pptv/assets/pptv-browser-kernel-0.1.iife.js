@@ -17915,7 +17915,13 @@ var PptvBrowserKernel = (() => {
     }
     const normalizedSources = validateSources(sources);
     const userAgent = options.userAgent ?? (globalThis.navigator === void 0 ? "" : globalThis.navigator.userAgent);
-    const environment = browserEnvironmentFromUserAgent(userAgent);
+    const platform = options.platform ?? (globalThis.navigator === void 0 ? "unknown" : globalThis.navigator.platform);
+    const devicePixelRatio = options.devicePixelRatio ?? globalThis.devicePixelRatio ?? 1;
+    const environment = browserEnvironmentFromUserAgent(
+      userAgent,
+      platform,
+      devicePixelRatio
+    );
     const loadedFaces = /* @__PURE__ */ new Map();
     const addedFaces = [];
     try {
@@ -18054,8 +18060,15 @@ var PptvBrowserKernel = (() => {
       dispose
     });
   }
-  function browserEnvironmentFromUserAgent(userAgent) {
-    const chromium = /\b(?:Chrome|Chromium)\/([\d.]+)/u.exec(userAgent);
+  function browserEnvironmentFromUserAgent(userAgent, platform = "unknown", devicePixelRatio = 1) {
+    if (typeof platform !== "string" || !Number.isFinite(devicePixelRatio) || devicePixelRatio <= 0) {
+      throw new Error(
+        "Browser environment evidence requires a platform string and positive finite devicePixelRatio."
+      );
+    }
+    const chromium = /\b(?:Chrome|Chromium|HeadlessChrome)\/([\d.]+)/u.exec(
+      userAgent
+    );
     const firefox = /\bFirefox\/([\d.]+)/u.exec(userAgent);
     const webkit = /\bAppleWebKit\/([\d.]+)/u.exec(userAgent) === null ? null : /\bVersion\/([\d.]+)/u.exec(userAgent);
     const engine = chromium !== null ? "chromium" : firefox !== null ? "firefox" : webkit !== null ? "webkit" : "unknown";
@@ -18063,7 +18076,9 @@ var PptvBrowserKernel = (() => {
     return Object.freeze({
       userAgent,
       engine,
-      engineVersion: version
+      engineVersion: version,
+      platform: platform.trim() || "unknown",
+      devicePixelRatio
     });
   }
   function browserFontAlias(sha256, weight, style, index = 0) {
@@ -18222,6 +18237,8 @@ var PptvBrowserKernel = (() => {
       `weight=${font.weight}`,
       `style=${font.style}`,
       `engine=${environment.engine}@${environment.engineVersion}`,
+      `platform=${encodeURIComponent(environment.platform)}`,
+      `dpr=${environment.devicePixelRatio}`,
       `userAgent=${encodeURIComponent(environment.userAgent)}`
     ].join(";");
   }

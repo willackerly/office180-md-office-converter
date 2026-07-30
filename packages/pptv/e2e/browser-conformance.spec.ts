@@ -145,6 +145,14 @@ test("C8 loads exact bytes, labels the environment, and fails closed on missing 
       primaryOracle: string;
       diagnosticAlternate: string;
     };
+    platformGridFittingCapture: {
+      engine: "chromium";
+      engineVersion: string;
+      platform: string;
+      devicePixelRatio: number;
+      widths: Record<string, number>;
+      behavior: string;
+    };
     samples: {
       id: string;
       text: string;
@@ -185,7 +193,12 @@ test("C8 loads exact bytes, labels the environment, and fails closed on missing 
         `Node calibration sample "${sample.id}" was not measured: ${measurement.reason}`,
       );
     }
+    const kernedRun = calibrationFont.layout(sample.text);
     const unkernedRun = calibrationFont.layout(sample.text, { kern: false });
+    const scaledKernedAdvances = kernedRun.positions.map(
+      ({ xAdvance }) =>
+        (xAdvance * calibration.fontSize) / calibrationFont.unitsPerEm,
+    );
     const unkernedWidth =
       (unkernedRun.positions.reduce(
         (sum, position) => sum + position.xAdvance,
@@ -197,6 +210,11 @@ test("C8 loads exact bytes, labels the environment, and fails closed on missing 
       ...sample,
       nodeWidth: measurement.width,
       nodeUnkernedWidth: unkernedWidth,
+      shapedGlyphCount: kernedRun.glyphs.length,
+      nearestPixelAdvanceEnvelope: scaledKernedAdvances.reduce(
+        (sum, advance) => sum + Math.abs(Math.round(advance) - advance),
+        0,
+      ),
       availableWidth: measurement.width / sample.nodeUtilization,
     };
   });
@@ -294,6 +312,8 @@ test("C8 loads exact bytes, labels the environment, and fails closed on missing 
 
   expect(result.environment.userAgent.length).toBeGreaterThan(20);
   expect(result.environment.engine).toBe(testInfo.project.name);
+  expect(result.environment.platform.length).toBeGreaterThan(0);
+  expect(result.environment.devicePixelRatio).toBeGreaterThan(0);
   expect(result.fonts).toEqual([
     expect.objectContaining({
       family: "ABeeZee",
@@ -326,6 +346,8 @@ test("C8 loads exact bytes, labels the environment, and fails closed on missing 
     const matchesUnkerned =
       absoluteUnkernedDelta <= calibration.tolerance.absoluteSvgUnits ||
       relativeUnkernedDelta <= calibration.tolerance.relative;
+    const withinNearestPixelAdvanceEnvelope =
+      absoluteDelta <= nodeRow.nearestPixelAdvanceEnvelope + 1e-9;
     return {
       id: nodeRow.id,
       text: nodeRow.text,
@@ -352,26 +374,72 @@ test("C8 loads exact bytes, labels the environment, and fails closed on missing 
       fontIdentity: browserRow.measurement.fontIdentity,
       matchesKerned,
       matchesUnkerned,
+      shapedGlyphCount: nodeRow.shapedGlyphCount,
+      nearestPixelAdvanceEnvelope: nodeRow.nearestPixelAdvanceEnvelope,
+      withinNearestPixelAdvanceEnvelope,
     };
   });
   const allKerned = evidenceRows.every(({ matchesKerned }) => matchesKerned);
   const allUnkerned = evidenceRows.every(
     ({ matchesUnkerned }) => matchesUnkerned,
   );
+  const semanticBandsMatch = evidenceRows.every(
+    ({ browserStatus, expectedBand }) =>
+      expectedBand === "boundary" || browserStatus === expectedBand,
+  );
+  const gridCapture = calibration.platformGridFittingCapture;
+  const gridCaptureEnvironmentMatches =
+    result.environment.engine === gridCapture.engine &&
+    result.environment.engineVersion === gridCapture.engineVersion &&
+    result.environment.platform === gridCapture.platform &&
+    result.environment.devicePixelRatio === gridCapture.devicePixelRatio;
+  const gridCaptureWidthsMatch = evidenceRows.every(({ id, browserWidth }) => {
+    const capturedWidth = gridCapture.widths[id];
+    return (
+      capturedWidth !== undefined &&
+      Math.abs(browserWidth - capturedWidth) <= 1e-9
+    );
+  });
+  const allWidthsIntegral = evidenceRows.every(
+    ({ browserWidth }) =>
+      Math.abs(browserWidth - Math.round(browserWidth)) <= 1e-9,
+  );
+  const allWithinNearestPixelAdvanceEnvelope = evidenceRows.every(
+    ({ withinNearestPixelAdvanceEnvelope }) =>
+      withinNearestPixelAdvanceEnvelope,
+  );
+  const gridCapturePass =
+    gridCaptureEnvironmentMatches &&
+    gridCaptureWidthsMatch &&
+    allWidthsIntegral &&
+    allWithinNearestPixelAdvanceEnvelope &&
+    semanticBandsMatch;
   const evidence = {
     schema: "pptv-browser-text-calibration-evidence/0.1",
     status: allKerned
       ? "pass-kerned"
       : allUnkerned
         ? "pass-with-unkerned-browser-variance"
-        : "fail",
+        : gridCapturePass
+          ? "pass-with-platform-grid-fitting-variance"
+          : "fail",
     engine: result.environment.engine,
     engineVersion: result.environment.engineVersion,
     userAgent: result.environment.userAgent,
+    platform: result.environment.platform,
+    devicePixelRatio: result.environment.devicePixelRatio,
     fontSha256: manifest.font.sha256,
     nodeMethod: "fontkit/2.0.4",
     browserMethod: `browser-svg-getComputedTextLength/${result.environment.engine}@${result.environment.engineVersion}`,
     tolerance: calibration.tolerance,
+    platformGridFittingCapture: {
+      behavior: gridCapture.behavior,
+      environmentMatches: gridCaptureEnvironmentMatches,
+      widthsMatch: gridCaptureWidthsMatch,
+      allWidthsIntegral,
+      allWithinNearestPixelAdvanceEnvelope,
+      semanticBandsMatch,
+    },
     maxAbsoluteDelta: Math.max(
       ...evidenceRows.map(({ absoluteDelta }) => absoluteDelta),
     ),
@@ -390,12 +458,41 @@ test("C8 loads exact bytes, labels the environment, and fails closed on missing 
     body: Buffer.from(`${JSON.stringify(evidence, null, 2)}\n`),
     contentType: "application/json",
   });
+  if (evidence.status === "pass-with-platform-grid-fitting-variance") {
+    console.info(
+      `PPTV_C8_PLATFORM_CAPTURE ${JSON.stringify({
+        engine: evidence.engine,
+        engineVersion: evidence.engineVersion,
+        userAgent: evidence.userAgent,
+        platform: evidence.platform,
+        devicePixelRatio: evidence.devicePixelRatio,
+        status: evidence.status,
+        maxAbsoluteDelta: evidence.maxAbsoluteDelta,
+        maxRelativeDelta: evidence.maxRelativeDelta,
+        widths: Object.fromEntries(
+          evidence.rows.map(({ id, browserWidth }) => [id, browserWidth]),
+        ),
+        nearestPixelAdvanceEnvelopes: Object.fromEntries(
+          evidence.rows.map(({ id, nearestPixelAdvanceEnvelope }) => [
+            id,
+            nearestPixelAdvanceEnvelope,
+          ]),
+        ),
+      })}`,
+    );
+  }
 
   expect(evidence.status, JSON.stringify(evidence, null, 2)).not.toBe("fail");
   for (const row of evidence.rows) {
     expect(row.method).toContain(testInfo.project.name);
     expect(row.fontIdentity).toContain(manifest.font.sha256);
     expect(row.fontIdentity).toContain("userAgent=");
+    expect(row.fontIdentity).toContain(
+      `platform=${encodeURIComponent(result.environment.platform)}`,
+    );
+    expect(row.fontIdentity).toContain(
+      `dpr=${result.environment.devicePixelRatio}`,
+    );
     if (row.expectedBand !== "boundary") {
       expect(row.nodeStatus).toBe(row.expectedBand);
       expect(row.browserStatus).toBe(row.expectedBand);

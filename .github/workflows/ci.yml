@@ -96,7 +96,7 @@ jobs:
         run: pnpm test:browser
 
   browser-release-matrix:
-    if: startsWith(github.ref, 'refs/tags/v')
+    if: github.event_name == 'pull_request' || startsWith(github.ref, 'refs/tags/v')
     runs-on: ubuntu-latest
     timeout-minutes: 20
     strategy:

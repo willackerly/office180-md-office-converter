@@ -771,6 +771,10 @@ function renderInspector(): void {
         `${browserMeasurer.environment.engine} ${browserMeasurer.environment.engineVersion}`,
       ],
       [
+        "Browser platform",
+        `${browserMeasurer.environment.platform}; DPR ${browserMeasurer.environment.devicePixelRatio}`,
+      ],
+      [
         "Exact browser fonts",
         browserMeasurer.fonts.length === 0
           ? "none"

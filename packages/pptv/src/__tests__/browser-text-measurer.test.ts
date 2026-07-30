@@ -13,8 +13,20 @@ describe("browser C8 measurement foundation", () => {
     expect(
       browserEnvironmentFromUserAgent(
         "Mozilla/5.0 AppleWebKit/537.36 Chrome/146.0.1.2 Safari/537.36",
+        "Linux x86_64",
+        2,
       ),
-    ).toMatchObject({ engine: "chromium", engineVersion: "146.0.1.2" });
+    ).toMatchObject({
+      engine: "chromium",
+      engineVersion: "146.0.1.2",
+      platform: "Linux x86_64",
+      devicePixelRatio: 2,
+    });
+    expect(
+      browserEnvironmentFromUserAgent(
+        "Mozilla/5.0 HeadlessChrome/151.0.7922.34 Safari/537.36",
+      ),
+    ).toMatchObject({ engine: "chromium", engineVersion: "151.0.7922.34" });
     expect(
       browserEnvironmentFromUserAgent("Mozilla/5.0 Firefox/147.0"),
     ).toMatchObject({ engine: "firefox", engineVersion: "147.0" });
@@ -27,7 +39,12 @@ describe("browser C8 measurement foundation", () => {
       userAgent: "test-agent",
       engine: "unknown",
       engineVersion: "unknown",
+      platform: "unknown",
+      devicePixelRatio: 1,
     });
+    expect(() =>
+      browserEnvironmentFromUserAgent("test-agent", "Linux", 0),
+    ).toThrow(/positive finite devicePixelRatio/u);
   });
 
   it("derives private aliases from exact hashes and validates inputs", () => {

@@ -22,27 +22,27 @@ published_schemas = 2
 shipped_themes = 3
 ```
 
-| Metric | Meaning | Computed as |
-|---|---|---|
-| `python_source_files` | Root Python converter files | root `*.py` |
-| `test_files` | Python `test_*.py` files | `tests/test_*.py` |
-| `test_functions` | Standalone Python test functions | `def test_*` in `tests/test_roundtrip.py` |
-| `typescript_source_files` | Portable core, ops, Node IO, and CLI modules | non-test `*.ts` under `packages/pptv/src` |
-| `typescript_test_files` | Vitest files | `packages/pptv/src/__tests__/*.test.ts` |
-| `typescript_test_cases` | Vitest `it()`/`test()` cases | test declarations in those files |
-| `contracts` | Versioned component contracts | non-template `architecture/CONTRACT-C*.md` |
-| `published_schemas` | PPTV JSON Schemas | `schemas/*.json` |
-| `shipped_themes` | DOCX theme JSON files | `themes/*.json` |
+| Metric                    | Meaning                                      | Computed as                                |
+| ------------------------- | -------------------------------------------- | ------------------------------------------ |
+| `python_source_files`     | Root Python converter files                  | root `*.py`                                |
+| `test_files`              | Python `test_*.py` files                     | `tests/test_*.py`                          |
+| `test_functions`          | Standalone Python test functions             | `def test_*` in `tests/test_roundtrip.py`  |
+| `typescript_source_files` | Portable core, ops, Node IO, and CLI modules | non-test `*.ts` under `packages/pptv/src`  |
+| `typescript_test_files`   | Vitest files                                 | `packages/pptv/src/__tests__/*.test.ts`    |
+| `typescript_test_cases`   | Vitest `it()`/`test()` cases                 | test declarations in those files           |
+| `contracts`               | Versioned component contracts                | non-template `architecture/CONTRACT-C*.md` |
+| `published_schemas`       | PPTV JSON Schemas                            | `schemas/*.json`                           |
+| `shipped_themes`          | DOCX theme JSON files                        | `themes/*.json`                            |
 
 ## Codebase Size (informational)
 
 - `md2docx.py` — 404 lines.
 - `docx2md.py` — 267 lines.
 - `tests/test_roundtrip.py` — 278 lines.
-- `packages/pptv/src/` — 27 non-test TypeScript modules / 16,409 lines across
+- `packages/pptv/src/` — 27 non-test TypeScript modules / 16,447 lines across
   the portable source/resolved/text-fit kernel, operations, browser session,
   extraction/editor runtime, Node font/compiler/filesystem boundary, and CLI.
-- `packages/pptv/src/__tests__/` — 24 Vitest files / 7,305 lines (excluding the
+- `packages/pptv/src/__tests__/` — 24 Vitest files / 7,373 lines (excluding the
   shared helper).
 
 ## Testing Status
@@ -59,17 +59,17 @@ shipped_themes = 3
   anchor/measurement/font-map/CLI behavior, and race-safe CLI atomic writes.
 - **Repo-scoped authoring skill:** structural validation passes; its bundled
   starter is locked byte-for-byte to the canonical minimal deck by Vitest.
-- **Browser conformance:** the checked ES2022 IIFE is 655,826 bytes with
+- **Browser conformance:** the checked ES2022 IIFE is 656,582 bytes with
   SHA-256
-  `57a62807006837c8e59d73f69e93f072ae94e8f67cfd8ab587e3fc35e6036533`.
+  `6e92938113408ffc0cb5ccecedac88a1c9cc1966f25724c533243259c0472661`.
   Four real-HTTP C4/C6/C8 tests plus three writable-editor tests pass in each
   captured Chromium, Firefox, and WebKit project (21 of 21), including
   normalized Node/browser equality for the minimal deck, arbitrary-viewBox
   standalone kitchen sink, invalid profile, transactional editing, clean
   source/slide downloads, undo/redo, and tamper-safe read-only fallback.
-- **Writable trusted editor:** its current generated IIFE is 666,636 bytes with
+- **Writable trusted editor:** its current generated IIFE is 667,548 bytes with
   SHA-256
-  `91caa37d88a5b90f9c15497437df33a121cfcabcd60c7827d31067d539529c3b`;
+  `ad7f023813d99d8c7d82468616989db03fbde834a9336925b605fd6ceb69d2c1`;
   `editor:check` exact-regenerates the app and stylesheet before accepting
   them.
 - **Repository enforcement:** Rebar `v3.0.0-beta` Tier 3 reports 14/14 adopter

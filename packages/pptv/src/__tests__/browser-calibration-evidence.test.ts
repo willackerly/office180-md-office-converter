@@ -16,6 +16,10 @@ const KERNEL_META_URL = new URL(
   "../../assets/pptv-browser-kernel-0.1.meta.json",
   import.meta.url,
 );
+const CALIBRATION_URL = new URL(
+  "../../test-fixtures/c8/browser-calibration.json",
+  import.meta.url,
+);
 const ROOT_PACKAGE_URL = new URL("../../../../package.json", import.meta.url);
 
 interface OracleEvidence {
@@ -28,6 +32,8 @@ interface EngineEvidence {
   engine: "chromium" | "firefox" | "webkit";
   version: string;
   userAgent: string;
+  platform: string;
+  devicePixelRatio: number;
   status: string;
   kernedOracle: OracleEvidence;
   unkernedOracle: OracleEvidence;
@@ -53,6 +59,18 @@ interface CalibrationEvidence {
   };
   privacy: { status: string; note: string };
   engines: EngineEvidence[];
+  platformGridFittingCapture: {
+    engine: "chromium";
+    version: string;
+    platform: string;
+    devicePixelRatio: number;
+    status: "pass-with-platform-grid-fitting-variance";
+    source: string;
+    maxAbsoluteDelta: number;
+    maxRelativeDelta: number;
+    widths: Record<string, number>;
+    behavior: string;
+  };
   coverage: {
     samples: number;
     missingGlyphCodepoint: number;
@@ -67,9 +85,19 @@ interface CalibrationEvidence {
 
 describe("checked browser C8 calibration evidence", () => {
   it("locks the three-engine inventory to exact tool and font identities", async () => {
-    const [evidence, fontManifest, kernelMetadata, rootPackage] =
+    const [evidence, calibration, fontManifest, kernelMetadata, rootPackage] =
       await Promise.all([
         readJson<CalibrationEvidence>(EVIDENCE_URL),
+        readJson<{
+          platformGridFittingCapture: {
+            engine: "chromium";
+            engineVersion: string;
+            platform: string;
+            devicePixelRatio: number;
+            widths: Record<string, number>;
+            behavior: string;
+          };
+        }>(CALIBRATION_URL),
         readJson<{ font: { family: string; sha256: string } }>(
           FONT_MANIFEST_URL,
         ),
@@ -86,7 +114,7 @@ describe("checked browser C8 calibration evidence", () => {
     expect(evidence).toMatchObject({
       schema: "pptv-browser-text-calibration-evidence/0.1",
       capturedOn: "2026-07-30",
-      overallStatus: "pass-with-explicit-webkit-unkerned-variance",
+      overallStatus: "pass-with-explicit-engine-and-platform-variance",
       privacy: { status: "safe" },
       coverage: {
         samples: 6,
@@ -110,6 +138,21 @@ describe("checked browser C8 calibration evidence", () => {
       },
     });
     expect(evidence.toolchain.esbuild).toBe(kernelMetadata.generator.version);
+    expect(evidence.platformGridFittingCapture).toMatchObject({
+      engine: calibration.platformGridFittingCapture.engine,
+      version: calibration.platformGridFittingCapture.engineVersion,
+      platform: calibration.platformGridFittingCapture.platform,
+      devicePixelRatio: calibration.platformGridFittingCapture.devicePixelRatio,
+      status: "pass-with-platform-grid-fitting-variance",
+      widths: calibration.platformGridFittingCapture.widths,
+      behavior: calibration.platformGridFittingCapture.behavior,
+    });
+    expect(
+      evidence.platformGridFittingCapture.maxAbsoluteDelta,
+    ).toBeGreaterThan(evidence.method.tolerance.absoluteSvgUnits);
+    expect(
+      evidence.platformGridFittingCapture.maxRelativeDelta,
+    ).toBeGreaterThan(evidence.method.tolerance.relative);
     expect(evidence.engines.map(({ engine }) => engine)).toEqual([
       "chromium",
       "firefox",
@@ -119,6 +162,8 @@ describe("checked browser C8 calibration evidence", () => {
       {
         engine: "chromium",
         version: "151.0.7922.34",
+        platform: "MacIntel",
+        devicePixelRatio: 1,
         status: "pass-kerned",
         kernedOracle: {
           maxAbsoluteDelta: 0.01387500000001296,
@@ -129,6 +174,8 @@ describe("checked browser C8 calibration evidence", () => {
       {
         engine: "firefox",
         version: "153.0",
+        platform: "MacIntel",
+        devicePixelRatio: 1,
         status: "pass-kerned",
         kernedOracle: {
           maxAbsoluteDelta: 0.021332824707030795,
@@ -139,6 +186,8 @@ describe("checked browser C8 calibration evidence", () => {
       {
         engine: "webkit",
         version: "26.5",
+        platform: "MacIntel",
+        devicePixelRatio: 2,
         status: "pass-with-unkerned-browser-variance",
         kernedOracle: {
           maxAbsoluteDelta: 6.2399979858398495,
@@ -163,6 +212,8 @@ describe("checked browser C8 calibration evidence", () => {
     for (const engine of evidence.engines) {
       expect(engine.version.length).toBeGreaterThan(0);
       expect(engine.userAgent.length).toBeGreaterThan(20);
+      expect(engine.platform.length).toBeGreaterThan(0);
+      expect(engine.devicePixelRatio).toBeGreaterThan(0);
       for (const oracle of [engine.kernedOracle, engine.unkernedOracle]) {
         const withinTolerance =
           oracle.maxAbsoluteDelta <= tolerance.absoluteSvgUnits ||
