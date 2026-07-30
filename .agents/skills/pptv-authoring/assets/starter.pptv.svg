@@ -1,0 +1,18 @@
+<svg id="diagram"
+     data-pptv-version="0.1"
+     viewBox="0 0 1200 800"
+     xmlns="http://www.w3.org/2000/svg">
+  <title>Minimal PPTV diagram</title>
+
+  <rect id="diagram.background"
+        data-pptv-role="shape" data-pptv-export="native"
+        x="0" y="0" width="1200" height="800"
+        fill="#ffffff"/>
+
+  <text id="diagram.title"
+        data-pptv-role="text" data-pptv-export="native"
+        data-pptv-frame="40 40 1120 154"
+        data-pptv-line-step="77"
+        x="40" y="104"
+        style="fill:#17211e;font-family:Arial;font-size:64px;font-weight:700">Minimal PPTV diagram</text>
+</svg>

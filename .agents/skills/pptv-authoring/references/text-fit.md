@@ -6,21 +6,25 @@ Neither the resolver nor compiler may wrap, shrink, move, or rewrite it.
 
 ## Required source
 
-Every native text object needs:
+Every native text object in either source form needs:
 
 ```xml
 <text id="slide.label"
-      class="label"
       data-pptv-role="text"
       data-pptv-export="native"
       data-pptv-frame="100 180 600 60"
       data-pptv-line-step="36"
+      fill="#17211e"
+      font-family="Arial"
+      font-size="30"
       x="100"
       y="220">One authored hard line</text>
 ```
 
-The class must resolve one concrete font family and explicit font size. The
-source `x`/`y` baseline and line string are authoritative.
+The object must resolve one concrete font family and explicit font size. In a
+standalone diagram, declare both with presentation attributes or local
+`style`. In a deck, a supported base class and complete theme may resolve them.
+The source `x`/`y` baseline and line string are authoritative.
 
 For C7 output, use exactly one direct line per text object. If a paragraph is
 visually multiline, create one text object per explicit line and group them.
@@ -55,7 +59,7 @@ evidence.
 Run C8 with an explicit map of every used face/style:
 
 ```bash
-pnpm pptv text-fit deck.pptv.html --font-map fonts.json
+pnpm pptv text-fit source.pptv.svg --font-map fonts.json
 ```
 
 ```json
