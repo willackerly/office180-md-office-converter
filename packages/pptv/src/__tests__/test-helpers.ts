@@ -1,3 +1,5 @@
+// Architecture: CONTRACT:C4-PPTV-SOURCE.1.0
+
 import { readFile } from "node:fs/promises";
 
 import type { Diagnostic } from "../core/types.js";

@@ -114,7 +114,7 @@ packages/pptv/                  @office180/pptv
   src/core/                     source, scan, deck, constrained styles/resolver
   src/ops/                      JSON-safe projections and patch engine
   src/browser/                  exact-source editor session and history
-  src/node/                     file I/O, trusted wrapper, strict PPTX canary
+  src/node/                     file I/O, exact-font fit, wrapper, PPTX canary
   src/cli.ts                    Node command surface
   schemas/                      manifest and patch schemas
 ```
@@ -123,7 +123,7 @@ Public boundaries are the root package plus `@office180/pptv/core`,
 `@office180/pptv/ops`, `@office180/pptv/browser`, `@office180/pptv/node`, and
 versioned schema subpaths. Internal module names are not permission to publish
 seven speculative packages. A future split should follow actual
-browser/editor/PPTX consumers and keep one implementation of C4-C7.
+browser/editor/PPTX consumers and keep one implementation of C4-C8.
 
 ### 4.1 Portable core
 
@@ -145,15 +145,17 @@ reconstruct a trusted base instead of trusting caller-mutated indexes.
 
 The host reads exact bytes and writes only to an explicit destination through a
 temporary peer, fsync, and atomic rename. The CLI exposes `outline`, `validate`,
-`resolve`, `editor-pack`, `pptx-canary`, `text`, `show`, `list`, and `patch`.
-`editor-pack` and `pptx-canary` require an explicit `--output`; `patch`
-requires exactly one of `--check` or `--output`.
+`resolve`, `editor-pack`, `pptx-canary`, `text-fit`, `text`, `show`, `list`,
+and `patch`. `editor-pack` and `pptx-canary` require an explicit `--output`;
+`text-fit` requires an explicit font map; `patch` requires exactly one of
+`--check` or `--output`.
 
 ### 4.4 Implemented boundaries and roadmap
 
 Constrained CSS/theme resolution, a browser editor-session API and trusted
-wrapper, and strict PPTX compilation now live behind logical interfaces within
-this package. Writable theme/geometry editing, general rendering, broad PPTX
+wrapper, exact-font non-mutating fit evidence, and strict PPTX compilation now live behind
+logical interfaces within this package. Writable theme/geometry editing,
+general rendering, broad PPTX
 compile/inspect/reconcile, and any PowerPoint/OpenDocKit adapter remain
 roadmap. The adapter must remain optional. Separate packages are warranted only
 when they provide a real dependency or runtime boundary.
@@ -330,9 +332,10 @@ resolvePptvDeck(deck): PptvResolvedResult
 ```
 
 The current resolver maps the fixed canvas, supported CSS, finite
-primitive/group geometry, opaque asset boundaries, and explicit one-line text
-to compiler-grade data with diagnostics. It performs no network or filesystem
-asset resolution.
+primitive/group geometry, opaque asset boundaries, and explicit hard-line text
+to compiler-grade data with diagnostics. C6 accepts a direct line or direct,
+non-nested `tspan` lines; C7 is the surface that currently requires one line per
+text object. The resolver performs no network or filesystem asset resolution.
 
 Broader normalization and rendering remain roadmap:
 
@@ -388,6 +391,7 @@ pptv validate <file> [--format text|json]
 pptv resolve <file> [--format text|json]
 pptv editor-pack <file> --output PATH [--format text|json]
 pptv pptx-canary <file> --output PATH [--format text|json]
+pptv text-fit <file> --font-map PATH [--near-limit N] [--format text|json]
 pptv text <file> [--slide ID] [--include-hidden] [--format text|json|jsonl]
 pptv show <file> <id> [--view semantic|editing] [--format json]
 pptv list <file> [--slide ID] [--role ROLE] [--class CLASS] [--text TEXT]
@@ -679,8 +683,8 @@ acceptance-gate authority. This section is only the architecture summary.
 - **Implemented:** strict source/manifest/slide/theme/library inventory,
   semantic loading for self-contained HTML, JSON-safe projections and stable-ID
   queries, exact preserve writes for direct text/active theme/slide order, and
-  the `outline`, `validate`, `resolve`, `editor-pack`, `pptx-canary`, `text`,
-  `show`, `list`, and `patch` CLI.
+  the `outline`, `validate`, `resolve`, `editor-pack`, `pptx-canary`,
+  `text-fit`, `text`, `show`, `list`, and `patch` CLI.
 - **Remaining:** rich-text and token edits, external dependencies,
   geometry/structural operations, and canonical serialization.
 

@@ -23,4 +23,13 @@ coverage/
 *.swp
 
 # Agent worktrees / local tooling state (never scanned by enforcement scripts)
-.claude/
+.claude/*
+!.claude/settings.json
+!.claude/skills/
+!.claude/skills/**
+.claude/worktrees/
+
+# Rebar-generated Steward state
+architecture/.state/*.json
+architecture/.state/steward-report.md
+!architecture/.state/.gitkeep

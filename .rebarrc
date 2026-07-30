@@ -1,27 +1,27 @@
-# Rebar configuration for md2docx
+# Rebar configuration for office180-md-office-converter
 #
 # Tier controls which checks are enforced:
 #   1 = Partial  — contract refs + TODOs only (solo dev / early adoption)
 #   2 = Adopted  — + headers, freshness, registry (small team)
 #   3 = Enforced — + ground truth, compliance (department / production)
 #
-# md2docx is a solo-maintained CLI tool, but it ships two production
-# converters with a documented round-trip contract, so the enforcement
-# scripts are wired in full: contract references, TODO tracking, doc
-# freshness, and ground-truth metrics all run and are expected to pass.
+# This solo-maintained dual-language converter ships persistent source
+# contracts, so the full adopter-side Tier 3 surface is enabled: cold-start
+# checks, contract/doc gates, generated registry, Steward, ground truth,
+# package checks, and CI.
 
 tier = 3
+# Legacy alias retained for older rebar scripts.
+REBAR_TIER=3
 
 # Version compatibility
-REBAR_VERSION=3.0.0
+REBAR_VERSION=3.0.0-beta
 
 # Optional: Override specific check behaviors
 # REBAR_SKIP_CHECKS="check-freshness"
 # REBAR_TODO_STRICT=true
 # REBAR_CONTRACT_STRICT=false
 
-# ─── Deliberate ci-check skips (SKIP_* convention, honored by ci-check.sh) ───
-# md2docx does not ship the rebar Steward or a `templates/` bootstrap tree —
-# it is a Tier 3 adopter, not a rebar-source repo. There is no ci-check.sh
-# in this repo; scripts are run individually (see scripts/README.md).
-SKIP_BOOTSTRAP_SYNC=1
+# The adopter-local ci-check intentionally omits rebar's source-repository-only
+# bootstrap-template drift gate; there is no templates/project-bootstrap tree
+# in this repository.

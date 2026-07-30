@@ -28,7 +28,7 @@ loading every asset, measuring every font, or parsing the final runtime.
 
 ### Normative 0.1 boundary
 
-The executable behavior is the single `@office180/pptv` package, C4 through C7,
+The executable behavior is the single `@office180/pptv` package, C4 through C8,
 the published schemas, and their tests. It currently provides:
 
 - `scanPptvSource`, `parseManifest`, `validateManifest`, `loadDeck`, and
@@ -39,13 +39,15 @@ the published schemas, and their tests. It currently provides:
 - only `set-text`, `set-active-theme`, and `set-slide-order`;
 - pure C6 fixed-canvas constrained-CSS/geometry/group/hard-line resolution;
 - exact-source editor sessions plus deterministic strict-CSP editor packs with a
-  literal-data viewport; and
-- the Node-only deterministic C7 strict-subset PPTX compiler/graph validator.
+  literal-data viewport;
+- the Node-only deterministic C7 strict-subset PPTX compiler/graph validator;
+  and
+- pure C8 text-fit evidence plus the Node-only explicit exact-font adapter.
 
 Interfaces in this document that exceed the narrow C6 resolver, editor
-foundation, or C7 canary—rich editing, libraries, dependencies, canonical
-serialization, broader rendering/PPTX, or reconciliation—remain roadmap unless
-explicitly identified as implemented 0.1.
+foundation, C7 canary, or C8 preflight—rich editing, libraries, dependencies,
+canonical serialization, broader rendering/PPTX, or reconciliation—remain
+roadmap unless explicitly identified as implemented 0.1.
 
 ## 2. Hard invariants
 
@@ -1039,6 +1041,7 @@ pptv validate <file> [--format text|json]
 pptv resolve <file> [--format text|json]
 pptv editor-pack <file> --output PATH [--format text|json]
 pptv pptx-canary <file> --output PATH [--format text|json]
+pptv text-fit <file> --font-map PATH [--near-limit N] [--format text|json]
 pptv text <file> [--slide ID] [--include-hidden] [--format text|json|jsonl]
 pptv show <file> <id> [--view semantic|editing] [--format json]
 pptv list <file> [--slide ID] [--role ROLE] [--class CLASS]
@@ -1063,7 +1066,8 @@ Exit behavior:
 
 ```text
 0 success
-1 validation, resolution, patch, or compiler capability failure
+1 validation, resolution, text overflow/unverified evidence, patch, or compiler
+  capability failure
 2 invocation error
 3 dependency or environment failure
 ```
@@ -1081,6 +1085,9 @@ a general PPTX renderer or editor.
 
 A narrow adapter can consume public, bounded surfaces such as:
 
+- a future stable font-metrics package that exposes selected face/style,
+  missing codepoints, substitution confidence, width bounds, and bundle
+  identity;
 - `@opendockit/core/opc` package-reader, part, and relationship APIs;
 - selected XML, DrawingML theme/color, unit, and geometry utilities;
 - font metrics and font resolution once their boundary is stable;

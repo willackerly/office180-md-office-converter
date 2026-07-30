@@ -1,7 +1,7 @@
 # Project Metrics
 
 <!-- FRESHNESS: Update this date every time you modify this file -->
-<!-- freshness: 2026-07-29 -->
+<!-- freshness: 2026-07-30 -->
 
 **Ground-truth metrics for the Python DOCX pair and TypeScript PPTV kernel.**
 
@@ -14,10 +14,10 @@ source files, tests, contracts, schemas, or themes change.
 python_source_files = 2
 test_files = 1
 test_functions = 7
-typescript_source_files = 20
-typescript_test_files = 11
-typescript_test_cases = 104
-contracts = 7
+typescript_source_files = 22
+typescript_test_files = 14
+typescript_test_cases = 121
+contracts = 8
 published_schemas = 2
 shipped_themes = 3
 ```
@@ -39,29 +39,53 @@ shipped_themes = 3
 - `md2docx.py` — 404 lines.
 - `docx2md.py` — 267 lines.
 - `tests/test_roundtrip.py` — 278 lines.
-- `packages/pptv/src/` — 20 non-test TypeScript modules / 10,854 lines across
-  the portable source/resolved kernel, operations, browser session, Node
-  editor/compiler boundary, and CLI.
-- `packages/pptv/src/__tests__/` — 11 Vitest files / 3,942 lines (excluding the
+- `packages/pptv/src/` — 22 non-test TypeScript modules / 12,032 lines across
+  the portable source/resolved/text-fit kernel, operations, browser session,
+  Node editor/font/compiler boundary, and CLI.
+- `packages/pptv/src/__tests__/` — 14 Vitest files / 4,996 lines (excluding the
   shared helper).
 
 ## Testing Status
 
 - **Python:** 7 passing standalone tests covering theme resolution, provenance,
   forward/reverse conversion, link demotion, and the `--no-footer` regression.
-- **TypeScript:** 147 passing runtime Vitest cases from 104 direct
+- **TypeScript:** 169 passing runtime Vitest cases from 121 direct
   `it()`/`test()` declarations (data-driven cases expand at runtime), covering
   exact UTF-8 source handling, BOM/non-BMP coordinates, non-executing security,
   strict container/manifest validation, hierarchy/order, JSON-safe projections,
   atomic preserve-mode operations, exact-source browser sessions/editor packs,
-  C6 style/geometry/text resolution, C7 OPC/ZIP/OOXML mappings and failures, and
-  CLI atomic writes.
+  C6 style/geometry/text resolution, C7 OPC/ZIP/OOXML mappings and failures, C8
+  anchor/measurement/font-map/CLI behavior, and CLI atomic writes.
+- **Repo-scoped authoring skill:** structural validation passes; its bundled
+  starter is locked byte-for-byte to the canonical minimal deck by Vitest.
+- **Repository enforcement:** Rebar `v3.0.0-beta` Tier 3 reports 14/14 adopter
+  gates passing; the generated Steward sees all eight contracts with
+  implementation and test files and zero discoveries.
 - **Skipped tests:** zero.
 
-Manual C7 evidence on the exact recorded contract hash additionally includes
-ISO/ECMA/DCMI XSD validation, independent OpenDocKit reopen/parse, and native
-PowerPoint 16.111.2 open plus two-page 16:9 PDF-render smoke without repair.
-Native PPTX save/reopen and quantitative render comparison remain open.
+Manual C7 1.1 evidence on the exact artifact hash recorded in its contract
+additionally includes ISO/ECMA/DCMI XSD validation, independent OpenDocKit
+reopen/parse, and native PowerPoint 16.111.2 open plus two-page 16:9 PDF-render
+smoke without repair. Native PPTX save/reopen and quantitative render comparison
+remain open.
+
+Manual C8 worked-deck evidence uses
+`TDFLite@2f0cba44a0904c8c964123253050ef32f793e7e2` source
+`docs/product-briefing/tdflite-vs-opentdf.pptv.html` and exact mapped Microsoft
+Arial/Consolas files. Across 153 hard lines, `text-fit` reports 21 definite
+overflows, 10 additional lines at or above the 95% guard band, and zero
+unverified lines. The mapped SHA-256 identities are Arial Regular
+`525979822591a3447cfc49d943d6f7683508e25543407871c0ed8fed05fd2bd9`,
+Arial Bold
+`d72db21f9242aedd6b917d8549ad5921766b24d5f8d0becfda2ff4c620b3c2e0`,
+Consolas Regular
+`1acfcc504d232e39f1ff4f1b54e29af13234da142b1d1386a1f5c027b49e6ab0`,
+and Consolas Bold
+`de40b748651bdc09d308c9b542e3f9c0f66c567f830c474ae320553063be4ae5`.
+A trusted Chromium comparison reports 18 overflows. That difference is
+consistent with unavailable Consolas and likely substitution, but the selected
+browser face was not captured; it is evidence for explicit font identity, not
+a browser-parity or substitution-causality claim.
 
 The aggregate gate is:
 
@@ -80,18 +104,21 @@ pnpm test
 - `C7-PPTX-CANARY` specifies the implemented deterministic strict-subset PPTX
   writer; expanded native fixtures, quantitative fidelity, and save/reopen
   remain.
+- `C8-PPTV-TEXT-FIT` specifies the implemented pure non-mutating preflight and
+  exact-font Node adapter; worked-deck fixture locking and browser/native
+  calibration remain.
 
-C1 through C5 are `verified`. C6 and C7 remain `in-progress` despite their
+C1 through C5 are `verified`. C6, C7, and C8 remain `in-progress` despite their
 implemented/tested surfaces because their contracts retain explicit promotion
 gates.
 
 ## Dependencies
 
 - **Python runtime:** `python-docx`.
-- **PPTV runtime:** Node.js 20+, `parse5`, `jsonc-parser`, and exact
-  `jszip@3.10.1`.
-- **TypeScript development/test:** TypeScript, Vitest, tsx, Prettier, and Node
-  type definitions.
+- **PPTV runtime:** Node.js 20+, `parse5`, `jsonc-parser`, exact
+  `jszip@3.10.1`, and exact `fontkit@2.0.4` behind the Node C8 adapter.
+- **TypeScript development/test:** TypeScript, Vitest, tsx, Prettier, Node type
+  definitions, and `@types/fontkit`.
 - **OpenDocKit:** no runtime dependency. Its sibling checkout is an independent
   C7 validation oracle plus optional future adapter/upstream-contribution target.
 - **Security vulnerabilities:** `pnpm audit` reported no known runtime or

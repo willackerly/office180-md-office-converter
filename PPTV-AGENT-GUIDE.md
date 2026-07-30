@@ -1,10 +1,20 @@
 # PPTV Agent Operating Guide
 
 **Status:** operational for the 0.1 source/query/patch kernel, C6 resolver,
-trusted editor foundation, and strict C7 PPTX canary; broader editing and
-PowerPoint translation remain roadmap
+trusted editor foundation, strict C7 PPTX canary, and C8 exact-font text-fit
+preflight; broader editing and PowerPoint translation remain roadmap
 **Profile identifier:** `pptv-agent/1`  
 **Architecture:** [`PPTV-PROCESSING-API.md`](PPTV-PROCESSING-API.md)
+
+## Repo-scoped authoring workflow
+
+Codex auto-discovers the versioned
+[`$pptv-authoring` skill](.agents/skills/pptv-authoring/SKILL.md) from this
+repository. Invoke it for deck creation, structural repair, exact-line
+authoring, overflow audits, editor-pack preparation, and strict C7 compilation.
+The skill packages this guide, the authoring constraints, and the CLI gates
+into a repeatable workflow; this profile and the component contracts remain
+the behavioral authorities.
 
 ## 1. Purpose
 
@@ -162,10 +172,12 @@ Use for:
 - inspecting exact source fragments.
 
 The C6 resolver is deliberately constrained: it requires the exact `1600 ×
-900` canvas, finite primitive/group geometry, explicit one-line text, supported
-CSS, and self-contained references. It reports unsupported SVG and raster
-assets rather than resolving or fetching them. Resolved output may be
-substantially larger.
+900` canvas, finite primitive/group geometry, explicit hard-line text,
+supported CSS, and self-contained references. C6 accepts direct one-line text
+or explicit direct `tspan` lines; the current C7 compiler is the surface that
+requires one line per text object. C6 reports unsupported SVG and raster assets
+rather than resolving or fetching them. Resolved output may be substantially
+larger.
 
 ## 6. Semantic patch discipline
 
@@ -284,8 +296,13 @@ Do not move slide template blocks merely to reorder the deck.
 2. Retrieve the selected text object.
 3. Apply `set-text` with `oldText`.
 4. Validate the resulting deck.
-5. Perform a trusted/sandboxed visual check when wrapping or fit may change;
-   overflow diagnostics are not implemented in 0.1.
+5. Run exact-font text-fit preflight. It warns but never wraps or repairs:
+
+   ```bash
+   pptv text-fit deck.updated.pptv.html --font-map fonts.json
+   ```
+
+6. Perform a trusted/sandboxed visual check when fidelity is material.
 
 ### 8.3 Move a diagram node
 
@@ -390,6 +407,18 @@ can provide a manual browser check; for untrusted decks, use a separate
 sandboxed renderer. Text and active-theme changes usually merit such a visual
 check when available. Slide reordering can often be confirmed structurally.
 
+Run C8 text-fit preflight with explicit, exact font files:
+
+```bash
+pptv text-fit deck.pptv.html --font-map fonts.json
+```
+
+The command uses anchor-aware frame capacity, hashes the selected font bytes,
+and returns nonzero for a definite overflow or unverified line. It never
+discovers or substitutes a system face and never changes source. A pass proves
+the shaped advance under the identified font and adapter, not pixel-identical
+browser or native PowerPoint rendering.
+
 The strict C7 subset can be compiled explicitly:
 
 ```bash
@@ -422,11 +451,11 @@ Do not claim a visual or native PowerPoint check occurred when it did not.
 
 ## 14. Current repository reality
 
-The repository now implements the C4-C7 vertical slice in one
+The repository now implements the C4-C8 vertical slice in one
 `@office180/pptv` package:
 
 - commands: `outline`, `validate`, `resolve`, `editor-pack`, `pptx-canary`,
-  `text`, `show`, `list`, and `patch`;
+  `text-fit`, `text`, `show`, `list`, and `patch`;
 - views: semantic, editing, and C6 resolved, plus outline/inventory/text
   projections;
 - writes: direct `set-text`, `set-active-theme`, and complete
@@ -440,10 +469,11 @@ The browser-safe `EditorSession` provides exact-source selection, the three
 contracted write intents, validation, and hash-preserving undo/redo. The trusted
 `editor-pack` wrapper holds exact source as inert data under a strict CSP,
 renders literal resolved SVG data, and downloads clean canonical bytes. The C7
-canary provides the narrow native subset described above.
+canary provides the narrow native subset described above. C8 provides pure,
+read-only line fit with an injected measurer and an exact-font Node adapter.
 
 Do not fabricate `theme`, `normalize`, `render`, general visual-editor, general
-PPTX, source-map, or reconciliation behavior. Geometry/class/style/token edits,
-rich text, connector/group editing, duplication, library expansion, canonical
-serialization, broader assets, and reverse PowerPoint translation require
-future contracts and fixtures.
+PPTX, browser/native fit parity, source-map, or reconciliation behavior.
+Geometry/class/style/token edits, rich text, connector/group editing,
+duplication, library expansion, canonical serialization, broader assets, and
+reverse PowerPoint translation require future contracts and fixtures.

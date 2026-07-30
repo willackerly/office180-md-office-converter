@@ -514,6 +514,7 @@ pptv validate
 pptv resolve
 pptv editor-pack
 pptv pptx-canary
+pptv text-fit
 pptv text
 pptv show
 pptv list
@@ -521,8 +522,8 @@ pptv patch
 ```
 
 `patch` requires exactly one of `--check` or an explicit `--output`;
-`editor-pack` and `pptx-canary` also require explicit atomic destinations. The
-broader roadmap is:
+`editor-pack` and `pptx-canary` also require explicit atomic destinations;
+`text-fit` requires an explicit exact-font map. The broader roadmap is:
 
 ```text
 pptv theme

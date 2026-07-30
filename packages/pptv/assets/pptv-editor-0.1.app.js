@@ -1,3 +1,5 @@
+// Architecture: CONTRACT:C4-PPTV-SOURCE.1.0
+
 (() => {
   "use strict";
 

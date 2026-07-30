@@ -2,7 +2,7 @@
  * Deterministic fresh-PPTX compiler canary for the strict C6 primitive subset.
  *
  * CONTRACT:C6-PPTV-RESOLVED.1.0
- * CONTRACT:C7-PPTX-CANARY.1.0
+ * CONTRACT:C7-PPTX-CANARY.1.1
  */
 
 import JSZip from "jszip";
@@ -22,7 +22,9 @@ import type {
 
 const FIXED_DATE_ISO = "2000-01-01T00:00:00Z";
 const EMU_PER_UNIT = 7_620;
-const HUNDREDTH_POINTS_PER_PX = 75;
+// 7,620 EMU/unit ÷ 127 EMU/hundredth-point. Text and frame geometry must use
+// one physical scale or native PowerPoint can overflow a line that fits SVG.
+const HUNDREDTH_POINTS_PER_UNIT = 60;
 const MAX_SIGNED_INT_31 = 0x7fffffff;
 const MASTER_ID = 0x80000000;
 const MAX_CANARY_ZIP_BYTES = 128 * 1024 * 1024;
@@ -1735,7 +1737,7 @@ function lineWidthEmu(value: number, label: string): number {
 function fontHundredthPoints(value: number, label: string): number {
   const result = scaledInteger(
     value,
-    HUNDREDTH_POINTS_PER_PX,
+    HUNDREDTH_POINTS_PER_UNIT,
     "PPTV-PPTX-NON-INTEGRAL-FONT",
     label,
   );
@@ -1751,7 +1753,7 @@ function fontHundredthPoints(value: number, label: string): number {
 function spacingHundredthPoints(value: number, label: string): number {
   const result = scaledInteger(
     value,
-    HUNDREDTH_POINTS_PER_PX,
+    HUNDREDTH_POINTS_PER_UNIT,
     "PPTV-PPTX-NON-INTEGRAL-FONT",
     label,
   );

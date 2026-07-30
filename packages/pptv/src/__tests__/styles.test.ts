@@ -1,3 +1,5 @@
+// Tests: CONTRACT:C6-PPTV-RESOLVED.1.0
+
 import { describe, expect, it } from "vitest";
 
 import { loadDeck } from "../core/deck.js";

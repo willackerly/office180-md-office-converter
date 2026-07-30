@@ -1,3 +1,5 @@
+// Tests: CONTRACT:C7-PPTX-CANARY.1.1
+
 import { spawnSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
 
@@ -42,7 +44,7 @@ interface RejectedRangeCase extends RangeCase {
 }
 
 const TEST_EMU_PER_UNIT = 7_620;
-const TEST_HUNDREDTH_POINTS_PER_PX = 75;
+const TEST_HUNDREDTH_POINTS_PER_UNIT = 60;
 const TEST_MIN_COORDINATE_EMU = -27_273_042_329_600;
 const TEST_MAX_COORDINATE_EMU = 27_273_042_316_900;
 const TEST_MAX_LINE_WIDTH_EMU = 20_116_800;
@@ -656,7 +658,7 @@ describe("C7 deterministic PPTX compiler canary", () => {
     expect(cover).not.toContain("xml:space=");
     expect(cover).not.toContain(" descr=");
     expect(cover).toContain(
-      '<a:endParaRPr lang="en-US" sz="7200" b="1" i="0" dirty="0">',
+      '<a:endParaRPr lang="en-US" sz="5760" b="1" i="0" dirty="0">',
     );
     expect(cover).toMatch(
       /<a:endParaRPr[^>]*>[\s\S]*?<a:latin typeface="Arial"\/>[\s\S]*?<a:ea typeface="Arial"\/>[\s\S]*?<a:cs typeface="Arial"\/>[\s\S]*?<\/a:endParaRPr>/u,
@@ -836,7 +838,7 @@ describe("C7 deterministic PPTX compiler canary", () => {
         mutate: (model) =>
           setTitleFontSize(
             model,
-            TEST_MIN_FONT_HUNDREDTH_POINTS / TEST_HUNDREDTH_POINTS_PER_PX,
+            TEST_MIN_FONT_HUNDREDTH_POINTS / TEST_HUNDREDTH_POINTS_PER_UNIT,
           ),
       },
       {
@@ -844,7 +846,7 @@ describe("C7 deterministic PPTX compiler canary", () => {
         mutate: (model) =>
           setTitleFontSize(
             model,
-            TEST_MAX_FONT_HUNDREDTH_POINTS / TEST_HUNDREDTH_POINTS_PER_PX,
+            TEST_MAX_FONT_HUNDREDTH_POINTS / TEST_HUNDREDTH_POINTS_PER_UNIT,
           ),
       },
       {
@@ -852,7 +854,7 @@ describe("C7 deterministic PPTX compiler canary", () => {
         mutate: (model) =>
           setTitleLineStep(
             model,
-            TEST_MIN_SPACING_HUNDREDTH_POINTS / TEST_HUNDREDTH_POINTS_PER_PX,
+            TEST_MIN_SPACING_HUNDREDTH_POINTS / TEST_HUNDREDTH_POINTS_PER_UNIT,
           ),
       },
       {
@@ -860,7 +862,7 @@ describe("C7 deterministic PPTX compiler canary", () => {
         mutate: (model) =>
           setTitleLineStep(
             model,
-            TEST_MAX_SPACING_HUNDREDTH_POINTS / TEST_HUNDREDTH_POINTS_PER_PX,
+            TEST_MAX_SPACING_HUNDREDTH_POINTS / TEST_HUNDREDTH_POINTS_PER_UNIT,
           ),
       },
       {
@@ -924,7 +926,7 @@ describe("C7 deterministic PPTX compiler canary", () => {
       mutate: (model) =>
         setTitleFontSize(
           model,
-          (TEST_MIN_FONT_HUNDREDTH_POINTS - 1) / TEST_HUNDREDTH_POINTS_PER_PX,
+          (TEST_MIN_FONT_HUNDREDTH_POINTS - 1) / TEST_HUNDREDTH_POINTS_PER_UNIT,
         ),
       code: "PPTV-PPTX-NON-INTEGRAL-FONT",
     },
@@ -933,7 +935,7 @@ describe("C7 deterministic PPTX compiler canary", () => {
       mutate: (model) =>
         setTitleFontSize(
           model,
-          (TEST_MAX_FONT_HUNDREDTH_POINTS + 1) / TEST_HUNDREDTH_POINTS_PER_PX,
+          (TEST_MAX_FONT_HUNDREDTH_POINTS + 1) / TEST_HUNDREDTH_POINTS_PER_UNIT,
         ),
       code: "PPTV-PPTX-NON-INTEGRAL-FONT",
     },
@@ -948,7 +950,7 @@ describe("C7 deterministic PPTX compiler canary", () => {
         setTitleLineStep(
           model,
           (TEST_MAX_SPACING_HUNDREDTH_POINTS + 1) /
-            TEST_HUNDREDTH_POINTS_PER_PX,
+            TEST_HUNDREDTH_POINTS_PER_UNIT,
         ),
       code: "PPTV-PPTX-NON-INTEGRAL-FONT",
     },

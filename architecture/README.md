@@ -28,21 +28,26 @@ scripts/check-contract-refs.sh
 architecture/
   README.md                         # this file
   CONTRACT-TEMPLATE.md              # annotated template for new contracts
-  CONTRACT-REGISTRY.md              # contract index (manually maintained —
-                                     #   see the Quick Audit script below)
+  CONTRACT-REGISTRY.md              # generated contract index
   CONTRACT-C1-THEME-SCHEMA.1.0.md   # theme JSON keys, deep-merge, resolution order
   CONTRACT-C2-PROVENANCE.1.0.md     # DOCX core-props provenance stamp
   CONTRACT-C3-ROUNDTRIP.1.0.md      # canonical-MD round-trip guarantees
   CONTRACT-C4-PPTV-SOURCE.1.0.md    # PPTV exact-source/read model
   CONTRACT-C5-PPTV-PATCH.1.0.md     # PPTV atomic patch protocol
   CONTRACT-C6-PPTV-RESOLVED.1.0.md  # PPTV compiler-grade resolved model
-  CONTRACT-C7-PPTX-CANARY.1.0.md    # deterministic primitive-only PPTX canary
+  CONTRACT-C7-PPTX-CANARY.1.1.md    # deterministic primitive-only PPTX canary
+  CONTRACT-C8-PPTV-TEXT-FIT.1.0.md  # exact-font non-mutating text-fit preflight
 ```
 
-This is a small, solo-maintained repository (see `../.rebarrc`), so it does
-not run the rebar Steward or `compute-registry.sh` — `CONTRACT-REGISTRY.md`
-is hand-maintained and `scripts/check-contract-refs.sh` is the enforcement
-mechanism that keeps `CONTRACT:` references honest.
+`CONTRACT-REGISTRY.md` is generated from the contract filesystem:
+
+```bash
+scripts/compute-registry.sh
+scripts/compute-registry.sh --check
+```
+
+Do not edit it by hand. `scripts/steward.sh` combines contract completeness,
+implementation/test links, discoveries, and the Tier 3 enforcement results.
 
 ## Naming Convention
 
@@ -62,9 +67,9 @@ future use (e.g., if the repository grows a plugin interface — see
 
 ## Contract Lifecycle
 
-This repository does not run an automated Steward, so lifecycle is not computed.
-Each contract instead **declares** its maturity honestly in a `**Status:**`
-header line:
+Each contract **declares** its maturity honestly in a `**Status:**` header line.
+The Steward separately computes implementation presence from repository
+evidence; computed lifecycle does not override the declared status.
 
 | Value | Meaning |
 |-------|---------|
