@@ -1,0 +1,96 @@
+{
+  "schema": "pptv-browser-text-calibration-evidence/0.1",
+  "capturedOn": "2026-07-30",
+  "overallStatus": "pass-with-explicit-webkit-unkerned-variance",
+  "fixture": "browser-calibration.json",
+  "method": {
+    "node": "fontkit/2.0.4",
+    "browser": "SVG getComputedTextLength after exact FontFace load and document.fonts.ready",
+    "tolerance": {
+      "absoluteSvgUnits": 0.75,
+      "relative": 0.01,
+      "acceptance": "absolute-or-relative"
+    }
+  },
+  "toolchain": {
+    "playwright": "1.62.0",
+    "esbuild": "0.28.1",
+    "browserKernelSha256": "f7b6759d11696954012a5dbf563c1320ed887cf6f7b43e184f4ffcd56b9738d7",
+    "font": {
+      "family": "ABeeZee",
+      "sha256": "2901c8df256648cc2bb2e3afb381cb8d28e65ed3dbe11de20695ae4d5ffdeda9"
+    }
+  },
+  "privacy": {
+    "status": "safe",
+    "note": "User-agent strings are Playwright browser identities only; no local paths, usernames, hostnames, or source text are retained."
+  },
+  "engines": [
+    {
+      "engine": "chromium",
+      "version": "151.0.7922.34",
+      "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/151.0.7922.34 Safari/537.36",
+      "status": "pass-kerned",
+      "kernedOracle": {
+        "maxAbsoluteDelta": 0.01387500000001296,
+        "maxRelativeDelta": 0.00015973513011159903,
+        "withinTolerance": true
+      },
+      "unkernedOracle": {
+        "maxAbsoluteDelta": 6.227625000000003,
+        "maxRelativeDelta": 0.07439345613532114,
+        "withinTolerance": false
+      }
+    },
+    {
+      "engine": "firefox",
+      "version": "153.0",
+      "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:153.0) Gecko/20100101 Firefox/153.0",
+      "status": "pass-kerned",
+      "kernedOracle": {
+        "maxAbsoluteDelta": 0.021332824707030795,
+        "maxRelativeDelta": 0.0001896048839859819,
+        "withinTolerance": true
+      },
+      "unkernedOracle": {
+        "maxAbsoluteDelta": 6.2286702270507845,
+        "maxRelativeDelta": 0.07440594212359977,
+        "withinTolerance": false
+      }
+    },
+    {
+      "engine": "webkit",
+      "version": "26.5",
+      "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.5 Safari/605.1.15",
+      "status": "pass-with-unkerned-browser-variance",
+      "kernedOracle": {
+        "maxAbsoluteDelta": 6.2399979858398495,
+        "maxRelativeDelta": 0.08054520324555775,
+        "withinTolerance": false
+      },
+      "unkernedOracle": {
+        "maxAbsoluteDelta": 0.000007080078120225153,
+        "maxRelativeDelta": 5.858750067063733e-8,
+        "withinTolerance": true
+      }
+    }
+  ],
+  "coverage": {
+    "samples": 6,
+    "includes": [
+      "AV kerning",
+      "spaces",
+      "representative mixed text",
+      "near-limit",
+      "exact boundary",
+      "overflow"
+    ],
+    "missingGlyphCodepoint": 129514,
+    "missingGlyphStatus": "unverified",
+    "diagramTextFit": {
+      "schema": "pptv-diagram-text-fit/0.1",
+      "lines": 4,
+      "unverified": 0
+    }
+  }
+}
