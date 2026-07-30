@@ -1,7 +1,7 @@
 /**
  * Strict PPTV manifest parsing, field ranges, and container references.
  *
- * CONTRACT:C4-PPTV-SOURCE.1.0
+ * CONTRACT:C4-PPTV-SOURCE.1.1
  */
 
 import {

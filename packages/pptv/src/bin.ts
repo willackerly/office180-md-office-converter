@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 
-// Architecture: CONTRACT:C4-PPTV-SOURCE.1.0
+// Architecture: CONTRACT:C4-PPTV-SOURCE.1.1
 
 import { runCli } from "./cli.js";
 

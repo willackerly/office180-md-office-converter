@@ -52,6 +52,7 @@ while IFS= read -r file; do
     *_test.go|*.test.ts|*.test.tsx|*.test.js|*.spec.ts|*.spec.tsx|*.spec.js) continue ;;
     */vendor/*|*/node_modules/*|*/dist/*|*/build/*|*/.git/*) continue ;;
     *_generated*|*.gen.*|*.pb.go|*.pb.ts) continue ;;
+    */assets/pptv-browser-kernel-0.1.iife.js|*/assets/pptv-editor-0.1.app.js) continue ;;
   esac
 
   total=$((total + 1))

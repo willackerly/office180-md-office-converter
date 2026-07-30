@@ -1,4 +1,4 @@
-// Architecture: CONTRACT:C4-PPTV-SOURCE.1.0
+// Architecture: CONTRACT:C4-PPTV-SOURCE.1.1
 
 import { readFile } from "node:fs/promises";
 

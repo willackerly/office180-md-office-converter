@@ -418,7 +418,7 @@ describe("PPTV source materialization and scan", () => {
     expect(nested.sections).toEqual([]);
   });
 
-  it("recognizes standalone SVG and external manifests as inventory-only forms", async () => {
+  it("recognizes standalone SVG and external manifest source forms without execution", async () => {
     const svg = await scanPptvSource({
       kind: "text",
       text: '<svg id="one" viewBox="0 0 10 10" data-pptv-version="1"></svg>',

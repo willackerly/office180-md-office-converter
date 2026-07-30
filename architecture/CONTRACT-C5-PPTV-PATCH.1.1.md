@@ -3,7 +3,7 @@
 <!-- SUPERSEDES: CONTRACT-C5-PPTV-PATCH.1.0 -->
 
 **Version:** 1.1
-**Status:** in-progress
+**Status:** verified
 **Owner:** Will Ackerly
 **Type:** Protocol
 **Cross-repo Promotability:** Yes — OpenDocKit collaboration/edit layers may adopt the transaction and precondition shape
@@ -153,9 +153,9 @@ after their source-edit rules and fixtures exist.
 - [x] Overlapping range rejection, including competing zero-width insertions (`patch.test.ts`)
 - [x] Preserve-mode byte identity outside affected ranges, including leading BOM (`patch.test.ts`)
 - [x] Candidate-source revalidation rejects an invalid result atomically (`hardening-extra.test.ts`)
-- [ ] Standalone direct-text success, stale/precondition failure, exact-diff preservation, and candidate diagram reload
-- [ ] Diagram theme/order operations produce stable `PPTV-PATCH-UNSUPPORTED` diagnostics and no replacement
-- [ ] Mixed diagram transactions remain all-or-nothing
+- [x] Standalone direct-text success, stale/precondition failure, exact-diff preservation, and candidate diagram reload
+- [x] Diagram theme/order operations produce stable `PPTV-PATCH-UNSUPPORTED` diagnostics and no replacement
+- [x] Mixed diagram transactions remain all-or-nothing
 
 ## Retirement / supersession plan
 

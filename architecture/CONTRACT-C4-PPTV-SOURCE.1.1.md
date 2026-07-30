@@ -3,7 +3,7 @@
 <!-- SUPERSEDES: CONTRACT-C4-PPTV-SOURCE.1.0 -->
 
 **Version:** 1.1
-**Status:** in-progress
+**Status:** verified
 **Owner:** Will Ackerly
 **Type:** Data Model
 **Cross-repo Promotability:** Yes — a future optional OpenDocKit adapter may consume PPTV projections without becoming a core dependency
@@ -51,6 +51,13 @@ A caller loads a self-contained `.pptv.svg` whose root declares its stable ID,
 PPTV version, SVG namespace, and arbitrary positive finite `viewBox`. The
 result is a `PptvDiagram` with one root object tree in DOM painter order, not a
 fabricated manifest, deck, slide, theme, or slide-order entry.
+
+### Scenario 5 — reject browser-tolerated but invalid XML
+
+A standalone SVG contains a duplicate attribute or an omitted/mismatched end
+tag that an HTML foreign-content parser could repair. C4 rejects it before
+semantic loading because a `.pptv.svg` atom must also be well-formed when
+consumed as `image/svg+xml`; HTML parser recovery is never format authority.
 
 ## Interfaces
 
@@ -107,6 +114,7 @@ distinct semantic type.
 | Artifact kinds | A self-contained HTML source semantically loads as a `PptvDeck`; a standalone SVG source semantically loads as a `PptvDiagram`. Neither loader coerces one kind into the other. External manifests remain inventory-only. |
 | HTML authority | The manifest defines slide order; physical template order does not. Strict HTML requires explicit `html`/`head`/`body`, allowlisted container/control-block attributes, an inert head, exactly one manifest, an empty inert `main`/`div` output mount, exactly one inert `<script type="text/css" data-pptv-style="base">`, and one recognized viewer runtime. Canonical body order is manifest, output mount, slides, libraries, base style, themes, runtime. All C4 1.0 HTML behavior is preserved. |
 | Diagram root | A standalone diagram contains exactly one source-located root `svg` and otherwise only an optional XML declaration, comments, and whitespace. The root requires a non-empty stable `id`, `data-pptv-version="0.1"`, `xmlns="http://www.w3.org/2000/svg"`, and a four-number finite unitless `viewBox` whose width and height are strictly positive. Its origin, size, and aspect ratio are otherwise arbitrary. Filename-derived identity is never semantic authority. |
+| Diagram XML | Before the HTML/SVG structural scanner is consulted, standalone SVG must pass a namespace-aware XML 1.0 well-formedness parse over the exact retained text. Duplicate attributes, mismatched/omitted end tags, undeclared prefixes, invalid XML characters, multiple roots, DTD/DOCTYPE declarations, and custom entity declarations fail closed. The optional XML declaration and the five predefined XML entities remain allowed. Parser recovery never changes or supplies authoritative bytes. |
 | Diagram control plane | A diagram has no manifest, slide/template wrapper, output mount, library, theme, executable runtime, dependency, or active-theme/slide-order authority. No such state is synthesized during loading or projection. |
 | Diagram styling boundary | Standalone SVG 0.1 has no stylesheet, class, theme, custom-property, token, or `var()` surface. A `style` element or `class` attribute is unsupported. C6 permits only its fixed defaults, supported presentation attributes, and supported element-local `style` declarations. |
 | SVG authority | Stable SVG `id` is canonical object identity and DOM sibling order is canonical painter/z-order. |
@@ -135,6 +143,7 @@ distinct semantic type.
 | Invalid diagram version | A standalone root does not declare `data-pptv-version="0.1"` | `PPTV-DIAGRAM-ROOT-VERSION` |
 | Invalid diagram namespace | A standalone root does not declare the exact SVG namespace | `PPTV-DIAGRAM-ROOT-NAMESPACE` |
 | Invalid diagram viewBox | A standalone root omits the four-number finite-positive viewBox | `PPTV-SVG-VIEWBOX` |
+| Invalid diagram XML | Standalone SVG is not namespace-aware XML 1.0 well formed, or declares a DTD/DOCTYPE/custom entity surface | `PPTV-SCAN-SVG-XML` |
 | Unsupported diagram root attribute | A standalone root has an attribute outside its strict allowlist | `PPTV-DIAGRAM-ROOT-ATTRIBUTES` |
 | Unsupported diagram stylesheet | A standalone diagram contains a `style` element, `class`, or another stylesheet/theme control surface | `PPTV-DIAGRAM-STYLE` |
 | Invalid manifest | JSON or required field shape is invalid | `PPTV-MANIFEST-INVALID` |
@@ -151,7 +160,9 @@ distinct semantic type.
 
 - Depends on: none
 - Configuration: strict order, source-size, element-count, and nesting-depth limits are explicit scan/load options
-- External: `parse5` for non-executing WHATWG HTML tokenization with source locations; `jsonc-parser` for strict JSON value ranges
+- External: `parse5` for non-executing WHATWG HTML/SVG tokenization with source
+  locations; exact `saxes@6.0.0` for the standalone namespace-aware XML
+  well-formedness gate; `jsonc-parser` for strict JSON value ranges
 
 ## Cross-references
 
@@ -185,9 +196,12 @@ distinct semantic type.
 - [x] Manifest order independent from template order (`manifest-deck.test.ts`)
 - [x] Duplicate IDs and unsupported native constructs (`manifest-deck.test.ts`)
 - [x] Outline/text/object projections exclude unrelated runtime and CSS content (`manifest-deck.test.ts`)
-- [ ] Required standalone root metadata, arbitrary finite-positive viewBox, and no filename-derived identity
-- [ ] Standalone diagram materialization, stylesheet/class rejection, object queries, duplicate suppression, and JSON-safe projections
-- [ ] Deck and diagram loaders reject cross-kind input without synthesizing another artifact kind
+- [x] Required standalone root metadata, arbitrary finite-positive viewBox, and no filename-derived identity
+- [x] Standalone diagram materialization, stylesheet/class rejection, object queries, duplicate suppression, and JSON-safe projections
+- [x] Deck and diagram loaders reject cross-kind input without synthesizing another artifact kind
+- [x] Standalone duplicate attributes, mismatched/omitted tags, undeclared
+  prefixes, DTD declarations, and invalid XML characters fail before semantic
+  loading; the optional XML declaration and predefined entities remain valid
 
 ## Retirement / supersession plan
 
@@ -202,4 +216,4 @@ distinct semantic type.
 | Version | Date | Change | Migration |
 |---------|------|--------|-----------|
 | 1.0 | 2026-07-28 | Initial executable contract, including the pre-publication base-style control block, verified against the 0.1 TypeScript source kernel and source-scan/manifest-deck tests | — |
-| 1.1 | 2026-07-30 | Add a first-class standalone SVG diagram atom with strict root metadata, stylesheet-free local styling, arbitrary positive finite viewBox, and a semantic type distinct from decks | Existing HTML sources and `loadDeck()` behavior are unchanged; SVG callers adopt `loadDiagram()`/`loadPptvDocument()` and must declare required root metadata |
+| 1.1 | 2026-07-30 | Add a first-class standalone SVG diagram atom with strict root metadata, stylesheet-free local styling, arbitrary positive finite viewBox, namespace-aware XML well-formedness, and a semantic type distinct from decks | Existing HTML sources and `loadDeck()` behavior are unchanged; SVG callers adopt `loadDiagram()`/`loadPptvDocument()` and must declare required root metadata and well-formed XML |
