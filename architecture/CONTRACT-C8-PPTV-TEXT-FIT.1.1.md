@@ -1,6 +1,8 @@
-# CONTRACT-C8-PPTV-TEXT-FIT.1.0
+# CONTRACT-C8-PPTV-TEXT-FIT.1.1
 
-**Version:** 1.0
+<!-- SUPERSEDES: CONTRACT-C8-PPTV-TEXT-FIT.1.0 -->
+
+**Version:** 1.1
 **Status:** in-progress
 **Owner:** Will Ackerly
 **Type:** Verification
@@ -10,10 +12,10 @@ evidence model can accept a future small OpenDocKit metrics package
 
 ## Why this exists
 
-C6 makes text frames, fonts, anchors, baselines, and hard lines explicit, then
-deliberately refuses to estimate glyph bounds. That preserves source authority
-but allows a syntactically valid line to extend beyond its declared future
-PowerPoint text box.
+C6 makes text frames, fonts, anchors, baselines, and hard lines explicit in
+both decks and standalone diagrams, then deliberately refuses to estimate
+glyph bounds. That preserves source authority but allows a syntactically valid
+line to extend beyond its declared text frame.
 
 C8 defines a deterministic, read-only preflight. It measures each authored hard
 line against the horizontal capacity implied by its frame and anchor, records
@@ -28,6 +30,8 @@ rewriting, or otherwise repairing source.
   substitution-prone environment measurements.
 - Compiler maintainers who need deterministic warnings without changing source
   text, font size, line breaks, or geometry.
+- Documentation-diagram authors who need evidence keyed to a diagram atom,
+  without fabricated slide or deck identity.
 
 ## Scenarios
 
@@ -37,6 +41,8 @@ rewriting, or otherwise repairing source.
   horizontal capacity.
 - Refuse to certify a line when the requested face or required glyph coverage
   cannot be proven.
+- Produce standalone-diagram evidence keyed by `diagramId` while retaining the
+  existing deck evidence keyed by `slideId`.
 
 ## Interfaces
 
@@ -46,6 +52,19 @@ measurement, and filesystem access remain behind an injected measurer:
 ```ts
 interface PptvTextMeasureRequest {
   slideId: string;
+  objectId: string;
+  lineIndex: number;
+  text: string;
+  font: {
+    family: string;
+    size: number;
+    weight: 400 | 700;
+    style: "normal" | "italic";
+  };
+}
+
+interface PptvDiagramTextMeasureRequest {
+  diagramId: string;
   objectId: string;
   lineIndex: number;
   text: string;
@@ -78,11 +97,17 @@ function preflightTextFit(
   measurer: PptvTextMeasurer,
   options?: { nearLimit?: number },
 ): PptvTextFitResult;
+
+function preflightDiagramTextFit(
+  diagram: PptvResolvedDiagram,
+  measurer: PptvDiagramTextMeasurer,
+  options?: { nearLimit?: number },
+): PptvDiagramTextFitResult;
 ```
 
-The result schema is `pptv-text-fit/0.1`. It retains manifest/DOM/hard-line
-order and records source hash, threshold, summary counts, and one result per
-line with:
+The existing deck result schema remains `pptv-text-fit/0.1`. It retains
+manifest/DOM/hard-line order and records source hash, threshold, summary
+counts, and one result per line with:
 
 - slide/object/line identity and source text;
 - concrete font request and horizontal anchor;
@@ -92,7 +117,14 @@ line with:
 - measured width, utilization, and overrun when verified;
 - measurement method, font identity, missing codepoints, and reason.
 
-The model is JSON-safe and immutable. It contains no font handles, buffers,
+The standalone result schema is `pptv-diagram-text-fit/0.1`. It carries the
+same threshold, summary, line, font, frame, measurement, and status evidence,
+but has one required top-level `diagramId` and each line uses `diagramId`
+instead of `slideId`. Results retain diagram-root DOM/hard-line order. A
+diagram result contains no slide ID, manifest order, active theme, EMU scale,
+or inferred PowerPoint context.
+
+Both models are JSON-safe and immutable. They contain no font handles, buffers,
 filesystem paths required for remeasurement, DOM nodes, or functions.
 
 ## Anchor-aware capacity
@@ -133,7 +165,7 @@ the JSON number range.
 
 The portable core validates adapter width, method, font identity, missing
 codepoints, and result kind. A bad or throwing adapter produces `unverified`
-for that line and does not suppress results for the rest of the deck.
+for that line and does not suppress results for the rest of the artifact.
 
 ## Exact-font Node adapter
 
@@ -177,14 +209,16 @@ bounded bytes rather than an unbounded stream or special file.
 - It never wraps, autofits, shrinks, truncates, or proposes an automatic
   repair.
 - It measures C6 hard lines independently; vertical fit and baseline parity are
-  outside C8 1.0.
+  outside C8 1.1.
 - A structural C4/C6 error prevents preflight because no resolved model exists.
 - Fontkit evidence certifies the reported shaped advance for the identified
   bytes and adapter. It is not a claim of pixel-identical browser or PowerPoint
   rendering.
-- C7 1.1 maps native font size and frame geometry through the same physical
-  scale, so their horizontal utilization ratio remains in SVG user space.
-  PowerPoint shaping/render calibration is still required.
+- For HTML decks, C7 1.1 maps native font size and frame geometry through the
+  same physical scale, so their horizontal utilization ratio remains in SVG
+  user space. PowerPoint shaping/render calibration is still required.
+- Standalone-diagram utilization is evidence only in its declared logical
+  coordinate space. It supplies no physical-size or C7 compilation claim.
 - Browser `getComputedTextLength()` after `document.fonts.ready` may become a
   second environment-labeled adapter. Native Office render comparison remains
   the highest fidelity gate.
@@ -198,12 +232,15 @@ The Node CLI command is:
 
 ```bash
 pptv text-fit deck.pptv.html --font-map fonts.json [--near-limit 0.9]
+pptv text-fit diagram.pptv.svg --font-map fonts.json [--near-limit 0.9]
 ```
 
-JSON output uses the complete `pptv-text-fit/0.1` result. Text output lists
-every non-clear line and a summary. Definite overflow or any unverified line
-returns exit code 1; a deck containing only clear/near-limit lines returns 0.
-Invocation errors return 2 and environment/font-loading failures return 3.
+JSON output uses the complete source-kind-specific result:
+`pptv-text-fit/0.1` for a deck or `pptv-diagram-text-fit/0.1` for a diagram.
+Text output lists every non-clear line and a summary. Definite overflow or any
+unverified line returns exit code 1; an artifact containing only
+clear/near-limit lines returns 0. Invocation errors return 2 and
+environment/font-loading failures return 3.
 
 ## Error and promotion gates
 
@@ -211,6 +248,7 @@ C8 remains `in-progress` until:
 
 - pure anchor/status/adversarial-measurer fixtures pass;
 - exact-font adapter, font-map, and CLI fixtures pass;
+- standalone-diagram ordering, identity, schema, and CLI fixtures pass;
 - the worked TDFLite deck locks its known overrun inventory;
 - browser advance measurements are compared with the exact-font adapter; and
 - representative lines are calibrated against native PowerPoint rendering.
@@ -219,7 +257,7 @@ No gate may be promoted by automatically changing an authored line.
 
 ## Dependencies
 
-- Depends on: `CONTRACT:C6-PPTV-RESOLVED.1.0`
+- Depends on: `CONTRACT:C6-PPTV-RESOLVED.1.1`
 - Exact-font Node adapter: pinned `fontkit@2.0.4`
 - OpenDocKit: no runtime dependency
 
@@ -237,5 +275,24 @@ No gate may be promoted by automatically changing an authored line.
 - [x] Missing face/style/codepoint and invalid/throwing measurer results
 - [x] Strict font-map parsing, exact face metadata, content hash, and shaping
 - [x] CLI JSON/text output and exit codes
+- [ ] Standalone diagram evidence uses diagram identity/root DOM order and
+  contains no synthetic slide/deck/physical-canvas state
+- [ ] Diagram CLI emits `pptv-diagram-text-fit/0.1` with the same exact-font
+  classification and exit semantics
 - [ ] TDFLite worked-deck regression inventory
 - [ ] Browser and native Office calibration evidence
+
+## Retirement / supersession plan
+
+- **Predecessor:** `CONTRACT:C8-PPTV-TEXT-FIT.1.0` — retired by this additive
+  diagram-evidence revision; existing deck result/request schemas are retained.
+- **Migration boundary:** update implementation headers and consumers to 1.1
+  when diagram request/result types, CLI dispatch, and fixtures land.
+- **Migration owner:** PPTV text-fit maintainer.
+
+## Change History
+
+| Version | Date | Change | Migration |
+|---------|------|--------|-----------|
+| 1.0 | 2026-07-29 | Initial exact-font, anchor-aware, non-mutating deck text-fit preflight | — |
+| 1.1 | 2026-07-30 | Add diagram-specific measurement requests and `pptv-diagram-text-fit/0.1` evidence without synthetic slide or physical-canvas state | Existing deck requests/results are unchanged; diagram callers use the dedicated function and schema |

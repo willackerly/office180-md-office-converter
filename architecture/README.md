@@ -32,11 +32,11 @@ architecture/
   CONTRACT-C1-THEME-SCHEMA.1.0.md   # theme JSON keys, deep-merge, resolution order
   CONTRACT-C2-PROVENANCE.1.0.md     # DOCX core-props provenance stamp
   CONTRACT-C3-ROUNDTRIP.1.0.md      # canonical-MD round-trip guarantees
-  CONTRACT-C4-PPTV-SOURCE.1.0.md    # PPTV exact-source/read model
-  CONTRACT-C5-PPTV-PATCH.1.0.md     # PPTV atomic patch protocol
-  CONTRACT-C6-PPTV-RESOLVED.1.0.md  # PPTV compiler-grade resolved model
+  CONTRACT-C4-PPTV-SOURCE.1.1.md    # PPTV deck/diagram exact-source read models
+  CONTRACT-C5-PPTV-PATCH.1.1.md     # PPTV deck/diagram atomic patch protocol
+  CONTRACT-C6-PPTV-RESOLVED.1.1.md  # PPTV deck/diagram resolved profiles
   CONTRACT-C7-PPTX-CANARY.1.1.md    # deterministic primitive-only PPTX canary
-  CONTRACT-C8-PPTV-TEXT-FIT.1.0.md  # exact-font non-mutating text-fit preflight
+  CONTRACT-C8-PPTV-TEXT-FIT.1.1.md  # deck/diagram exact-font text-fit evidence
 ```
 
 `CONTRACT-REGISTRY.md` is generated from the contract filesystem:
@@ -91,6 +91,12 @@ adopted, or `scripts/check-compliance.sh` itself for the exact thresholds.
 | New optional key/field | Minor (1.0 → 1.1) |
 | Changed schema, removed key | Major (1.1 → 2.0) |
 | New contract | New ID + 1.0 |
+
+When bumping minor within one compatible major:
+1. Rename the current file to the new minor version; Git retains the old text.
+2. Add `SUPERSEDES`, a retirement/migration section, and a Change History row.
+3. Update all `CONTRACT:` implementation references in the same delivery.
+4. Preserve every existing behavior unless the change is reclassified as major.
 
 When bumping major:
 1. Create the new version file.
