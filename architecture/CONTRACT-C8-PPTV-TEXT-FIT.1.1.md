@@ -202,6 +202,57 @@ accepts at most 32 mapped faces, reads regular files only, limits one file to
 64 MiB, limits distinct font bytes across a map to 256 MiB, and parses cached
 bounded bytes rather than an unbounded stream or special file.
 
+## Exact-font browser adapter and checked calibration
+
+The browser adapter accepts exact caller-supplied font bytes plus explicit
+precomputed codepoint coverage. It hashes the bytes, loads each face through
+`FontFace` under a private SHA-derived family alias, adds it to the document
+font set, awaits `document.fonts.ready`, and measures a hidden SVG text node
+with `getComputedTextLength()`. Each result identifies the font SHA-256 and
+browser engine/version. An unmapped face, unchecked codepoint, known missing
+glyph, unavailable private alias, or invalid browser width is `unverified`;
+fallback glyphs never become exact evidence.
+
+Checked evidence in
+`packages/pptv/test-fixtures/c8/browser-calibration-evidence.json` uses exact
+`@playwright/test@1.62.0`, exact `esbuild@0.28.1`, Fontkit 2.0.4, and the
+655,826-byte browser-kernel SHA-256
+`57a62807006837c8e59d73f69e93f072ae94e8f67cfd8ab587e3fc35e6036533`,
+and the OFL ABeeZee Regular fixture SHA-256
+`2901c8df256648cc2bb2e3afb381cb8d28e65ed3dbe11de20695ae4d5ffdeda9`.
+Six samples cover kerning, spaces, mixed text, near-limit, exact-boundary, and
+overflow behavior. Acceptance is an absolute delta at or below 0.75 SVG units
+or a relative delta at or below 1%.
+
+| Engine capture | Compared oracle | Maximum absolute delta | Maximum relative delta | Result |
+|---|---:|---:|---:|---|
+| Chromium 151.0.7922.34 | Fontkit kerned | 0.013875 | 0.015974% | pass |
+| Firefox 153.0 | Fontkit kerned | 0.021333 | 0.018960% | pass |
+| WebKit 26.5 | Fontkit unkerned | 0.0000071 | 0.0000059% | recorded variance |
+
+Despite explicit browser kerning declarations, this WebKit capture follows the
+Fontkit `kern=false` oracle; its maximum delta from Fontkit's kerned oracle is
+6.239998 SVG units / 8.054520%. This is retained as engine-specific evidence,
+not rewritten as kerned parity. The missing-glyph sample U+1F9EA remains
+`unverified`, and standalone-diagram integration produces four ordered,
+verified lines under `pptv-diagram-text-fit/0.1` without slide identity.
+
+The browser evidence file is privacy-safe and shape/inventory locked by
+Vitest. It records browser identities but no local path, username, hostname,
+private source text, or private font bytes.
+
+## Checked worked-deck inventory
+
+The private TDFLite worked example is represented only by a checked,
+content- and font-hash-bound inventory at
+`packages/pptv/test-fixtures/c8/tdflite-text-fit-inventory.json`; neither its
+source nor separately licensed font bytes are vendored. The inventory binds
+TDFLite commit `2f0cba44a0904c8c964123253050ef32f793e7e2`, source SHA-256
+`eda92b47bc92720436a3f5f2c20681d8c2de97685b535505df3d5a39f8928f69`,
+Fontkit 2.0.4, and the four exact font-byte identities. At a 0.95 near-limit
+threshold its 153 hard lines lock 122 clear, 10 near-limit, 21 overflow, and
+zero unverified results.
+
 ## Behavioral boundaries
 
 - Preflight never changes source, text, font size, frame, anchor, line breaks,
@@ -219,9 +270,10 @@ bounded bytes rather than an unbounded stream or special file.
   user space. PowerPoint shaping/render calibration is still required.
 - Standalone-diagram utilization is evidence only in its declared logical
   coordinate space. It supplies no physical-size or C7 compilation claim.
-- Browser `getComputedTextLength()` after `document.fonts.ready` may become a
-  second environment-labeled adapter. Native Office render comparison remains
-  the highest fidelity gate.
+- Browser `getComputedTextLength()` after exact `FontFace` loading and
+  `document.fonts.ready` is an implemented, environment-labeled adapter. Its
+  checked engine-specific calibration is not a universal renderer-parity
+  claim. Native Office render comparison remains the highest fidelity gate.
 - A future OpenDocKit LUT adapter may provide conservative width bounds and
   substitution evidence. It must not become a PPTV core dependency or call a
   fallback result exact.
@@ -244,14 +296,15 @@ environment/font-loading failures return 3.
 
 ## Error and promotion gates
 
-C8 remains `in-progress` until:
+C8 remains `in-progress` until every promotion gate is closed:
 
-- pure anchor/status/adversarial-measurer fixtures pass;
-- exact-font adapter, font-map, and CLI fixtures pass;
-- standalone-diagram ordering, identity, schema, and CLI fixtures pass;
-- the worked TDFLite deck locks its known overrun inventory;
-- browser advance measurements are compared with the exact-font adapter; and
-- representative lines are calibrated against native PowerPoint rendering.
+- [x] Pure anchor/status/adversarial-measurer fixtures pass.
+- [x] Exact-font adapter, font-map, and CLI fixtures pass.
+- [x] Standalone-diagram ordering, identity, schema, and CLI fixtures pass.
+- [x] The worked TDFLite deck locks its known overrun inventory.
+- [x] Browser advance measurements are compared with the exact-font adapter,
+  including explicit WebKit kerning variance.
+- [ ] Representative lines are calibrated against native PowerPoint rendering.
 
 No gate may be promoted by automatically changing an authored line.
 
@@ -259,13 +312,23 @@ No gate may be promoted by automatically changing an authored line.
 
 - Depends on: `CONTRACT:C6-PPTV-RESOLVED.1.1`
 - Exact-font Node adapter: pinned `fontkit@2.0.4`
+- Browser build/calibration: exact `esbuild@0.28.1` and
+  `@playwright/test@1.62.0`
+- Browser font fixture: OFL ABeeZee Regular, exact SHA-256
+  `2901c8df256648cc2bb2e3afb381cb8d28e65ed3dbe11de20695ae4d5ffdeda9`
 - OpenDocKit: no runtime dependency
 
 ## Implementing Files
 
 - `packages/pptv/src/core/text-fit.ts`
 - `packages/pptv/src/node/fontkit-text-measurer.ts`
+- `packages/pptv/src/browser/text-measurer.ts`
 - `packages/pptv/src/cli.ts`
+- `packages/pptv/e2e/browser-conformance.spec.ts`
+- `packages/pptv/test-fixtures/c8/browser-calibration-evidence.json`
+- `packages/pptv/test-fixtures/c8/tdflite-text-fit-inventory.json`
+- `packages/pptv/src/__tests__/browser-calibration-evidence.test.ts`
+- `packages/pptv/src/__tests__/c8-regression-inventory.test.ts`
 
 ## Test Requirements
 
@@ -275,12 +338,13 @@ No gate may be promoted by automatically changing an authored line.
 - [x] Missing face/style/codepoint and invalid/throwing measurer results
 - [x] Strict font-map parsing, exact face metadata, content hash, and shaping
 - [x] CLI JSON/text output and exit codes
-- [ ] Standalone diagram evidence uses diagram identity/root DOM order and
+- [x] Standalone diagram evidence uses diagram identity/root DOM order and
   contains no synthetic slide/deck/physical-canvas state
-- [ ] Diagram CLI emits `pptv-diagram-text-fit/0.1` with the same exact-font
+- [x] Diagram CLI emits `pptv-diagram-text-fit/0.1` with the same exact-font
   classification and exit semantics
-- [ ] TDFLite worked-deck regression inventory
-- [ ] Browser and native Office calibration evidence
+- [x] TDFLite worked-deck regression inventory
+- [x] Browser exact-font calibration evidence in Chromium, Firefox, and WebKit
+- [ ] Native PowerPoint calibration evidence
 
 ## Retirement / supersession plan
 

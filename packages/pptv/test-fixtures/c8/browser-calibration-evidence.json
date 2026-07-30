@@ -15,7 +15,8 @@
   "toolchain": {
     "playwright": "1.62.0",
     "esbuild": "0.28.1",
-    "browserKernelSha256": "f7b6759d11696954012a5dbf563c1320ed887cf6f7b43e184f4ffcd56b9738d7",
+    "browserKernelSha256": "57a62807006837c8e59d73f69e93f072ae94e8f67cfd8ab587e3fc35e6036533",
+    "browserKernelBytes": 655826,
     "font": {
       "family": "ABeeZee",
       "sha256": "2901c8df256648cc2bb2e3afb381cb8d28e65ed3dbe11de20695ae4d5ffdeda9"

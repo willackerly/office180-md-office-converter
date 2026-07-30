@@ -48,6 +48,7 @@ interface CalibrationEvidence {
     playwright: string;
     esbuild: string;
     browserKernelSha256: string;
+    browserKernelBytes: number;
     font: { family: string; sha256: string };
   };
   privacy: { status: string; note: string };
@@ -75,6 +76,7 @@ describe("checked browser C8 calibration evidence", () => {
         readJson<{
           generator: { version: string };
           sha256: string;
+          bytes: number;
         }>(KERNEL_META_URL),
         readJson<{
           devDependencies: Record<string, string>;
@@ -101,6 +103,7 @@ describe("checked browser C8 calibration evidence", () => {
       playwright: rootPackage.devDependencies["@playwright/test"],
       esbuild: rootPackage.devDependencies["esbuild"],
       browserKernelSha256: kernelMetadata.sha256,
+      browserKernelBytes: kernelMetadata.bytes,
       font: {
         family: fontManifest.font.family,
         sha256: fontManifest.font.sha256,
