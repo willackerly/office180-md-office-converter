@@ -143,6 +143,16 @@ export async function extractPptvDiagram(
     "http://www.w3.org/2000/svg",
     edits,
   );
+  if (slideUsesXlinkPrefix(deck.source.text, indexedSlide.svgRange)) {
+    setAttribute(
+      deck.source.text,
+      indexedSlide.openTagRange,
+      indexedSlide.attributeRanges,
+      "xmlns:xlink",
+      "http://www.w3.org/1999/xlink",
+      edits,
+    );
+  }
 
   for (const objectId of indexedSlide.objectIds) {
     const indexedObject = deck.index.objects.get(objectId);
@@ -247,12 +257,24 @@ function serializeResolvedStyle(style: PptvResolvedStyle): string {
     `opacity:${style.opacity}`,
     ...(style.fontFamily === undefined
       ? []
-      : [`font-family:${style.fontFamily}`]),
+      : [`font-family:${serializeFontFamily(style.fontFamily)}`]),
     ...(style.fontSize === undefined ? [] : [`font-size:${style.fontSize}`]),
     `font-weight:${style.fontWeight}`,
     `font-style:${style.fontStyle}`,
     `text-anchor:${style.textAnchor}`,
   ].join(";");
+}
+
+function serializeFontFamily(family: string): string {
+  // C6 permits a quoted concrete family to contain declaration punctuation.
+  // At least one delimiter is absent from every family accepted by the C6
+  // parser, because escapes and the authored delimiter are forbidden.
+  const quote = family.includes('"') ? "'" : '"';
+  return `${quote}${family}${quote}`;
+}
+
+function slideUsesXlinkPrefix(source: string, range: SourceRange): boolean {
+  return /\bxlink:/u.test(source.slice(range.charStart, range.charEnd));
 }
 
 function removeAttribute(
