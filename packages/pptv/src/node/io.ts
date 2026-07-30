@@ -3,7 +3,7 @@
  *
  * CONTRACT:C4-PPTV-SOURCE.1.0
  * CONTRACT:C5-PPTV-PATCH.1.0
- * CONTRACT:C7-PPTX-CANARY.1.0
+ * CONTRACT:C7-PPTX-CANARY.1.1
  */
 
 import { randomUUID } from "node:crypto";

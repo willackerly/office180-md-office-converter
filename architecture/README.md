@@ -36,7 +36,8 @@ architecture/
   CONTRACT-C4-PPTV-SOURCE.1.0.md    # PPTV exact-source/read model
   CONTRACT-C5-PPTV-PATCH.1.0.md     # PPTV atomic patch protocol
   CONTRACT-C6-PPTV-RESOLVED.1.0.md  # PPTV compiler-grade resolved model
-  CONTRACT-C7-PPTX-CANARY.1.0.md    # deterministic primitive-only PPTX canary
+  CONTRACT-C7-PPTX-CANARY.1.1.md    # deterministic primitive-only PPTX canary
+  CONTRACT-C8-PPTV-TEXT-FIT.1.0.md  # exact-font non-mutating text-fit preflight
 ```
 
 This is a small, solo-maintained repository (see `../.rebarrc`), so it does

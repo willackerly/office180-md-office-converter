@@ -33,6 +33,21 @@ export {
   type PptvResolvedTextLine,
 } from "./resolved.js";
 export {
+  preflightTextFit,
+  textLineAvailableWidth,
+  type PptvMeasuredText,
+  type PptvTextFitLine,
+  type PptvTextFitOptions,
+  type PptvTextFitResult,
+  type PptvTextFitStatus,
+  type PptvTextFitSummary,
+  type PptvTextFont,
+  type PptvTextMeasurement,
+  type PptvTextMeasurer,
+  type PptvTextMeasureRequest,
+  type PptvUnverifiedText,
+} from "./text-fit.js";
+export {
   hasErrors,
   materializeSource,
   sha256Hex,

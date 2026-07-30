@@ -1,6 +1,6 @@
-# CONTRACT-C7-PPTX-CANARY.1.0
+# CONTRACT-C7-PPTX-CANARY.1.1
 
-**Version:** 1.0
+**Version:** 1.1
 **Status:** in-progress
 **Owner:** Will Ackerly
 **Type:** Artifact Compiler
@@ -85,8 +85,10 @@ stroke is not equivalent to SVG object/group compositing.
 - Every position, extent, radius, endpoint, translation, line width, and
   paragraph margin used in DrawingML must map to a safe integer after
   multiplication by exactly `7620`. Non-integral or unsafe values fail.
-- Font size and line step map from CSS px to hundredths of a point by
-  multiplication by exactly `75`. Non-integral or unsafe values fail.
+- Font size and line step are SVG user-space values. They map to hundredths of
+  a point by multiplication by exactly `60`, derived from the same physical
+  scale as geometry (`7620` EMU per unit divided by `127` EMU per hundredth
+  point). Non-integral or unsafe values fail.
 - There is no implicit rounding, clamping, locale formatting, or unit fallback.
 - Values must also fit their emitted DrawingML simple types: coordinates stay
   within `-27273042329600..27273042316900`, extents within
@@ -128,6 +130,10 @@ The package contains no copied template parts and includes:
 Custom properties record compiler identity, resolved schema, active theme, and
 the complete C6 source SHA-256. Core created/modified times and ZIP DOS
 timestamps are fixed at `2000-01-01T00:00:00Z`.
+The emitted `office180-pptv-pptx-canary/0.1` compiler identity is the stable
+output capability-profile identifier, not this contract document's revision;
+the C7 contract version and source history record implementation corrections
+that preserve the same output profile.
 
 Before ZIP generation:
 
@@ -198,10 +204,11 @@ timestamps, and no ZIP64. Package-limit overflow fails.
 
 ## Validation Evidence
 
-On 2026-07-29, source
+On 2026-07-29, the 1.1 compiler mapped text and geometry through one physical
+scale. Source
 `a4e23c1b7b8dc7034150352dea5bbf03028a76f50025059de259a80af1563bf8`
 produced the 17-part, 26,412-byte canary
-`a42ede5a21dba6e64d8f0b5b5eb91c9cb245785e808f705e582904b6e859b317`.
+`8709452fe68f909ca4c469486e6e4c3e7bbde25dff114fdc79587cc75b8e8c96`.
 That exact artifact:
 
 - passed the applicable ISO/ECMA PresentationML, DrawingML, document-property,
@@ -209,8 +216,10 @@ That exact artifact:
 - reopened through OpenDocKit 0.2 with exact `12192000 × 6858000` size, manifest
   slide order, both slide-layout-master chains, theme, native shapes, text,
   groups, and connector;
-- opened read/write in Microsoft PowerPoint 16.111.2 with two slides, no repair
-  dialog or corruption diagnostic, and exported a coherent two-page 16:9 PDF
+- opened in Microsoft PowerPoint 16.111.2 with two slides, no repair dialog or
+  corruption diagnostic, and exported a coherent 14,630-byte, two-page
+  960 × 540-point PDF
+  (`fda8cbd680cad913f10921e06c19956dd0e8dc2ad01192409dbbcc8dcb59d88f`)
   without hard-line reflow; and
 - retained byte-identical output across process time zones.
 
@@ -228,6 +237,7 @@ remains outside the current claim.
 
 ## Change History
 
-| Version | Date       | Change                                                 | Migration                  |
-| ------- | ---------- | ------------------------------------------------------ | -------------------------- |
-| 1.0     | 2026-07-29 | Initial deterministic primitive-only fresh-PPTX canary | No prior compiler artifact |
+| Version | Date       | Change                                                                                                                                        | Migration                                            |
+| ------- | ---------- | --------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------- |
+| 1.1     | 2026-07-29 | Correct font-size and line-step mapping to geometry-derived 60 hundredth-points per unit; renew exact artifact/schema/OpenDocKit/native evidence | Regenerate C7 artifacts; source remains unchanged    |
+| 1.0     | 2026-07-29 | Initial deterministic primitive-only fresh-PPTX canary                                                                                        | No prior compiler artifact                           |

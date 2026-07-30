@@ -16,6 +16,15 @@ Active tasks only. Priority ordering lives in `QUICKCONTEXT.md`.
 - [x] Build the pure resolved model: discriminated finite geometry, translated
   native-group world bounds, explicit hard-line text, concrete font resolution,
   complete theme-token maps, constrained base CSS, and source provenance.
+- [x] Add pure C8 text-fit preflight with anchor-aware capacity, immutable
+  per-line evidence, clear/near/overflow/unverified states, and no source
+  mutation.
+- [x] Add the exact-font Node adapter and `text-fit` CLI with a strict explicit
+  font map, byte/PostScript identity, shaping, missing-glyph reporting, and
+  fail-closed exit behavior.
+- [ ] Lock the worked TDFLite deck as a C8 regression, add environment-labeled
+  browser/editor measurement and overlays, and calibrate representative lines
+  against native PowerPoint. Never turn this into wrapping or automatic repair.
 - [ ] Remove first-declaration entries for duplicate object IDs from the raw C4
   index; public queries suppress ambiguous IDs and C6/C7 reject ambiguous
   decks, so this is internal representation cleanup rather than a compiler
@@ -63,6 +72,9 @@ Active tasks only. Priority ordering lives in `QUICKCONTEXT.md`.
 
 - [ ] Execute OpenDocKit's editing rigor gate; fix per-run formatting
   reconstitution, bulk typing-style propagation, and real DOM/save/reload tests.
+- [ ] Extract a small stable OpenDocKit font-metrics surface that exposes the
+  chosen face/style, missing codepoints, substitution class, kerned/un-kerned
+  width bounds, and bundle identity for a conservative optional C8 adapter.
 - [ ] Extract public SVG interaction primitives with host-owned semantic
   operation callbacks; do not make OpenDocKit's flat element model canonical.
 - [ ] Add or co-design a valid fresh `PptxPackageBuilder`; fix synthesis
@@ -100,6 +112,9 @@ Active tasks only. Priority ordering lives in `QUICKCONTEXT.md`.
   groups/connectors and passes schema, independent reopen, and PowerPoint
   open/render smoke validation. Hit-testing, typed geometry edits, raster
   resources, quantitative fidelity, and PPTX save/reopen remain open.
+- C8 exact-font shaped advance catches horizontal hard-line overrun without
+  changing source. Browser/native parity, vertical fit, font embedding, system
+  discovery, silent substitution, and automatic repair remain out.
 - The minimal fixture has one base/component style block plus complete
   token-only themes. Theme token editing remains a typed-operation follow-up.
 - `docx2md.py` does not reject pending tracked changes (`ROADMAP.md` §7.5).
@@ -117,6 +132,11 @@ scans both Python and TypeScript and rejects untracked `TODO:` comments.
 <details>
 <summary><strong>Recently completed</strong></summary>
 
+- [x] Repo-scoped `$pptv-authoring` skill with strict authoring/text-fit
+  references, canonical starter parity lock, and end-to-end gate helper —
+  2026-07-29
+- [x] C8 pure anchor-aware text-fit preflight, exact-font Fontkit adapter, font
+  map, CLI, and worked TDFLite audit — 2026-07-29
 - [x] Deterministic C7 fresh-PPTX canary, strict OPC/ZIP validator, atomic Node
   API/CLI, ISO/ECMA XSD validation, OpenDocKit reopen, and native PowerPoint
   open/render smoke — 2026-07-29

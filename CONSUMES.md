@@ -6,7 +6,7 @@
 This file declares which **external contracts** (owned by other rebar
 repos) this converter repository depends on.
 
-**Current state: no entries.** All seven C1–C7 contracts are owned locally, and
+**Current state: no entries.** All eight C1–C8 contracts are owned locally, and
 neither the DOCX track nor `@office180/pptv` consumes a contract from another
 rebar repository. In particular, OpenDocKit is not a current runtime or
 contract dependency; future integration stays behind an optional adapter. This

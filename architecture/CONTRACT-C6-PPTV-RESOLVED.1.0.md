@@ -267,7 +267,7 @@ supplies translation.
 | No autofit | The model always means PowerPoint `wrap="none"` plus `a:noAutofit`; it exposes no wrap/shrink/fit switch. |
 | Paragraph editing | An editor may join lines with `\n`, but commit emits direct text or explicit direct `tspan` lines. |
 | Unsupported richness | Nested/styled runs, text paths, `dx`/`dy`, `rotate`, `textLength`, bullets, columns, and ambient non-whitespace text are errors. |
-| Overflow | A later deterministic verifier may warn; it never mutates text or geometry and is not required for pure resolution. |
+| Overflow | `CONTRACT:C8-PPTV-TEXT-FIT.1.0` defines the deterministic warning preflight; it never mutates text or geometry and is not required for pure C6 resolution. |
 
 ### CSS and theme resolution
 

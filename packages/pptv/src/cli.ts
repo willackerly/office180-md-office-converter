@@ -5,14 +5,18 @@
  * CONTRACT:C4-PPTV-SOURCE.1.0
  * CONTRACT:C5-PPTV-PATCH.1.0
  * CONTRACT:C6-PPTV-RESOLVED.1.0
- * CONTRACT:C7-PPTX-CANARY.1.0
+ * CONTRACT:C7-PPTX-CANARY.1.1
+ * CONTRACT:C8-PPTV-TEXT-FIT.1.0
  */
+
+import { dirname, resolve } from "node:path";
 
 import { loadDeck, PptvLoadError } from "./core/deck.js";
 import { parseManifest, validateManifest } from "./core/manifest.js";
 import { resolvePptvDeck } from "./core/resolved.js";
 import { scanPptvSource } from "./core/scan.js";
 import { hasErrors } from "./core/source.js";
+import { preflightTextFit, type PptvTextFitLine } from "./core/text-fit.js";
 import type {
   Diagnostic,
   ProjectionView,
@@ -20,6 +24,10 @@ import type {
   PptvRole,
 } from "./core/types.js";
 import { createEditorPack } from "./node/editor-pack.js";
+import {
+  createFontkitTextMeasurer,
+  parseFontMap,
+} from "./node/fontkit-text-measurer.js";
 import { readJsonPath, readPptvPath, writeFileAtomic } from "./node/io.js";
 import {
   compilePptxCanary,
@@ -78,6 +86,8 @@ export async function runCli(
       return await runEditorPack(argv.slice(1), environment);
     if (command === "pptx-canary")
       return await runPptxCanary(argv.slice(1), environment);
+    if (command === "text-fit")
+      return await runTextFit(argv.slice(1), environment);
     if (command === "text") return await runText(argv.slice(1), environment);
     if (command === "show") return await runShow(argv.slice(1), environment);
     if (command === "list") return await runList(argv.slice(1), environment);
@@ -300,6 +310,62 @@ async function runPptxCanary(
     );
     return 1;
   }
+}
+
+async function runTextFit(
+  args: readonly string[],
+  environment: CliEnvironment,
+): Promise<number> {
+  const parsedArgs = parseArguments(
+    args,
+    {
+      "--font-map": "value",
+      "--near-limit": "value",
+      "--format": "value",
+    },
+    1,
+    "text-fit requires exactly one PPTV path",
+  );
+  const path = parsedArgs.positionals[0]!;
+  const fontMapPath = readOption(parsedArgs, "--font-map");
+  const format = readFormat(parsedArgs, ["text", "json"]);
+  if (fontMapPath === undefined) {
+    throw new InvocationError("text-fit requires an explicit --font-map PATH");
+  }
+  const nearLimit = readNearLimit(parsedArgs);
+
+  const deck = await loadDeck(await readPptvPath(path));
+  const resolvedDeck = resolvePptvDeck(deck);
+  if (resolvedDeck.model === undefined) {
+    writeDiagnostics(resolvedDeck.diagnostics, format, environment);
+    return 1;
+  }
+
+  let fontMapInput: unknown;
+  try {
+    fontMapInput = await readJsonPath(fontMapPath);
+  } catch (error) {
+    if (error instanceof SyntaxError) {
+      throw new InvocationError(`Invalid font map JSON: ${error.message}`);
+    }
+    throw error;
+  }
+  let fontMap;
+  try {
+    fontMap = parseFontMap(fontMapInput, dirname(resolve(fontMapPath)));
+  } catch (error) {
+    throw new InvocationError(
+      `Invalid font map: ${error instanceof Error ? error.message : String(error)}`,
+    );
+  }
+  const measurer = await createFontkitTextMeasurer(fontMap.faces);
+  const result = preflightTextFit(resolvedDeck.model, measurer, {
+    ...(nearLimit === undefined ? {} : { nearLimit }),
+  });
+
+  if (format === "json") writeJson(result, environment);
+  else writeTextFit(result.lines, result.summary, environment);
+  return result.summary.overflow > 0 || result.summary.unverified > 0 ? 1 : 0;
 }
 
 async function runText(
@@ -558,6 +624,18 @@ function readRole(args: ParsedArguments): PptvRole | undefined {
   throw new InvocationError(`Unknown PPTV role "${value}".`);
 }
 
+function readNearLimit(args: ParsedArguments): number | undefined {
+  const value = readOption(args, "--near-limit");
+  if (value === undefined) return undefined;
+  const threshold = Number(value);
+  if (!Number.isFinite(threshold) || threshold <= 0 || threshold >= 1) {
+    throw new InvocationError(
+      "--near-limit must be a finite number greater than 0 and less than 1",
+    );
+  }
+  return threshold;
+}
+
 function readOption(args: ParsedArguments, name: string): string | undefined {
   const value = args.options.get(name);
   return typeof value === "string" ? value : undefined;
@@ -565,6 +643,47 @@ function readOption(args: ParsedArguments, name: string): string | undefined {
 
 function hasFlag(args: ParsedArguments, name: string): boolean {
   return args.options.get(name) === true;
+}
+
+function writeTextFit(
+  lines: readonly PptvTextFitLine[],
+  summary: {
+    readonly total: number;
+    readonly clear: number;
+    readonly nearLimit: number;
+    readonly overflow: number;
+    readonly unverified: number;
+  },
+  environment: CliEnvironment,
+): void {
+  for (const line of lines) {
+    if (line.status === "clear") continue;
+    const location = `${line.slideId}/${line.objectId}#${line.lineIndex + 1}`;
+    if (line.status === "unverified") {
+      environment.stdout(
+        `UNVERIFIED ${location} ${line.reason ?? "measurement unavailable"} (${line.method})\n`,
+      );
+      continue;
+    }
+    const utilization =
+      line.utilization === null
+        ? "n/a"
+        : `${formatDecimal(line.utilization * 100)}%`;
+    const overrun =
+      line.status === "overflow"
+        ? ` overrun=${formatDecimal(line.overrun ?? 0)}`
+        : "";
+    environment.stdout(
+      `${line.status === "overflow" ? "OVERFLOW" : "NEAR-LIMIT"} ${location} width=${formatDecimal(line.measuredWidth ?? 0)} available=${formatDecimal(line.availableWidth)} utilization=${utilization}${overrun}\n`,
+    );
+  }
+  environment.stdout(
+    `text-fit ${summary.total} lines: ${summary.clear} clear, ${summary.nearLimit} near-limit, ${summary.overflow} overflow, ${summary.unverified} unverified\n`,
+  );
+}
+
+function formatDecimal(value: number): string {
+  return value.toFixed(2).replace(/\.?0+$/u, "");
 }
 
 function parseArguments(
@@ -614,6 +733,7 @@ Usage:
   pptv resolve <file> [--format text|json]
   pptv editor-pack <file> --output PATH [--format text|json]
   pptv pptx-canary <file> --output PATH [--format text|json]
+  pptv text-fit <file> --font-map PATH [--near-limit N] [--format text|json]
   pptv text <file> [--slide ID] [--format text|json|jsonl]
   pptv show <file> <id> [--view semantic|editing] [--format json]
   pptv list <file> [--slide ID] [--role ROLE] [--class CLASS] [--text TEXT]

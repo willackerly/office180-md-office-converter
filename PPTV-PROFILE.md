@@ -356,10 +356,12 @@ introducing independent Python semantics:
 ```bash
 pptv validate deck.pptv.html
 pptv resolve deck.pptv.html
+pptv text-fit deck.pptv.html --font-map fonts.json
 pptv pptx-canary deck.pptv.html --output deck.pptx
 ```
 
 Semantic validation/compilation is currently limited to self-contained HTML.
+`text-fit` is a read-only exact-font warning gate and never changes a line.
 `pptx-canary` is deliberately strict, fresh-package, and template-free.
 Template-backed or broader `build-pptx` behavior remains roadmap.
 
@@ -465,8 +467,11 @@ The minimum automated cascade is:
 
 C4 is the verified behavioral authority for the implemented 0.1 source/read
 surface, C5 governs the constrained patch path, C6 governs the implemented
-resolved profile, and C7 governs the strict fresh-PPTX canary. This document
-remains the author-facing rationale and broader compiler/reconciliation roadmap.
+resolved profile, C7 governs the strict fresh-PPTX canary, and C8 governs the
+implemented non-mutating text-fit preflight. C6, C7, and C8 remain
+`in-progress` while their stated promotion gates are open. This document
+remains the author-facing rationale and broader compiler/reconciliation
+roadmap.
 
 Before claiming general editable PowerPoint conformance, expand the native
 fixture, add source-map/reverse comparison, quantitative render fidelity, and

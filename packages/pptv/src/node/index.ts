@@ -3,10 +3,27 @@
  *
  * CONTRACT:C4-PPTV-SOURCE.1.0
  * CONTRACT:C5-PPTV-PATCH.1.0
- * CONTRACT:C7-PPTX-CANARY.1.0
+ * CONTRACT:C7-PPTX-CANARY.1.1
+ * CONTRACT:C8-PPTV-TEXT-FIT.1.0
  */
 
 export { createEditorPack, type EditorPackResult } from "./editor-pack.js";
+export {
+  createFontkitTextMeasurer,
+  parseFontMap,
+  type FontkitFontFace,
+  type FontkitFontMap,
+  type FontkitFontStyle,
+  type FontkitFontWeight,
+  type FontkitLoadedFaceEvidence,
+  type FontkitMeasuredText,
+  type FontkitRequestedFace,
+  type FontkitTextMeasurement,
+  type FontkitTextMeasurementEvidence,
+  type FontkitTextMeasurer,
+  type FontkitTextMeasureRequest,
+  type FontkitUnverifiedText,
+} from "./fontkit-text-measurer.js";
 export { readJsonPath, readPptvPath, writeFileAtomic } from "./io.js";
 export {
   compilePptxCanary,

@@ -1,7 +1,8 @@
 # PPTV Implementation Plan
 
-**Status:** active delivery roadmap; C6 is executable and C7 promotes the
-first compiler canary, while remaining milestones retain their own gates
+**Status:** active delivery roadmap; C6 is executable, C7 promotes the first
+compiler canary, and C8 adds exact-font non-mutating text-fit while remaining
+milestones retain their own gates
 
 **Decision date:** 2026-07-28
 
@@ -113,11 +114,12 @@ resize text.
 
 Compiler-grade text uses one concrete resolved font family rather than a
 browser fallback stack. The first profile supports the small set of font
-weights/styles that map without approximation. C6/C7 currently validate and
-emit that concrete family string; they do not detect whether a font is installed
-or substituted and do not record the host font environment. Those checks plus
-visual-verification environment provenance are future fidelity gates. Font
-embedding and arbitrary web fonts are deferred.
+weights/styles that map without approximation. C8 now verifies shaped
+horizontal advance only when the caller supplies an exact mapped font face,
+records its byte/PostScript identity, and reports missing faces/styles/glyphs as
+unverified. It does not discover a system font or certify browser/PowerPoint
+pixel parity. Environment-labeled browser evidence, native calibration, font
+embedding, and arbitrary web fonts remain deferred.
 
 ### 2.4 Small deterministic CSS composition
 
@@ -190,6 +192,9 @@ Progress at the 2026-07-29 integration point:
   PowerPoint 16.111.2 open/PDF-render smoke without repair. It is not a general
   converter or quantitative native-fidelity claim; native PPTX save/reopen
   remains unverified on this install.
+- C8's pure anchor-aware text-fit preflight, strict explicit font map,
+  exact-byte Fontkit adapter, and CLI are implemented. Worked-deck regression
+  locking plus browser/native calibration keep that contract `in-progress`.
 
 ### Milestone 0 — C6 resolved-profile contract and fixtures
 
@@ -216,6 +221,25 @@ Exit gate:
   patch; and
 - no physical-size, text-reflow, object-boundary, or style-authority question
   remains for the supported subset.
+
+### Milestone 0.5 — Exact-font text-fit preflight
+
+Catch authored hard-line overruns without introducing layout behavior.
+
+Deliver:
+
+- pure C8 preflight over the C6 resolved model;
+- start/middle/end anchor-aware horizontal capacity;
+- clear, near-limit, overflow, and unverified evidence;
+- explicit exact font-map input with no discovery or substitution;
+- byte/PostScript font identity, shaping, and missing-glyph evidence;
+- CLI output and fail-closed automation behavior; and
+- browser/editor warnings that remain secondary environment evidence.
+
+The pure API, exact-font Node adapter, and CLI are implemented. The remaining
+exit gates are a locked worked-deck regression, browser comparison with
+confirmed font identity, and representative native PowerPoint calibration.
+None may mutate source or infer a new line.
 
 ### Milestone 1 — Trusted browser editor MVP on existing C5
 
@@ -472,16 +496,18 @@ editability, and visual gates.
 
 The first coherent vertical slice above is now implemented. Continue with:
 
-1. finish C6 standalone fixture and Node/browser normalized-JSON parity gates;
-2. bundle writable text/theme/order controls over the existing C5
-   exact-source session;
-3. add stale-safe user-granted persistence and real browser save/reload tests;
-4. add typed geometry/line/order/group operations without a generic attribute
+1. lock the C8 worked-deck regression, add environment-labeled browser/editor
+   warnings, and calibrate representative lines against native PowerPoint;
+2. finish C6 standalone fixture and Node/browser normalized-JSON parity gates;
+3. bundle writable text/theme/order controls over the existing C5 exact-source
+   session and surface C8 warnings without automatic repair;
+4. add stale-safe user-granted persistence and real browser save/reload tests;
+5. add typed geometry/line/order/group operations without a generic attribute
    escape hatch;
-5. expand C7 only where those same fixtures pass browser, schema, independent
+6. expand C7 only where those same fixtures pass browser, schema, independent
    reopen, and native Office gates;
-6. add quantitative browser/PDF comparison; and
-7. complete native PPTX save/reopen on an automation path that first proves a
+7. add quantitative browser/PDF comparison; and
+8. complete native PPTX save/reopen on an automation path that first proves a
    non-empty ZIP output.
 
 This preserves momentum from the worked examples while keeping the source,

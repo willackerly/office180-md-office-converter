@@ -27,9 +27,11 @@ the explicit Node filesystem/wrapper boundary.
   hard-line text, opaque-SVG bounds, and provenance resolution;
 - deterministic C7 fresh-PPTX compilation for plain rectangles, ellipses,
   straight connectors, translated native groups, and one hard line per text
-  frame; and
-- `outline`, `validate`, `resolve`, `editor-pack`, `pptx-canary`, `text`, `show`,
-  `list`, and `patch` CLI commands.
+  frame;
+- pure C8 anchor-aware text-fit preflight plus an exact-font, hash-evidenced
+  Fontkit adapter that never discovers or substitutes a system face; and
+- `outline`, `validate`, `resolve`, `editor-pack`, `pptx-canary`, `text-fit`,
+  `text`, `show`, `list`, and `patch` CLI commands.
 
 Standalone `.pptv.svg` and external `.pptv-manifest.json` inputs are recognized
 and inventoried, but semantic loading and patching are deliberately limited to
@@ -47,10 +49,32 @@ pnpm pptv editor-pack examples/minimal-deck.pptv.html \
   --output minimal-deck.editable.pptv.html
 pnpm pptv pptx-canary examples/minimal-deck.pptv.html \
   --output minimal-deck.pptx
+pnpm pptv text-fit examples/minimal-deck.pptv.html \
+  --font-map fonts.json
 pnpm pptv text examples/minimal-deck.pptv.html --slide cover --format json
 pnpm pptv show examples/minimal-deck.pptv.html cover.title --view editing
 pnpm pptv list examples/minimal-deck.pptv.html --role connector
 ```
+
+`text-fit` requires exact font files rather than system discovery:
+
+```json
+{
+  "schema": "pptv-font-map/0.1",
+  "faces": [
+    {
+      "family": "Arial",
+      "weight": 400,
+      "style": "normal",
+      "path": "./fonts/Arial.ttf"
+    }
+  ]
+}
+```
+
+Paths are relative to the map. Add one entry for every used
+family/weight/style. The command returns nonzero for definite overflow or any
+unverified line; it never wraps, resizes, substitutes, or changes source.
 
 Patches never overwrite implicitly. Check one without writing:
 
@@ -102,6 +126,29 @@ await session.dispatch({
 session.undo(); // restores the prior exact source snapshot
 ```
 
+Exact-font fit is also available as a library composition. Font discovery and
+fallback remain the caller's responsibility:
+
+```ts
+import {
+  loadDeck,
+  preflightTextFit,
+  resolvePptvDeck,
+} from '@office180/pptv';
+import {
+  createFontkitTextMeasurer,
+  parseFontMap,
+} from '@office180/pptv/node';
+
+const deck = await loadDeck({ kind: 'text', text: html });
+const resolved = resolvePptvDeck(deck);
+if (resolved.model === undefined) throw new Error('Deck is outside C6');
+
+const fontMap = parseFontMap(JSON.parse(fontMapJson), process.cwd());
+const measurer = await createFontkitTextMeasurer(fontMap.faces);
+const fit = preflightTextFit(resolved.model, measurer, { nearLimit: 0.95 });
+```
+
 `PptvDeck` is an immutable, source-hash-bound in-process snapshot and contains
 `Map` indexes. CLI/MCP boundaries should use the versioned JSON-safe projection
 functions rather than serializing that snapshot directly.
@@ -113,6 +160,7 @@ exact declarative source bytes (persistent authority)
   -> scan + source index
   -> hash-bound hierarchical semantic interpretation
   -> C6 normalized styles/geometry/hard lines
+  -> C8 injected exact-font text-fit evidence
   -> JSON-safe projections and semantic operations
        -> Node CLI and deterministic editor-pack
        -> browser-safe exact-source editor session
@@ -120,15 +168,17 @@ exact declarative source bytes (persistent authority)
 ```
 
 The package has no OpenDocKit dependency. C7 writes a small fresh package
-directly and uses exact `jszip@3.10.1`; OpenDocKit is only an independent
-inspection oracle. A future broader adapter can consume selected OpenDocKit OPC,
-OOXML, rendering, and fidelity APIs behind a narrow boundary without changing
-PPTV's source model.
+directly and uses exact `jszip@3.10.1`; C8 uses exact `fontkit@2.0.4` only
+behind its Node adapter. OpenDocKit is an independent inspection oracle and a
+future optional metrics adapter/contribution target. A broader adapter can
+consume selected OpenDocKit OPC, OOXML, rendering, font-metrics, and fidelity
+APIs behind a narrow boundary without changing PPTV's source model.
 
 Portable browser state is exported at `@office180/pptv/browser`; explicit
 filesystem and trusted-wrapper generation are exported at
 `@office180/pptv/node`. The latter also exports `compilePptxCanary()`,
-`createPptxCanaryGraph()`, and `validatePptxCanaryGraph()`.
+`createPptxCanaryGraph()`, `validatePptxCanaryGraph()`,
+`createFontkitTextMeasurer()`, and `parseFontMap()`.
 
 The versioned manifest and patch schemas ship at the
 `@office180/pptv/schemas/manifest` and `@office180/pptv/schemas/patch`
@@ -144,6 +194,7 @@ Not implemented yet:
 - a writable bundled browser UI (the first generated wrapper shell is
   intentionally read-only; host integrations can use `EditorSession`);
 - C6 Node/browser normalized-JSON parity and the standalone fixture corpus;
+- C8 browser/native calibration and a locked worked-deck overflow fixture;
 - theme-token patches;
 - rich `tspan` editing;
 - geometry and structural operations;
@@ -156,9 +207,11 @@ See `architecture/CONTRACT-C4-PPTV-SOURCE.1.0.md` and
 `architecture/CONTRACT-C5-PPTV-PATCH.1.0.md` for verified executable behavior,
 and `architecture/CONTRACT-C6-PPTV-RESOLVED.1.0.md` for the implemented but
 still in-progress compiler-grade projection. See
-`architecture/CONTRACT-C7-PPTX-CANARY.1.0.md` for the implemented canary,
+`architecture/CONTRACT-C7-PPTX-CANARY.1.1.md` for the implemented canary,
 structural/native-open evidence, deliberate capability errors, and remaining
-fidelity gates.
+fidelity gates, and `architecture/CONTRACT-C8-PPTV-TEXT-FIT.1.0.md` for the
+implemented exact-font non-mutating preflight and its remaining calibration
+gates.
 
 ## Development
 

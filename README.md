@@ -7,7 +7,7 @@
 | Track | Canonical source | Office artifact | Status |
 |---|---|---|---|
 | Markdown / Word | `.md` | `.docx` | Implemented and tested |
-| PPTV / PowerPoint | `.pptv.svg` / `.pptv.html` | `.pptx` | TypeScript vertical slice, trusted editor foundation, and strict PPTX canary implemented |
+| PPTV / PowerPoint | self-contained `.pptv.html` | `.pptx` | TypeScript vertical slice, trusted editor foundation, and strict PPTX canary implemented; standalone SVG is inventory-only |
 
 ## What ships
 
@@ -21,12 +21,13 @@ one TypeScript package/CLI—with no server:
   inverting the same style choices, so editing the generated document in
   Word (or Google Docs) and converting it back doesn't silently lose or
   invent content.
-- **`@office180/pptv`** — a TypeScript source kernel and CLI for non-executing
-  `.pptv.html` scan/validation, manifest and semantic projections, stable-ID
-  queries, atomic source-preserving text/theme/slide-order patches, exact-source
-  editor sessions, deterministic trusted editor wrappers, and strict
-  compiler-grade CSS/geometry/text resolution. Its Node boundary also emits a
-  deterministic, fail-closed native-shape PPTX canary.
+- **`@office180/pptv@0.1.0-alpha.2`** — a TypeScript source kernel and CLI for
+  non-executing `.pptv.html` scan/validation, manifest and semantic projections,
+  stable-ID queries, atomic source-preserving text/theme/slide-order patches,
+  exact-source editor sessions, deterministic trusted editor wrappers, and
+  strict compiler-grade CSS/geometry/text resolution. Its Node boundary also
+  emits a deterministic, fail-closed native-shape PPTX canary and exact-font,
+  non-mutating text-fit evidence.
 
 ## PowerPoint design track
 
@@ -65,8 +66,22 @@ strict primitive subset into a fresh deterministic PPTX; the minimal canary
 artifact passes ISO/ECMA schema validation, independent OpenDocKit reopen, and
 native PowerPoint open/render without repair. Ellipse and translated-group
 mappings currently have structural tests rather than native fixture coverage.
-Browser parity fixtures, writable bundled controls, broader compilation,
-quantitative render comparison, and native PPTX save/reopen remain open gates.
+C8 now adds exact-font, anchor-aware no-reflow text-fit warnings. Browser parity
+fixtures, writable bundled controls, broader compilation, quantitative render
+comparison, text-fit calibration, and native PPTX save/reopen remain open
+gates.
+
+### Repo-scoped PPTV authoring skill
+
+Codex discovers the versioned
+[`$pptv-authoring` skill](.agents/skills/pptv-authoring/SKILL.md) from
+`.agents/skills/` in this repository. Use it to create or repair strict
+no-reflow decks, choose stable groups/IDs/text frames, run exact-font overflow
+preflight, and compile the supported canary. Its bundled starter is
+test-locked byte-for-byte to
+[`examples/minimal-deck.pptv.html`](examples/minimal-deck.pptv.html). The skill
+is an operational workflow over the versioned contracts and CLI, not a
+separate specification or published plugin.
 
 ---
 
@@ -78,9 +93,10 @@ python3 -m venv .venv
 pnpm install
 ```
 
-`python-docx` is the DOCX runtime dependency. The PPTV package requires
-Node.js 20+ and uses `parse5`, `jsonc-parser`, and exactly `jszip@3.10.1`. Run
-the Python scripts through the local environment:
+`python-docx` is the DOCX runtime dependency. The PPTV package requires Node.js
+20+ and uses `parse5`, `jsonc-parser`, exactly `jszip@3.10.1`, and exact
+`fontkit@2.0.4` for the explicit-font C8 Node adapter. Run the Python scripts
+through the local environment:
 
 ```bash
 .venv/bin/python md2docx.py notes.md
@@ -103,6 +119,8 @@ pnpm pptv editor-pack examples/minimal-deck.pptv.html \
   --output minimal-deck.editable.pptv.html
 pnpm pptv pptx-canary examples/minimal-deck.pptv.html \
   --output minimal-deck.pptx
+pnpm pptv text-fit examples/minimal-deck.pptv.html \
+  --font-map fonts.json
 pnpm pptv text examples/minimal-deck.pptv.html --slide cover --format json
 pnpm pptv show examples/minimal-deck.pptv.html cover.title --view editing
 pnpm pptv list examples/minimal-deck.pptv.html --role connector
@@ -124,8 +142,8 @@ read-only trusted shell around inert canonical bytes and reconstructs its
 preview only from literal resolved data. Standalone SVG and external manifests
 are recognition-only; CSS token editing, geometry/rich-text editing, writable
 bundled controls, PPTX features beyond the strict C7 subset, quantitative
-render fidelity, reconciliation, and native PPTX save/reopen remain outside the
-verified surface. See
+render fidelity, browser/native text-fit parity, reconciliation, and native
+PPTX save/reopen remain outside the verified surface. See
 [`packages/pptv/README.md`](packages/pptv/README.md).
 
 ### Markdown → DOCX
@@ -265,10 +283,11 @@ themes with an `extends` chain, and the rest of the symmetry track
 broader SVG/HTML source model, processing API, native editor, PowerPoint
 adapter, reverse-patch semantics, and conformance path. Contracts C4 and C5,
 their schemas, and executable tests define the implemented 0.1 source/read/patch
-subset. C6 and C7 are implemented, in-progress resolver/compiler surfaces with
-explicit parity, fidelity, and native save/reopen gates. The broader writable
-editor, full compiler, and reconciliation surface remains forward design until
-promoted the same way.
+subset. C6, C7, and C8 are implemented, in-progress
+resolver/compiler/verification surfaces with explicit parity, calibration,
+fidelity, and native save/reopen gates. The broader writable editor, full
+compiler, and reconciliation surface remains forward design until promoted the
+same way.
 
 ---
 

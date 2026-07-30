@@ -23,7 +23,8 @@ scripts/check-contract-refs.sh
 | C4-PPTV-SOURCE | 1.0 | verified | 5 | Exact-source PPTV scan, manifest, semantic hierarchy, identity, and order |
 | C5-PPTV-PATCH | 1.0 | verified | 2 | Hash-bound atomic semantic patch transactions |
 | C6-PPTV-RESOLVED | 1.0 | in-progress | 3 | Pure compiler-grade geometry, text, style, font, and asset projection |
-| C7-PPTX-CANARY | 1.0 | in-progress | 4 | Deterministic primitive-only fresh-PPTX compiler canary |
+| C7-PPTX-CANARY | 1.1 | in-progress | 4 | Deterministic primitive-only fresh-PPTX compiler canary |
+| C8-PPTV-TEXT-FIT | 1.0 | in-progress | 3 | Pure anchor-aware text-fit evidence plus exact-font Node adapter |
 
 `Impl Files` counts the artifacts explicitly listed under each contract's
 `Implementing Files` section; it is not a count of transitive consumers carrying
@@ -37,11 +38,12 @@ a `CONTRACT:` header.
 - `CONTRACT-C4-PPTV-SOURCE.1.0.md`
 - `CONTRACT-C5-PPTV-PATCH.1.0.md`
 - `CONTRACT-C6-PPTV-RESOLVED.1.0.md`
-- `CONTRACT-C7-PPTX-CANARY.1.0.md`
+- `CONTRACT-C7-PPTX-CANARY.1.1.md`
+- `CONTRACT-C8-PPTV-TEXT-FIT.1.0.md`
 
 ## Owners
 
-All seven contracts: Will Ackerly (sole maintainer).
+All eight contracts: Will Ackerly (sole maintainer).
 
 ## Known Consumers
 
