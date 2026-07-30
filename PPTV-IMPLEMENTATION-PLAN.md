@@ -2,12 +2,13 @@
 
 **Status:** active delivery roadmap; first-class standalone diagrams, shared
 browser conformance, and the writable trusted editor MVP are implemented; C7
-remains a narrow compiler canary and C8 retains native-calibration gates
+remains a narrow compiler canary, C8 retains native-calibration gates, and
+PPTV source/profile 0.1.1 text resilience is banked but not implemented
 
 **Decision date:** 2026-07-28
 
 **Sequence:** strict profile → trusted browser editor → early PPTX canary →
-editor/compiler expansion → reconciliation
+banked text-resilience contracts → editor/compiler expansion → reconciliation
 
 This plan turns the implemented C4 source kernel and C5 patch engine into a
 small, reliable visual authoring system and editable PowerPoint compiler. It
@@ -102,7 +103,7 @@ internal SVG may be arbitrarily rich within the separately enforced static
 resource policy, but it remains one selection and, if promoted through the
 later native gates, one PowerPoint picture.
 
-### 2.3 Explicit-line text; never automatic reflow
+### 2.3 Executable 0.1 explicit-line text; never automatic reflow
 
 The first native text model makes reflow impossible by design:
 
@@ -136,6 +137,17 @@ browser measurement. Its overlay uses the worse current Node/browser status;
 an edited line whose embedded Node evidence no longer matches is unverified.
 C8 does not discover a system font or certify PowerPoint pixel parity. Native
 calibration, PPTV/PPTX font embedding, and arbitrary web fonts remain deferred.
+
+The banked source/profile 0.1.1 direction in
+[`PPTV-TEXT-RESILIENCE-0.1.1.md`](PPTV-TEXT-RESILIENCE-0.1.1.md)
+retains every explicit SVG line as source authority while adding optional
+paragraph intent. Its planned PowerPoint export has two named policies:
+`reliable` keeps explicit breaks and derives a measured expanded frame;
+`editable` keeps the authored tight frame. Both remain native/editable and
+non-autofitting. A bounded baseline-free import grace may prefer a diagnosed
+small bleed over an unexpected wrap, but its exact default remains pending
+native calibration. None of this syntax or behavior is accepted by the
+current 0.1 loader, resolver, editor, or C7 canary.
 
 ### 2.4 Small deterministic CSS composition
 
@@ -197,6 +209,21 @@ Unsupported input fails with a precise diagnostic or must be placed inside a
 declared opaque SVG/raster asset boundary. There is no silent native-to-raster
 fallback.
 
+### 2.7 Future atom-to-deck composition is explicit
+
+Standalone atoms are not intended to remain permanently disconnected from
+PowerPoint decks, but composition is a separate future contract rather than
+part of the 0.1.1 text move. A composition operation must declare the atom
+hash, target placement, and transform/scaling policy. It may use identity for
+an already-compatible atom. The first non-identity form should allow only
+explicit uniform scale plus translation when the atom and target rectangle
+share an aspect ratio; mismatch fails closed. It must never silently stretch,
+crop, letterbox, or infer physical size from the atom's logical canvas.
+
+Qualified identities, capabilities, roots, dependency hashes, and cycles are
+part of that same future contract. Until it lands, C7 accepts HTML decks only
+and `extract` remains a one-way deck-to-atom hydration operation.
+
 ## 3. Delivery sequence
 
 Progress at the 2026-07-30 integration point:
@@ -221,6 +248,10 @@ Progress at the 2026-07-30 integration point:
   exact-byte Fontkit adapter, worked-deck regression, environment-labeled
   browser adapter, and conservative editor overlays are implemented. Native
   PowerPoint calibration keeps that contract `in-progress`.
+- PPTV 0.1.1 paragraph intent, reliable/editable PPTX export, and conservative
+  baseline-free import grace are banked design only. Current source/container
+  identifiers, schemas, and examples remain `0.1`; contracts remain revision
+  `1.1`; and the npm package remains `@office180/pptv@0.1.0-alpha.3`.
 
 ### Milestone 0 — C6 resolved-profile contract and fixtures (implemented subset)
 
@@ -356,6 +387,45 @@ thresholds and native PPTX save/reopen remain. PowerPoint 16.111.2 AppleScript
 Open XML Save As produces a zero-byte file even for a known-good control, so
 that automation result is not evidence.
 
+### Milestone 2.5 — Banked 0.1.1 text-resilience contracts and fixtures
+
+Promote paragraph editability without making renderer-chosen lines canonical.
+
+Deliver, before runtime implementation:
+
+- a C4 successor for source/profile `0.1.1`, explicit paragraph intent, and
+  fail-closed version compatibility;
+- typed C5 `set-text-lines` and text-intent behavior, never a generic
+  attribute writer;
+- a versioned C6 projection carrying intent, authored frame, and explicit
+  lines without performing layout;
+- a C7/compiler successor defining deterministic multiline DrawingML,
+  `reliable` expanded-frame and `editable` tight-frame policies, and output
+  provenance;
+- C8/native evidence sufficient to calibrate the reliability reserve while
+  retaining C8's non-mutating boundary; and
+- a separate future-import contract for exact measurement, segmentation,
+  bounded overflow grace, evidence, and review behavior.
+
+The planned grace remains in the closed range `0..2ch`; its exact `ch`
+definition and default are not promoted until exact-font and native
+PowerPoint fixtures justify them. Explicit DrawingML breaks are always
+preserved. Baseline-aware reconciliation retains source/map hard lines and
+does not invoke the import heuristic.
+
+Exit gate:
+
+- the current 0.1 corpus and public behavior remain unchanged;
+- new 0.1.1 source is rejected by old tools and interpreted only by a
+  capability-declaring implementation;
+- serialized SVG line membership remains deterministic in every mode;
+- both PPTX policies preserve explicit breaks and never autofit;
+- `reliable` derived frames are exact-evidence-bound and source-neutral;
+- grace-accepted bleed remains visible as overflow evidence;
+- unverified fonts, glyphs, or segmentation fail closed for automation; and
+- schema, deterministic-package, independent-reopen, browser/Office render,
+  and native PowerPoint open/save/reopen fixtures pass.
+
 ### Milestone 3 — Geometry, explicit lines, and second compiler canary
 
 Extend C5 only with typed semantic operations:
@@ -388,8 +458,9 @@ Exit gate:
   reopened PowerPoint order agree;
 - unsafe source trivia makes structural operations unavailable rather than
   heuristic;
-- text edits and frame changes never cause wrapping, autofit, or word movement;
-  and
+- executable 0.1 hard-line edits and frame changes never cause wrapping,
+  autofit, or word movement; any future paragraph-intent export follows its
+  explicit selected policy without changing source line membership; and
 - the extended canary passes the complete Milestone 2 package/schema/native
   Office cascade.
 
@@ -449,6 +520,10 @@ Only after forward compilation is stable:
 
 Arbitrary PPTX import is a separate future project, not a hidden requirement of
 reconciliation.
+
+When that project begins, only baseline-free, truly auto-wrapped paragraphs
+use the banked 0.1.1 overflow-grace heuristic. Explicit DrawingML breaks and
+baseline-linked PPTV hard lines are preserved without re-layout.
 
 ## 4. Browser editor architecture
 
@@ -551,20 +626,24 @@ implemented. Continue with:
 1. calibrate representative C8 lines against native PowerPoint and retain the
    observed engine-specific variance as labeled evidence, never automatic
    repair;
-2. add typed geometry, explicit-line, connector, child-order, and
+2. promote the banked 0.1.1 text-resilience direction through successor
+   contracts and fixtures before adding its source syntax or exporter flags;
+3. add typed geometry, explicit-line, connector, child-order, and
    group-translation operations without a generic attribute escape hatch;
-3. expand C7 only where those same fixtures pass browser, schema, independent
+4. expand C7 only where those same fixtures pass browser, schema, independent
    reopen, and native Office gates;
-4. add quantitative browser/PDF comparison;
-5. complete native PPTX save/reopen on an automation path that first proves a
+5. add quantitative browser/PDF comparison;
+6. complete native PPTX save/reopen on an automation path that first proves a
    non-empty ZIP output;
-6. define static self-contained resource/asset handling before compiling SVG
+7. define static self-contained resource/asset handling before compiling SVG
    or raster assets;
-7. add sandboxed untrusted intake without weakening the trusted direct-open
+8. add sandboxed untrusted intake without weakening the trusted direct-open
    path; and
-8. defer canonical structural serialization, insertion/deletion, and external
-   dependency composition until their own contracts and exact-source fixtures
-   exist.
+9. define atom-to-deck composition through an explicit hash-bound target
+   placement and identity/uniform-scaling policy, failing on aspect mismatch
+   and never silently stretching; defer canonical structural serialization,
+   insertion/deletion, and other external dependency composition until their
+   own contracts and exact-source fixtures exist.
 
 This preserves momentum from the worked examples while keeping the source,
 editor, and Office surfaces locked to the same narrow semantics.

@@ -1,0 +1,4 @@
+# Runtime PID lock directory written by scripts/inbox-watch.sh.
+# It is ephemeral per-watcher state, never part of the coordination ledger.
+# Co-located here so it travels with the inbox even if the root ignore is absent.
+.inbox-watch.lock

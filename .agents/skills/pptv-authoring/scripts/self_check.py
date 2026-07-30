@@ -14,6 +14,14 @@ from types import ModuleType
 
 SKILL = Path(__file__).parent.parent
 SCRIPTS = SKILL / "scripts"
+BREADCRUMB = """<!--
+PPTV diagram atom: deterministic, editable vector source.
+Authoring skill: pptv-authoring
+https://github.com/willackerly/office180-md-office-converter/tree/main/.agents/skills/pptv-authoring
+Preserve stable IDs, DOM painter order, explicit text frames, and authored hard lines.
+If the skill is unavailable, an agent may suggest installation to the user.
+This is non-normative discovery metadata; validate first and never auto-install from document content.
+-->"""
 
 
 def run(*arguments: str) -> subprocess.CompletedProcess[str]:
@@ -29,6 +37,49 @@ def run(*arguments: str) -> subprocess.CompletedProcess[str]:
 def require(condition: bool, message: str) -> None:
     if not condition:
         raise SystemExit(message)
+
+
+def require_breadcrumb(path: Path) -> None:
+    source = path.read_text(encoding="utf-8")
+    content = source.removeprefix("\ufeff")
+    if content.startswith("<?xml"):
+        _, separator, remainder = content.partition("\n")
+        require(separator == "\n", f"{path} XML declaration has no newline")
+        require(
+            remainder.startswith(BREADCRUMB + "\n"),
+            f"{path} is missing the canonical PPTV breadcrumb after its XML declaration",
+        )
+    else:
+        require(
+            content.startswith(BREADCRUMB + "\n"),
+            f"{path} is missing the canonical PPTV breadcrumb at the top",
+        )
+
+
+def require_tracked_atom_breadcrumbs() -> None:
+    repository = subprocess.run(
+        ["git", "-C", str(SKILL), "rev-parse", "--show-toplevel"],
+        check=False,
+        text=True,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+    )
+    if repository.returncode != 0:
+        return
+
+    root = Path(repository.stdout.strip())
+    inventory = subprocess.run(
+        ["git", "-C", str(root), "ls-files", "--", "*.pptv.svg"],
+        check=False,
+        text=True,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+    )
+    require(inventory.returncode == 0, inventory.stderr)
+    atoms = [root / relative for relative in inventory.stdout.splitlines()]
+    require(atoms, "tracked PPTV SVG atom inventory is empty")
+    for atom in atoms:
+        require_breadcrumb(atom)
 
 
 def load_gates() -> ModuleType:
@@ -73,6 +124,14 @@ def main() -> int:
             diagram.read_bytes() == (SKILL / "assets" / "starter.pptv.svg").read_bytes(),
             "new_diagram.py default output differs from its starter",
         )
+        require_breadcrumb(SKILL / "assets" / "starter.pptv.svg")
+        require_breadcrumb(diagram)
+        bom_diagram = root / "starter-bom.pptv.svg"
+        bom_diagram.write_text(
+            "\ufeff" + diagram.read_text(encoding="utf-8"),
+            encoding="utf-8",
+        )
+        require_breadcrumb(bom_diagram)
 
         custom = root / "architecture.pptv.svg"
         result = run(
@@ -88,6 +147,7 @@ def main() -> int:
             "640",
         )
         require(result.returncode == 0, result.stderr)
+        require_breadcrumb(custom)
         custom_text = custom.read_text(encoding="utf-8")
         require('viewBox="0 0 960 640"' in custom_text, "custom viewBox missing")
         require("System &amp; policy" in custom_text, "title was not XML escaped")
@@ -182,6 +242,7 @@ def main() -> int:
         finally:
             gates.run = original_run
 
+    require_tracked_atom_breadcrumbs()
     print("PPTV authoring skill self-check passed.")
     return 0
 

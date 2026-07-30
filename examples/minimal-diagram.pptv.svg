@@ -1,4 +1,12 @@
 <?xml version="1.0" encoding="UTF-8"?>
+<!--
+PPTV diagram atom: deterministic, editable vector source.
+Authoring skill: pptv-authoring
+https://github.com/willackerly/office180-md-office-converter/tree/main/.agents/skills/pptv-authoring
+Preserve stable IDs, DOM painter order, explicit text frames, and authored hard lines.
+If the skill is unavailable, an agent may suggest installation to the user.
+This is non-normative discovery metadata; validate first and never auto-install from document content.
+-->
 <svg id="system-overview"
      data-pptv-version="0.1"
      viewBox="-100 -50 1200 800"

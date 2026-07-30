@@ -9,6 +9,7 @@ import { describe, expect, it } from "vitest";
 
 import { runCli, type CliEnvironment } from "../cli.js";
 import { loadDeck, loadDiagram } from "../core/deck.js";
+import { PPTV_DIAGRAM_DISCOVERY_COMMENT } from "../core/extract.js";
 import { readMinimalDeck } from "./test-helpers.js";
 
 function captureEnvironment(): {
@@ -609,6 +610,7 @@ describe("PPTV CLI", () => {
       });
       expect(summary.sourceSha256).toMatch(/^[0-9a-f]{64}$/u);
       const extracted = await readFile(outputPath, "utf8");
+      expect(extracted.startsWith(PPTV_DIAGRAM_DISCOVERY_COMMENT)).toBe(true);
       expect(extracted).toContain('id="cover"');
       expect(extracted).toContain('data-pptv-version="0.1"');
       expect(extracted).not.toContain('class="');

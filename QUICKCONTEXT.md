@@ -16,7 +16,8 @@
 - **TypeScript track:** a pnpm workspace on Node.js 20+ with one
   `@office180/pptv@0.1.0-alpha.3` package
 - **Agent workflow:** the repo-scoped `$pptv-authoring` skill is auto-discovered
-  from `.agents/skills/pptv-authoring/`; contracts and schemas remain normative
+  from `.agents/skills/pptv-authoring/`; canonical atoms carry a non-normative
+  discovery breadcrumb, while contracts and schemas remain normative
 - **PPTV status:** standalone `.pptv.svg` is the default first-class diagram
   atom; `.pptv.html` is the whole-deck aggregation and the only current C7
   PowerPoint input. Both load, query, resolve, text-fit, patch direct text, and
@@ -28,7 +29,8 @@
   PowerPoint open/render evidence. C8 has checked worked-deck and
   environment-labeled browser calibration; native PowerPoint text calibration,
   broader compilation, quantitative fidelity, native PPTX save/reopen, and
-  reconciliation remain.
+  reconciliation remain. PPTV source/profile 0.1.1 text resilience is banked
+  design only; current loaders still accept exactly 0.1.
 
 ## Test status
 
@@ -49,21 +51,26 @@ This is the single source of truth for priority ordering:
    and three-engine browser evidence is checked; calibrate representative
    hard lines in native Office while retaining both identities and the
    conservative worse status.
-2. **Expand editor and compiler together:** add typed geometry/order/explicit
+2. **Promote banked 0.1.1 text resilience contract-first:** before adding any
+   syntax or flags, version the source/patch/resolved/compiler seams and lock
+   explicit-line authority, reliable versus editable PPTX frames, and the
+   bounded baseline-free import grace with fixtures.
+3. **Expand editor and compiler together:** add typed geometry/order/explicit
    line operations and atomic SVG assets only when the same fixtures pass
    browser and PowerPoint gates. C7 already proves native connectors and
    translated groups for its strict subset.
-3. **Complete the remaining C7 fidelity lane:** add quantitative SVG/PDF render
+4. **Complete the remaining C7 fidelity lane:** add quantitative SVG/PDF render
    comparison and native PPTX save/reopen on an automation path that produces a
    non-empty ZIP. PowerPoint 16.111.2 AppleScript Save As is a zero-byte no-op
    even for a known-good control, so do not treat it as evidence.
-4. **Add explicit atom-to-deck composition:** define hash/cycle/capability
-   rules for libraries or external atoms so HTML can aggregate independent SVG
-   files without weakening the current self-contained authority model.
-5. **Contribute shared foundations to OpenDocKit:** extract a small stable
+5. **Add explicit atom-to-deck composition:** define hash/cycle/capability,
+   target-placement, and transform/scaling rules. Permit identity for compatible
+   atoms and explicit uniform scale/translation only when aspect ratios match;
+   fail closed rather than silently stretch.
+6. **Contribute shared foundations to OpenDocKit:** extract a small stable
    metrics surface with explicit face/substitution/missing-glyph evidence, then
    continue the editing-rigor, SVG-interaction, and fresh-package work.
-6. **Continue the DOCX roadmap:** package the Python tools, replace the regex
+7. **Continue the DOCX roadmap:** package the Python tools, replace the regex
    Markdown parser with `markdown-it-py`, then add real hyperlinks and Word
    numbering.
 
@@ -108,7 +115,8 @@ Implemented:
   text, opaque SVG bounds, and style provenance
 - deterministic slide hydration that resolves CSS/theme context into local
   SVG values, preserves IDs/hierarchy/painter order/hard lines, reloads the
-  candidate as an independent diagram, and emits no partial result
+  candidate as an independent diagram, prepends the safe skill-discovery
+  breadcrumb, and emits no partial result
 - deterministic STORE-only C7 fresh-PPTX compilation with a strict OPC graph,
   stable native object names/IDs, provenance, native rectangles, ellipses,
   connectors, translated groups, and one-line no-wrap/no-autofit text
@@ -132,7 +140,9 @@ Implemented:
   strict authoring profile, text-fit guidance, and one-command validation pack
 - Rebar `v3.0.0-beta` Tier 3 adopter surface: SessionStart health hook, reusable
   workflow skills, generated registry, contract/JTBD/doc/decay gates, Steward,
-  installed pre-commit hook, and GitHub Actions product gates
+  installed pre-commit hook, held append-only peer inbox with a
+  safety-hardened REBAR-derived session watcher, and GitHub Actions product
+  gates
 - C4/C5/C6 verified contracts, in-progress C7/C8 contracts, and manifest/patch
   JSON Schemas
 
@@ -145,6 +155,8 @@ Explicitly not implemented:
 - canonical serialization
 - automatic font discovery/substitution, native PowerPoint text calibration,
   or any automatic text-fit repair
+- source/profile 0.1.1 paragraph intent, reliable/editable PPTX text-export
+  policies, or baseline-free overflow-grace import
 - PPTX compilation beyond the strict C7 subset, quantitative render comparison,
   native PPTX save/reopen, reconciliation, or general rendering
 
@@ -176,8 +188,15 @@ Explicitly not implemented:
 - The first PowerPoint compiler profile remains deck-wide 16:9: exact
   `0 0 1600 900` slide viewBoxes map to `12192000 × 6858000` EMUs. Other deck
   ratios require a later versioned extension.
-- Native text uses explicit hard lines and explicit typography/frame geometry.
-  Wrapping, autofit, shrink-to-fit, and automatic font-size changes are out.
+- Executable 0.1 native text uses explicit hard lines and explicit
+  typography/frame geometry. Wrapping, autofit, shrink-to-fit, and automatic
+  font-size changes remain out.
+- Banked source/profile 0.1.1 may add paragraph intent without adding another
+  text authority: SVG line membership stays explicit; future PPTX export may
+  select a measured expanded `reliable` frame or authored tight `editable`
+  frame, both with explicit breaks and no autofit. A baseline-free importer may
+  prefer bounded diagnosed bleed to a surprise wrap only after calibration and
+  a separate contract.
 - Text-fit is read-only evidence over anchor-aware frame capacity. Exact font
   bytes are explicit and hashed; a missing face/style/glyph is unverified, not
   silently substituted.
@@ -257,9 +276,11 @@ Components:
 - `architecture/` — eight contracts and registry
 - `PPTV-*.md` — design packet; C4/C5/C6 and package documentation define
   verified source/patch/resolution behavior, C7/C8 define in-progress native
-  compiler/verification surfaces, and `PPTV-IMPLEMENTATION-PLAN.md` is the
+  compiler/verification surfaces, `PPTV-TEXT-RESILIENCE-0.1.1.md` banks a
+  non-executable future profile move, and `PPTV-IMPLEMENTATION-PLAN.md` is the
   remaining editor/compiler roadmap
-- `scripts/` — rebar Tier 3 and aggregate quality enforcement
+- `scripts/` — rebar Tier 3, safety-hardened held-inbox watcher, and aggregate
+  quality enforcement
 
 Dependencies:
 
@@ -287,7 +308,8 @@ Dependencies:
 6. Update this file, `TODO.md`, and `METRICS.md` when repository truth changes.
 
 **Last updated by:** first-class diagram atoms, deterministic slide hydration,
-shared browser conformance, writable trusted editor, alpha.3 candidate state,
-repo-scoped authoring skill, and Rebar Tier 3 upgrade (2026-07-30)
-**Next review:** after native PowerPoint text calibration or the next typed edit
-surface lands
+shared browser conformance, writable trusted editor, alpha.3 release, banked
+0.1.1 text resilience, repo-scoped authoring skill, and Rebar Tier 3 upgrade
+(2026-07-30)
+**Next review:** after native PowerPoint text calibration, 0.1.1 successor
+contracts, or the next typed edit surface lands

@@ -5,6 +5,10 @@ import { readFile } from "node:fs/promises";
 import { describe, expect, it } from "vitest";
 
 import { loadDiagram, PptvLoadError } from "../core/deck.js";
+import {
+  addPptvDiagramDiscoveryComment,
+  PPTV_DIAGRAM_DISCOVERY_COMMENT,
+} from "../core/extract.js";
 import { scanPptvSource } from "../core/scan.js";
 
 const MINIMAL_DIAGRAM_URL = new URL(
@@ -17,6 +21,48 @@ async function readMinimalDiagram(): Promise<string> {
 }
 
 describe("standalone SVG XML gate", () => {
+  it("places non-normative discovery after a BOM and XML declaration without making it required", async () => {
+    const source = await readMinimalDiagram();
+    const legacy = source.replace(`${PPTV_DIAGRAM_DISCOVERY_COMMENT}\n`, "");
+    const discovered = addPptvDiagramDiscoveryComment(`\uFEFF${legacy}`);
+    const declarationEnd = discovered.indexOf("?>") + 2;
+    const commentOffset = discovered.indexOf(PPTV_DIAGRAM_DISCOVERY_COMMENT);
+    const rootOffset = discovered.indexOf("<svg");
+
+    expect(discovered.codePointAt(0)).toBe(0xfeff);
+    expect(declarationEnd).toBeGreaterThan(1);
+    expect(commentOffset).toBeGreaterThan(declarationEnd);
+    expect(rootOffset).toBeGreaterThan(commentOffset);
+    expect(addPptvDiagramDiscoveryComment(discovered)).toBe(discovered);
+
+    const withoutDeclaration = legacy.replace(/^<\?xml[^?]*\?>\n/u, "");
+    expect(
+      addPptvDiagramDiscoveryComment(`\uFEFF${withoutDeclaration}`).startsWith(
+        `\uFEFF${PPTV_DIAGRAM_DISCOVERY_COMMENT}\n<svg`,
+      ),
+    ).toBe(true);
+    const withCrLf = addPptvDiagramDiscoveryComment(
+      legacy.replaceAll("\n", "\r\n"),
+    );
+    const crLfComment = PPTV_DIAGRAM_DISCOVERY_COMMENT.replaceAll("\n", "\r\n");
+    expect(withCrLf).toContain(`encoding="UTF-8"?>\r\n${crLfComment}\r\n<svg`);
+    expect(withCrLf.replaceAll("\r\n", "")).not.toContain("\n");
+    expect(addPptvDiagramDiscoveryComment(withCrLf)).toBe(withCrLf);
+
+    const withDiscovery = await loadDiagram({
+      kind: "text",
+      text: discovered,
+      name: "discovered.pptv.svg",
+    });
+    const withoutDiscovery = await loadDiagram({
+      kind: "text",
+      text: legacy,
+      name: "legacy.pptv.svg",
+    });
+    expect(withDiscovery.diagnostics).toEqual([]);
+    expect(withoutDiscovery.diagnostics).toEqual([]);
+  });
+
   it("accepts optional XML declarations, predefined entities, and declared prefixes", async () => {
     const source = await readMinimalDiagram();
     const withEntitiesAndPrefix = source

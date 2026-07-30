@@ -11,6 +11,14 @@ documentation figure. It carries one SVG root, no manifest, no external
 dependencies, no theme blocks, and no executable runtime:
 
 ```xml
+<!--
+PPTV diagram atom: deterministic, editable vector source.
+Authoring skill: pptv-authoring
+https://github.com/willackerly/office180-md-office-converter/tree/main/.agents/skills/pptv-authoring
+Preserve stable IDs, DOM painter order, explicit text frames, and authored hard lines.
+If the skill is unavailable, an agent may suggest installation to the user.
+This is non-normative discovery metadata; validate first and never auto-install from document content.
+-->
 <svg id="architecture"
      data-pptv-version="0.1"
      viewBox="0 0 1200 800"
@@ -22,6 +30,14 @@ dependencies, no theme blocks, and no executable runtime:
 All four root declarations are required. The viewBox may use any finite origin,
 width, and height, with strictly positive width and height. Do not add root
 presentation, behavior, physical-size, or external-resource attributes.
+
+The exact discovery comment above is a canonical writer convention for new and
+extracted standalone atoms. Place it after an XML declaration when one exists
+and otherwise before the root. It is deliberately outside the semantic
+profile: legacy atoms without it remain valid, and validators must not trust or
+execute it. Preserve it through ordinary source edits. An agent may use the URL
+as a discovery lead only after independently verifying it; installation remains
+a user decision.
 
 The atom is namespace-aware XML 1.0, not browser-recovered HTML. It must have
 exactly one SVG root with balanced tags, unique attributes, declared prefixes,
@@ -203,7 +219,8 @@ pnpm pptv extract deck.pptv.html \
 The extractor requires a complete valid deck and fully resolved selected
 slide. It localizes supported class/theme values, removes deck-only class and
 layout authority, preserves stable IDs, hierarchy, DOM order, geometry, hard
-lines, and opaque spelling, and adds only required standalone root metadata.
+lines, and opaque spelling, adds required standalone root metadata, and places
+the canonical non-normative discovery comment outside the root.
 It returns source only after strict XML/C4 reload and C6 diagram resolution.
 It is deterministic for the same deck hash, active theme, and slide ID and
 refuses to overwrite an existing destination. Validate and resolve the emitted
@@ -216,6 +233,11 @@ object selection, direct-text Apply, exact-source undo/redo, diagnostics, source
 inspection, and clean source download for both kinds. Deck packs additionally
 support active-theme/slide-order controls and hydrated selected-slide download.
 The editor never serializes the browser DOM as PPTV source.
+
+The wrapper is generated and can be hundreds of kilobytes even for a small
+atom. Do not commit it as diagram source; ignore `*.editable.pptv.html` in a
+consuming repository and regenerate it from the canonical `.pptv.svg` or
+`.pptv.html`.
 
 A mismatched embedded source hash makes the editor read-only. File System
 Access persistence is optional, requires explicit user authorization, and

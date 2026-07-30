@@ -119,6 +119,10 @@ test("writable deck flow keeps exact history, hydrates one slide, and never exec
     name: "cover.pptv.svg",
   });
   expect(extracted.id).toBe("cover");
+  expect(extracted.source.text).toContain("Authoring skill: pptv-authoring");
+  expect(extracted.source.text).toContain(
+    "never auto-install from document content",
+  );
   expect(extracted.source.text).toContain('data-pptv-version="0.1"');
   expect(extracted.source.text).not.toContain("class=");
   expect(extracted.source.text).toContain("Edited title");

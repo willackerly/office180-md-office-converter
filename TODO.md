@@ -8,6 +8,20 @@ Active tasks only. Priority ordering lives in `QUICKCONTEXT.md`.
 
 ## PPTV next slice
 
+- [x] Bank PPTV source/profile 0.1.1 text resilience without changing current
+  runtime identifiers: explicit serialized lines remain authority; paragraph
+  intent may later select reliable expanded-frame or editable tight-frame PPTX
+  export; a baseline-free importer may prefer bounded measured bleed to
+  surprise wrapping.
+- [ ] Promote 0.1.1 only through successor C4 source, C5 typed-line/intent,
+  C6 resolved, C7/compiler, and any additive C8 evidence contracts plus
+  conformance fixtures. Current 0.1 loaders, schemas, examples, and package
+  behavior must remain unchanged until then.
+- [ ] Specify baseline-free PPTX paragraph import independently from
+  baseline-aware reconciliation: preserve explicit DrawingML/source-map breaks,
+  use exact-font measurement and reviewed segmentation, retain grace-accepted
+  overflow as overflow evidence, and calibrate the banked `0..2ch` range/default
+  before automation.
 - [x] Promote standalone `.pptv.svg` to a first-class semantic diagram
   document with explicit root ID/version/namespace/viewBox, arbitrary aspect
   ratio, shared object parsing, direct-text patching, diagram resolution,
@@ -31,8 +45,9 @@ Active tasks only. Priority ordering lives in `QUICKCONTEXT.md`.
   add explicit-byte environment-labeled browser/editor measurement and
   conservative overlays.
 - [ ] Calibrate representative exact-font hard lines against native PowerPoint.
-  Never turn this into wrapping or automatic repair, and retain both Node and
-  browser identities when their kerning behavior differs.
+  C8 itself remains read-only and never wraps or repairs; future 0.1.1
+  export/import layers may consume its exact evidence only through their own
+  contracts. Retain both Node and browser identities when kerning differs.
 - [ ] Remove first-declaration entries for duplicate object IDs from the raw C4
   index; public queries suppress ambiguous IDs and C6/C7 reject ambiguous
   decks, so this is internal representation cleanup rather than a compiler
@@ -73,7 +88,23 @@ Active tasks only. Priority ordering lives in `QUICKCONTEXT.md`.
 - [ ] Split `@office180/pptv-pptx` only when the real OOXML dependency boundary
   exists; keep the source/browser core independent.
 - [ ] Add library/`use`, atom composition, and external-manifest dependency
-  resolution only after capability, cycle, root, and hash contracts exist.
+  resolution only after capability, cycle, root, hash, target-placement, and
+  transform contracts exist. The first atom-to-deck bridge permits identity
+  for already-compatible atoms or explicit uniform scale plus translation when
+  aspect ratios match; mismatch fails closed and never silently stretches.
+- [ ] Make exact-font preflight approachable for installed-package consumers
+  without weakening evidence: evaluate an explicitly selected, redistributable
+  OFL default font/map and a `pptv new diagram|deck` scaffold (or clearly
+  document that scaffolding requires a repository checkout). Never infer a
+  system font or silently substitute.
+- [x] Treat generated editor wrappers as build artifacts: document
+  `*.editable.html` and `*.editable.pptv.html`, ship both ignore patterns, and
+  mirror the guidance in the authoring skill without hiding canonical
+  `.pptv.svg` or `.pptv.html` source.
+- [ ] Upstream the marked office180 inbox-watcher safety delta to REBAR:
+  atomic non-symlink locks, duplicate-watch refusal, dated safe-name filtering,
+  and bounded control-sanitized previews. Keep the delta explicit until REBAR
+  ratifies one shared successor to its 2026.07.11 script.
 - [ ] Define canonical serialization independently from preserve-mode patching.
 - [ ] Extend the implemented source-byte, element/depth, and manifest-complexity
   ceilings with patch-operation, future asset, and decompressed-package limits.
@@ -132,6 +163,13 @@ Active tasks only. Priority ordering lives in `QUICKCONTEXT.md`.
   WebKit's unkerned SVG variance is conservatively retained. Native PowerPoint
   calibration, vertical fit, font embedding, system discovery, silent
   substitution, and automatic repair remain out.
+- PPTV source/profile 0.1.1 paragraph intent, reliable/editable PowerPoint
+  frame policies, and bounded baseline-free import grace are banked design,
+  not accepted syntax or executable behavior. The npm package remains
+  `0.1.0-alpha.3`, and current contracts remain at their stated 1.1 revisions.
+- `text-fit` still requires an explicit font map, and the repository-scoped
+  authoring skill currently owns starter scaffolding. Installed-package default
+  font evidence and public scaffolding remain follow-ups.
 - The minimal fixture has one base/component style block plus complete
   token-only themes. Theme token editing remains a typed-operation follow-up.
 - `docx2md.py` does not reject pending tracked changes (`ROADMAP.md` §7.5).
@@ -149,13 +187,19 @@ scans both Python and TypeScript and rejects untracked `TODO:` comments.
 <details>
 <summary><strong>Recently completed</strong></summary>
 
+- [x] Banked PPTV source/profile 0.1.1 text resilience with explicit-line
+  authority, planned reliable/editable PPTX frame policies, conservative
+  future-import grace, and contract-first promotion gates — 2026-07-30
+- [x] Marked generated editor wrappers as non-canonical build artifacts in the
+  package/skill guidance and shipped both ignore patterns — 2026-07-30
 - [x] First-class arbitrary-viewBox `.pptv.svg` atom; generic source/query/text
   patch/resolve/text-fit/editor CLI; deterministic deck-slide hydration;
   shared three-engine browser conformance; checked browser C8 evidence; and
   writable trusted deck/diagram editor — 2026-07-30
 - [x] Rebar `v3.0.0-beta` Tier 3 upgrade with a SessionStart health hook,
   generated registry, JTBD/header/doc/decay gates, Steward report, installed
-  pre-commit hook, reusable Claude workflow skills, and GitHub Actions — 2026-07-30
+  pre-commit hook, reusable Claude workflow skills, held peer inbox plus
+  canonical watcher, and GitHub Actions — 2026-07-30
 - [x] Repo-scoped `$pptv-authoring` skill with strict authoring/text-fit
   references, canonical starter parity lock, and end-to-end gate helper —
   2026-07-29

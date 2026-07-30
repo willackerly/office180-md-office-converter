@@ -16,7 +16,7 @@ test_files = 1
 test_functions = 7
 typescript_source_files = 27
 typescript_test_files = 24
-typescript_test_cases = 174
+typescript_test_cases = 175
 contracts = 8
 published_schemas = 2
 shipped_themes = 3
@@ -39,17 +39,17 @@ shipped_themes = 3
 - `md2docx.py` — 404 lines.
 - `docx2md.py` — 267 lines.
 - `tests/test_roundtrip.py` — 278 lines.
-- `packages/pptv/src/` — 27 non-test TypeScript modules / 16,447 lines across
+- `packages/pptv/src/` — 27 non-test TypeScript modules / 16,523 lines across
   the portable source/resolved/text-fit kernel, operations, browser session,
   extraction/editor runtime, Node font/compiler/filesystem boundary, and CLI.
-- `packages/pptv/src/__tests__/` — 24 Vitest files / 7,373 lines (excluding the
+- `packages/pptv/src/__tests__/` — 24 Vitest files / 7,444 lines (excluding the
   shared helper).
 
 ## Testing Status
 
 - **Python:** 7 passing standalone tests covering theme resolution, provenance,
   forward/reverse conversion, link demotion, and the `--no-footer` regression.
-- **TypeScript:** 222 passing runtime Vitest cases from 174 direct
+- **TypeScript:** 223 passing runtime Vitest cases from 175 direct
   `it()`/`test()` declarations (data-driven cases expand at runtime), covering
   exact UTF-8 source handling, BOM/non-BMP coordinates, non-executing security,
   strict HTML/XML/container/manifest validation, diagram/deck distinction,
@@ -59,17 +59,17 @@ shipped_themes = 3
   anchor/measurement/font-map/CLI behavior, and race-safe CLI atomic writes.
 - **Repo-scoped authoring skill:** structural validation passes; its bundled
   starter is locked byte-for-byte to the canonical minimal deck by Vitest.
-- **Browser conformance:** the checked ES2022 IIFE is 656,582 bytes with
+- **Browser conformance:** the checked ES2022 IIFE is 659,260 bytes with
   SHA-256
-  `6e92938113408ffc0cb5ccecedac88a1c9cc1966f25724c533243259c0472661`.
+  `489e7c2d9174759dba046662124d74339385c60d000d736f9156d6097f5e8f9a`.
   Four real-HTTP C4/C6/C8 tests plus three writable-editor tests pass in each
   captured Chromium, Firefox, and WebKit project (21 of 21), including
   normalized Node/browser equality for the minimal deck, arbitrary-viewBox
   standalone kitchen sink, invalid profile, transactional editing, clean
   source/slide downloads, undo/redo, and tamper-safe read-only fallback.
-- **Writable trusted editor:** its current generated IIFE is 667,548 bytes with
+- **Writable trusted editor:** its current generated IIFE is 670,078 bytes with
   SHA-256
-  `ad7f023813d99d8c7d82468616989db03fbde834a9336925b605fd6ceb69d2c1`;
+  `5ea8b63d18c5b4804b151b22719f0ca629047a474e9bef3335d5a7a576722caa`;
   `editor:check` exact-regenerates the app and stylesheet before accepting
   them.
 - **Repository enforcement:** Rebar `v3.0.0-beta` Tier 3 reports 14/14 adopter

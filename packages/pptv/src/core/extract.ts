@@ -47,6 +47,24 @@ interface SourceEdit {
 }
 
 /**
+ * Non-normative discovery metadata emitted by PPTV diagram writers.
+ *
+ * Loaders deliberately do not require or trust this comment. It names the
+ * canonical authoring skill without authorizing installation from document
+ * content.
+ */
+export const PPTV_DIAGRAM_DISCOVERY_COMMENT = [
+  "<!--",
+  "PPTV diagram atom: deterministic, editable vector source.",
+  "Authoring skill: pptv-authoring",
+  "https://github.com/willackerly/office180-md-office-converter/tree/main/.agents/skills/pptv-authoring",
+  "Preserve stable IDs, DOM painter order, explicit text frames, and authored hard lines.",
+  "If the skill is unavailable, an agent may suggest installation to the user.",
+  "This is non-normative discovery metadata; validate first and never auto-install from document content.",
+  "-->",
+].join("\n");
+
+/**
  * Materialize one valid C6 deck slide as a context-free `.pptv.svg` atom.
  *
  * IDs, hierarchy, painter order, geometry, authored hard lines, and opaque
@@ -114,18 +132,21 @@ export async function extractPptvDiagram(
     indexedSlide.attributeRanges,
     "class",
     edits,
+    true,
   );
   removeAttribute(
     deck.source.text,
     indexedSlide.attributeRanges,
     "style",
     edits,
+    true,
   );
   removeAttribute(
     deck.source.text,
     indexedSlide.attributeRanges,
     "data-pptv-layout",
     edits,
+    true,
   );
   setAttribute(
     deck.source.text,
@@ -196,6 +217,7 @@ export async function extractPptvDiagram(
     return freezeResult({ provenance, diagnostics });
   }
   if (!sourceText.endsWith("\n")) sourceText += "\n";
+  sourceText = addPptvDiagramDiscoveryComment(sourceText);
 
   let diagram: PptvDiagram;
   try {
@@ -282,15 +304,37 @@ function removeAttribute(
   ranges: ReadonlyMap<string, SourceRange>,
   name: string,
   edits: SourceEdit[],
+  removeIsolatedLine = false,
 ): void {
   const range = findAttributeRange(ranges, name);
   if (range === undefined) return;
   assertRangeSpelling(source, range, name);
+  const editRange = removeIsolatedLine
+    ? isolatedAttributeLineRange(source, range)
+    : range;
   edits.push({
-    start: range.charStart,
-    end: range.charEnd,
+    start: editRange.charStart,
+    end: editRange.charEnd,
     replacement: "",
   });
+}
+
+function isolatedAttributeLineRange(
+  source: string,
+  range: SourceRange,
+): Pick<SourceRange, "charStart" | "charEnd"> {
+  const lineStart = source.lastIndexOf("\n", range.charStart - 1) + 1;
+  const nextLineBreak = source.indexOf("\n", range.charEnd);
+  const lineEnd = nextLineBreak === -1 ? source.length : nextLineBreak;
+  const before = source.slice(lineStart, range.charStart);
+  const after = source.slice(range.charEnd, lineEnd);
+  if (!/^[\t \r]*$/u.test(before) || !/^[\t \r]*$/u.test(after)) {
+    return range;
+  }
+  return {
+    charStart: lineStart,
+    charEnd: nextLineBreak === -1 ? lineEnd : nextLineBreak + 1,
+  };
 }
 
 function setAttribute(
@@ -427,6 +471,36 @@ function escapeXmlAttribute(value: string): string {
 
 function escapeRegExp(value: string): string {
   return value.replace(/[.*+?^${}()|[\]\\]/gu, "\\$&");
+}
+
+/**
+ * Add the canonical discovery comment without rewriting existing source bytes.
+ * An XML declaration remains first and a leading BOM remains byte zero.
+ */
+export function addPptvDiagramDiscoveryComment(source: string): string {
+  const rootOffset = source.search(/<svg(?:\s|>)/iu);
+  const prolog = rootOffset < 0 ? source : source.slice(0, rootOffset);
+  const normalizedProlog = prolog.replace(/\r\n?|\n/gu, "\n");
+  if (normalizedProlog.includes(PPTV_DIAGRAM_DISCOVERY_COMMENT)) {
+    return source;
+  }
+
+  const bomLength = source.startsWith("\uFEFF") ? 1 : 0;
+  const afterBom = source.slice(bomLength);
+  const declaration = afterBom.match(/^<\?xml(?:\s|\?>)[\s\S]*?\?>/iu)?.[0];
+  const insertionOffset = bomLength + (declaration?.length ?? 0);
+  const before = source.slice(0, insertionOffset);
+  const after = source.slice(insertionOffset);
+  const sourceSeparator = after.match(/^(?:\r\n?|\n)/u)?.[0] ?? "\n";
+  const discoveryComment = PPTV_DIAGRAM_DISCOVERY_COMMENT.replaceAll(
+    "\n",
+    sourceSeparator,
+  );
+  const leadingSeparator = declaration === undefined ? "" : sourceSeparator;
+  const trailingSeparator = /^(?:\r\n?|\n)/u.test(after) ? "" : sourceSeparator;
+  return (
+    before + leadingSeparator + discoveryComment + trailingSeparator + after
+  );
 }
 
 function freezeResult(
