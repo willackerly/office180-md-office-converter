@@ -10,6 +10,7 @@ import {
   type DefaultTreeAdapterMap,
   type ParserError,
 } from "parse5";
+import { SaxesParser } from "saxes";
 
 import { PROFILE_ID_PATTERN, STABLE_ID_PATTERN } from "./manifest.js";
 import { materializeSource, sha256Hex, SourceMapper } from "./source.js";
@@ -126,6 +127,15 @@ export async function scanPptvSource(
   }
 
   if (kind === "svg") {
+    if (!validateStandaloneSvgXml(document, mapper, diagnostics)) {
+      return {
+        kind,
+        encoding: "utf-8",
+        source: document,
+        sections: [],
+        diagnostics,
+      };
+    }
     return scanSvg(document, mapper, diagnostics, options);
   }
 
@@ -146,6 +156,53 @@ export async function scanPptvSource(
     ],
     diagnostics,
   };
+}
+
+function validateStandaloneSvgXml(
+  source: PptvScan["source"],
+  mapper: SourceMapper,
+  diagnostics: Diagnostic[],
+): boolean {
+  const parser = new SaxesParser({
+    xmlns: true,
+    fragment: false,
+    defaultXMLVersion: "1.0",
+  });
+  let policyFailure: string | undefined;
+
+  parser.on("xmldecl", (declaration) => {
+    if (declaration.version !== undefined && declaration.version !== "1.0") {
+      policyFailure =
+        "Standalone PPTV SVG requires XML 1.0 when an XML declaration is present.";
+      throw new Error(policyFailure);
+    }
+  });
+  parser.on("doctype", () => {
+    policyFailure =
+      "Standalone PPTV SVG forbids DOCTYPE, DTD, and custom entity declarations.";
+    throw new Error(policyFailure);
+  });
+
+  try {
+    parser.write(source.text).close();
+    return true;
+  } catch (error) {
+    const position = Math.max(
+      0,
+      Math.min(source.text.length, parser.position - 1),
+    );
+    diagnostics.push({
+      code: "PPTV-SCAN-SVG-XML",
+      severity: "fatal",
+      message:
+        policyFailure ??
+        `Standalone PPTV SVG is not namespace-aware XML 1.0: ${
+          error instanceof Error ? error.message : "unknown XML parse error"
+        }`,
+      range: mapper.range(position, Math.min(source.text.length, position + 1)),
+    });
+    return false;
+  }
 }
 
 async function scanHtml(
@@ -532,7 +589,8 @@ function identifySourceKind(
   const byContent =
     trimmed.startsWith("<!doctype html") || trimmed.startsWith("<html")
       ? "html"
-      : trimmed.startsWith("<svg")
+      : trimmed.startsWith("<svg") ||
+          /^<!doctype\s+svg(?:\s|>|\[)/iu.test(trimmed)
         ? "svg"
         : trimmed.startsWith("{")
           ? "manifest"

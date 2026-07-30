@@ -1,4 +1,4 @@
-// Tests: CONTRACT:C4-PPTV-SOURCE.1.0
+// Tests: CONTRACT:C4-PPTV-SOURCE.1.1
 
 import { describe, expect, it } from "vitest";
 
@@ -112,7 +112,7 @@ describe("PPTV source materialization and scan", () => {
     });
     const svg = await scanPptvSource({
       kind: "text",
-      text: '\uFEFF\n<!-- source note -->\n<?xml version="1.0"?>\n<svg id="recognized"></svg>',
+      text: '\uFEFF<?xml version="1.0"?>\n<!-- source note -->\n<svg id="recognized"></svg>',
     });
 
     expect(html.kind).toBe("html");
@@ -412,9 +412,7 @@ describe("PPTV source materialization and scan", () => {
       name: "nested.pptv.svg",
     });
 
-    expect(errorCodes(multiple.diagnostics)).toContain(
-      "PPTV-SCAN-UNRECOGNIZED",
-    );
+    expect(errorCodes(multiple.diagnostics)).toContain("PPTV-SCAN-SVG-XML");
     expect(errorCodes(nested.diagnostics)).toContain("PPTV-SCAN-UNRECOGNIZED");
     expect(multiple.sections).toEqual([]);
     expect(nested.sections).toEqual([]);

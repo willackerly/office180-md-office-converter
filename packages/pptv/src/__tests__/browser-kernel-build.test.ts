@@ -50,7 +50,9 @@ describe("generated shared browser kernel", () => {
         "src/browser/conformance-entry.ts",
         "src/core/deck.ts",
         "src/core/resolved.ts",
+        "src/core/scan.ts",
         "src/ops/patch.ts",
+        expect.stringMatching(/node_modules\/saxes\/saxes\.js$/u),
       ]),
     );
     expect(asset).toContain("PptvBrowserKernel");

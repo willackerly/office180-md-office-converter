@@ -134,6 +134,7 @@ function assertPortableMetafile(metafile) {
   }
 
   const requiredSharedInputs = [
+    "src/core/scan.ts",
     "src/core/deck.ts",
     "src/core/resolved.ts",
     "src/ops/patch.ts",
@@ -148,6 +149,16 @@ function assertPortableMetafile(metafile) {
         `Browser kernel is missing shared TypeScript input "${required}".`,
       );
     }
+  }
+
+  if (
+    !inputPaths.some((inputPath) =>
+      normalized(inputPath).endsWith("node_modules/saxes/saxes.js"),
+    )
+  ) {
+    throw new Error(
+      'Browser kernel is missing the required browser-safe "saxes" XML parser.',
+    );
   }
 }
 

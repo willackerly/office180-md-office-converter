@@ -147,6 +147,30 @@ describe("deck-slide diagram extraction", () => {
     );
   });
 
+  it("fails with no candidate bytes when hydrated opaque SVG is not namespace-aware XML", async () => {
+    const source = insertBeforeCoverTitle(
+      await readMinimalDeck(),
+      `    <g id="cover.asset"
+       data-pptv-role="asset" data-pptv-export="svg"
+       data-pptv-bounds="200 200 100 100">
+      <rect demo:label="detail" x="0" y="0" width="100" height="100"/>
+    </g>`,
+    );
+    const deck = await loadDeck({ kind: "text", text: source });
+    expect(deck.diagnostics).toEqual([]);
+    expect(resolvePptvDeck(deck).model).toBeDefined();
+
+    const result = await extractPptvDiagram(deck, "cover");
+
+    expect(result.sourceText).toBeUndefined();
+    expect(result.sourceSha256).toBeUndefined();
+    expect(result.diagram).toBeUndefined();
+    expect(errorCodes(result.diagnostics)).toContain("PPTV-SCAN-SVG-XML");
+    expect(errorCodes(result.diagnostics)).toContain(
+      "PPTV-EXTRACT-INVALID-CANDIDATE",
+    );
+  });
+
   it("fails with no candidate bytes for a partial semantic deck snapshot", async () => {
     const deck = await loadDeck(
       { kind: "text", text: await readMinimalDeck() },
