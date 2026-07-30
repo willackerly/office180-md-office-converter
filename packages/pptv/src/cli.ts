@@ -2,31 +2,33 @@
 /**
  * Reference Node CLI for the PPTV 0.1 source kernel.
  *
- * CONTRACT:C4-PPTV-SOURCE.1.0
- * CONTRACT:C5-PPTV-PATCH.1.0
- * CONTRACT:C6-PPTV-RESOLVED.1.0
+ * CONTRACT:C4-PPTV-SOURCE.1.1
+ * CONTRACT:C5-PPTV-PATCH.1.1
+ * CONTRACT:C6-PPTV-RESOLVED.1.1
  * CONTRACT:C7-PPTX-CANARY.1.1
- * CONTRACT:C8-PPTV-TEXT-FIT.1.0
+ * CONTRACT:C8-PPTV-TEXT-FIT.1.1
  */
 
 import { dirname, resolve } from "node:path";
 
-import { loadDeck, PptvLoadError } from "./core/deck.js";
+import { loadDeck, loadPptvDocument, PptvLoadError } from "./core/deck.js";
+import { extractPptvDiagram } from "./core/extract.js";
 import { parseManifest, validateManifest } from "./core/manifest.js";
-import { resolvePptvDeck } from "./core/resolved.js";
+import { resolvePptvDeck, resolvePptvDiagram } from "./core/resolved.js";
 import { scanPptvSource } from "./core/scan.js";
 import { hasErrors } from "./core/source.js";
-import { preflightTextFit, type PptvTextFitLine } from "./core/text-fit.js";
-import type {
-  Diagnostic,
-  ProjectionView,
-  PptvQuery,
-  PptvRole,
-} from "./core/types.js";
+import {
+  preflightDiagramTextFit,
+  preflightTextFit,
+  type PptvDiagramTextFitLine,
+  type PptvTextFitLine,
+} from "./core/text-fit.js";
+import type { Diagnostic, ProjectionView, PptvRole } from "./core/types.js";
 import { createEditorPack } from "./node/editor-pack.js";
 import {
   createFontkitTextMeasurer,
   parseFontMap,
+  type FontkitFontMap,
 } from "./node/fontkit-text-measurer.js";
 import { readJsonPath, readPptvPath, writeFileAtomic } from "./node/io.js";
 import {
@@ -35,11 +37,17 @@ import {
 } from "./node/pptx-canary.js";
 import { applyPatch } from "./ops/patch.js";
 import {
+  extractDiagramText,
   extractText,
+  getDiagram,
+  getDiagramObject,
   getObject,
   getSlide,
+  outlineDiagram,
   outlineManifest,
+  queryDiagramObjects,
   queryObjects,
+  type PptvDiagramQuery,
 } from "./ops/projections.js";
 
 type OutputFormat = "text" | "json" | "jsonl";
@@ -82,6 +90,8 @@ export async function runCli(
       return await runValidate(argv.slice(1), environment);
     if (command === "resolve")
       return await runResolve(argv.slice(1), environment);
+    if (command === "extract")
+      return await runExtract(argv.slice(1), environment);
     if (command === "editor-pack")
       return await runEditorPack(argv.slice(1), environment);
     if (command === "pptx-canary")
@@ -121,7 +131,26 @@ async function runOutline(
   );
   const path = parsedArgs.positionals[0]!;
   const format = readFormat(parsedArgs, ["text", "json"]);
-  const scan = await scanPptvSource(await readPptvPath(path));
+  const input = await readPptvPath(path);
+  const scan = await scanPptvSource(input);
+  if (scan.kind === "svg") {
+    const document = await loadPptvDocument(input);
+    if (document.sourceKind !== "svg") {
+      throw new Error("SVG scan did not load as a standalone diagram.");
+    }
+    if (hasErrors(document.diagnostics)) {
+      writeDiagnostics(document.diagnostics, format, environment);
+      return 1;
+    }
+    const outline = outlineDiagram(document);
+    if (format === "json") writeJson(outline, environment);
+    else {
+      environment.stdout(
+        `${outline.diagramId}\nviewBox: ${outline.viewBox.join(" ")}\n`,
+      );
+    }
+    return 0;
+  }
   const parsed = parseManifest(scan);
   const diagnostics = [
     ...scan.diagnostics,
@@ -166,23 +195,40 @@ async function runValidate(
   );
   const path = parsedArgs.positionals[0]!;
   const format = readFormat(parsedArgs, ["text", "json"]);
-  const deck = await loadDeck(await readPptvPath(path));
+  const document = await loadPptvDocument(await readPptvPath(path));
   if (format === "json") {
-    writeJson(
-      {
-        schema: "pptv-validation/0.1",
-        valid: !hasErrors(deck.diagnostics),
-        sourceSha256: deck.source.sha256,
-        diagnostics: deck.diagnostics,
-      },
-      environment,
+    if (document.sourceKind === "html") {
+      writeJson(
+        {
+          schema: "pptv-validation/0.1",
+          valid: !hasErrors(document.diagnostics),
+          sourceSha256: document.source.sha256,
+          diagnostics: document.diagnostics,
+        },
+        environment,
+      );
+    } else {
+      writeJson(
+        {
+          schema: "pptv-diagram-validation/0.1",
+          valid: !hasErrors(document.diagnostics),
+          sourceSha256: document.source.sha256,
+          diagramId: document.id,
+          diagnostics: document.diagnostics,
+        },
+        environment,
+      );
+    }
+  } else if (document.diagnostics.length === 0) {
+    environment.stdout(
+      document.sourceKind === "html"
+        ? `valid ${path} (${document.slideOrder.length} slides)\n`
+        : `valid ${path} (diagram ${document.id})\n`,
     );
-  } else if (deck.diagnostics.length === 0) {
-    environment.stdout(`valid ${path} (${deck.slideOrder.length} slides)\n`);
   } else {
-    writeDiagnostics(deck.diagnostics, format, environment);
+    writeDiagnostics(document.diagnostics, format, environment);
   }
-  return hasErrors(deck.diagnostics) ? 1 : 0;
+  return hasErrors(document.diagnostics) ? 1 : 0;
 }
 
 async function runEditorPack(
@@ -191,18 +237,35 @@ async function runEditorPack(
 ): Promise<number> {
   const parsedArgs = parseArguments(
     args,
-    { "--output": "value", "--format": "value" },
+    {
+      "--output": "value",
+      "--font-map": "value",
+      "--near-limit": "value",
+      "--format": "value",
+    },
     1,
     "editor-pack requires exactly one PPTV path",
   );
   const path = parsedArgs.positionals[0]!;
   const output = readOption(parsedArgs, "--output");
+  const fontMapPath = readOption(parsedArgs, "--font-map");
+  const nearLimit = readNearLimit(parsedArgs);
   const format = readFormat(parsedArgs, ["text", "json"]);
   if (output === undefined) {
     throw new InvocationError("editor-pack requires an explicit --output PATH");
   }
+  if (nearLimit !== undefined && fontMapPath === undefined) {
+    throw new InvocationError(
+      "editor-pack --near-limit requires an explicit --font-map PATH",
+    );
+  }
+  const fontMap =
+    fontMapPath === undefined ? undefined : await loadFontMap(fontMapPath);
 
-  const result = await createEditorPack(await readPptvPath(path));
+  const result = await createEditorPack(await readPptvPath(path), {
+    ...(fontMap === undefined ? {} : { fontFaces: fontMap.faces }),
+    ...(nearLimit === undefined ? {} : { nearLimit }),
+  });
   if (result.html === undefined || result.sourceSha256 === undefined) {
     writeDiagnostics(result.diagnostics, format, environment);
     return 1;
@@ -214,6 +277,9 @@ async function runEditorPack(
       {
         schema: "pptv-editor-pack-result/0.1",
         output,
+        ...(result.documentKind === undefined
+          ? {}
+          : { documentKind: result.documentKind }),
         sourceSha256: result.sourceSha256,
         diagnostics: result.diagnostics,
       },
@@ -239,8 +305,11 @@ async function runResolve(
   );
   const path = parsedArgs.positionals[0]!;
   const format = readFormat(parsedArgs, ["text", "json"], "json");
-  const deck = await loadDeck(await readPptvPath(path));
-  const result = resolvePptvDeck(deck);
+  const document = await loadPptvDocument(await readPptvPath(path));
+  const result =
+    document.sourceKind === "html"
+      ? resolvePptvDeck(document)
+      : resolvePptvDiagram(document);
   if (result.model === undefined) {
     writeDiagnostics(result.diagnostics, format, environment);
     return 1;
@@ -249,7 +318,66 @@ async function runResolve(
     writeJson(result.model, environment);
   } else {
     environment.stdout(
-      `resolved ${path} (${result.model.slides.length} slides, ${result.model.sourceSha256})\n`,
+      result.model.schema === "pptv-resolved/0.1"
+        ? `resolved ${path} (${result.model.slides.length} slides, ${result.model.sourceSha256})\n`
+        : `resolved ${path} (diagram ${result.model.diagramId}, ${result.model.sourceSha256})\n`,
+    );
+  }
+  return 0;
+}
+
+async function runExtract(
+  args: readonly string[],
+  environment: CliEnvironment,
+): Promise<number> {
+  const parsedArgs = parseArguments(
+    args,
+    { "--slide": "value", "--output": "value", "--format": "value" },
+    1,
+    "extract requires exactly one PPTV deck path",
+  );
+  const path = parsedArgs.positionals[0]!;
+  const slideId = readOption(parsedArgs, "--slide");
+  const output = readOption(parsedArgs, "--output");
+  const format = readFormat(parsedArgs, ["text", "json"]);
+  if (slideId === undefined) {
+    throw new InvocationError("extract requires an explicit --slide ID");
+  }
+  if (output === undefined) {
+    throw new InvocationError("extract requires an explicit --output PATH");
+  }
+
+  const deck = await loadDeck(await readPptvPath(path));
+  const result = await extractPptvDiagram(deck, slideId);
+  if (result.sourceText === undefined || result.sourceSha256 === undefined) {
+    writeDiagnostics(result.diagnostics, format, environment);
+    return 1;
+  }
+  try {
+    await writeFileAtomic(output, result.sourceText, { overwrite: false });
+  } catch (error) {
+    if (isFileExistsError(error)) {
+      throw new InvocationError(
+        `extract refuses to overwrite existing output "${output}".`,
+      );
+    }
+    throw error;
+  }
+
+  if (format === "json") {
+    writeJson(
+      {
+        schema: "pptv-diagram-extraction-result/0.1",
+        output,
+        sourceSha256: result.sourceSha256,
+        provenance: result.provenance,
+        diagnostics: result.diagnostics,
+      },
+      environment,
+    );
+  } else {
+    environment.stdout(
+      `wrote ${output} (diagram ${result.sourceSha256}, hydrated ${result.provenance.sourceSlideId} from ${result.provenance.sourceDeckSha256})\n`,
     );
   }
   return 0;
@@ -334,34 +462,26 @@ async function runTextFit(
   }
   const nearLimit = readNearLimit(parsedArgs);
 
-  const deck = await loadDeck(await readPptvPath(path));
-  const resolvedDeck = resolvePptvDeck(deck);
-  if (resolvedDeck.model === undefined) {
-    writeDiagnostics(resolvedDeck.diagnostics, format, environment);
+  const document = await loadPptvDocument(await readPptvPath(path));
+  const resolved =
+    document.sourceKind === "html"
+      ? resolvePptvDeck(document)
+      : resolvePptvDiagram(document);
+  if (resolved.model === undefined) {
+    writeDiagnostics(resolved.diagnostics, format, environment);
     return 1;
   }
 
-  let fontMapInput: unknown;
-  try {
-    fontMapInput = await readJsonPath(fontMapPath);
-  } catch (error) {
-    if (error instanceof SyntaxError) {
-      throw new InvocationError(`Invalid font map JSON: ${error.message}`);
-    }
-    throw error;
-  }
-  let fontMap;
-  try {
-    fontMap = parseFontMap(fontMapInput, dirname(resolve(fontMapPath)));
-  } catch (error) {
-    throw new InvocationError(
-      `Invalid font map: ${error instanceof Error ? error.message : String(error)}`,
-    );
-  }
+  const fontMap = await loadFontMap(fontMapPath);
   const measurer = await createFontkitTextMeasurer(fontMap.faces);
-  const result = preflightTextFit(resolvedDeck.model, measurer, {
-    ...(nearLimit === undefined ? {} : { nearLimit }),
-  });
+  const result =
+    resolved.model.schema === "pptv-resolved/0.1"
+      ? preflightTextFit(resolved.model, measurer, {
+          ...(nearLimit === undefined ? {} : { nearLimit }),
+        })
+      : preflightDiagramTextFit(resolved.model, measurer, {
+          ...(nearLimit === undefined ? {} : { nearLimit }),
+        });
 
   if (format === "json") writeJson(result, environment);
   else writeTextFit(result.lines, result.summary, environment);
@@ -385,26 +505,39 @@ async function runText(
   const path = parsedArgs.positionals[0]!;
   const slide = readOption(parsedArgs, "--slide");
   const format = readFormat(parsedArgs, ["text", "json", "jsonl"]);
-  const deck = await loadDeck(await readPptvPath(path), {
-    ...(slide === undefined ? {} : { slides: [slide] }),
-  });
-  if (hasErrors(deck.diagnostics)) {
-    writeDiagnostics(deck.diagnostics, format, environment);
+  const document = await loadPptvDocument(await readPptvPath(path));
+  if (hasErrors(document.diagnostics)) {
+    writeDiagnostics(document.diagnostics, format, environment);
     return 1;
   }
-  const projection = extractText(deck, {
-    ...(slide === undefined ? {} : { slideId: slide }),
-    includeHidden: hasFlag(parsedArgs, "--include-hidden"),
-  });
+  if (document.sourceKind === "svg" && slide !== undefined) {
+    throw new InvocationError(
+      'text option "--slide" is deck-only; standalone diagrams have no slides.',
+    );
+  }
+  if (
+    document.sourceKind === "svg" &&
+    hasFlag(parsedArgs, "--include-hidden")
+  ) {
+    throw new InvocationError(
+      'text option "--include-hidden" is deck-only; standalone diagrams have no hidden slides.',
+    );
+  }
+  const projection =
+    document.sourceKind === "html"
+      ? extractText(document, {
+          ...(slide === undefined ? {} : { slideId: slide }),
+          includeHidden: hasFlag(parsedArgs, "--include-hidden"),
+        })
+      : extractDiagramText(document);
   if (format === "json") writeJson(projection, environment);
   else if (format === "jsonl") {
     for (const entry of projection.entries)
       environment.stdout(`${JSON.stringify(entry)}\n`);
   } else {
     for (const entry of projection.entries) {
-      environment.stdout(
-        `${entry.slideId}\t${entry.objectId}\t${entry.text}\n`,
-      );
+      const scopeId = "slideId" in entry ? entry.slideId : entry.diagramId;
+      environment.stdout(`${scopeId}\t${entry.objectId}\t${entry.text}\n`);
     }
   }
   return 0;
@@ -424,19 +557,27 @@ async function runShow(
   const id = parsedArgs.positionals[1]!;
   const format = readFormat(parsedArgs, ["json"], "json");
   const view = readView(parsedArgs);
-  const deck = await loadDeck(await readPptvPath(path));
-  if (hasErrors(deck.diagnostics)) {
-    writeDiagnostics(deck.diagnostics, format, environment);
+  const document = await loadPptvDocument(await readPptvPath(path));
+  if (hasErrors(document.diagnostics)) {
+    writeDiagnostics(document.diagnostics, format, environment);
     return 1;
   }
-  const projection = getSlide(deck, id, view) ?? getObject(deck, id, view);
+  const projection =
+    document.sourceKind === "html"
+      ? (getSlide(document, id, view) ?? getObject(document, id, view))
+      : id === document.id
+        ? getDiagram(document, view)
+        : getDiagramObject(document, id, view);
   if (projection === undefined) {
     writeDiagnostics(
       [
         {
           code: "PPTV-QUERY-NOT-FOUND",
           severity: "error",
-          message: `No slide or object has stable ID "${id}".`,
+          message:
+            document.sourceKind === "html"
+              ? `No slide or object has stable ID "${id}".`
+              : `No diagram or object has stable ID "${id}".`,
         },
       ],
       format,
@@ -467,29 +608,45 @@ async function runList(
   );
   const path = parsedArgs.positionals[0]!;
   const format = readFormat(parsedArgs, ["text", "json", "jsonl"]);
-  const deck = await loadDeck(await readPptvPath(path));
-  if (hasErrors(deck.diagnostics)) {
-    writeDiagnostics(deck.diagnostics, format, environment);
+  const document = await loadPptvDocument(await readPptvPath(path));
+  if (hasErrors(document.diagnostics)) {
+    writeDiagnostics(document.diagnostics, format, environment);
     return 1;
   }
   const slideId = readOption(parsedArgs, "--slide");
+  if (document.sourceKind === "svg" && slideId !== undefined) {
+    throw new InvocationError(
+      'list option "--slide" is deck-only; standalone diagrams have no slides.',
+    );
+  }
   const role = readRole(parsedArgs);
   const className = readOption(parsedArgs, "--class");
   const textContains = readOption(parsedArgs, "--text");
-  const query: PptvQuery = {
-    ...(slideId === undefined ? {} : { slideId }),
+  const query: PptvDiagramQuery = {
     ...(role === undefined ? {} : { role }),
     ...(className === undefined ? {} : { className }),
     ...(textContains === undefined ? {} : { textContains }),
   };
-  const objects = queryObjects(deck, query, readView(parsedArgs));
-  if (format === "json")
-    writeJson({ schema: "pptv-list/0.1", objects }, environment);
+  const projection =
+    document.sourceKind === "html"
+      ? {
+          schema: "pptv-list/0.1" as const,
+          objects: queryObjects(
+            document,
+            {
+              ...query,
+              ...(slideId === undefined ? {} : { slideId }),
+            },
+            readView(parsedArgs),
+          ),
+        }
+      : queryDiagramObjects(document, query, readView(parsedArgs));
+  if (format === "json") writeJson(projection, environment);
   else if (format === "jsonl") {
-    for (const object of objects)
+    for (const object of projection.objects)
       environment.stdout(`${JSON.stringify(object)}\n`);
   } else {
-    for (const object of objects) {
+    for (const object of projection.objects) {
       environment.stdout(
         `${object.id}\t${object.role}\t${object.element}${object.text === undefined ? "" : `\t${object.text}`}\n`,
       );
@@ -522,9 +679,9 @@ async function runPatch(
     );
   }
 
-  const deck = await loadDeck(await readPptvPath(path));
+  const document = await loadPptvDocument(await readPptvPath(path));
   const patch = await readJsonPath(patchPath);
-  const result = await applyPatch(deck, patch);
+  const result = await applyPatch(document, patch);
   if (!result.applied || result.sourceText === undefined) {
     writeDiagnostics(result.diagnostics, format, environment);
     return 1;
@@ -624,6 +781,25 @@ function readRole(args: ParsedArguments): PptvRole | undefined {
   throw new InvocationError(`Unknown PPTV role "${value}".`);
 }
 
+async function loadFontMap(path: string): Promise<FontkitFontMap> {
+  let input: unknown;
+  try {
+    input = await readJsonPath(path);
+  } catch (error) {
+    if (error instanceof SyntaxError) {
+      throw new InvocationError(`Invalid font map JSON: ${error.message}`);
+    }
+    throw error;
+  }
+  try {
+    return parseFontMap(input, dirname(resolve(path)));
+  } catch (error) {
+    throw new InvocationError(
+      `Invalid font map: ${error instanceof Error ? error.message : String(error)}`,
+    );
+  }
+}
+
 function readNearLimit(args: ParsedArguments): number | undefined {
   const value = readOption(args, "--near-limit");
   if (value === undefined) return undefined;
@@ -646,7 +822,7 @@ function hasFlag(args: ParsedArguments, name: string): boolean {
 }
 
 function writeTextFit(
-  lines: readonly PptvTextFitLine[],
+  lines: readonly (PptvTextFitLine | PptvDiagramTextFitLine)[],
   summary: {
     readonly total: number;
     readonly clear: number;
@@ -658,7 +834,8 @@ function writeTextFit(
 ): void {
   for (const line of lines) {
     if (line.status === "clear") continue;
-    const location = `${line.slideId}/${line.objectId}#${line.lineIndex + 1}`;
+    const scopeId = "slideId" in line ? line.slideId : line.diagramId;
+    const location = `${scopeId}/${line.objectId}#${line.lineIndex + 1}`;
     if (line.status === "unverified") {
       environment.stdout(
         `UNVERIFIED ${location} ${line.reason ?? "measurement unavailable"} (${line.method})\n`,
@@ -684,6 +861,15 @@ function writeTextFit(
 
 function formatDecimal(value: number): string {
   return value.toFixed(2).replace(/\.?0+$/u, "");
+}
+
+function isFileExistsError(error: unknown): boolean {
+  return (
+    typeof error === "object" &&
+    error !== null &&
+    "code" in error &&
+    error.code === "EEXIST"
+  );
 }
 
 function parseArguments(
@@ -728,16 +914,17 @@ function helpText(): string {
   return `pptv — source-preserving PPTV 0.1 tools
 
 Usage:
-  pptv outline <file> [--format text|json]
-  pptv validate <file> [--format text|json]
-  pptv resolve <file> [--format text|json]
-  pptv editor-pack <file> --output PATH [--format text|json]
-  pptv pptx-canary <file> --output PATH [--format text|json]
-  pptv text-fit <file> --font-map PATH [--near-limit N] [--format text|json]
-  pptv text <file> [--slide ID] [--format text|json|jsonl]
-  pptv show <file> <id> [--view semantic|editing] [--format json]
-  pptv list <file> [--slide ID] [--role ROLE] [--class CLASS] [--text TEXT]
-  pptv patch <file> <patch.json> (--check | --output PATH) [--format text|json]
+  pptv outline <file.pptv.html|file.pptv.svg> [--format text|json]
+  pptv validate <file.pptv.html|file.pptv.svg> [--format text|json]
+  pptv resolve <file.pptv.html|file.pptv.svg> [--format text|json]
+  pptv extract <deck.pptv.html> --slide ID --output file.pptv.svg [--format text|json]
+  pptv editor-pack <file.pptv.html|file.pptv.svg> --output PATH [--font-map PATH] [--near-limit N] [--format text|json]
+  pptv pptx-canary <deck.pptv.html> --output PATH [--format text|json]
+  pptv text-fit <file.pptv.html|file.pptv.svg> --font-map PATH [--near-limit N] [--format text|json]
+  pptv text <file.pptv.html|file.pptv.svg> [--slide ID] [--format text|json|jsonl]
+  pptv show <file.pptv.html|file.pptv.svg> <id> [--view semantic|editing] [--format json]
+  pptv list <file.pptv.html|file.pptv.svg> [--slide ID] [--role ROLE] [--class CLASS] [--text TEXT]
+  pptv patch <file.pptv.html|file.pptv.svg> <patch.json> (--check | --output PATH) [--format text|json]
 `;
 }
 

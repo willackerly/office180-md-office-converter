@@ -1,0 +1,64 @@
+{
+  "schema": "pptv-private-text-fit-inventory/0.1",
+  "recordedAt": "2026-07-29",
+  "source": {
+    "repository": "willackerly/TDFLite",
+    "visibility": "private",
+    "commit": "2f0cba44a0904c8c964123253050ef32f793e7e2",
+    "path": "docs/product-briefing/tdflite-vs-opentdf.pptv.html",
+    "sha256": "eda92b47bc92720436a3f5f2c20681d8c2de97685b535505df3d5a39f8928f69",
+    "bytes": 57909,
+    "sourceLines": 807,
+    "vendored": false
+  },
+  "measurement": {
+    "adapter": "fontkit/2.0.4",
+    "nearLimit": 0.95,
+    "hardLines": 153,
+    "summary": {
+      "clear": 122,
+      "nearLimit": 10,
+      "overflow": 21,
+      "unverified": 0
+    },
+    "fontFaces": [
+      {
+        "family": "Arial",
+        "weight": 400,
+        "style": "normal",
+        "sha256": "525979822591a3447cfc49d943d6f7683508e25543407871c0ed8fed05fd2bd9"
+      },
+      {
+        "family": "Arial",
+        "weight": 700,
+        "style": "normal",
+        "sha256": "d72db21f9242aedd6b917d8549ad5921766b24d5f8d0becfda2ff4c620b3c2e0"
+      },
+      {
+        "family": "Consolas",
+        "weight": 400,
+        "style": "normal",
+        "sha256": "1acfcc504d232e39f1ff4f1b54e29af13234da142b1d1386a1f5c027b49e6ab0"
+      },
+      {
+        "family": "Consolas",
+        "weight": 700,
+        "style": "normal",
+        "sha256": "de40b748651bdc09d308c9b542e3f9c0f66c567f830c474ae320553063be4ae5"
+      }
+    ]
+  },
+  "browserObservation": {
+    "status": "informational-unverified-substitution",
+    "engine": "chromium",
+    "engineVersion": "not-captured",
+    "overflow": 18,
+    "selectedFontIdentityCaptured": false,
+    "reason": "Consolas was unavailable to the browser and the selected fallback face was not captured; this observation cannot certify parity or substitution causality."
+  },
+  "reproduction": {
+    "requiresPrivateSource": true,
+    "requiresSeparatelyLicensedFontBytes": true,
+    "sourceAndFontBytesMustNotBeVendored": true
+  }
+}

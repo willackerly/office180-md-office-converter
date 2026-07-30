@@ -5,7 +5,7 @@
  * returned measurer uses only the caller's explicit face map and cached font
  * bytes; it never discovers or substitutes a system font.
  *
- * CONTRACT:C8-PPTV-TEXT-FIT.1.0
+ * CONTRACT:C8-PPTV-TEXT-FIT.1.1
  */
 
 import { createHash } from "node:crypto";
@@ -16,8 +16,8 @@ import { create as createFont, type Font } from "fontkit";
 
 import type {
   PptvMeasuredText,
+  PptvDiagramTextMeasureRequest,
   PptvTextMeasureRequest,
-  PptvTextMeasurer,
   PptvUnverifiedText,
 } from "../core/text-fit.js";
 
@@ -37,7 +37,8 @@ export interface FontkitFontMap {
   readonly faces: readonly FontkitFontFace[];
 }
 
-export type FontkitTextMeasureRequest = PptvTextMeasureRequest;
+export type FontkitTextMeasureRequest =
+  PptvTextMeasureRequest | PptvDiagramTextMeasureRequest;
 
 export interface FontkitRequestedFace {
   readonly family: string;
@@ -82,7 +83,7 @@ export type FontkitTextMeasurement =
   FontkitMeasuredText | FontkitUnverifiedText;
 
 export interface FontkitTextMeasurer {
-  (request: PptvTextMeasureRequest): FontkitTextMeasurement;
+  (request: FontkitTextMeasureRequest): FontkitTextMeasurement;
   readonly faces: readonly FontkitLoadedFaceEvidence[];
 }
 
@@ -204,7 +205,7 @@ export async function createFontkitTextMeasurer(
       unsupportedShapingFeatures: Object.freeze([]),
       evidence: freezeMeasurementEvidence(requestedFace, loaded.evidence),
     });
-  }) satisfies PptvTextMeasurer;
+  }) as FontkitTextMeasurer;
   Object.defineProperty(measure, "faces", {
     configurable: false,
     enumerable: true,
@@ -485,6 +486,17 @@ function verifyLoadedFace(
 }
 
 function validateMeasureRequest(request: FontkitTextMeasureRequest): void {
+  const hasSlideId = "slideId" in request;
+  const hasDiagramId = "diagramId" in request;
+  if (hasSlideId === hasDiagramId) {
+    throw new Error(
+      "Text measurement requires exactly one slide or diagram identity.",
+    );
+  }
+  const scopeId = hasSlideId ? request.slideId : request.diagramId;
+  if (scopeId.trim().length === 0) {
+    throw new Error("Text measurement requires a non-empty artifact identity.");
+  }
   if (request.font.family.trim().length === 0) {
     throw new Error("Text measurement requires a non-empty font family.");
   }

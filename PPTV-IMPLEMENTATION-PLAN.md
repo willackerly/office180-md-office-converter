@@ -1,8 +1,8 @@
 # PPTV Implementation Plan
 
-**Status:** active delivery roadmap; C6 is executable, C7 promotes the first
-compiler canary, and C8 adds exact-font non-mutating text-fit while remaining
-milestones retain their own gates
+**Status:** active delivery roadmap; first-class standalone diagrams, shared
+browser conformance, and the writable trusted editor MVP are implemented; C7
+remains a narrow compiler canary and C8 retains native-calibration gates
 
 **Decision date:** 2026-07-28
 
@@ -19,6 +19,10 @@ feature coverage.
 PPTV is already structurally well suited to live editing:
 
 - exact source bytes and hashes remain authoritative;
+- standalone `.pptv.svg` is a first-class semantic/editable atom rather than a
+  synthetic one-slide deck;
+- self-contained `.pptv.html` remains the aggregation, theme, viewer, and C7
+  presentation envelope;
 - stable SVG IDs identify objects across browser, agent, and Office views;
 - the semantic tree preserves native group hierarchy;
 - DOM sibling order is canonical z-order;
@@ -27,11 +31,16 @@ PPTV is already structurally well suited to live editing:
 - all current writes are validated, atomic semantic transactions.
 
 The current kernel now makes the narrow geometry/style/text claims defined by
-the in-progress C6 contract. It resolves fixed-canvas primitives, translated
-group bounds, connector endpoints, explicit text frames and hard lines,
-constrained CSS/theme tokens, and provenance without a browser. It still makes
-no writable geometry-operation or native PowerPoint fidelity claim. Move,
-resize, hit-testing, typed line edits, and PPTX behavior retain separate gates.
+the verified C6 contract. It resolves fixed-canvas deck primitives or an
+arbitrary finite standalone-diagram viewBox, translated group bounds, connector
+endpoints, explicit text frames and hard lines, constrained deck CSS/theme
+tokens or diagram-local declarations, and provenance without a browser. One
+deck slide can be hydrated into an independent `.pptv.svg` by dereferencing its
+resolved styles and reloading it through the diagram path. The editor writes
+direct text in either kind and deck theme/order only. It still makes no
+writable geometry-operation, structured hard-line/rich-text edit, or broad
+native PowerPoint fidelity claim. Move, resize, general hit-testing, typed line
+edits, and PPTX behavior retain separate gates.
 
 That boundary is useful rather than alarming: the source and identity model do
 not need redesign. The next work specializes and proves the intentionally small
@@ -45,7 +54,7 @@ because it appears in this roadmap.
 
 ### 2.1 One fixed 16:9 canvas first
 
-The first editor/compiler profile uses:
+The first HTML-deck/compiler profile uses:
 
 ```text
 SVG viewBox:       0 0 1600 900
@@ -54,8 +63,11 @@ Physical size:     13⅓ × 7.5 in
 Scale:             7620 EMU per SVG unit
 ```
 
-Every slide in a deck uses that exact viewBox and one deck-wide PowerPoint
+Every slide in an HTML deck uses that exact viewBox and one deck-wide PowerPoint
 slide size. The compiler never stretches or infers a mismatched slide.
+Standalone diagrams may declare any finite four-number viewBox with positive
+width and height; C6 retains it as a logical canvas without EMU, inch, DPI, or
+slide-size inference. C7 rejects diagrams even when their ratio is 16:9.
 
 Alternate ratios are a later versioned deck-level extension. They are not
 per-slide, and the first implementation rejects them with a capability
@@ -67,14 +79,14 @@ introducing arbitrary unit/layout behavior.
 The author declares role and export intent; the resolver derives the concrete
 kind from the SVG element.
 
-| Source boundary | Meaning in the editor | Initial PowerPoint intent |
+| Source boundary | Semantic/editor selection boundary | PowerPoint intent / current C7 status |
 |---|---|---|
-| `rect`, `circle`, or `ellipse`; role `shape`, export `native` | Independently editable primitive | Native shape |
-| `text`; role `text`, export `native` | Explicit-line text frame | Native text box |
-| `line`; role `connector`, export `native` | Independently editable straight edge | Native line/connector |
-| `g`; role `group`, export `native` | Addressable children plus one parent scope | Native PowerPoint group |
-| `g`; role `asset`, export `svg` | One atomic vector image; internals are opaque | SVG picture plus PNG fallback |
-| `image`; role `asset`, export `raster` | One atomic raster image | Native picture |
+| `rect`, `circle`, or `ellipse`; role `shape`, export `native` | Independent native primitive | Native shape; implemented in C7 |
+| `text`; role `text`, export `native` | Explicit-line text frame | Native text box; one hard line implemented in C7 |
+| `line`; role `connector`, export `native` | Independent straight edge | Native line/connector; straight form implemented in C7 |
+| `g`; role `group`, export `native` | Addressable children plus one parent scope | Native PowerPoint group; translated subset implemented in C7 |
+| `g`; role `asset`, export `svg` | One atomic vector image; internals are opaque | SVG picture plus PNG fallback; roadmap |
+| `image`; role `asset`, export `raster` | One atomic raster image | Native picture; roadmap |
 
 A visual “box with text” is a native group containing a rectangle and a text
 object. It is not one inferred compound object. A complex illustration is an
@@ -84,10 +96,11 @@ Native groups initially allow only a finite `translate(tx ty)` transform.
 Children retain explicit local geometry and DOM order. Group scale, rotation,
 skew, matrices, resize, flattening, group creation, and ungrouping are deferred.
 
-Atomic vector assets require explicit bounds on their opaque boundary; the
+Atomic vector assets require explicit bounds on their opaque boundary; a future
 compiler must not use browser `getBBox()` as canonical geometry. Their safe
 internal SVG may be arbitrarily rich within the separately enforced static
-resource policy, but it remains one selection and one PowerPoint picture.
+resource policy, but it remains one selection and, if promoted through the
+later native gates, one PowerPoint picture.
 
 ### 2.3 Explicit-line text; never automatic reflow
 
@@ -114,12 +127,15 @@ resize text.
 
 Compiler-grade text uses one concrete resolved font family rather than a
 browser fallback stack. The first profile supports the small set of font
-weights/styles that map without approximation. C8 now verifies shaped
-horizontal advance only when the caller supplies an exact mapped font face,
-records its byte/PostScript identity, and reports missing faces/styles/glyphs as
-unverified. It does not discover a system font or certify browser/PowerPoint
-pixel parity. Environment-labeled browser evidence, native calibration, font
-embedding, and arbitrary web fonts remain deferred.
+weights/styles that map without approximation. C8 verifies shaped horizontal
+advance only when the caller supplies an exact mapped font face, records its
+byte/PostScript identity, and reports missing faces/styles/glyphs as
+unverified. The editor pack can embed only those explicit bytes plus Fontkit
+coverage, then load them under SHA-derived aliases for environment-labeled
+browser measurement. Its overlay uses the worse current Node/browser status;
+an edited line whose embedded Node evidence no longer matches is unverified.
+C8 does not discover a system font or certify PowerPoint pixel parity. Native
+calibration, PPTV/PPTX font embedding, and arbitrary web fonts remain deferred.
 
 ### 2.4 Small deterministic CSS composition
 
@@ -153,14 +169,17 @@ The compiler consumes a pure resolved-style projection. It never calls
 
 The first browser product targets trusted, generated artifacts:
 
-- a deterministic `*.editable.pptv.html` wrapper contains the exact clean deck
-  bytes, their SHA-256, and one fixed bundled editor application;
+- a deterministic `*.editable.pptv.html` wrapper contains exact clean deck or
+  diagram bytes, their SHA-256, and one fixed bundled editor application;
 - the wrapper has no network dependencies and carries a strict CSP;
-- the embedded canonical deck is data, so its viewer script and event-bearing
+- the embedded canonical source is data, so viewer scripts and event-bearing
   markup are never executed by the editor;
-- editor save/export always produces a clean canonical `.pptv.html`, never DOM
-  serialization and never the wrapper; and
-- invalid source shows diagnostics rather than a partially editable deck.
+- a source-hash mismatch makes the session read-only;
+- editor save/export always produces exact clean canonical `.pptv.html` or
+  `.pptv.svg`, never DOM serialization and never the wrapper;
+- optional explicitly granted file saves compare the on-disk hash with the last
+  successful editor save before every subsequent overwrite; and
+- invalid source shows diagnostics rather than a partially editable artifact.
 
 Ordinary canonical decks may retain the fixed digest-verified direct-open
 viewer. Both viewer and editor direct-open are explicitly trusted-source
@@ -180,23 +199,30 @@ fallback.
 
 ## 3. Delivery sequence
 
-Progress at the 2026-07-29 integration point:
+Progress at the 2026-07-30 integration point:
 
-- C6's pure resolver and normalized minimal fixture are implemented; standalone
-  parity/kitchen-sink corpora keep that contract `in-progress`.
-- The exact-source editor session, trusted strict-CSP wrapper, navigation,
-  literal-data viewport, integrity check, and clean download are implemented;
-  bundled writable controls and stale-safe file persistence remain.
+- C4-C6 load and resolve both self-contained HTML decks and first-class
+  standalone SVG diagrams without coercion. The shared browser kernel matches
+  Node across minimal, kitchen-sink, and invalid-profile corpora in Chromium,
+  Firefox, and WebKit.
+- Deck-slide hydration/dereferencing produces a separately valid/resolvable SVG
+  atom with stable IDs, hierarchy, painter order, geometry, and hard lines.
+- The exact-source editor session and deterministic strict-CSP pack now provide
+  writable deck/diagram controls, fresh literal-data projections, integrity
+  fail-closed behavior, clean downloads, per-slide SVG extraction, exact
+  undo/redo, and stale-safe optional file persistence. Geometry and structured
+  text remain read-only.
 - C7's deterministic primitive-only PPTX canary is implemented. It passes
   applicable ISO/ECMA schemas, independent OpenDocKit reopen, and native
   PowerPoint 16.111.2 open/PDF-render smoke without repair. It is not a general
   converter or quantitative native-fidelity claim; native PPTX save/reopen
   remains unverified on this install.
-- C8's pure anchor-aware text-fit preflight, strict explicit font map,
-  exact-byte Fontkit adapter, and CLI are implemented. Worked-deck regression
-  locking plus browser/native calibration keep that contract `in-progress`.
+- C8's pure anchor-aware deck/diagram preflight, strict explicit font map,
+  exact-byte Fontkit adapter, worked-deck regression, environment-labeled
+  browser adapter, and conservative editor overlays are implemented. Native
+  PowerPoint calibration keeps that contract `in-progress`.
 
-### Milestone 0 — C6 resolved-profile contract and fixtures
+### Milestone 0 — C6 resolved-profile contract and fixtures (implemented subset)
 
 Define the executable editor/compiler input before adding UI behavior.
 
@@ -222,7 +248,12 @@ Exit gate:
 - no physical-size, text-reflow, object-boundary, or style-authority question
   remains for the supported subset.
 
-### Milestone 0.5 — Exact-font text-fit preflight
+The listed gates pass for the current declared corpus and source-kind-specific
+schemas. C6 remains intentionally bounded; adding a new primitive, resource, or
+style behavior requires its own contract/fixture promotion rather than
+best-effort browser fallback.
+
+### Milestone 0.5 — Exact-font text-fit preflight (native gate open)
 
 Catch authored hard-line overruns without introducing layout behavior.
 
@@ -236,12 +267,15 @@ Deliver:
 - CLI output and fail-closed automation behavior; and
 - browser/editor warnings that remain secondary environment evidence.
 
-The pure API, exact-font Node adapter, and CLI are implemented. The remaining
-exit gates are a locked worked-deck regression, browser comparison with
-confirmed font identity, and representative native PowerPoint calibration.
-None may mutate source or infer a new line.
+The pure deck/diagram APIs, exact-font Node adapter, CLI, locked worked-deck
+inventory, explicit-byte browser adapter, and environment-labeled comparison
+are implemented. Editor packs optionally carry the exact selected font bytes,
+hash/PostScript identity, precomputed coverage, and original Node line
+evidence. The editor reports the worse Node/browser status and treats stale
+Node evidence as unverified. Representative native PowerPoint calibration is
+the remaining promotion gate. No gate may mutate source or infer a new line.
 
-### Milestone 1 — Trusted browser editor MVP on existing C5
+### Milestone 1 — Trusted browser editor MVP on existing C5 (implemented)
 
 Build a useful editor before broad geometry authoring.
 
@@ -250,11 +284,12 @@ Deliver:
 - deterministic `editor-pack` generation for trusted direct-open wrappers;
 - slide rail, object tree, diagnostics panel, selection, and inspector;
 - scriptless/isolated rendering from semantic projections;
-- direct safe-text editing;
+- direct-text editing only;
 - active-theme switching;
 - manifest slide reordering;
 - semantic undo/redo with exact before/after source states and hashes;
-- explicit clean-deck download; and
+- explicit clean deck/diagram download;
+- deck-only hydrated single-slide `.pptv.svg` download;
 - optional user-granted File System Access save with stale-hash protection.
 
 The canonical browser DOM is never saved. Live previews are disposable; every
@@ -264,11 +299,18 @@ Exit gate:
 
 - pack → open → edit → undo → redo → export → CLI validate → reopen passes;
 - undo restores byte-identical BOM, newline, whitespace, and entity spelling;
-- the wrapper performs zero network requests and never executes deck runtime
-  code;
+- after loading the wrapper document, the editor performs no subresource or
+  network fetch and never executes source runtime code;
 - failed edits add no history entry and produce no partial source; and
 - Chromium, Firefox, and WebKit agree on hashes, diagnostics, hierarchy, and
   clean-download behavior.
+
+These gates pass for both the minimal deck and standalone diagram editor packs.
+The real-HTTP matrix also proves integrity-mismatch read-only behavior, no
+source-runtime execution, no editor subresource/network fetch, clean
+download/reload, hydrated-slide reload, and stale on-disk save refusal. This
+milestone does not include geometry, structured `tspan`/rich-text, token-rule,
+or general SVG editing.
 
 ### Milestone 2 — Early PPTX compiler canary (implemented; final fidelity gates open)
 
@@ -411,7 +453,7 @@ reconciliation.
 ## 4. Browser editor architecture
 
 ```text
-exact embedded/file bytes + expected hash
+exact embedded deck/diagram bytes + expected hash
   -> SourceProvider
   -> EditorSession
        -> C4 immutable load
@@ -419,22 +461,31 @@ exact embedded/file bytes + expected hash
        -> C5 validate/apply
        -> exact source/hash history
   -> JSON-safe projections
-       -> slide rail / tree / inspector / diagnostics
+       -> conditional navigation / tree / inspector / diagnostics
        -> isolated supported-SVG viewport
+       -> conservative Node/browser C8 evidence
   -> PersistenceAdapter
        -> clean download
+       -> hydrated deck-slide SVG download
        -> explicitly granted file handle
 ```
 
-Keep the first implementation inside `@office180/pptv`:
+The first implementation remains inside `@office180/pptv`:
 
-- `browser/session` owns source, deck, selection, dirty state, and history;
-- `browser/render` creates supported SVG from projections;
-- `browser/viewport` isolates deck styling from editor chrome;
-- `browser/intents` emits typed operations;
-- `browser/persistence` implements wrapper, file, handle, and download paths;
-- `browser/app` may use plain TypeScript and Web Components; and
-- Node `editor-pack` validates and generates the wrapper.
+- `browser/session` owns same-kind source/document, selection, dirty state, and
+  history;
+- `browser/runtime` and the deterministic browser kernel expose shared
+  C4/C5/C6 conformance surfaces;
+- `browser/text-measurer` loads explicit bytes through `FontFace` and captures
+  engine/version-labeled C8 evidence;
+- `browser/editor-app` currently owns supported-SVG reconstruction, controls,
+  persistence, and downloads without treating those derived DOM nodes as
+  source; and
+- Node `editor-pack` validates, resolves, precomputes exact-font evidence, and
+  generates the wrapper.
+
+The current MVP deliberately keeps this small rather than inventing
+`render`/`viewport`/`intents` packages before independent consumers exist.
 
 Exact source states back undo/redo because an inverse semantic operation cannot
 reconstruct lexical choices such as entity spelling. History is bounded,
@@ -494,21 +545,26 @@ editability, and visual gates.
 
 ## 7. Recommended immediate work
 
-The first coherent vertical slice above is now implemented. Continue with:
+The first coherent source/browser/editor vertical slice above is now
+implemented. Continue with:
 
-1. lock the C8 worked-deck regression, add environment-labeled browser/editor
-   warnings, and calibrate representative lines against native PowerPoint;
-2. finish C6 standalone fixture and Node/browser normalized-JSON parity gates;
-3. bundle writable text/theme/order controls over the existing C5 exact-source
-   session and surface C8 warnings without automatic repair;
-4. add stale-safe user-granted persistence and real browser save/reload tests;
-5. add typed geometry/line/order/group operations without a generic attribute
-   escape hatch;
-6. expand C7 only where those same fixtures pass browser, schema, independent
+1. calibrate representative C8 lines against native PowerPoint and retain the
+   observed engine-specific variance as labeled evidence, never automatic
+   repair;
+2. add typed geometry, explicit-line, connector, child-order, and
+   group-translation operations without a generic attribute escape hatch;
+3. expand C7 only where those same fixtures pass browser, schema, independent
    reopen, and native Office gates;
-7. add quantitative browser/PDF comparison; and
-8. complete native PPTX save/reopen on an automation path that first proves a
-   non-empty ZIP output.
+4. add quantitative browser/PDF comparison;
+5. complete native PPTX save/reopen on an automation path that first proves a
+   non-empty ZIP output;
+6. define static self-contained resource/asset handling before compiling SVG
+   or raster assets;
+7. add sandboxed untrusted intake without weakening the trusted direct-open
+   path; and
+8. defer canonical structural serialization, insertion/deletion, and external
+   dependency composition until their own contracts and exact-source fixtures
+   exist.
 
 This preserves momentum from the worked examples while keeping the source,
 editor, and Office surfaces locked to the same narrow semantics.

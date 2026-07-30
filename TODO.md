@@ -8,7 +8,7 @@ Active tasks only. Priority ordering lives in `QUICKCONTEXT.md`.
 
 ## PPTV next slice
 
-- [ ] Promote standalone `.pptv.svg` to a first-class semantic diagram
+- [x] Promote standalone `.pptv.svg` to a first-class semantic diagram
   document with explicit root ID/version/namespace/viewBox, arbitrary aspect
   ratio, shared object parsing, direct-text patching, diagram resolution,
   text-fit, editor-pack, CLI projections, and clean SVG download. Do not
@@ -16,7 +16,7 @@ Active tasks only. Priority ordering lives in `QUICKCONTEXT.md`.
 - [x] Promote `PPTV-IMPLEMENTATION-PLAN.md` section 2 into C6 and normalize the
   minimal fixture: exact `0 0 1600 900`/16:9 mapping, explicit text-frame/line
   syntax, primitive/group/asset bounds, CSS authority, and capability errors.
-- [ ] Add C6 kitchen-sink and invalid-profile fixture corpora plus normalized
+- [x] Add C6 kitchen-sink and invalid-profile fixture corpora plus normalized
   Node/browser JSON parity locks.
 - [x] Build the pure resolved model: discriminated finite geometry, translated
   native-group world bounds, explicit hard-line text, concrete font resolution,
@@ -27,9 +27,12 @@ Active tasks only. Priority ordering lives in `QUICKCONTEXT.md`.
 - [x] Add the exact-font Node adapter and `text-fit` CLI with a strict explicit
   font map, byte/PostScript identity, shaping, missing-glyph reporting, and
   fail-closed exit behavior.
-- [ ] Lock the worked TDFLite deck as a C8 regression, add environment-labeled
-  browser/editor measurement and overlays, and calibrate representative lines
-  against native PowerPoint. Never turn this into wrapping or automatic repair.
+- [x] Lock the worked TDFLite deck as a privacy-safe C8 inventory regression,
+  add explicit-byte environment-labeled browser/editor measurement and
+  conservative overlays.
+- [ ] Calibrate representative exact-font hard lines against native PowerPoint.
+  Never turn this into wrapping or automatic repair, and retain both Node and
+  browser identities when their kerning behavior differs.
 - [ ] Remove first-declaration entries for duplicate object IDs from the raw C4
   index; public queries suppress ambiguous IDs and C6/C7 reject ambiguous
   decks, so this is internal representation cleanup rather than a compiler
@@ -41,8 +44,13 @@ Active tasks only. Priority ordering lives in `QUICKCONTEXT.md`.
   C5 operations into bounded, exact-source hash-checked undo/redo.
 - [x] Reconstruct the trusted wrapper viewport from literal C6 data without
   source DOM cloning, CSSOM, or source-runtime execution.
-- [ ] Bundle writable editor controls into the wrapper, then add stale-safe
+- [x] Bundle writable editor controls into the wrapper, then add stale-safe
   user-granted file save.
+- [x] Add deterministic deck-slide hydration into a standalone `.pptv.svg`
+  atom with localized concrete style, stable identity/hierarchy/order,
+  independent C4/C6 reload, library/CLI/editor surfaces, and no partial output.
+- [x] Require standalone SVG to pass namespace-aware XML 1.0 well-formedness
+  before semantic loading; HTML parser recovery is not atom authority.
 - [x] Build the first deterministic fresh-PPTX canary with native
   rectangles/ellipses/connectors/translated groups/one-line text, exact
   stable-ID metadata, strict OPC graph validation, and atomic CLI output.
@@ -104,22 +112,26 @@ Active tasks only. Priority ordering lives in `QUICKCONTEXT.md`.
 
 ## Known limitations
 
-- PPTV semantic loading currently supports only self-contained `.pptv.html`.
-  Standalone SVG and external manifests are recognition/inventory-only.
+- PPTV semantic loading supports self-contained standalone `.pptv.svg` atoms
+  and self-contained `.pptv.html` decks. External manifests remain
+  recognition/inventory-only; external atom/library composition is not yet
+  implemented.
 - Strict 0.1 resource references are same-document fragments only. Relative,
   absolute, remote, and embedded-data fetches require a future dependency
   resolver and hash/capability contract.
-- PPTV preserve mode supports only direct text, an existing active-theme value,
-  and slide-order permutations. Rich text, CSS, and structural edits fail
-  explicitly.
+- PPTV preserve mode supports direct text for either artifact kind and an
+  existing active-theme value plus slide-order permutations for decks. Rich
+  text, CSS, geometry, and structural edits fail explicitly.
 - Group hierarchy/order, translated world bounds, explicit text frames, and
   opaque SVG asset bounds resolve today. The strict C7 subset emits native
   groups/connectors and passes schema, independent reopen, and PowerPoint
   open/render smoke validation. Hit-testing, typed geometry edits, raster
   resources, quantitative fidelity, and PPTX save/reopen remain open.
 - C8 exact-font shaped advance catches horizontal hard-line overrun without
-  changing source. Browser/native parity, vertical fit, font embedding, system
-  discovery, silent substitution, and automatic repair remain out.
+  changing source. Node/browser evidence is environment-labeled and checked;
+  WebKit's unkerned SVG variance is conservatively retained. Native PowerPoint
+  calibration, vertical fit, font embedding, system discovery, silent
+  substitution, and automatic repair remain out.
 - The minimal fixture has one base/component style block plus complete
   token-only themes. Theme token editing remains a typed-operation follow-up.
 - `docx2md.py` does not reject pending tracked changes (`ROADMAP.md` §7.5).
@@ -137,6 +149,10 @@ scans both Python and TypeScript and rejects untracked `TODO:` comments.
 <details>
 <summary><strong>Recently completed</strong></summary>
 
+- [x] First-class arbitrary-viewBox `.pptv.svg` atom; generic source/query/text
+  patch/resolve/text-fit/editor CLI; deterministic deck-slide hydration;
+  shared three-engine browser conformance; checked browser C8 evidence; and
+  writable trusted deck/diagram editor — 2026-07-30
 - [x] Rebar `v3.0.0-beta` Tier 3 upgrade with a SessionStart health hook,
   generated registry, JTBD/header/doc/decay gates, Steward report, installed
   pre-commit hook, reusable Claude workflow skills, and GitHub Actions — 2026-07-30

@@ -1,7 +1,7 @@
 {
   "name": "@office180/pptv",
-  "version": "0.1.0-alpha.2",
-  "description": "Source-preserving PPTV scanner, editor foundation, text-fit preflight, strict PPTX canary, and CLI",
+  "version": "0.1.0-alpha.3",
+  "description": "Source-preserving PPTV diagram/deck editor, slide hydrator, text-fit preflight, strict PPTX canary, and CLI",
   "type": "module",
   "license": "MIT",
   "repository": {
@@ -39,6 +39,7 @@
       "import": "./dist/ops/index.js"
     },
     "./assets/pptv-browser-0.1.script.html": "./assets/pptv-browser-0.1.script.html",
+    "./assets/pptv-browser-kernel-0.1.iife.js": "./assets/pptv-browser-kernel-0.1.iife.js",
     "./schemas/manifest": "./dist/schemas/pptv-manifest-0.1.schema.json",
     "./schemas/patch": "./dist/schemas/pptv-patch-0.1.schema.json"
   },
@@ -48,17 +49,24 @@
     "README.md"
   ],
   "scripts": {
-    "build": "node scripts/prepare-dist.mjs && tsc -p tsconfig.build.json && node scripts/copy-schemas.mjs",
+    "browser:build": "node scripts/build-browser-kernel.mjs && pnpm editor:build",
+    "browser:check": "node scripts/build-browser-kernel.mjs --check && pnpm editor:check",
+    "build": "node scripts/prepare-dist.mjs && pnpm browser:check && tsc -p tsconfig.build.json && node scripts/copy-schemas.mjs",
+    "editor:build": "node scripts/build-editor-app.mjs",
+    "editor:check": "node scripts/build-editor-app.mjs --check",
     "prepack": "pnpm build",
     "pack:check": "npm pack --dry-run",
-    "typecheck": "tsc -p tsconfig.json --noEmit",
-    "test": "vitest run"
+    "typecheck": "tsc -p tsconfig.json --noEmit && tsc -p tsconfig.playwright.json",
+    "test": "vitest run",
+    "test:browser": "playwright test --project=chromium",
+    "test:browser:all": "playwright test"
   },
   "dependencies": {
     "fontkit": "2.0.4",
     "jsonc-parser": "^3.3.1",
     "jszip": "3.10.1",
-    "parse5": "^8.0.1"
+    "parse5": "^8.0.1",
+    "saxes": "6.0.0"
   },
   "devDependencies": {
     "@types/fontkit": "2.0.9"

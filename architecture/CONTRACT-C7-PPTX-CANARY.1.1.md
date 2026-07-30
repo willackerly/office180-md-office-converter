@@ -185,7 +185,7 @@ timestamps, and no ZIP64. Package-limit overflow fails.
 
 ## Dependencies
 
-- Depends on: `CONTRACT:C6-PPTV-RESOLVED.1.0`
+- Depends on: `CONTRACT:C6-PPTV-RESOLVED.1.1`
 - External runtime dependency: exactly `jszip@3.10.1`, configured with fixed
   dates, `createFolders: false`, `STORE`, empty comments, explicit DOS
   platform/permissions, and sorted insertion

@@ -1,18 +1,26 @@
 /**
  * Pure compiler-grade PPTV geometry, text, and object projection.
  *
- * CONTRACT:C6-PPTV-RESOLVED.1.0
+ * CONTRACT:C6-PPTV-RESOLVED.1.1
  */
 
 import { parseFragment, type DefaultTreeAdapterMap } from "parse5";
 
 import {
+  resolvePptvDiagramStyles,
   resolvePptvStyles,
   type PptvResolvedObjectStyle,
   type PptvResolvedStyle,
   type PptvStyleProvenance,
 } from "./styles.js";
-import type { Diagnostic, PptvDeck, PptvNode, PptvSlide } from "./types.js";
+import type {
+  Diagnostic,
+  PptvDeck,
+  PptvDiagram,
+  PptvNode,
+  PptvSlide,
+  SourceRange,
+} from "./types.js";
 
 type ParsedNode = DefaultTreeAdapterMap["node"];
 type ParsedElement = DefaultTreeAdapterMap["element"];
@@ -221,8 +229,91 @@ export interface PptvResolvedResult {
   readonly diagnostics: readonly Diagnostic[];
 }
 
+export interface PptvResolvedDiagramObjectBase extends Omit<
+  PptvResolvedObjectBase,
+  "slideId"
+> {
+  readonly diagramId: string;
+}
+
+type DiagramScoped<T> = Omit<T, "slideId"> & {
+  readonly diagramId: string;
+};
+
+export type PptvResolvedDiagramRect = DiagramScoped<PptvResolvedRect>;
+export type PptvResolvedDiagramEllipse = DiagramScoped<PptvResolvedEllipse>;
+export type PptvResolvedDiagramText = DiagramScoped<PptvResolvedText>;
+export type PptvResolvedDiagramLine = DiagramScoped<PptvResolvedLine>;
+export type PptvResolvedDiagramSvgAsset = DiagramScoped<PptvResolvedSvgAsset>;
+export type PptvResolvedDiagramRasterAsset =
+  DiagramScoped<PptvResolvedRasterAsset>;
+export type PptvResolvedDiagramGroup = DiagramScoped<
+  Omit<PptvResolvedGroup, "children">
+> & {
+  readonly children: readonly PptvResolvedDiagramObject[];
+};
+
+export type PptvResolvedDiagramObject =
+  | PptvResolvedDiagramRect
+  | PptvResolvedDiagramEllipse
+  | PptvResolvedDiagramText
+  | PptvResolvedDiagramLine
+  | PptvResolvedDiagramGroup
+  | PptvResolvedDiagramSvgAsset
+  | PptvResolvedDiagramRasterAsset;
+
+export interface PptvResolvedDiagram {
+  readonly schema: "pptv-resolved-diagram/0.1";
+  readonly sourceSha256: string;
+  readonly diagramId: string;
+  readonly canvas: {
+    readonly viewBox: readonly [number, number, number, number];
+  };
+  readonly objects: readonly PptvResolvedDiagramObject[];
+}
+
+export interface PptvResolvedDiagramResult {
+  readonly model?: PptvResolvedDiagram;
+  readonly diagnostics: readonly Diagnostic[];
+}
+
+type PptvResolvableDocument = PptvDeck | PptvDiagram;
+
+interface ResolutionScope {
+  readonly kind: "slide" | "diagram";
+  readonly id: string;
+  readonly children: readonly PptvNode[];
+  readonly viewBox: readonly [number, number, number, number];
+  readonly sourceRange: SourceRange;
+}
+
+type InternalScoped<T> = Omit<T, "slideId"> & {
+  readonly containerId: string;
+};
+
+type InternalResolvedObjectBase = InternalScoped<PptvResolvedObjectBase>;
+type InternalResolvedRect = InternalScoped<PptvResolvedRect>;
+type InternalResolvedEllipse = InternalScoped<PptvResolvedEllipse>;
+type InternalResolvedText = InternalScoped<PptvResolvedText>;
+type InternalResolvedLine = InternalScoped<PptvResolvedLine>;
+type InternalResolvedSvgAsset = InternalScoped<PptvResolvedSvgAsset>;
+type InternalResolvedRasterAsset = InternalScoped<PptvResolvedRasterAsset>;
+type InternalResolvedGroup = InternalScoped<
+  Omit<PptvResolvedGroup, "children">
+> & {
+  readonly children: readonly InternalResolvedObject[];
+};
+type InternalResolvedObject =
+  | InternalResolvedRect
+  | InternalResolvedEllipse
+  | InternalResolvedText
+  | InternalResolvedLine
+  | InternalResolvedGroup
+  | InternalResolvedSvgAsset
+  | InternalResolvedRasterAsset;
+
 interface ResolutionContext {
-  readonly deck: PptvDeck;
+  readonly document: PptvResolvableDocument;
   readonly diagnostics: Diagnostic[];
   readonly styles: ReadonlyMap<string, PptvResolvedObjectStyle>;
   readonly sourceNodes: ReadonlyMap<string, PptvNode>;
@@ -244,7 +335,7 @@ export function resolvePptvDeck(deck: PptvDeck): PptvResolvedResult {
   diagnostics.push(...styleResult.diagnostics);
   const sourceNodes = indexSourceNodes(deck);
   const context: ResolutionContext = {
-    deck,
+    document: deck,
     diagnostics,
     styles: styleResult.styles,
     sourceNodes,
@@ -262,7 +353,7 @@ export function resolvePptvDeck(deck: PptvDeck): PptvResolvedResult {
       });
       continue;
     }
-    validateSlideRoot(slide, context);
+    validateSlideRoot(slide, deck, context);
     if (!exactCanvas(slide.viewBox)) {
       diagnostics.push({
         code: "PPTV-PROFILE-VIEWBOX",
@@ -272,20 +363,27 @@ export function resolvePptvDeck(deck: PptvDeck): PptvResolvedResult {
         range: slide.sourceRange,
       });
     }
-    const objects = resolveSiblings(
-      slide.children,
-      slide,
+    const scope: ResolutionScope = {
+      kind: "slide",
+      id: slide.id,
+      children: slide.children,
+      viewBox: slide.viewBox,
+      sourceRange: slide.sourceRange,
+    };
+    const internalObjects = resolveSiblings(
+      scope.children,
+      scope,
       null,
       { x: 0, y: 0 },
       context,
     );
-    validateConnectorReferences(objects, context);
+    validateConnectorReferences(internalObjects, context);
     slides.push({
       id: slide.id,
       order,
       hidden: slide.hidden,
       ...(slide.layout === undefined ? {} : { layout: slide.layout }),
-      objects,
+      objects: internalObjects.map(toDeckObject),
     });
   }
 
@@ -304,6 +402,66 @@ export function resolvePptvDeck(deck: PptvDeck): PptvResolvedResult {
       emuPerUnit: EMU_PER_UNIT,
     },
     slides,
+  };
+  return { model: cloneAndFreeze(model), diagnostics };
+}
+
+export function resolvePptvDiagram(
+  diagram: PptvDiagram,
+): PptvResolvedDiagramResult {
+  const diagnostics = [...diagram.diagnostics];
+  const styleResult = resolvePptvDiagramStyles(diagram);
+  diagnostics.push(...styleResult.diagnostics);
+  if (!validDiagramBaseSnapshot(diagram)) {
+    diagnostics.push({
+      code: "PPTV-PROFILE-INVALID-BASE",
+      severity: "error",
+      message:
+        "Diagram resolution requires a complete, unambiguous standalone semantic snapshot with no errors.",
+      diagramId: diagram.id,
+    });
+    return { diagnostics };
+  }
+  if (!validDiagramCanvas(diagram.viewBox)) {
+    diagnostics.push({
+      code: "PPTV-PROFILE-VIEWBOX",
+      severity: "error",
+      message: `Diagram "${diagram.id}" requires a four-number finite viewBox with positive width and height.`,
+      diagramId: diagram.id,
+      range: diagram.sourceRange,
+    });
+    return { diagnostics };
+  }
+
+  const context: ResolutionContext = {
+    document: diagram,
+    diagnostics,
+    styles: styleResult.styles,
+    sourceNodes: indexSourceNodes(diagram),
+  };
+  const scope: ResolutionScope = {
+    kind: "diagram",
+    id: diagram.id,
+    children: diagram.children,
+    viewBox: diagram.viewBox,
+    sourceRange: diagram.sourceRange,
+  };
+  const internalObjects = resolveSiblings(
+    scope.children,
+    scope,
+    null,
+    { x: 0, y: 0 },
+    context,
+  );
+  validateConnectorReferences(internalObjects, context);
+  if (hasErrors(diagnostics)) return { diagnostics };
+
+  const model: PptvResolvedDiagram = {
+    schema: "pptv-resolved-diagram/0.1",
+    sourceSha256: diagram.source.sha256,
+    diagramId: diagram.id,
+    canvas: { viewBox: [...diagram.viewBox] },
+    objects: internalObjects.map(toDiagramObject),
   };
   return { model: cloneAndFreeze(model), diagnostics };
 }
@@ -339,12 +497,83 @@ function validBaseSnapshot(deck: PptvDeck): boolean {
   return objectCount === deck.index.objects.size;
 }
 
-function indexSourceNodes(deck: PptvDeck): Map<string, PptvNode> {
+function validDiagramBaseSnapshot(diagram: PptvDiagram): boolean {
+  if (
+    hasErrors(diagram.diagnostics) ||
+    diagram.index.sourceSha256 !== diagram.source.sha256 ||
+    diagram.index.root.id !== diagram.id
+  ) {
+    return false;
+  }
+  const seen = new Set<string>();
+  let valid = true;
+  let objectCount = 0;
+  visitSourceNodes(diagram.children, (node) => {
+    objectCount += 1;
+    const indexed = diagram.index.objects.get(node.id);
+    if (
+      seen.has(node.id) ||
+      indexed === undefined ||
+      indexed.diagramId !== diagram.id
+    ) {
+      valid = false;
+    }
+    seen.add(node.id);
+  });
+  return valid && objectCount === diagram.index.objects.size;
+}
+
+function validDiagramCanvas(
+  viewBox: readonly [number, number, number, number],
+): boolean {
+  return (
+    viewBox.length === 4 &&
+    viewBox.every(Number.isFinite) &&
+    (viewBox[2] ?? 0) > 0 &&
+    (viewBox[3] ?? 0) > 0
+  );
+}
+
+function indexSourceNodes(
+  document: PptvResolvableDocument,
+): Map<string, PptvNode> {
   const nodes = new Map<string, PptvNode>();
-  for (const slide of deck.slides.values()) {
-    visitSourceNodes(slide.children, (node) => nodes.set(node.id, node));
+  if (document.sourceKind === "html") {
+    for (const slide of document.slides.values()) {
+      visitSourceNodes(slide.children, (node) => nodes.set(node.id, node));
+    }
+  } else {
+    visitSourceNodes(document.children, (node) => nodes.set(node.id, node));
   }
   return nodes;
+}
+
+function toDeckObject(object: InternalResolvedObject): PptvResolvedObject {
+  if (object.kind === "group") {
+    const { containerId, children, ...fields } = object;
+    return {
+      ...fields,
+      slideId: containerId,
+      children: children.map(toDeckObject),
+    } as PptvResolvedGroup;
+  }
+  const { containerId, ...fields } = object;
+  return { ...fields, slideId: containerId } as PptvResolvedObject;
+}
+
+function toDiagramObject(
+  object: InternalResolvedObject,
+): PptvResolvedDiagramObject {
+  if (object.kind === "group") {
+    const { containerId, children, ...fields } = object;
+    return {
+      ...fields,
+      diagramId: containerId,
+      children: children.map(toDiagramObject),
+    } as PptvResolvedDiagramGroup;
+  }
+  const { containerId, ...fields } = object;
+  return { ...fields, diagramId: containerId } as PptvResolvedDiagramObject;
 }
 
 function visitSourceNodes(
@@ -359,17 +588,17 @@ function visitSourceNodes(
 
 function resolveSiblings(
   nodes: readonly PptvNode[],
-  slide: PptvSlide,
+  scope: ResolutionScope,
   parentId: string | null,
   parentWorldOffset: PptvPoint,
   context: ResolutionContext,
-): PptvResolvedObject[] {
-  const result: PptvResolvedObject[] = [];
+): InternalResolvedObject[] {
+  const result: InternalResolvedObject[] = [];
   for (const node of nodes) {
     if (node.exportMode === "ignore") continue;
     const resolved = resolveObject(
       node,
-      slide,
+      scope,
       parentId,
       result.length,
       parentWorldOffset,
@@ -382,12 +611,12 @@ function resolveSiblings(
 
 function resolveObject(
   node: PptvNode,
-  slide: PptvSlide,
+  scope: ResolutionScope,
   parentId: string | null,
   order: number,
   parentWorldOffset: PptvPoint,
   context: ResolutionContext,
-): PptvResolvedObject | undefined {
+): InternalResolvedObject | undefined {
   const styleEntry = context.styles.get(node.id);
   if (styleEntry === undefined) {
     pushNodeDiagnostic(
@@ -406,7 +635,7 @@ function resolveObject(
   ) {
     return resolveGroup(
       node,
-      slide,
+      scope,
       parentId,
       order,
       parentWorldOffset,
@@ -431,7 +660,7 @@ function resolveObject(
   ) {
     return resolveRect(
       node,
-      slide,
+      scope,
       parentId,
       order,
       parentWorldOffset,
@@ -446,7 +675,7 @@ function resolveObject(
   ) {
     return resolveEllipse(
       node,
-      slide,
+      scope,
       parentId,
       order,
       parentWorldOffset,
@@ -461,7 +690,7 @@ function resolveObject(
   ) {
     return resolveLine(
       node,
-      slide,
+      scope,
       parentId,
       order,
       parentWorldOffset,
@@ -476,7 +705,7 @@ function resolveObject(
   ) {
     return resolveText(
       node,
-      slide,
+      scope,
       parentId,
       order,
       parentWorldOffset,
@@ -491,7 +720,7 @@ function resolveObject(
   ) {
     return resolveSvgAsset(
       node,
-      slide,
+      scope,
       parentId,
       order,
       parentWorldOffset,
@@ -506,7 +735,7 @@ function resolveObject(
   ) {
     return resolveRasterAsset(
       node,
-      slide,
+      scope,
       parentId,
       order,
       parentWorldOffset,
@@ -526,13 +755,13 @@ function resolveObject(
 
 function resolveRect(
   node: PptvNode,
-  slide: PptvSlide,
+  scope: ResolutionScope,
   parentId: string | null,
   order: number,
   worldOffset: PptvPoint,
   styleEntry: PptvResolvedObjectStyle,
   context: ResolutionContext,
-): PptvResolvedRect | undefined {
+): InternalResolvedRect | undefined {
   validateBoundaryAttributes(node, RECT_ATTRIBUTES, context);
   const x = requiredNumber(node, "x", false, context);
   const y = requiredNumber(node, "y", false, context);
@@ -554,7 +783,7 @@ function resolveRect(
   return {
     ...objectBase(
       node,
-      slide,
+      scope,
       parentId,
       "rect",
       order,
@@ -574,13 +803,13 @@ function resolveRect(
 
 function resolveEllipse(
   node: PptvNode,
-  slide: PptvSlide,
+  scope: ResolutionScope,
   parentId: string | null,
   order: number,
   worldOffset: PptvPoint,
   styleEntry: PptvResolvedObjectStyle,
   context: ResolutionContext,
-): PptvResolvedEllipse | undefined {
+): InternalResolvedEllipse | undefined {
   validateBoundaryAttributes(
     node,
     node.elementName === "circle" ? CIRCLE_ATTRIBUTES : ELLIPSE_ATTRIBUTES,
@@ -623,7 +852,7 @@ function resolveEllipse(
   return {
     ...objectBase(
       node,
-      slide,
+      scope,
       parentId,
       "ellipse",
       order,
@@ -642,13 +871,13 @@ function resolveEllipse(
 
 function resolveLine(
   node: PptvNode,
-  slide: PptvSlide,
+  scope: ResolutionScope,
   parentId: string | null,
   order: number,
   worldOffset: PptvPoint,
   styleEntry: PptvResolvedObjectStyle,
   context: ResolutionContext,
-): PptvResolvedLine | undefined {
+): InternalResolvedLine | undefined {
   validateBoundaryAttributes(node, LINE_ATTRIBUTES, context);
   const x1 = requiredNumber(node, "x1", false, context);
   const y1 = requiredNumber(node, "y1", false, context);
@@ -688,7 +917,7 @@ function resolveLine(
   return {
     ...objectBase(
       node,
-      slide,
+      scope,
       parentId,
       "line",
       order,
@@ -708,13 +937,13 @@ function resolveLine(
 
 function resolveGroup(
   node: PptvNode,
-  slide: PptvSlide,
+  scope: ResolutionScope,
   parentId: string | null,
   order: number,
   parentWorldOffset: PptvPoint,
   styleEntry: PptvResolvedObjectStyle,
   context: ResolutionContext,
-): PptvResolvedGroup | undefined {
+): InternalResolvedGroup | undefined {
   validateBoundaryAttributes(node, GROUP_ATTRIBUTES, context);
   const translation = parseGroupTranslation(node, context);
   if (translation === undefined) return undefined;
@@ -722,7 +951,7 @@ function resolveGroup(
   if (worldOffset === undefined) return undefined;
   const children = resolveSiblings(
     node.children,
-    slide,
+    scope,
     node.id,
     worldOffset,
     context,
@@ -754,7 +983,7 @@ function resolveGroup(
   return {
     ...objectBase(
       node,
-      slide,
+      scope,
       parentId,
       "group",
       order,
@@ -771,13 +1000,13 @@ function resolveGroup(
 
 function resolveSvgAsset(
   node: PptvNode,
-  slide: PptvSlide,
+  scope: ResolutionScope,
   parentId: string | null,
   order: number,
   worldOffset: PptvPoint,
   styleEntry: PptvResolvedObjectStyle,
   context: ResolutionContext,
-): PptvResolvedSvgAsset | undefined {
+): InternalResolvedSvgAsset | undefined {
   validateBoundaryAttributes(node, SVG_ASSET_ATTRIBUTES, context);
   const bounds = parseDeclaredBounds(node, context);
   if (bounds === undefined) return undefined;
@@ -786,7 +1015,7 @@ function resolveSvgAsset(
   return {
     ...objectBase(
       node,
-      slide,
+      scope,
       parentId,
       "svg-asset",
       order,
@@ -800,13 +1029,13 @@ function resolveSvgAsset(
 
 function resolveRasterAsset(
   node: PptvNode,
-  slide: PptvSlide,
+  scope: ResolutionScope,
   parentId: string | null,
   order: number,
   worldOffset: PptvPoint,
   styleEntry: PptvResolvedObjectStyle,
   context: ResolutionContext,
-): PptvResolvedRasterAsset | undefined {
+): InternalResolvedRasterAsset | undefined {
   validateBoundaryAttributes(node, RASTER_ASSET_ATTRIBUTES, context);
   const bounds = parseDeclaredBounds(node, context);
   const resourceRef =
@@ -832,7 +1061,7 @@ function resolveRasterAsset(
   return {
     ...objectBase(
       node,
-      slide,
+      scope,
       parentId,
       "raster-asset",
       order,
@@ -847,13 +1076,13 @@ function resolveRasterAsset(
 
 function resolveText(
   node: PptvNode,
-  slide: PptvSlide,
+  scope: ResolutionScope,
   parentId: string | null,
   order: number,
   worldOffset: PptvPoint,
   styleEntry: PptvResolvedObjectStyle,
   context: ResolutionContext,
-): PptvResolvedText | undefined {
+): InternalResolvedText | undefined {
   validateBoundaryAttributes(node, TEXT_ATTRIBUTES, context);
   const frame = parseTupleBounds(
     getAttribute(node, "data-pptv-frame"),
@@ -883,7 +1112,7 @@ function resolveText(
       `Text object "${node.id}" requires one resolved font family and size.`,
     );
   }
-  const parsedElement = parseSourceElement(node, context.deck);
+  const parsedElement = parseSourceElement(node, context.document);
   if (parsedElement === undefined) {
     pushTextLinesDiagnostic(
       context,
@@ -913,7 +1142,7 @@ function resolveText(
   return {
     ...objectBase(
       node,
-      slide,
+      scope,
       parentId,
       "text",
       order,
@@ -1075,7 +1304,7 @@ function parseHardLines(
 
 function objectBase<Kind extends PptvResolvedObjectKind>(
   node: PptvNode,
-  slide: PptvSlide,
+  scope: ResolutionScope,
   parentId: string | null,
   kind: Kind,
   order: number,
@@ -1083,10 +1312,10 @@ function objectBase<Kind extends PptvResolvedObjectKind>(
   worldBounds: PptvBounds,
   worldOffset: PptvPoint,
   styleEntry: PptvResolvedObjectStyle,
-): Omit<PptvResolvedObjectBase, "kind"> & { readonly kind: Kind } {
+): Omit<InternalResolvedObjectBase, "kind"> & { readonly kind: Kind } {
   return {
     id: node.id,
-    slideId: slide.id,
+    containerId: scope.id,
     parentId,
     kind,
     order,
@@ -1411,7 +1640,7 @@ function pointInside(bounds: PptvBounds, x: number, y: number): boolean {
 }
 
 function validateConnectorReferences(
-  objects: readonly PptvResolvedObject[],
+  objects: readonly InternalResolvedObject[],
   context: ResolutionContext,
 ): void {
   const ids = new Set<string>();
@@ -1429,7 +1658,7 @@ function validateConnectorReferences(
             context,
             source,
             "PPTV-PROFILE-GEOMETRY",
-            `Connector "${object.id}" ${label} target "${target}" is not a unique resolved object in slide "${object.slideId}".`,
+            `Connector "${object.id}" ${label} target "${target}" is not a unique resolved object in "${object.containerId}".`,
           );
         }
       }
@@ -1438,8 +1667,8 @@ function validateConnectorReferences(
 }
 
 function visitResolvedObjects(
-  objects: readonly PptvResolvedObject[],
-  visitor: (object: PptvResolvedObject) => void,
+  objects: readonly InternalResolvedObject[],
+  visitor: (object: InternalResolvedObject) => void,
 ): void {
   for (const object of objects) {
     visitor(object);
@@ -1458,9 +1687,9 @@ function getAttribute(node: PptvNode, name: string): string | undefined {
 
 function parseSourceElement(
   node: PptvNode,
-  deck: PptvDeck,
+  document: PptvResolvableDocument,
 ): ParsedElement | undefined {
-  const source = deck.source.text.slice(
+  const source = document.source.text.slice(
     node.sourceRange.charStart,
     node.sourceRange.charEnd,
   );
@@ -1473,8 +1702,12 @@ function parseSourceElement(
     : undefined;
 }
 
-function validateSlideRoot(slide: PptvSlide, context: ResolutionContext): void {
-  const source = context.deck.source.text.slice(
+function validateSlideRoot(
+  slide: PptvSlide,
+  deck: PptvDeck,
+  context: ResolutionContext,
+): void {
+  const source = deck.source.text.slice(
     slide.sourceRange.charStart,
     slide.sourceRange.charEnd,
   );
@@ -1592,14 +1825,24 @@ function pushNodeDiagnostic(
     code,
     severity: "error",
     message,
-    slideId: nodeSourceSlideId(node, context),
+    ...nodeSourceScope(node, context),
     objectId: node.id,
     range: node.openTagRange,
   });
 }
 
-function nodeSourceSlideId(node: PptvNode, context: ResolutionContext): string {
-  return context.deck.index.objects.get(node.id)?.slideId ?? "";
+function nodeSourceScope(
+  node: PptvNode,
+  context: ResolutionContext,
+): Pick<Diagnostic, "slideId" | "diagramId"> {
+  if (context.document.sourceKind === "html") {
+    return {
+      slideId: context.document.index.objects.get(node.id)?.slideId ?? "",
+    };
+  }
+  return {
+    diagramId: context.document.index.objects.get(node.id)?.diagramId ?? "",
+  };
 }
 
 function hasErrors(diagnostics: readonly Diagnostic[]): boolean {

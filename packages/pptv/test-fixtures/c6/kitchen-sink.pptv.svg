@@ -1,0 +1,103 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg id="conformance"
+     data-pptv-version="0.1"
+     viewBox="-20 10 960 640"
+     xmlns="http://www.w3.org/2000/svg">
+  <title>PPTV browser conformance kitchen sink</title>
+  <desc>Finite primitives, hard text, a connector, a translated group, and an opaque asset.</desc>
+
+  <rect id="conformance.background"
+        data-pptv-role="shape"
+        data-pptv-export="native"
+        x="-20"
+        y="10"
+        width="960"
+        height="640"
+        fill="#f7f9fc"/>
+
+  <text id="conformance.title"
+        data-pptv-role="text"
+        data-pptv-export="native"
+        data-pptv-frame="20 42 880 84"
+        data-pptv-line-step="38"
+        x="20"
+        y="84"
+        style="fill:#17211e;font-family:ABeeZee;font-size:34px;font-weight:400">Browser / Node parity</text>
+
+  <line id="conformance.flow"
+        data-pptv-role="connector"
+        data-pptv-export="native"
+        data-pptv-from="conformance.source"
+        data-pptv-to="conformance.target"
+        x1="310"
+        y1="280"
+        x2="610"
+        y2="280"
+        stroke="#40566f"
+        stroke-width="4"/>
+
+  <g id="conformance.source"
+     data-pptv-role="group"
+     data-pptv-export="native"
+     transform="translate(10 15)">
+    <rect id="conformance.source.box"
+          data-pptv-role="shape"
+          data-pptv-export="native"
+          x="40"
+          y="190"
+          width="260"
+          height="180"
+          rx="18"
+          fill="#dcebf7"
+          stroke="#24557a"
+          stroke-width="3"/>
+    <circle id="conformance.source.badge"
+            data-pptv-role="shape"
+            data-pptv-export="native"
+            cx="85"
+            cy="235"
+            r="20"
+            fill="#24557a"/>
+    <text id="conformance.source.label"
+          data-pptv-role="text"
+          data-pptv-export="native"
+          data-pptv-frame="90 246 180 92"
+          data-pptv-line-step="32"
+          style="fill:#17211e;font-family:ABeeZee;font-size:24px;font-weight:400">
+      <tspan x="90" y="278">Hard line AV</tspan>
+      <tspan x="90" y="310">Second line</tspan>
+    </text>
+  </g>
+
+  <g id="conformance.target"
+     data-pptv-role="group"
+     data-pptv-export="native">
+    <ellipse id="conformance.target.ellipse"
+             data-pptv-role="shape"
+             data-pptv-export="native"
+             cx="740"
+             cy="280"
+             rx="130"
+             ry="90"
+             fill="#f1e6f8"
+             stroke="#71458f"
+             stroke-width="3"/>
+    <text id="conformance.target.label"
+          data-pptv-role="text"
+          data-pptv-export="native"
+          data-pptv-frame="640 246 200 68"
+          data-pptv-line-step="30"
+          x="740"
+          y="286"
+          text-anchor="middle"
+          style="fill:#17211e;font-family:ABeeZee;font-size:24px;font-weight:400">Target</text>
+  </g>
+
+  <g id="conformance.opaque-art"
+     data-pptv-role="asset"
+     data-pptv-export="svg"
+     data-pptv-bounds="40 450 860 130">
+    <path d="M40 580 L470 450 L900 580 Z" fill="#d8efe5"/>
+    <text x="470" y="535">Opaque internals are one asset.</text>
+  </g>
+</svg>

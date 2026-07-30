@@ -1,0 +1,23 @@
+<svg id="invalid-profile"
+     data-pptv-version="0.1"
+     viewBox="0 0 800 500"
+     xmlns="http://www.w3.org/2000/svg">
+  <title>Intentionally invalid C6 profile fixture</title>
+
+  <rect id="invalid-profile.background"
+        class="theme-driven"
+        data-pptv-role="shape"
+        data-pptv-export="native"
+        x="0"
+        y="0"
+        width="800"
+        height="500"
+        fill="#ffffff"/>
+
+  <text id="invalid-profile.implicit-text"
+        data-pptv-role="text"
+        data-pptv-export="native"
+        x="40"
+        y="100"
+        style="font-family:ABeeZee;font-size:32px">No explicit frame</text>
+</svg>

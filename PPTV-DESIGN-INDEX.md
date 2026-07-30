@@ -22,42 +22,51 @@ PPTV does not attempt to replace SVG, HTML, CSS, or PresentationML. It defines a
 strict intersection and a set of author-intent annotations that make reliable
 translation possible.
 
-### Implemented baseline (2026-07-29)
+### Implemented baseline (2026-07-30)
 
 The single TypeScript package `@office180/pptv` now implements the first
 contracted vertical slice:
 
-- strict, non-executing recognition and scanning of PPTV HTML, SVG, and manifest
-  source forms;
-- semantic loading of one self-contained `pptv: "0.1"` HTML deck;
+- strict, non-executing recognition/scanning of PPTV HTML, SVG, and manifest
+  forms plus namespace-aware XML well-formedness for standalone SVG;
+- semantic loading of either one self-contained `.pptv.svg` diagram atom or
+  one self-contained `pptv: "0.1"` HTML deck, with no synthetic coercion;
 - exact retained UTF-8 bytes and text, including a leading BOM and original
   newline spelling, with SHA-256 over those exact bytes;
 - half-open UTF-8 byte and UTF-16 code-unit ranges plus one-based source
   positions;
-- immutable, source-hash-bound deck/index snapshots and JSON-safe outline,
-  inventory, text, semantic, and editing projections;
-- transactional `set-text`, `set-active-theme`, and `set-slide-order` patches;
-- exact-source browser sessions, trusted strict-CSP editor-pack generation, and
-  a literal-data resolved-model viewport;
-- fail-closed C6 fixed-canvas CSS/geometry/group/explicit-line text resolution;
+- immutable, source-hash-bound diagram/deck indexes and artifact-specific
+  JSON-safe outline, inventory, text, semantic, and editing projections;
+- transactional direct-text patches for either form plus deck-only
+  active-theme and slide-order patches;
+- exact-source browser sessions and writable strict-CSP diagram/deck editor
+  packs with literal C6 viewports, clean source download, exact undo/redo, and
+  stale-safe user-granted persistence;
+- fail-closed C6 arbitrary-canvas diagram and fixed-16:9 deck
+  CSS/geometry/group/explicit-line text resolution;
+- deterministic CSS/theme hydration of a resolvable deck slide into an
+  independently reloaded/resolved `.pptv.svg` atom;
+- deterministic shared browser/editor bundles and normalized C4/C6 parity
+  across Chromium, Firefox, and WebKit;
 - deterministic C7 fresh-PPTX compilation for the strict primitive subset,
   validated by ISO/ECMA schemas, OpenDocKit reopen, and native PowerPoint
   open/render without repair;
-- pure C8 anchor-aware text-fit evidence plus an explicit exact-font Node
-  adapter; and
-- `outline`, `validate`, `resolve`, `editor-pack`, `pptx-canary`, `text-fit`,
-  `text`, `show`, `list`, and `patch` CLI commands.
+- pure C8 anchor-aware text-fit evidence with exact-font Node and explicit-byte
+  browser adapters, worked-deck inventory, and checked three-engine evidence;
+  and
+- generic `outline`, `validate`, `resolve`, `editor-pack`, `text-fit`, `text`,
+  `show`, `list`, and `patch`, plus deck-only `extract` and `pptx-canary`.
 
 Contracts
-[`CONTRACT-C4-PPTV-SOURCE.1.0.md`](architecture/CONTRACT-C4-PPTV-SOURCE.1.0.md)
+[`CONTRACT-C4-PPTV-SOURCE.1.1.md`](architecture/CONTRACT-C4-PPTV-SOURCE.1.1.md)
 and
-[`CONTRACT-C5-PPTV-PATCH.1.0.md`](architecture/CONTRACT-C5-PPTV-PATCH.1.0.md),
+[`CONTRACT-C5-PPTV-PATCH.1.1.md`](architecture/CONTRACT-C5-PPTV-PATCH.1.1.md),
 the shipped schemas, implementation, and fixtures are normative for that
-implemented slice. C6, C7, and C8 are implemented but remain `in-progress`
-until their parity, corpus, text-fit calibration, quantitative render, and
-native save/reopen gates close. Writable bundled controls, geometry/structural
-editing, canonical serialization, compilation beyond the canary, and
-reconciliation remain roadmap.
+implemented slice. C4, C5, and C6 are verified. C7 and C8 remain
+`in-progress` until their native calibration, quantitative render, and native
+save/reopen gates close. Geometry/structural editing, external composition,
+canonical serialization, compilation beyond the canary, and reconciliation
+remain roadmap.
 
 ## 2. Current design packet
 
@@ -101,24 +110,25 @@ Read these documents in order:
    hybrid native/asset conversion, stable PowerPoint object names, source maps,
    render comparison, and reverse inspection.
 
-8. **[`examples/minimal-deck.pptv.html`](examples/minimal-deck.pptv.html)**
+8. **[`examples/minimal-diagram.pptv.svg`](examples/minimal-diagram.pptv.svg)
+   and [`examples/minimal-deck.pptv.html`](examples/minimal-deck.pptv.html)**
 
-   A deliberately small browser-openable and C7-compilable specimen showing
-   manifest-defined slide order, inert slide sources, multiple inert themes,
-   stable IDs, and the final reference viewer runtime.
+   The first is the smallest standalone arbitrary-viewBox atom. The second is
+   a browser-openable/C7-compilable aggregation showing manifest order, inert
+   slide sources, themes, extraction, and the reference viewer runtime.
 
 9. **[`.agents/skills/pptv-authoring/SKILL.md`](.agents/skills/pptv-authoring/SKILL.md)**
 
-   The repo-scoped, auto-discovered operational workflow for strict deck
-   creation/repair, no-reflow text authoring, exact-font overflow audits,
-   editor-pack generation, and C7 canary compilation. It packages the design
-   packet and gates; it does not replace the contracts.
+   The repo-scoped, auto-discovered operational workflow defaults to a
+   standalone diagram for one figure and HTML for deck/PPTX work. It covers
+   no-reflow authoring, exact-font audits, extraction, editor generation, and
+   C7 canary compilation without replacing the contracts.
 
-These files mix implemented status with design rationale. C4 and C5 are the
-verified behavioral authorities for the 0.1 source and patch kernels; C6, C7,
-and C8 are implemented, tested, in-progress compiler/verification surfaces.
-Prose beyond those surfaces remains roadmap until promoted through a contract
-and fixture.
+These files mix implemented status with design rationale. C4–C6 are verified
+behavioral authorities for source, patch, resolution, and hydration. C7/C8 are
+implemented, tested, in-progress native compiler/verification surfaces. Prose
+beyond those surfaces remains roadmap until promoted through a contract and
+fixture.
 
 ## 3. Artifact family
 
@@ -126,10 +136,10 @@ PPTV uses escalating source forms rather than requiring a project directory for
 every diagram:
 
 ```text
-diagram.pptv.svg                 recognition/inventory only; semantic support future
+diagram.pptv.svg                 implemented default standalone diagram atom
 mydeck.pptv.html                 implemented portable whole-deck source
 mydeck.pptv-manifest.json        recognition only; external orchestration future
-mydeck.editable.pptv.html        implemented generated read-only trusted wrapper
+mydeck.editable.pptv.html        implemented generated writable trusted wrapper
 mydeck.pptx                      current strict canary; broader compiler future
 mydeck.pptv.map.json             future generated source/object baseline
 mydeck.pptv.patch.json           future generated reviewable reverse patch
@@ -151,10 +161,10 @@ A `.pptv.html` file can contain the complete deck, shared CSS themes, reusable
 symbols, and a tiny browser runtime without requiring users to manage many peer
 files.
 
-External decomposition remains a design direction when it provides real value.
-The 0.1 scanner can recognize/inventory standalone SVG and external manifests,
-but semantic loading, editing, resolution, and compilation require one
-self-contained `.pptv.html` deck.
+The independent `.pptv.svg` atom is the default unit for a diagram or doc
+figure. HTML is the preferred portable deck envelope and the current C7
+compilation input. External manifests are inventory-only; future multi-file
+composition needs explicit hashes, capabilities, roots, and cycle behavior.
 
 ### 4.3 The manifest is the deck table of contents
 
@@ -266,12 +276,13 @@ public SVG interaction interfaces, per-run text fidelity and DOM tests, a
 fresh-package builder, shared transaction/precondition patterns, and cross-repo
 fixtures.
 
-### 4.13 The first editor/compiler profile is fixed 16:9
+### 4.13 Diagram canvases are arbitrary; the first PowerPoint profile is 16:9
 
-The first compiler-grade profile uses one exact `0 0 1600 900` viewBox and one
-deck-wide PowerPoint Widescreen size. Alternate aspect ratios remain a
-versioned deck-level extension. They are never inferred, stretched silently, or
-varied per slide.
+Standalone diagrams use any explicit finite-positive logical viewBox and infer
+no physical size. The first PowerPoint compiler profile uses exact
+`0 0 1600 900` slides and one deck-wide Widescreen size. Alternate deck ratios
+remain a versioned extension; they are never inferred, stretched, or varied
+silently per slide.
 
 ### 4.14 Native text never reflows automatically
 
@@ -282,11 +293,13 @@ shrink-to-fit, and font-size adjustment are outside the profile.
 
 ### 4.15 The direct-open editor is a generated trusted wrapper
 
-The implemented `.editable.pptv.html` foundation is a deterministic,
-strict-CSP application wrapper around the exact canonical deck bytes and hash.
-It exports a clean canonical deck and never promotes browser DOM serialization
-to source authority. Its bundled UI is intentionally read-only until writable
-controls and stale-safe persistence pass their own gates.
+The implemented editor pack is a deterministic strict-CSP application around
+the exact canonical diagram or deck bytes and expected hash. It opens through
+the shared C4/C5 session, rebuilds every preview/projection from current C6
+data, supports the current typed patch vocabulary, exports clean source, and
+never promotes DOM serialization to authority. A user-selected file may be
+overwritten once by explicit picker consent; later saves compare its disk hash
+with the editor's last saved hash and refuse stale writes.
 
 ## 5. Authority hierarchy
 
@@ -330,7 +343,7 @@ through an appropriate sandbox/CSP boundary.
 ## 7. Conformance classes under consideration
 
 ```text
-PPTV SVG Core       constrained standalone slide
+PPTV SVG Core       constrained standalone diagram atom
 PPTV HTML Deck      manifest-first portable deck container
 PPTV Authoring      local reusable CSS, symbols, and assets before normalization
 PPTV Tooling        projections, semantic patches, validation, serialization
@@ -344,22 +357,21 @@ A tool should declare exactly which classes and versions it implements.
 
 ## 8. Promotion path and status
 
-The source/patch kernels, resolved model, trusted editor foundation, and strict
-PPTX canary have satisfied the first executable promotion steps. The full
+The diagram/deck source and patch kernels, C6 resolved model/browser parity,
+writable trusted editor, text calibration fixtures, and strict PPTX canary have
+satisfied the first executable promotion steps. The full
 visual/editor/PowerPoint profile still must not be declared a stable standard
 based on prose alone. Remaining promotion work includes:
 
-1. lock the C8 worked-deck inventory, add environment-labeled browser/editor
-   warnings, and calibrate representative lines against native PowerPoint;
-2. complete the C6 standalone fixture corpus and Node/browser JSON parity;
-3. bundle writable editor controls and stale-safe user-granted persistence;
-4. implement editor operations beyond the three 0.1 patches;
-5. extend compilation only with features covered by the same editor fixtures;
-6. add quantitative browser/Office visual baselines;
-7. pass native PowerPoint PPTX save/reopen (open/render already passes);
-8. define canonical structural serialization before insert/delete/group
+1. calibrate representative C8 lines against native PowerPoint while retaining
+   environment-specific Node/browser identities;
+2. implement editor operations beyond the current typed patch vocabulary;
+3. extend compilation only with features covered by the same editor fixtures;
+4. add quantitative browser/Office visual baselines;
+5. pass native PowerPoint PPTX save/reopen (open/render already passes);
+6. define canonical structural serialization before insert/delete/group
    authoring; and
-9. complete at least one independent implementation or adapter experiment.
+7. complete at least one independent implementation or adapter experiment.
 
 The conformance corpus is part of the standard, not supplementary test code.
 
@@ -371,6 +383,7 @@ The source package currently provides:
 pptv outline
 pptv validate
 pptv resolve
+pptv extract
 pptv editor-pack
 pptv pptx-canary
 pptv text-fit
@@ -384,17 +397,17 @@ pptv patch
 `editor-pack` and `pptx-canary` also require explicit destinations; `text-fit`
 requires an explicit font map. There is no implicit overwrite. Rich editor
 commands, compilation beyond C7, and reconciliation remain roadmap. The
-implemented slice proves the source container, stable identity, semantic
-loading, projections, constrained patch discipline, trusted read-only editor
-foundation, exact-font non-mutating fit evidence, and deterministic strict-subset PPTX
-synthesis.
+implemented slice proves both source atoms, stable identity, semantic loading,
+projections, constrained patch discipline, deterministic hydration, a writable
+trusted editor, exact-font non-mutating fit evidence, and deterministic
+strict-subset PPTX synthesis.
 
 ## 10. Open design questions
 
 The following implementation details remain intentionally unresolved until the
 next contract, fixtures, and prototypes provide evidence:
 
-- version naming across contract 1.0, manifest/container `0.1`, future SVG
+- version naming across contract 1.1, source/container `0.1`, future SVG
   profile versions, viewer versions, and agent-profile versions;
 - authority and mismatch behavior for manifest title/layout/agent profile and
   their HTML/SVG mirrors;
@@ -410,10 +423,11 @@ next contract, fixtures, and prototypes provide evidence:
   text-save, package-builder, test-rigor, and license blockers are resolved.
 
 Exact BOM handling, UTF-8/UTF-16 range coordinates, source hashing, strict
-default section order, the fixed viewer-runtime digest policy, initial 16:9
-scope, explicit frame/line-step syntax, constrained base/theme CSS, opaque SVG
+default section order, the fixed viewer-runtime digest policy, arbitrary
+diagram canvases versus the initial 16:9 deck scope, explicit frame/line-step
+syntax, constrained base/theme CSS, opaque SVG
 bounds, no-reflow text behavior, no-theme-inheritance direction, and C7's
-minimum fresh package are decided. C4/C5 are verified authorities; C6/C7/C8
-are contracted, implemented, in-progress authorities for their narrow
-surfaces. Broader behavior still requires promotion through contracts and
-fixtures.
+minimum fresh package are decided. C4/C5/C6 are verified authorities; C7/C8
+are contracted, implemented, in-progress authorities for their narrow native
+fidelity surfaces. Broader behavior still requires promotion through contracts
+and fixtures.

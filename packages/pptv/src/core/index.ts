@@ -1,10 +1,24 @@
 /**
  * Portable PPTV source kernel.
  *
- * CONTRACT:C4-PPTV-SOURCE.1.0
+ * CONTRACT:C4-PPTV-SOURCE.1.1
  */
 
-export { deckIsValid, loadDeck, PptvLoadError, validateDeck } from "./deck.js";
+export {
+  deckIsValid,
+  diagramIsValid,
+  loadDeck,
+  loadDiagram,
+  loadPptvDocument,
+  PptvLoadError,
+  validateDeck,
+  validateDiagram,
+} from "./deck.js";
+export {
+  extractPptvDiagram,
+  type PptvDiagramExtractionProvenance,
+  type PptvDiagramExtractionResult,
+} from "./extract.js";
 export {
   parseManifest,
   PROFILE_ID_PATTERN,
@@ -15,9 +29,21 @@ export {
 export { scanPptvSource } from "./scan.js";
 export {
   resolvePptvDeck,
+  resolvePptvDiagram,
   type PptvBounds,
   type PptvPoint,
   type PptvResolvedDeck,
+  type PptvResolvedDiagram,
+  type PptvResolvedDiagramEllipse,
+  type PptvResolvedDiagramGroup,
+  type PptvResolvedDiagramLine,
+  type PptvResolvedDiagramObject,
+  type PptvResolvedDiagramObjectBase,
+  type PptvResolvedDiagramRasterAsset,
+  type PptvResolvedDiagramRect,
+  type PptvResolvedDiagramResult,
+  type PptvResolvedDiagramSvgAsset,
+  type PptvResolvedDiagramText,
   type PptvResolvedEllipse,
   type PptvResolvedGroup,
   type PptvResolvedLine,
@@ -33,8 +59,13 @@ export {
   type PptvResolvedTextLine,
 } from "./resolved.js";
 export {
+  preflightDiagramTextFit,
   preflightTextFit,
   textLineAvailableWidth,
+  type PptvDiagramTextFitLine,
+  type PptvDiagramTextFitResult,
+  type PptvDiagramTextMeasurer,
+  type PptvDiagramTextMeasureRequest,
   type PptvMeasuredText,
   type PptvTextFitLine,
   type PptvTextFitOptions,
@@ -55,6 +86,7 @@ export {
   SourceMapper,
 } from "./source.js";
 export {
+  resolvePptvDiagramStyles,
   resolvePptvStyles,
   type PptvResolvedObjectStyle,
   type PptvResolvedPropertyProvenance,

@@ -1,10 +1,18 @@
 /**
  * Browser-independent PPTV style and theme resolution.
  *
- * CONTRACT:C6-PPTV-RESOLVED.1.0
+ * CONTRACT:C6-PPTV-RESOLVED.1.1
  */
 
-import type { Diagnostic, PptvDeck, PptvNode, SourceRange } from "./types.js";
+import type {
+  Diagnostic,
+  PptvDeck,
+  PptvDiagram,
+  PptvNode,
+  SourceRange,
+} from "./types.js";
+
+type PptvStyleDocument = PptvDeck | PptvDiagram;
 
 export type PptvStyleOrigin =
   "default" | "presentation-attribute" | "base-rule" | "inline-style";
@@ -291,6 +299,28 @@ export function resolvePptvStyles(deck: PptvDeck): PptvStyleResolution {
   return { styles, diagnostics };
 }
 
+/**
+ * Resolve standalone diagram styles from SVG initial defaults plus local
+ * presentation attributes and inline declarations. Standalone diagrams have
+ * no base stylesheet, theme, active-theme, or inherited browser CSS authority.
+ */
+export function resolvePptvDiagramStyles(
+  diagram: PptvDiagram,
+): PptvStyleResolution {
+  const diagnostics: Diagnostic[] = [];
+  const styles = new Map<string, PptvResolvedObjectStyle>();
+  resolveNodes(
+    diagram,
+    diagram.id,
+    diagram.children,
+    [],
+    undefined,
+    styles,
+    diagnostics,
+  );
+  return { styles, diagnostics };
+}
+
 function parseBase(deck: PptvDeck, diagnostics: Diagnostic[]): ParsedBase {
   if (deck.baseStyle === undefined) {
     const result: ParsedBase = {
@@ -525,8 +555,8 @@ function validateThemeValues(
 }
 
 function resolveNodes(
-  deck: PptvDeck,
-  slideId: string,
+  document: PptvStyleDocument,
+  scopeId: string,
   nodes: readonly PptvNode[],
   rules: readonly BaseRule[],
   activeTheme: ParsedTheme | undefined,
@@ -542,7 +572,7 @@ function resolveNodes(
           `Ambiguous object ID "${node.id}" cannot have one resolved style.`,
           node.sourceRange,
         ),
-        slideId,
+        ...diagnosticScope(document, scopeId),
         objectId: node.id,
       });
       continue;
@@ -550,12 +580,19 @@ function resolveNodes(
 
     styles.set(
       node.id,
-      resolveNodeStyle(deck, slideId, node, rules, activeTheme, diagnostics),
+      resolveNodeStyle(
+        document,
+        scopeId,
+        node,
+        rules,
+        activeTheme,
+        diagnostics,
+      ),
     );
     if (!node.opaque) {
       resolveNodes(
-        deck,
-        slideId,
+        document,
+        scopeId,
         node.children,
         rules,
         activeTheme,
@@ -567,14 +604,38 @@ function resolveNodes(
 }
 
 function resolveNodeStyle(
-  deck: PptvDeck,
-  slideId: string,
+  document: PptvStyleDocument,
+  scopeId: string,
   node: PptvNode,
   rules: readonly BaseRule[],
   activeTheme: ParsedTheme | undefined,
   diagnostics: Diagnostic[],
 ): PptvResolvedObjectStyle {
   const candidates = defaultCandidates();
+
+  if (document.sourceKind === "svg") {
+    for (const [authoredName, value] of Object.entries(node.attributes)) {
+      const name = authoredName.toLowerCase();
+      const prohibited =
+        name === "class" ||
+        name === "data-pptv-style" ||
+        name === "data-pptv-theme" ||
+        name.startsWith("--") ||
+        /var\s*\(|--pptv-/iu.test(value) ||
+        (name === "style" && /(?:^|;)\s*--[-_A-Za-z0-9]+\s*:/u.test(value));
+      if (!prohibited) continue;
+      diagnostics.push(
+        objectDiagnostic(
+          "PPTV-PROFILE-DIAGRAM-STYLE",
+          `Standalone diagram object "${node.id}" uses unsupported stylesheet, class, theme, token, custom-property, or var() authority in "${authoredName}".`,
+          document,
+          scopeId,
+          node,
+          authoredName,
+        ),
+      );
+    }
+  }
 
   for (const attributeName of Object.keys(node.attributes)) {
     if (!UNSUPPORTED_PRESENTATION_ATTRIBUTES.has(attributeName.toLowerCase()))
@@ -583,8 +644,8 @@ function resolveNodeStyle(
       objectDiagnostic(
         "PPTV-PROFILE-CSS-PROPERTY",
         `Object "${node.id}" uses unsupported presentation attribute "${attributeName}".`,
-        deck,
-        slideId,
+        document,
+        scopeId,
         node,
         attributeName,
       ),
@@ -600,15 +661,15 @@ function resolveNodeStyle(
         objectDiagnostic(
           result.code,
           `Object "${node.id}" presentation attribute "${property}" ${result.message}.`,
-          deck,
-          slideId,
+          document,
+          scopeId,
           node,
           property,
         ),
       );
       continue;
     }
-    const sourceRange = attributeRange(deck, node, property);
+    const sourceRange = attributeRange(document, node, property);
     candidates.set(property, {
       value: result.value,
       provenance: {
@@ -630,8 +691,8 @@ function resolveNodeStyle(
             objectDiagnostic(
               "PPTV-PROFILE-UNRESOLVED-TOKEN",
               `Object "${node.id}" cannot resolve token "${declaration.token}" for "${declaration.property}".`,
-              deck,
-              slideId,
+              document,
+              scopeId,
               node,
             ),
           );
@@ -652,9 +713,9 @@ function resolveNodeStyle(
           ...(declaration.token === undefined
             ? {}
             : { token: declaration.token }),
-          ...(deck.baseStyle === undefined
+          ...(document.sourceKind !== "html" || document.baseStyle === undefined
             ? {}
-            : { sourceRange: deck.baseStyle.contentRange }),
+            : { sourceRange: document.baseStyle.contentRange }),
         },
       });
     }
@@ -662,12 +723,12 @@ function resolveNodeStyle(
 
   const inline = getAttribute(node, "style");
   if (inline !== undefined) {
-    const range = attributeRange(deck, node, "style") ?? node.openTagRange;
+    const range = attributeRange(document, node, "style") ?? node.openTagRange;
     const parsed = parseDeclarationList(inline, range, `style on "${node.id}"`);
     diagnostics.push(
       ...parsed.diagnostics.map((diagnostic) => ({
         ...diagnostic,
-        slideId,
+        ...diagnosticScope(document, scopeId),
         objectId: node.id,
       })),
     );
@@ -678,8 +739,8 @@ function resolveNodeStyle(
           objectDiagnostic(
             "PPTV-PROFILE-CSS-PROPERTY",
             `Object "${node.id}" inline style uses unsupported property "${declaration.property}".`,
-            deck,
-            slideId,
+            document,
+            scopeId,
             node,
             "style",
           ),
@@ -692,8 +753,8 @@ function resolveNodeStyle(
           objectDiagnostic(
             result.code,
             `Object "${node.id}" inline property "${property}" ${result.message}.`,
-            deck,
-            slideId,
+            document,
+            scopeId,
             node,
             "style",
           ),
@@ -723,8 +784,8 @@ function resolveNodeStyle(
       objectDiagnostic(
         "PPTV-PROFILE-FONT",
         `Text object "${node.id}" has no explicit resolved ${missing.join(" or ")}.`,
-        deck,
-        slideId,
+        document,
+        scopeId,
         node,
       ),
     );
@@ -1278,11 +1339,11 @@ function getAttribute(node: PptvNode, name: string): string | undefined {
 }
 
 function attributeRange(
-  deck: PptvDeck,
+  document: PptvStyleDocument,
   node: PptvNode,
   name: string,
 ): SourceRange | undefined {
-  const ranges = deck.index.objects.get(node.id)?.attributeRanges;
+  const ranges = document.index.objects.get(node.id)?.attributeRanges;
   if (ranges === undefined) return undefined;
   const lowerName = name.toLowerCase();
   for (const [candidate, range] of ranges) {
@@ -1294,8 +1355,8 @@ function attributeRange(
 function objectDiagnostic(
   code: string,
   message: string,
-  deck: PptvDeck,
-  slideId: string,
+  document: PptvStyleDocument,
+  scopeId: string,
   node: PptvNode,
   attribute?: string,
 ): Diagnostic {
@@ -1305,11 +1366,20 @@ function objectDiagnostic(
       message,
       attribute === undefined
         ? node.sourceRange
-        : (attributeRange(deck, node, attribute) ?? node.openTagRange),
+        : (attributeRange(document, node, attribute) ?? node.openTagRange),
     ),
-    slideId,
+    ...diagnosticScope(document, scopeId),
     objectId: node.id,
   };
+}
+
+function diagnosticScope(
+  document: PptvStyleDocument,
+  scopeId: string,
+): Pick<Diagnostic, "slideId" | "diagramId"> {
+  return document.sourceKind === "html"
+    ? { slideId: scopeId }
+    : { diagramId: scopeId };
 }
 
 function makeDiagnostic(

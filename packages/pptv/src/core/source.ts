@@ -1,7 +1,7 @@
 /**
  * UTF-8 source materialization, hashing, and dual-coordinate mapping.
  *
- * CONTRACT:C4-PPTV-SOURCE.1.0
+ * CONTRACT:C4-PPTV-SOURCE.1.1
  */
 
 import type {

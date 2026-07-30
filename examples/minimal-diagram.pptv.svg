@@ -1,0 +1,88 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg id="system-overview"
+     data-pptv-version="0.1"
+     viewBox="-100 -50 1200 800"
+     xmlns="http://www.w3.org/2000/svg">
+  <title>Minimal PPTV diagram</title>
+  <desc>A standalone, no-reflow system overview with explicit local styling.</desc>
+
+  <rect id="system-overview.background"
+        data-pptv-role="shape"
+        data-pptv-export="native"
+        x="-100"
+        y="-50"
+        width="1200"
+        height="800"
+        fill="#f7f9fc"/>
+
+  <text id="system-overview.title"
+        data-pptv-role="text"
+        data-pptv-export="native"
+        data-pptv-frame="-40 10 1080 70"
+        data-pptv-line-step="44"
+        x="-40"
+        y="58"
+        style="fill: #17211e; font-family: Arial; font-size: 36px; font-weight: 700">Standalone PPTV diagram</text>
+
+  <line id="system-overview.flow"
+        data-pptv-role="connector"
+        data-pptv-export="native"
+        data-pptv-from="system-overview.client"
+        data-pptv-to="system-overview.service"
+        x1="340"
+        y1="330"
+        x2="660"
+        y2="330"
+        stroke="#576b64"
+        stroke-width="4"/>
+
+  <g id="system-overview.client"
+     data-pptv-role="group"
+     data-pptv-export="native"
+     transform="translate(20 0)">
+    <rect id="system-overview.client.panel"
+          data-pptv-role="shape"
+          data-pptv-export="native"
+          x="-20"
+          y="240"
+          width="340"
+          height="180"
+          fill="#e4f2ec"
+          stroke="#24735d"
+          stroke-width="3"/>
+    <text id="system-overview.client.label"
+          data-pptv-role="text"
+          data-pptv-export="native"
+          data-pptv-frame="20 285 260 60"
+          data-pptv-line-step="34"
+          x="20"
+          y="326"
+          fill="#17211e"
+          font-family="Arial"
+          font-size="28"
+          font-weight="700">Client</text>
+  </g>
+
+  <g id="system-overview.service"
+     data-pptv-role="group"
+     data-pptv-export="native">
+    <rect id="system-overview.service.panel"
+          data-pptv-role="shape"
+          data-pptv-export="native"
+          x="660"
+          y="240"
+          width="340"
+          height="180"
+          fill="#f2e9fc"
+          stroke="#674194"
+          stroke-width="3"/>
+    <text id="system-overview.service.label"
+          data-pptv-role="text"
+          data-pptv-export="native"
+          data-pptv-frame="700 285 260 60"
+          data-pptv-line-step="34"
+          x="700"
+          y="326"
+          style="fill: #17211e; font-family: Arial; font-size: 28px; font-weight: 700">Policy service</text>
+  </g>
+</svg>

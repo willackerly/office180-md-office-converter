@@ -1,7 +1,7 @@
 /**
  * Hierarchical, source-hash-bound PPTV semantic snapshot.
  *
- * CONTRACT:C4-PPTV-SOURCE.1.0
+ * CONTRACT:C4-PPTV-SOURCE.1.1
  */
 
 import { parseFragment, type DefaultTreeAdapterMap } from "parse5";
@@ -16,20 +16,27 @@ import { scanPptvSource } from "./scan.js";
 import { hasErrors, SourceMapper } from "./source.js";
 import type {
   Diagnostic,
+  IndexedDiagramObject,
   IndexedLibrary,
   IndexedObject,
   IndexedSlide,
   IndexedStyle,
   IndexedTheme,
+  LoadDiagramOptions,
   LoadDeckOptions,
+  LoadPptvDocumentOptions,
   PptvBaseStyle,
   PptvDeck,
+  PptvDiagram,
+  PptvDiagramIndex,
+  PptvDocument,
   PptvExportMode,
   PptvInput,
   PptvLibrary,
   PptvManifestSlide,
   PptvNode,
   PptvRole,
+  PptvScan,
   PptvSlide,
   PptvSourceIndex,
   PptvSectionKind,
@@ -82,11 +89,56 @@ export async function loadDeck(
   options: LoadDeckOptions = {},
 ): Promise<PptvDeck> {
   const scan = await scanPptvSource(input, options);
+  assertSafelyScanned(scan);
+  if (scan.kind !== "html") {
+    throw wrongDocumentKind("HTML deck", scan);
+  }
+  return loadDeckFromScan(scan, options);
+}
+
+export async function loadDiagram(
+  input: PptvInput,
+  options: LoadDiagramOptions = {},
+): Promise<PptvDiagram> {
+  const scan = await scanPptvSource(input, options);
+  assertSafelyScanned(scan);
+  if (scan.kind !== "svg") {
+    throw wrongDocumentKind("standalone SVG diagram", scan);
+  }
+  return loadDiagramFromScan(scan);
+}
+
+export async function loadPptvDocument(
+  input: PptvInput,
+  options: LoadPptvDocumentOptions = {},
+): Promise<PptvDocument> {
+  const scan = await scanPptvSource(input, options);
+  assertSafelyScanned(scan);
+  if (scan.kind === "html") return loadDeckFromScan(scan, options);
+  if (scan.kind === "svg") return loadDiagramFromScan(scan);
+  throw wrongDocumentKind("HTML deck or standalone SVG diagram", scan);
+}
+
+function assertSafelyScanned(scan: PptvScan): void {
   if (scan.diagnostics.some((diagnostic) => diagnostic.severity === "fatal")) {
     throw new PptvLoadError("PPTV source could not be scanned safely.", [
       ...scan.diagnostics,
     ]);
   }
+}
+
+function wrongDocumentKind(expected: string, scan: PptvScan): PptvLoadError {
+  return new PptvLoadError(`PPTV source is not a supported ${expected}.`, [
+    ...scan.diagnostics,
+    {
+      code: "PPTV-DOCUMENT-KIND",
+      severity: "error",
+      message: `Expected ${expected}; recognized source kind "${scan.kind}".`,
+    },
+  ]);
+}
+
+function loadDeckFromScan(scan: PptvScan, options: LoadDeckOptions): PptvDeck {
   const parsedManifest = parseManifest(scan);
   const diagnostics = [...scan.diagnostics, ...parsedManifest.diagnostics];
 
@@ -113,7 +165,7 @@ export async function loadDeck(
   let indexedStyle: IndexedStyle | undefined;
   const indexedThemes = new Map<string, IndexedTheme>();
   const indexedLibraries = new Map<string, IndexedLibrary>();
-  const objectDeclarations = new Map<string, IndexedObject>();
+  const objectDeclarations = new Map<string, ParsedIndexedObject>();
   const slideSections = sectionsById(scan.sections, "slide");
   const styleSections = sectionsById(scan.sections, "style");
   const themeSections = sectionsById(scan.sections, "theme");
@@ -195,11 +247,22 @@ export async function loadDeck(
     );
     diagnostics.push(...parsed.diagnostics);
     if (parsed.slide !== undefined) {
+      if (
+        parsed.svgRange === undefined ||
+        parsed.svgOpenTagRange === undefined ||
+        parsed.svgAttributeRanges === undefined
+      ) {
+        throw new Error(
+          `Internal PPTV index invariant failed for slide "${id}".`,
+        );
+      }
       slides.set(id, parsed.slide);
       indexedSlides.set(id, {
         id,
         range: section.range,
-        openTagRange: parsed.svgOpenTagRange ?? section.openTagRange,
+        svgRange: parsed.svgRange,
+        openTagRange: parsed.svgOpenTagRange,
+        attributeRanges: parsed.svgAttributeRanges,
         objectIds: parsed.objectIds,
       });
       for (const object of parsed.indexedObjects)
@@ -235,7 +298,7 @@ export async function loadDeck(
 
   return freezeDeck({
     version: manifest.pptv,
-    sourceKind: scan.kind,
+    sourceKind: "html",
     ...(manifest.title === undefined ? {} : { title: manifest.title }),
     ...(manifest.theme === undefined ? {} : { activeTheme: manifest.theme }),
     slideOrder,
@@ -255,12 +318,133 @@ export async function loadDeck(
   });
 }
 
+function loadDiagramFromScan(scan: PptvScan): PptvDiagram {
+  const diagnostics = [...scan.diagnostics];
+  const rootSection = scan.sections.find((section) => section.kind === "slide");
+  const root =
+    rootSection === undefined
+      ? undefined
+      : parseStandaloneRoot(rootSection, scan.source.text);
+  const id = root === undefined ? undefined : getAttribute(root, "id");
+  const version =
+    root === undefined ? undefined : getAttribute(root, "data-pptv-version");
+  const namespace =
+    root === undefined ? undefined : getAttribute(root, "xmlns");
+  const viewBox =
+    root === undefined
+      ? undefined
+      : parseViewBox(
+          getAttribute(root, "viewBox") ?? getAttribute(root, "viewbox"),
+        );
+
+  if (
+    rootSection?.openTagRange === undefined ||
+    root?.sourceCodeLocation == null ||
+    id === undefined ||
+    !STABLE_ID_PATTERN.test(id) ||
+    version !== "0.1" ||
+    namespace !== "http://www.w3.org/2000/svg" ||
+    viewBox === undefined
+  ) {
+    throw new PptvLoadError(
+      "Standalone PPTV SVG root could not be loaded semantically.",
+      diagnostics,
+    );
+  }
+
+  const mapper = new SourceMapper(scan.source.text, scan.source.bytes);
+  const baseOffset = rootSection.range.charStart;
+  const rootLocation = root.sourceCodeLocation;
+  const rootOpenLocation = rootLocation.startTag ?? rootLocation;
+  const rootOpenTagRange = offsetRange(rootOpenLocation, baseOffset, mapper);
+  const attributeRanges = indexAttributeRanges(root, baseOffset, mapper);
+  const declarations = new Map<string, ParsedIndexedObject>();
+  declarations.set(id, {
+    id,
+    elementRange: rootSection.range,
+    openTagRange: rootOpenTagRange,
+    attributeRanges,
+  });
+  const objectIds: string[] = [];
+  const parsedIndexes: ParsedIndexedObject[] = [];
+  const children: PptvNode[] = [];
+  const scope: SemanticScope = { kind: "diagram", id };
+  for (const child of root.childNodes) {
+    if (!isElement(child) || NON_RENDERED.has(child.tagName)) continue;
+    const parsed = parseObject(
+      child,
+      scope,
+      null,
+      baseOffset,
+      mapper,
+      declarations,
+      diagnostics,
+      objectIds,
+      parsedIndexes,
+    );
+    if (parsed !== undefined) children.push(parsed);
+  }
+
+  const objects = new Map<string, IndexedDiagramObject>();
+  for (const indexed of parsedIndexes) {
+    objects.set(indexed.id, { ...indexed, diagramId: id });
+  }
+  const index: PptvDiagramIndex = {
+    sourceSha256: scan.source.sha256,
+    root: {
+      id,
+      range: rootSection.range,
+      openTagRange: rootOpenTagRange,
+      attributeRanges,
+      objectIds,
+    },
+    objects,
+  };
+
+  return freezeDiagram({
+    version: "0.1",
+    sourceKind: "svg",
+    id,
+    viewBox,
+    children,
+    sourceRange: rootSection.range,
+    source: scan.source,
+    index,
+    diagnostics,
+  });
+}
+
+function parseStandaloneRoot(
+  section: PptvSectionRef,
+  sourceText: string,
+): ElementNode | undefined {
+  const fragment = parseFragment(
+    sourceText.slice(section.range.charStart, section.range.charEnd),
+    {
+      sourceCodeLocationInfo: true,
+      scriptingEnabled: false,
+    },
+  );
+  const roots = fragment.childNodes.filter(isElement);
+  return roots.length === 1 && roots[0]?.tagName === "svg"
+    ? roots[0]
+    : undefined;
+}
+
 export function validateDeck(deck: PptvDeck): Diagnostic[] {
   return [...deck.diagnostics];
 }
 
 export function deckIsValid(deck: PptvDeck): boolean {
   return !hasErrors(deck.diagnostics);
+}
+
+export function validateDiagram(diagram: PptvDiagram): Diagnostic[] {
+  return [...diagram.diagnostics];
+}
+
+export function diagramIsValid(diagram: PptvDiagram): boolean {
+  return !hasErrors(diagram.diagnostics);
 }
 
 function sectionsById(
@@ -279,10 +463,32 @@ function sectionsById(
 
 interface ParsedSlide {
   slide?: PptvSlide;
+  svgRange?: SourceRange;
   svgOpenTagRange?: SourceRange;
+  svgAttributeRanges?: ReadonlyMap<string, SourceRange>;
   objectIds: string[];
   indexedObjects: IndexedObject[];
   diagnostics: Diagnostic[];
+}
+
+interface ParsedIndexedObject {
+  id: string;
+  elementRange: SourceRange;
+  openTagRange: SourceRange;
+  attributeRanges: Map<string, SourceRange>;
+  directTextRange?: SourceRange;
+}
+
+type SemanticScope =
+  | { readonly kind: "slide"; readonly id: string }
+  | { readonly kind: "diagram"; readonly id: string };
+
+function scopeDiagnostic(
+  scope: SemanticScope,
+): Pick<Diagnostic, "slideId" | "diagramId"> {
+  return scope.kind === "slide"
+    ? { slideId: scope.id }
+    : { diagramId: scope.id };
 }
 
 function parseSlideSection(
@@ -292,7 +498,7 @@ function parseSlideSection(
   sectionRange: SourceRange,
   sourceText: string,
   mapper: SourceMapper,
-  declarations: Map<string, IndexedObject>,
+  declarations: Map<string, ParsedIndexedObject>,
 ): ParsedSlide {
   const diagnostics: Diagnostic[] = [];
   const fragmentText = sourceText.slice(
@@ -340,6 +546,7 @@ function parseSlideSection(
     svg.sourceCodeLocation.startTag === undefined
       ? svgRange
       : offsetRange(svg.sourceCodeLocation.startTag, baseOffset, mapper);
+  const svgAttributeRanges = indexAttributeRanges(svg, baseOffset, mapper);
   const rootId = getAttribute(svg, "id");
   if (rootId !== slideIdValue) {
     diagnostics.push({
@@ -365,20 +572,21 @@ function parseSlideSection(
   }
 
   const objectIds: string[] = [];
-  const indexedObjects: IndexedObject[] = [];
+  const parsedIndexes: ParsedIndexedObject[] = [];
   const children: PptvNode[] = [];
+  const scope: SemanticScope = { kind: "slide", id: slideIdValue };
   for (const child of svg.childNodes) {
     if (!isElement(child) || NON_RENDERED.has(child.tagName)) continue;
     const parsed = parseObject(
       child,
-      slideIdValue,
+      scope,
       null,
       baseOffset,
       mapper,
       declarations,
       diagnostics,
       objectIds,
-      indexedObjects,
+      parsedIndexes,
     );
     if (parsed !== undefined) children.push(parsed);
   }
@@ -400,19 +608,31 @@ function parseSlideSection(
     sourceRange: sectionRange,
   };
 
-  return { slide, svgOpenTagRange, objectIds, indexedObjects, diagnostics };
+  const indexedObjects = parsedIndexes.map<IndexedObject>((indexed) => ({
+    ...indexed,
+    slideId: slideIdValue,
+  }));
+  return {
+    slide,
+    svgRange,
+    svgOpenTagRange,
+    svgAttributeRanges,
+    objectIds,
+    indexedObjects,
+    diagnostics,
+  };
 }
 
 function parseObject(
   element: ElementNode,
-  slideId: string,
+  scope: SemanticScope,
   parentId: string | null,
   baseOffset: number,
   mapper: SourceMapper,
-  declarations: Map<string, IndexedObject>,
+  declarations: Map<string, ParsedIndexedObject>,
   diagnostics: Diagnostic[],
   objectIds: string[],
-  indexedObjects: IndexedObject[],
+  indexedObjects: ParsedIndexedObject[],
 ): PptvNode | undefined {
   const location = element.sourceCodeLocation;
   if (location == null) return undefined;
@@ -435,7 +655,7 @@ function parseObject(
       severity: "error",
       message: `Renderable <${element.tagName}> outside an opaque boundary requires id, data-pptv-role, and data-pptv-export.`,
       range: openTagRange,
-      slideId,
+      ...scopeDiagnostic(scope),
     });
     return undefined;
   }
@@ -446,7 +666,7 @@ function parseObject(
       severity: "error",
       message: `Object id "${id}" is not a valid PPTV stable ID.`,
       range: openTagRange,
-      slideId,
+      ...scopeDiagnostic(scope),
       objectId: id,
     });
   }
@@ -456,7 +676,7 @@ function parseObject(
       severity: "error",
       message: `Object "${id}" has unsupported role "${roleValue}".`,
       range: openTagRange,
-      slideId,
+      ...scopeDiagnostic(scope),
       objectId: id,
     });
     return undefined;
@@ -467,7 +687,7 @@ function parseObject(
       severity: "error",
       message: `Object "${id}" has unsupported export mode "${exportValue}".`,
       range: openTagRange,
-      slideId,
+      ...scopeDiagnostic(scope),
       objectId: id,
     });
     return undefined;
@@ -483,7 +703,7 @@ function parseObject(
       severity: "error",
       message: `Native role "${role}" is not compatible with <${element.tagName}>.`,
       range: openTagRange,
-      slideId,
+      ...scopeDiagnostic(scope),
       objectId: id,
     });
   }
@@ -505,9 +725,8 @@ function parseObject(
       ? getDirectTextRange(element, baseOffset, mapper)
       : undefined;
   const text = role === "text" ? readText(element) : undefined;
-  const indexed: IndexedObject = {
+  const indexed: ParsedIndexedObject = {
     id,
-    slideId,
     elementRange: sourceRange,
     openTagRange,
     attributeRanges,
@@ -518,9 +737,9 @@ function parseObject(
     diagnostics.push({
       code: "PPTV-ID-DUPLICATE",
       severity: "error",
-      message: `Object id "${id}" is declared more than once across the deck.`,
+      message: `Stable id "${id}" is declared more than once in the semantic document.`,
       range: openTagRange,
-      slideId,
+      ...scopeDiagnostic(scope),
       objectId: id,
       related: [
         { message: "First declaration is here.", range: prior.openTagRange },
@@ -538,7 +757,7 @@ function parseObject(
       if (!isElement(child) || NON_RENDERED.has(child.tagName)) continue;
       const parsed = parseObject(
         child,
-        slideId,
+        scope,
         id,
         baseOffset,
         mapper,
@@ -560,7 +779,7 @@ function parseObject(
           baseOffset,
           mapper,
         ),
-        slideId,
+        ...scopeDiagnostic(scope),
         objectId: id,
       });
     }
@@ -576,7 +795,7 @@ function parseObject(
             baseOffset,
             mapper,
           ),
-          slideId,
+          ...scopeDiagnostic(scope),
           objectId: id,
         });
       }
@@ -692,9 +911,27 @@ function getAttribute(element: ElementNode, name: string): string | undefined {
 function qualifiedAttributeName(
   attribute: ElementNode["attrs"][number],
 ): string {
-  return attribute.prefix == null
+  return attribute.prefix == null || attribute.prefix === ""
     ? attribute.name
     : `${attribute.prefix}:${attribute.name}`;
+}
+
+function indexAttributeRanges(
+  element: ElementNode,
+  baseOffset: number,
+  mapper: SourceMapper,
+): Map<string, SourceRange> {
+  const ranges = new Map<string, SourceRange>();
+  const location = element.sourceCodeLocation;
+  if (location == null) return ranges;
+  for (const attribute of element.attrs) {
+    const name = qualifiedAttributeName(attribute);
+    const attributeLocation = findAttributeLocation(location, name);
+    if (attributeLocation !== undefined) {
+      ranges.set(name, offsetRange(attributeLocation, baseOffset, mapper));
+    }
+  }
+  return ranges;
 }
 
 function findAttributeLocation(
@@ -758,11 +995,19 @@ function offsetRange(
 }
 
 function freezeDeck(deck: PptvDeck): PptvDeck {
+  const indexedSlides = new Map<string, IndexedSlide>();
+  for (const [id, slide] of deck.index.slides) {
+    indexedSlides.set(id, {
+      ...slide,
+      attributeRanges: immutableMap(slide.attributeRanges),
+      objectIds: [...slide.objectIds],
+    });
+  }
   const index: PptvSourceIndex = {
     ...deck.index,
     manifestFields: immutableMap(deck.index.manifestFields),
     manifestSlideEntries: immutableMap(deck.index.manifestSlideEntries),
-    slides: immutableMap(deck.index.slides),
+    slides: immutableMap(indexedSlides),
     objects: immutableMap(deck.index.objects),
     themes: immutableMap(deck.index.themes),
     libraries: immutableMap(deck.index.libraries),
@@ -781,6 +1026,32 @@ function freezeDeck(deck: PptvDeck): PptvDeck {
       slideIds: [...deck.materialization.slideIds],
     },
     diagnostics: [...deck.diagnostics],
+  });
+}
+
+function freezeDiagram(diagram: PptvDiagram): PptvDiagram {
+  const indexedObjects = new Map<string, IndexedDiagramObject>();
+  for (const [id, object] of diagram.index.objects) {
+    indexedObjects.set(id, {
+      ...object,
+      attributeRanges: immutableMap(object.attributeRanges),
+    });
+  }
+  const index: PptvDiagramIndex = {
+    ...diagram.index,
+    root: deepFreeze({
+      ...diagram.index.root,
+      attributeRanges: immutableMap(diagram.index.root.attributeRanges),
+      objectIds: [...diagram.index.root.objectIds],
+    }),
+    objects: immutableMap(indexedObjects),
+  };
+  return deepFreeze({
+    ...diagram,
+    viewBox: [...diagram.viewBox],
+    children: [...diagram.children],
+    index: deepFreeze(index),
+    diagnostics: [...diagram.diagnostics],
   });
 }
 

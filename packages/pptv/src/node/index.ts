@@ -1,13 +1,17 @@
 /**
  * Explicit Node-only PPTV filesystem and wrapper boundaries.
  *
- * CONTRACT:C4-PPTV-SOURCE.1.0
- * CONTRACT:C5-PPTV-PATCH.1.0
+ * CONTRACT:C4-PPTV-SOURCE.1.1
+ * CONTRACT:C5-PPTV-PATCH.1.1
  * CONTRACT:C7-PPTX-CANARY.1.1
- * CONTRACT:C8-PPTV-TEXT-FIT.1.0
+ * CONTRACT:C8-PPTV-TEXT-FIT.1.1
  */
 
-export { createEditorPack, type EditorPackResult } from "./editor-pack.js";
+export {
+  createEditorPack,
+  type EditorPackOptions,
+  type EditorPackResult,
+} from "./editor-pack.js";
 export {
   createFontkitTextMeasurer,
   parseFontMap,
@@ -24,7 +28,12 @@ export {
   type FontkitTextMeasureRequest,
   type FontkitUnverifiedText,
 } from "./fontkit-text-measurer.js";
-export { readJsonPath, readPptvPath, writeFileAtomic } from "./io.js";
+export {
+  readJsonPath,
+  readPptvPath,
+  writeFileAtomic,
+  type AtomicWriteOptions,
+} from "./io.js";
 export {
   compilePptxCanary,
   createPptxCanaryGraph,

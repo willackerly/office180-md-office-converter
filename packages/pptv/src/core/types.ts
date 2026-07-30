@@ -1,8 +1,8 @@
 /**
  * Public PPTV core types.
  *
- * CONTRACT:C4-PPTV-SOURCE.1.0
- * CONTRACT:C5-PPTV-PATCH.1.0
+ * CONTRACT:C4-PPTV-SOURCE.1.1
+ * CONTRACT:C5-PPTV-PATCH.1.1
  */
 
 export type PptvInput =
@@ -38,6 +38,7 @@ export interface Diagnostic {
   message: string;
   range?: SourceRange;
   slideId?: string;
+  diagramId?: string;
   objectId?: string;
   related?: DiagnosticRelated[];
 }
@@ -134,14 +135,27 @@ export interface IndexedObject {
   slideId: string;
   elementRange: SourceRange;
   openTagRange: SourceRange;
-  attributeRanges: Map<string, SourceRange>;
+  attributeRanges: ReadonlyMap<string, SourceRange>;
+  directTextRange?: SourceRange;
+}
+
+export interface IndexedDiagramObject {
+  id: string;
+  diagramId: string;
+  elementRange: SourceRange;
+  openTagRange: SourceRange;
+  attributeRanges: ReadonlyMap<string, SourceRange>;
   directTextRange?: SourceRange;
 }
 
 export interface IndexedSlide {
   id: string;
+  /** Exact enclosing template section range (retained for compatibility). */
   range: SourceRange;
+  /** Exact root SVG element range inside the template. */
+  svgRange: SourceRange;
   openTagRange: SourceRange;
+  attributeRanges: ReadonlyMap<string, SourceRange>;
   objectIds: string[];
 }
 
@@ -173,6 +187,20 @@ export interface PptvSourceIndex {
   readonly themes: ReadonlyMap<string, IndexedTheme>;
   readonly libraries: ReadonlyMap<string, IndexedLibrary>;
   readonly runtimes: readonly PptvSectionRef[];
+}
+
+export interface IndexedDiagram {
+  id: string;
+  range: SourceRange;
+  openTagRange: SourceRange;
+  attributeRanges: ReadonlyMap<string, SourceRange>;
+  objectIds: string[];
+}
+
+export interface PptvDiagramIndex {
+  readonly sourceSha256: string;
+  readonly root: IndexedDiagram;
+  readonly objects: ReadonlyMap<string, IndexedDiagramObject>;
 }
 
 export interface PptvNode {
@@ -221,7 +249,7 @@ export interface PptvLibrary {
 
 export interface PptvDeck {
   readonly version: string;
-  readonly sourceKind: PptvSourceKind;
+  readonly sourceKind: "html";
   readonly title?: string;
   readonly activeTheme?: string;
   readonly slideOrder: readonly string[];
@@ -241,6 +269,27 @@ export interface PptvDeck {
 }
 
 export interface LoadDeckOptions extends ScanOptions {
+  slides?: string[];
+}
+
+export interface PptvDiagram {
+  readonly version: "0.1";
+  readonly sourceKind: "svg";
+  readonly id: string;
+  readonly viewBox: readonly [number, number, number, number];
+  readonly children: readonly PptvNode[];
+  readonly sourceRange: SourceRange;
+  readonly source: PptvSourceDocument;
+  readonly index: PptvDiagramIndex;
+  readonly diagnostics: readonly Diagnostic[];
+}
+
+export type PptvDocument = PptvDeck | PptvDiagram;
+
+export type LoadDiagramOptions = ScanOptions;
+
+export interface LoadPptvDocumentOptions extends ScanOptions {
+  /** Applied only when the recognized document is an HTML deck. */
   slides?: string[];
 }
 
@@ -274,6 +323,27 @@ export interface DeckInventory {
   slides: DeckInventorySlide[];
 }
 
+export interface DiagramOutline {
+  schema: "pptv-diagram-outline/0.1";
+  version: string;
+  diagramId: string;
+  viewBox: [number, number, number, number];
+}
+
+export interface DiagramInventoryObject {
+  id: string;
+  role: PptvRole;
+  text?: string;
+  children: DiagramInventoryObject[];
+}
+
+export interface DiagramInventory {
+  schema: "pptv-diagram-inventory/0.1";
+  diagramId: string;
+  viewBox: [number, number, number, number];
+  objects: DiagramInventoryObject[];
+}
+
 export type ProjectionView = "semantic" | "editing";
 
 export interface ObjectProjection {
@@ -297,6 +367,25 @@ export interface SlideProjection {
   objects: ObjectProjection[];
 }
 
+export interface DiagramProjection {
+  schema: "pptv-diagram/0.1";
+  diagramId: string;
+  viewBox: [number, number, number, number];
+  objects: ObjectProjection[];
+}
+
+export interface DiagramObjectProjection {
+  schema: "pptv-diagram-object/0.1";
+  diagramId: string;
+  object: ObjectProjection;
+}
+
+export interface DiagramQueryProjection {
+  schema: "pptv-diagram-query/0.1";
+  diagramId: string;
+  objects: ObjectProjection[];
+}
+
 export interface TextProjectionEntry {
   slideId: string;
   objectId: string;
@@ -306,6 +395,18 @@ export interface TextProjectionEntry {
 export interface TextProjection {
   schema: "pptv-text/0.1";
   entries: TextProjectionEntry[];
+}
+
+export interface DiagramTextProjectionEntry {
+  diagramId: string;
+  objectId: string;
+  text: string;
+}
+
+export interface DiagramTextProjection {
+  schema: "pptv-diagram-text/0.1";
+  diagramId: string;
+  entries: DiagramTextProjectionEntry[];
 }
 
 export interface PptvQuery {
@@ -361,6 +462,7 @@ export interface PatchResult {
   sourceText?: string;
   sourceSha256?: string;
   deck?: PptvDeck;
+  diagram?: PptvDiagram;
   affectedIds: string[];
   edits: AppliedSourceEdit[];
   diagnostics: Diagnostic[];

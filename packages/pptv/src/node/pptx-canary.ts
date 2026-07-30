@@ -1,7 +1,7 @@
 /**
  * Deterministic fresh-PPTX compiler canary for the strict C6 primitive subset.
  *
- * CONTRACT:C6-PPTV-RESOLVED.1.0
+ * CONTRACT:C6-PPTV-RESOLVED.1.1
  * CONTRACT:C7-PPTX-CANARY.1.1
  */
 

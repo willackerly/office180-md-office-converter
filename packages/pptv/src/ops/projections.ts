@@ -1,7 +1,7 @@
 /**
  * JSON-safe, ordered PPTV projections and queries.
  *
- * CONTRACT:C4-PPTV-SOURCE.1.0
+ * CONTRACT:C4-PPTV-SOURCE.1.1
  */
 
 import { slideId } from "../core/manifest.js";
@@ -9,15 +9,25 @@ import type {
   DeckInventory,
   DeckInventoryObject,
   DeckOutline,
+  DiagramInventory,
+  DiagramInventoryObject,
+  DiagramObjectProjection,
+  DiagramOutline,
+  DiagramProjection,
+  DiagramQueryProjection,
+  DiagramTextProjection,
   ObjectProjection,
   ProjectionView,
   PptvDeck,
+  PptvDiagram,
   PptvManifest,
   PptvNode,
   PptvQuery,
   SlideProjection,
   TextProjection,
 } from "../core/types.js";
+
+export type PptvDiagramQuery = Omit<PptvQuery, "slideId">;
 
 export function outlineManifest(manifest: PptvManifest): DeckOutline {
   return {
@@ -39,6 +49,15 @@ export function outlineDeck(deck: PptvDeck): DeckOutline {
   return outlineManifest(deck.manifest);
 }
 
+export function outlineDiagram(diagram: PptvDiagram): DiagramOutline {
+  return {
+    schema: "pptv-diagram-outline/0.1",
+    version: diagram.version,
+    diagramId: diagram.id,
+    viewBox: [...diagram.viewBox],
+  };
+}
+
 export function inventoryDeck(deck: PptvDeck): DeckInventory {
   return {
     schema: "pptv-inventory/0.1",
@@ -54,6 +73,15 @@ export function inventoryDeck(deck: PptvDeck): DeckInventory {
         },
       ];
     }),
+  };
+}
+
+export function inventoryDiagram(diagram: PptvDiagram): DiagramInventory {
+  return {
+    schema: "pptv-diagram-inventory/0.1",
+    diagramId: diagram.id,
+    viewBox: [...diagram.viewBox],
+    objects: diagram.children.map(inventoryDiagramObject),
   };
 }
 
@@ -76,6 +104,18 @@ export function getSlide(
   };
 }
 
+export function getDiagram(
+  diagram: PptvDiagram,
+  view: ProjectionView = "semantic",
+): DiagramProjection {
+  return {
+    schema: "pptv-diagram/0.1",
+    diagramId: diagram.id,
+    viewBox: [...diagram.viewBox],
+    objects: diagram.children.map((node) => projectObject(node, view)),
+  };
+}
+
 export function getObject(
   deck: PptvDeck,
   id: string,
@@ -89,6 +129,21 @@ export function getObject(
     if (found !== undefined) return projectObject(found, view);
   }
   return undefined;
+}
+
+export function getDiagramObject(
+  diagram: PptvDiagram,
+  id: string,
+  view: ProjectionView = "semantic",
+): DiagramObjectProjection | undefined {
+  if (ambiguousDiagramObjectIds(diagram).has(id)) return undefined;
+  const found = findNode(diagram.children, id);
+  if (found === undefined) return undefined;
+  return {
+    schema: "pptv-diagram-object/0.1",
+    diagramId: diagram.id,
+    object: projectObject(found, view),
+  };
 }
 
 export function queryObjects(
@@ -144,9 +199,76 @@ export function queryObjects(
   return result;
 }
 
+export function queryDiagramObjects(
+  diagram: PptvDiagram,
+  query: PptvDiagramQuery,
+  view: ProjectionView = "semantic",
+): DiagramQueryProjection {
+  const result: ObjectProjection[] = [];
+  const idSet = query.ids === undefined ? undefined : new Set(query.ids);
+  const ambiguousIds = ambiguousDiagramObjectIds(diagram);
+  if (
+    query.descendantOf !== undefined &&
+    ambiguousIds.has(query.descendantOf)
+  ) {
+    return {
+      schema: "pptv-diagram-query/0.1",
+      diagramId: diagram.id,
+      objects: result,
+    };
+  }
+  const nodesById =
+    query.descendantOf === undefined ? undefined : indexNodes(diagram.children);
+  visitNodes(diagram.children, (node) => {
+    if (ambiguousIds.has(node.id)) return;
+    if (idSet !== undefined && !idSet.has(node.id)) return;
+    if (query.role !== undefined && node.role !== query.role) return;
+    if (
+      query.className !== undefined &&
+      !node.classes.includes(query.className)
+    )
+      return;
+    if (
+      query.elementName !== undefined &&
+      node.elementName !== query.elementName
+    )
+      return;
+    if (
+      query.textContains !== undefined &&
+      !node.text?.toLowerCase().includes(query.textContains.toLowerCase())
+    ) {
+      return;
+    }
+    if (
+      query.descendantOf !== undefined &&
+      (nodesById === undefined ||
+        !isDescendantOf(node, query.descendantOf, nodesById))
+    ) {
+      return;
+    }
+    result.push(projectObject(node, view));
+  });
+  return {
+    schema: "pptv-diagram-query/0.1",
+    diagramId: diagram.id,
+    objects: result,
+  };
+}
+
 function ambiguousObjectIds(deck: PptvDeck): Set<string> {
   return new Set(
     deck.diagnostics.flatMap((diagnostic) =>
+      diagnostic.code === "PPTV-ID-DUPLICATE" &&
+      diagnostic.objectId !== undefined
+        ? [diagnostic.objectId]
+        : [],
+    ),
+  );
+}
+
+function ambiguousDiagramObjectIds(diagram: PptvDiagram): Set<string> {
+  return new Set(
+    diagram.diagnostics.flatMap((diagnostic) =>
       diagnostic.code === "PPTV-ID-DUPLICATE" &&
       diagnostic.objectId !== undefined
         ? [diagnostic.objectId]
@@ -179,6 +301,26 @@ export function extractText(
   return { schema: "pptv-text/0.1", entries };
 }
 
+export function extractDiagramText(
+  diagram: PptvDiagram,
+): DiagramTextProjection {
+  const entries: DiagramTextProjection["entries"] = [];
+  visitNodes(diagram.children, (node) => {
+    if (node.role === "text" && node.text !== undefined) {
+      entries.push({
+        diagramId: diagram.id,
+        objectId: node.id,
+        text: node.text,
+      });
+    }
+  });
+  return {
+    schema: "pptv-diagram-text/0.1",
+    diagramId: diagram.id,
+    entries,
+  };
+}
+
 function projectObject(node: PptvNode, view: ProjectionView): ObjectProjection {
   return {
     id: node.id,
@@ -203,6 +345,15 @@ function inventoryObject(node: PptvNode): DeckInventoryObject {
     role: node.role,
     ...(node.text === undefined ? {} : { text: node.text }),
     children: node.children.map(inventoryObject),
+  };
+}
+
+function inventoryDiagramObject(node: PptvNode): DiagramInventoryObject {
+  return {
+    id: node.id,
+    role: node.role,
+    ...(node.text === undefined ? {} : { text: node.text }),
+    children: node.children.map(inventoryDiagramObject),
   };
 }
 
