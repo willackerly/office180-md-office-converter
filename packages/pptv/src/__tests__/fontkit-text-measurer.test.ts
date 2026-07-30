@@ -1,4 +1,4 @@
-// Tests: CONTRACT:C8-PPTV-TEXT-FIT.1.0
+// Tests: CONTRACT:C8-PPTV-TEXT-FIT.1.1
 
 import { createHash } from "node:crypto";
 import { mkdtemp, rm, truncate, unlink, writeFile } from "node:fs/promises";
@@ -150,6 +150,42 @@ describe("fontkit text measurer", () => {
         },
       });
       expect(font.layout).not.toHaveBeenCalled();
+    });
+  });
+
+  it("uses the same exact mapped face for standalone-diagram requests", async () => {
+    const font = fakeFont({ advances: [500] });
+    fontkitMocks.create.mockReturnValue(font);
+
+    await withFontFile(Buffer.from("diagram face"), async (path) => {
+      const measurer = await createFontkitTextMeasurer([
+        {
+          family: "Demo Sans",
+          weight: 400,
+          style: "normal",
+          path,
+        },
+      ]);
+
+      const result = measurer({
+        diagramId: "system-overview",
+        objectId: "system-overview.title",
+        lineIndex: 0,
+        text: "A",
+        font: {
+          family: "Demo Sans",
+          size: 20,
+          weight: 400,
+          style: "normal",
+        },
+      });
+
+      expect(result).toMatchObject({
+        kind: "measured",
+        width: 10,
+        method: "fontkit/2.0.4",
+      });
+      expect(font.layout).toHaveBeenCalledWith("A");
     });
   });
 

@@ -59,8 +59,13 @@ export {
   type PptvResolvedTextLine,
 } from "./resolved.js";
 export {
+  preflightDiagramTextFit,
   preflightTextFit,
   textLineAvailableWidth,
+  type PptvDiagramTextFitLine,
+  type PptvDiagramTextFitResult,
+  type PptvDiagramTextMeasurer,
+  type PptvDiagramTextMeasureRequest,
   type PptvMeasuredText,
   type PptvTextFitLine,
   type PptvTextFitOptions,

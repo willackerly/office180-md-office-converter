@@ -1,15 +1,24 @@
-// Tests: CONTRACT:C8-PPTV-TEXT-FIT.1.0
+// Tests: CONTRACT:C8-PPTV-TEXT-FIT.1.1
+
+import { readFile } from "node:fs/promises";
 
 import { describe, expect, it, vi } from "vitest";
 
-import { loadDeck } from "../core/deck.js";
+import { loadDeck, loadDiagram } from "../core/deck.js";
 import {
+  preflightDiagramTextFit,
   preflightTextFit,
   textLineAvailableWidth,
+  type PptvDiagramTextMeasurer,
   type PptvTextMeasurer,
   type PptvTextMeasurement,
 } from "../core/text-fit.js";
-import { resolvePptvDeck, type PptvResolvedDeck } from "../core/resolved.js";
+import {
+  resolvePptvDeck,
+  resolvePptvDiagram,
+  type PptvResolvedDeck,
+  type PptvResolvedDiagram,
+} from "../core/resolved.js";
 import { readMinimalDeck } from "./test-helpers.js";
 
 async function resolvedDeck(
@@ -22,6 +31,23 @@ async function resolvedDeck(
   const resolved = resolvePptvDeck(deck);
   expect(resolved.diagnostics).toEqual([]);
   if (resolved.model === undefined) throw new Error("Expected resolved deck");
+  return resolved.model;
+}
+
+async function resolvedDiagram(): Promise<PptvResolvedDiagram> {
+  const source = await readFile(
+    new URL("../../../../examples/minimal-diagram.pptv.svg", import.meta.url),
+    "utf8",
+  );
+  const diagram = await loadDiagram({
+    kind: "text",
+    text: source,
+    name: "minimal-diagram.pptv.svg",
+  });
+  const resolved = resolvePptvDiagram(diagram);
+  expect(resolved.diagnostics).toEqual([]);
+  if (resolved.model === undefined)
+    throw new Error("Expected resolved diagram");
   return resolved.model;
 }
 
@@ -311,5 +337,69 @@ describe("C8 text-fit preflight", () => {
       method: "measurer-error",
       reason: "hostile result getter",
     });
+  });
+
+  it("emits immutable diagram-specific evidence in root DOM order without slide state", async () => {
+    const diagram = await resolvedDiagram();
+    const before = JSON.stringify(diagram);
+    const requests: unknown[] = [];
+    const widths = new Map([
+      ["system-overview.title", 100],
+      ["system-overview.client.label", 250],
+      ["system-overview.service.label", 300],
+    ]);
+    const measurer: PptvDiagramTextMeasurer = (request) => {
+      requests.push(request);
+      return {
+        kind: "measured",
+        width: widths.get(request.objectId) ?? 0,
+        method: "fixture",
+        fontIdentity: "sha256:diagram-fixture",
+      };
+    };
+
+    const result = preflightDiagramTextFit(diagram, measurer);
+
+    expect(result).toMatchObject({
+      schema: "pptv-diagram-text-fit/0.1",
+      sourceSha256: diagram.sourceSha256,
+      diagramId: "system-overview",
+      nearLimit: 0.9,
+      summary: {
+        total: 3,
+        clear: 1,
+        nearLimit: 1,
+        overflow: 1,
+        unverified: 0,
+      },
+    });
+    expect(
+      result.lines.map(({ diagramId, objectId, status, availableWidth }) => [
+        diagramId,
+        objectId,
+        status,
+        availableWidth,
+      ]),
+    ).toEqual([
+      ["system-overview", "system-overview.title", "clear", 1080],
+      ["system-overview", "system-overview.client.label", "near-limit", 260],
+      ["system-overview", "system-overview.service.label", "overflow", 260],
+    ]);
+    expect(requests).toHaveLength(3);
+    for (const request of requests) {
+      expect(request).toHaveProperty("diagramId", "system-overview");
+      expect(request).not.toHaveProperty("slideId");
+      expect(Object.isFrozen(request)).toBe(true);
+    }
+    const serialized = JSON.stringify(result);
+    expect(serialized).not.toContain("slideId");
+    expect(serialized).not.toContain("activeTheme");
+    expect(serialized).not.toContain("Emu");
+    expect(JSON.stringify(diagram)).toBe(before);
+    expect(JSON.parse(serialized)).toEqual(result);
+    expect(Object.isFrozen(result)).toBe(true);
+    expect(Object.isFrozen(result.summary)).toBe(true);
+    expect(Object.isFrozen(result.lines)).toBe(true);
+    expect(Object.isFrozen(result.lines[0])).toBe(true);
   });
 });

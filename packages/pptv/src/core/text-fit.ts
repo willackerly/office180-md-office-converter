@@ -1,11 +1,14 @@
 /**
  * Pure non-mutating text-fit preflight for explicit PPTV hard lines.
  *
- * CONTRACT:C8-PPTV-TEXT-FIT.1.0
+ * CONTRACT:C8-PPTV-TEXT-FIT.1.1
  */
 
 import type {
   PptvResolvedDeck,
+  PptvResolvedDiagram,
+  PptvResolvedDiagramObject,
+  PptvResolvedDiagramText,
   PptvResolvedObject,
   PptvResolvedText,
   PptvResolvedTextLine,
@@ -23,6 +26,14 @@ export interface PptvTextFont {
 
 export interface PptvTextMeasureRequest {
   readonly slideId: string;
+  readonly objectId: string;
+  readonly lineIndex: number;
+  readonly text: string;
+  readonly font: PptvTextFont;
+}
+
+export interface PptvDiagramTextMeasureRequest {
+  readonly diagramId: string;
   readonly objectId: string;
   readonly lineIndex: number;
   readonly text: string;
@@ -51,6 +62,10 @@ export type PptvTextMeasurer = (
   request: PptvTextMeasureRequest,
 ) => PptvTextMeasurement;
 
+export type PptvDiagramTextMeasurer = (
+  request: PptvDiagramTextMeasureRequest,
+) => PptvTextMeasurement;
+
 export interface PptvTextFitOptions {
   /** Utilization at or above this value warns before an actual overrun. */
   readonly nearLimit?: number;
@@ -58,6 +73,27 @@ export interface PptvTextFitOptions {
 
 export interface PptvTextFitLine {
   readonly slideId: string;
+  readonly objectId: string;
+  readonly lineIndex: number;
+  readonly text: string;
+  readonly anchor: "start" | "middle" | "end";
+  readonly anchorX: number;
+  readonly frameX: number;
+  readonly frameWidth: number;
+  readonly availableWidth: number;
+  readonly font: PptvTextFont;
+  readonly status: PptvTextFitStatus;
+  readonly measuredWidth: number | null;
+  readonly utilization: number | null;
+  readonly overrun: number | null;
+  readonly method: string;
+  readonly fontIdentity?: string;
+  readonly missingCodepoints: readonly number[];
+  readonly reason?: string;
+}
+
+export interface PptvDiagramTextFitLine {
+  readonly diagramId: string;
   readonly objectId: string;
   readonly lineIndex: number;
   readonly text: string;
@@ -92,6 +128,44 @@ export interface PptvTextFitResult {
   readonly summary: PptvTextFitSummary;
   readonly lines: readonly PptvTextFitLine[];
 }
+
+export interface PptvDiagramTextFitResult {
+  readonly schema: "pptv-diagram-text-fit/0.1";
+  readonly sourceSha256: string;
+  readonly diagramId: string;
+  readonly nearLimit: number;
+  readonly summary: PptvTextFitSummary;
+  readonly lines: readonly PptvDiagramTextFitLine[];
+}
+
+interface TextMeasureRequestBase {
+  readonly objectId: string;
+  readonly lineIndex: number;
+  readonly text: string;
+  readonly font: PptvTextFont;
+}
+
+interface TextFitLineBase extends TextMeasureRequestBase {
+  readonly anchor: "start" | "middle" | "end";
+  readonly anchorX: number;
+  readonly frameX: number;
+  readonly frameWidth: number;
+  readonly availableWidth: number;
+  readonly status: PptvTextFitStatus;
+  readonly measuredWidth: number | null;
+  readonly utilization: number | null;
+  readonly overrun: number | null;
+  readonly method: string;
+  readonly fontIdentity?: string;
+  readonly missingCodepoints: readonly number[];
+  readonly reason?: string;
+}
+
+type ResolvedTextLike = Pick<
+  PptvResolvedText,
+  "id" | "anchor" | "frame" | "lines" | "style"
+>;
+type MeasureResolvedLine = (font: PptvTextFont) => PptvTextMeasurement;
 
 const DEFAULT_NEAR_LIMIT = 0.9;
 const INVALID_MEASURER_METHOD = "invalid-measurer-result";
@@ -128,23 +202,48 @@ export function preflightTextFit(
   for (const slide of deck.slides) {
     visitTextObjects(slide.objects, (object) => {
       for (const [lineIndex, line] of object.lines.entries()) {
-        lines.push(preflightLine(object, line, lineIndex, nearLimit, measurer));
+        lines.push(
+          preflightDeckLine(object, line, lineIndex, nearLimit, measurer),
+        );
       }
     });
   }
 
-  const summary: PptvTextFitSummary = {
-    total: lines.length,
-    clear: lines.filter(({ status }) => status === "clear").length,
-    nearLimit: lines.filter(({ status }) => status === "near-limit").length,
-    overflow: lines.filter(({ status }) => status === "overflow").length,
-    unverified: lines.filter(({ status }) => status === "unverified").length,
-  };
+  const summary = summarizeLines(lines);
   return Object.freeze({
     schema: "pptv-text-fit/0.1",
     sourceSha256: deck.sourceSha256,
     nearLimit,
-    summary: Object.freeze(summary),
+    summary,
+    lines: Object.freeze(lines),
+  });
+}
+
+/**
+ * Measure every standalone-diagram hard line without fabricating slide,
+ * manifest, theme, or physical-canvas state.
+ */
+export function preflightDiagramTextFit(
+  diagram: PptvResolvedDiagram,
+  measurer: PptvDiagramTextMeasurer,
+  options: PptvTextFitOptions = {},
+): PptvDiagramTextFitResult {
+  const nearLimit = validatePreflightInputs(measurer, options);
+  const lines: PptvDiagramTextFitLine[] = [];
+  visitDiagramTextObjects(diagram.objects, (object) => {
+    for (const [lineIndex, line] of object.lines.entries()) {
+      lines.push(
+        preflightDiagramLine(object, line, lineIndex, nearLimit, measurer),
+      );
+    }
+  });
+
+  return Object.freeze({
+    schema: "pptv-diagram-text-fit/0.1",
+    sourceSha256: diagram.sourceSha256,
+    diagramId: diagram.diagramId,
+    nearLimit,
+    summary: summarizeLines(lines),
     lines: Object.freeze(lines),
   });
 }
@@ -160,17 +259,68 @@ export function textLineAvailableWidth(
   return 2 * Math.min(line.x - left, right - line.x);
 }
 
-function preflightLine(
+function preflightDeckLine(
   object: PptvResolvedText,
   line: PptvResolvedTextLine,
   lineIndex: number,
   nearLimit: number,
   measurer: PptvTextMeasurer,
 ): PptvTextFitLine {
+  const evidence = preflightLineEvidence(
+    object,
+    line,
+    lineIndex,
+    nearLimit,
+    (font) =>
+      measurer(
+        Object.freeze({
+          slideId: object.slideId,
+          objectId: object.id,
+          lineIndex,
+          text: line.text,
+          font,
+        }),
+      ),
+  );
+  return Object.freeze({ slideId: object.slideId, ...evidence });
+}
+
+function preflightDiagramLine(
+  object: PptvResolvedDiagramText,
+  line: PptvResolvedTextLine,
+  lineIndex: number,
+  nearLimit: number,
+  measurer: PptvDiagramTextMeasurer,
+): PptvDiagramTextFitLine {
+  const evidence = preflightLineEvidence(
+    object,
+    line,
+    lineIndex,
+    nearLimit,
+    (font) =>
+      measurer(
+        Object.freeze({
+          diagramId: object.diagramId,
+          objectId: object.id,
+          lineIndex,
+          text: line.text,
+          font,
+        }),
+      ),
+  );
+  return Object.freeze({ diagramId: object.diagramId, ...evidence });
+}
+
+function preflightLineEvidence(
+  object: ResolvedTextLike,
+  line: PptvResolvedTextLine,
+  lineIndex: number,
+  nearLimit: number,
+  measure: MeasureResolvedLine,
+): TextFitLineBase {
   const family = object.style.fontFamily;
   const size = object.style.fontSize;
   const base = {
-    slideId: object.slideId,
     objectId: object.id,
     lineIndex,
     text: line.text,
@@ -213,16 +363,9 @@ function preflightLine(
     weight: object.style.fontWeight,
     style: object.style.fontStyle,
   });
-  const request: PptvTextMeasureRequest = Object.freeze({
-    slideId: object.slideId,
-    objectId: object.id,
-    lineIndex,
-    text: line.text,
-    font,
-  });
   let normalized: PptvTextMeasurement;
   try {
-    normalized = normalizeMeasurement(measurer(request));
+    normalized = normalizeMeasurement(measure(font));
   } catch (error) {
     return unverifiedLine(
       base,
@@ -348,7 +491,7 @@ function invalidMeasurement(reason: string): PptvUnverifiedText {
 
 function unverifiedLine(
   base: Omit<
-    PptvTextFitLine,
+    TextFitLineBase,
     | "font"
     | "status"
     | "measuredWidth"
@@ -362,7 +505,7 @@ function unverifiedLine(
   reason: string,
   fontIdentity?: string,
   missingCodepoints: readonly number[] = [],
-): PptvTextFitLine {
+): TextFitLineBase {
   return freezeLine({
     ...base,
     font,
@@ -377,7 +520,7 @@ function unverifiedLine(
   });
 }
 
-function freezeLine(line: PptvTextFitLine): PptvTextFitLine {
+function freezeLine(line: TextFitLineBase): TextFitLineBase {
   return Object.freeze({
     ...line,
     font: Object.freeze({ ...line.font }),
@@ -419,4 +562,48 @@ function visitTextObjects(
     if (object.kind === "text") visit(object);
     else if (object.kind === "group") visitTextObjects(object.children, visit);
   }
+}
+
+function visitDiagramTextObjects(
+  objects: readonly PptvResolvedDiagramObject[],
+  visit: (object: PptvResolvedDiagramText) => void,
+): void {
+  for (const object of objects) {
+    if (object.kind === "text") visit(object);
+    else if (object.kind === "group")
+      visitDiagramTextObjects(object.children, visit);
+  }
+}
+
+function summarizeLines(
+  lines: readonly Pick<PptvTextFitLine, "status">[],
+): PptvTextFitSummary {
+  return Object.freeze({
+    total: lines.length,
+    clear: lines.filter(({ status }) => status === "clear").length,
+    nearLimit: lines.filter(({ status }) => status === "near-limit").length,
+    overflow: lines.filter(({ status }) => status === "overflow").length,
+    unverified: lines.filter(({ status }) => status === "unverified").length,
+  });
+}
+
+function validatePreflightInputs(
+  measurer: unknown,
+  options: PptvTextFitOptions,
+): number {
+  const nearLimit = options.nearLimit ?? DEFAULT_NEAR_LIMIT;
+  if (
+    typeof nearLimit !== "number" ||
+    !Number.isFinite(nearLimit) ||
+    nearLimit <= 0 ||
+    nearLimit >= 1
+  ) {
+    throw new RangeError(
+      "nearLimit must be a finite number greater than 0 and less than 1.",
+    );
+  }
+  if (typeof measurer !== "function") {
+    throw new TypeError("text-fit preflight requires a callable measurer.");
+  }
+  return nearLimit;
 }

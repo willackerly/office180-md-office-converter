@@ -1,13 +1,16 @@
-// Tests: CONTRACT:C4-PPTV-SOURCE.1.0, CONTRACT:C6-PPTV-RESOLVED.1.0,
-// CONTRACT:C8-PPTV-TEXT-FIT.1.0
+// Tests: CONTRACT:C4-PPTV-SOURCE.1.1, CONTRACT:C6-PPTV-RESOLVED.1.1,
+// CONTRACT:C8-PPTV-TEXT-FIT.1.1
 
-import { mkdtemp, rm, writeFile } from "node:fs/promises";
+import { mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import type { PptvTextMeasurer } from "../core/text-fit.js";
+import type {
+  PptvDiagramTextMeasurer,
+  PptvTextMeasurer,
+} from "../core/text-fit.js";
 
 const adapterMocks = vi.hoisted(() => ({
   parseFontMap: vi.fn(),
@@ -44,6 +47,30 @@ async function withFixture(
   const fontMapPath = join(directory, "fonts.json");
   try {
     await writeFile(sourcePath, await readMinimalDeck());
+    await writeFile(fontMapPath, '{"schema":"fixture"}');
+    await run(sourcePath, fontMapPath);
+  } finally {
+    await rm(directory, { recursive: true, force: true });
+  }
+}
+
+async function withDiagramFixture(
+  run: (sourcePath: string, fontMapPath: string) => Promise<void>,
+): Promise<void> {
+  const directory = await mkdtemp(join(tmpdir(), "pptv-diagram-fit-cli-"));
+  const sourcePath = join(directory, "diagram.pptv.svg");
+  const fontMapPath = join(directory, "fonts.json");
+  try {
+    await writeFile(
+      sourcePath,
+      await readFile(
+        new URL(
+          "../../../../examples/minimal-diagram.pptv.svg",
+          import.meta.url,
+        ),
+        "utf8",
+      ),
+    );
     await writeFile(fontMapPath, '{"schema":"fixture"}');
     await run(sourcePath, fontMapPath);
   } finally {
@@ -210,6 +237,58 @@ describe("PPTV text-fit CLI", () => {
       expect(environmentExitCode).toBe(3);
       expect(environmentFailure.stderr.join("")).toContain(
         "PPTV environment failure: font file could not be loaded",
+      );
+    });
+  });
+
+  it("emits diagram-specific JSON and text evidence with the same exit policy", async () => {
+    const measurer: PptvDiagramTextMeasurer = (request) => ({
+      kind: "measured",
+      width: request.objectId === "system-overview.service.label" ? 300 : 10,
+      method: "fixture",
+      fontIdentity: "fixture",
+    });
+    adapterMocks.createFontkitTextMeasurer.mockResolvedValue(measurer);
+
+    await withDiagramFixture(async (sourcePath, fontMapPath) => {
+      const jsonCapture = captureEnvironment();
+      expect(
+        await runCli(
+          [
+            "text-fit",
+            sourcePath,
+            "--font-map",
+            fontMapPath,
+            "--format",
+            "json",
+          ],
+          jsonCapture.environment,
+        ),
+      ).toBe(1);
+      const result = JSON.parse(jsonCapture.stdout.join("")) as {
+        lines: Array<Record<string, unknown>>;
+      };
+      expect(result).toMatchObject({
+        schema: "pptv-diagram-text-fit/0.1",
+        diagramId: "system-overview",
+        summary: { total: 3, overflow: 1, unverified: 0 },
+      });
+      expect(result.lines[0]).toHaveProperty("diagramId", "system-overview");
+      expect(result.lines[0]).not.toHaveProperty("slideId");
+      expect(JSON.stringify(result)).not.toContain("activeTheme");
+
+      const textCapture = captureEnvironment();
+      expect(
+        await runCli(
+          ["text-fit", sourcePath, "--font-map", fontMapPath],
+          textCapture.environment,
+        ),
+      ).toBe(1);
+      expect(textCapture.stdout.join("")).toContain(
+        "OVERFLOW system-overview/system-overview.service.label#1",
+      );
+      expect(textCapture.stdout.join("")).toContain(
+        "text-fit 3 lines: 2 clear, 0 near-limit, 1 overflow, 0 unverified",
       );
     });
   });
