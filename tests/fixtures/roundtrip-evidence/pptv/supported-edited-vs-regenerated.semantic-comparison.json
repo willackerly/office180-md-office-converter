@@ -1,0 +1,33 @@
+{
+  "schema": "pptv-edited-regenerated-comparison/0.1",
+  "status": "passed",
+  "method": [
+    "C10 typed apply/C9 regeneration proof",
+    "byte-identical mapped slide XML",
+    "independent regenerated C10 no-op",
+    "same-renderer zero-pixel Quick Look comparison"
+  ],
+  "editedPptxSha256": "4cf72c93e821adc4460f723c2bbd5085b54116a9067907ed0c60ec6eeebb9ca9",
+  "regeneratedPptxSha256": "d02246f4090b3378fb6a29dfbc5f6dd0cb69b731e44a64f0a21fda4df9c66771",
+  "packageBytesEqual": false,
+  "slidePart": {
+    "path": "ppt/slides/slide1.xml",
+    "bytesEqual": true,
+    "editedSha256": "9f0c0d53f9e10499f0acf8f85b6cfc43b67068e868fd7d52b13714f43568ca8f",
+    "regeneratedSha256": "9f0c0d53f9e10499f0acf8f85b6cfc43b67068e868fd7d52b13714f43568ca8f"
+  },
+  "reconciliation": {
+    "editedStatus": "patchable",
+    "editedReportSha256": "f7a723ab93c16c4b96de33aaaa54684b27198a1bd86d1d74756fb12845134ccb",
+    "patchSha256": "631da8587e5ec71578b4f0303139359d9836eb753d90f04b5004544c67689d1e",
+    "regeneratedStatus": "unchanged",
+    "regeneratedReportSha256": "e1f3eea09f5c175d10ae0035b4431747e379afaba4fd4d6947907170cd448272"
+  },
+  "quickLook": {
+    "comparisonEvidenceSha256": "687ba74c29c8bfd64a9f0fb1dfe7dd7b7db1b1a30e7d4691b9091345e7f9c4cd",
+    "changedPixels": 0,
+    "changedFraction": 0,
+    "meanAbsoluteError": 0,
+    "maxChannelDelta": 0
+  }
+}

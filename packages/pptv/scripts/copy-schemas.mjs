@@ -4,6 +4,7 @@ import { fileURLToPath } from "node:url";
 const schemaNames = [
   "pptv-manifest-0.1.schema.json",
   "pptv-patch-0.1.schema.json",
+  "pptv-patch-0.2.schema.json",
 ];
 const sourceDirectory = new URL("../../../schemas/", import.meta.url);
 const destinationDirectory = new URL("../dist/schemas/", import.meta.url);

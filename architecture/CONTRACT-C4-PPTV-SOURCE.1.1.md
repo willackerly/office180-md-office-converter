@@ -167,7 +167,7 @@ distinct semantic type.
 ## Cross-references
 
 - **Source docs:** `PPTV-DESIGN-INDEX.md` §§4–10; `PPTV-PROCESSING-API.md` §§2–12, 19–20, 24
-- **Write path:** `CONTRACT:C5-PPTV-PATCH.1.1`
+- **Write path:** `CONTRACT:C5-PPTV-PATCH.1.2`
 
 ## Future evolution
 

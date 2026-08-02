@@ -18,10 +18,11 @@ the theme stays pure data.
 
 Why first: every feature below (nested lists, footnotes, callouts, syntax
 highlighting, images) is a token handler on an AST, but a fragile regex special
-case on the current parser. The prototype already mis-handles: nested emphasis
-(`**bold *italic* bold**`), escaped pipes in table cells, backticks inside code
-spans, multi-paragraph list items, indented code blocks, setext headings, hard
-line breaks. One afternoon of AST swap deletes all of those bugs at once.
+case on the current parser. C3 1.1 now conservatively refuses known lossy forms
+such as nested/underscore emphasis, escaped pipes, complex code spans, indented
+code, setext headings, and hard line breaks rather than flattening them. It
+still cannot support those constructs—or reliably broaden into multi-paragraph
+list items—until the AST swap replaces that refusal boundary.
 
 Shape:
 
@@ -136,7 +137,11 @@ namespace now (`<!-- md2docx: key=value ... -->`).
 ## 6. Quality & tooling
 
 - **Golden corpus tests:** real-world docs (the kind with headings, tables, code, blockquotes, and marking banners) are the corpus. Convert each; assert structural invariants (heading/table/image counts, no dropped text vs. source token stream, banner in header XML). `tests/fixtures/kitchen-sink.md` + `tests/test_roundtrip.py` are the first slice of this.
-- **Visual regression:** render page 1 via `qlmanage -t` (no Word needed) and image-diff against checked-in baselines. Full-PDF diff via Word automation only in a manual pre-release pass (Word scripting is flaky: sandbox path limits, modal-dialog AppleEvent timeouts).
+- **Visual regression:** the C11 supported-profile fixture now captures generated,
+  edited, and regenerated page 1 through `qlmanage`, proves the edit is confined
+  to its expected crop, and requires edited/regenerated previews to match
+  exactly. Full native Word edit/save/reopen and PDF comparison remain a manual
+  pre-release gate.
 - **Warnings discipline:** every unsupported construct emits `file:line: message`; `--strict` turns warnings into failure. Silent feature-dropping is how trust in a doc tool dies.
 - **Google Docs import check** (manual, per release): if generated DOCX files get uploaded to Google Docs, verify headers/footers, table shading, and landscape sections survive the import.
 
@@ -171,7 +176,7 @@ themes cleaner (restyle = redefine styles).
 | Mechanism | What to store | Survives Word edits | Survives Google Docs | Status |
 | :--- | :--- | :--- | :--- | :--- |
 | **Core properties** (`docProps/core.xml`) | Compact JSON in `comments`: tool/version, template name, template hash (16-hex), source hash, timestamp; full source path in `subject`; `keywords: md2docx`; `category`: template name | Yes — standard OPC part, Word preserves and shows in File → Info | Partially (title/subject/keywords usually survive export) | **SHIPPED in v0.2.0** |
-| **Custom XML part** (`customXml/item1.xml`) | The *entire source MD* (and optionally the resolved theme JSON), so the DOCX carries its own origin | Yes — custom XML parts are designed to persist through editing | **No — stripped on GDocs import** | P0 of this workstream |
+| **Custom XML part** (`customXml/itemN.xml`) | Exact original and canonical UTF-8 Markdown with full hashes and deterministic item identity | Yes under independent `python-docx` reopen/save; native Word lifecycle remains a gate | **No — expected to be stripped on GDocs import** | **SHIPPED for the C2 2.0 supported profile** |
 | **Table captions** (`w:tblCaption`) + alt text | Per-table: original MD table form + which wide-table strategy was applied (landscape/chunk/cards), so the reverse tool can un-transform | Yes | Mostly no | P1 |
 | **Heading bookmarks** | Stable anchor slugs on each heading (also powers internal links / TOC) | Yes | Weakly | P1 |
 | **Content controls (SDTs)** per block, tagged with source line ranges | Fine-grained block↔line mapping for surgical merge | Yes — SDTs are built for document assembly | No | P2 — invasive; only if per-line merge fidelity proves necessary |
@@ -179,20 +184,31 @@ themes cleaner (restyle = redefine styles).
 ### 7.3 The reverse tool (`docx2md`)
 
 1. Read core props → recover template identity (name + hash → fetch exact theme even if the file was renamed) → build the inverse style map.
-2. Extract the embedded source MD from the custom XML part (if present) — this is the **merge base**.
-3. Walk `document.xml`: invert styles to MD constructs; tables → pipe tables (consult `tblCaption` breadcrumbs to un-transform landscape/chunked/card tables); hyperlinks → `[label](url)`; images → extract from `word/media/` into an assets dir, emit `![alt](path)` using the alt text the forward pass stored.
+2. Extract the embedded original and canonical MD from the custom XML part (if
+   present). The embedded canonical MD is the **merge base**; the original bytes
+   remain provenance for exact-source recovery and audit.
+3. Preflight every relevant Word story and fail closed on revisions, drawings,
+   text boxes, hyperlinks, fields, notes, unsupported styles/numbering, or
+   ambiguous content. Walk supported `document.xml` body constructs and invert
+   headings 1–4, flat bullets, literal numbered paragraphs, pipe tables,
+   untagged fenced code, blockquotes, banner, and supported inline spans.
 4. Emit **canonical MD** (see 7.4).
-5. **3-way merge**: base = embedded original MD; theirs = regenerated MD from the edited DOCX; mine = current MD on disk (which may have moved on since the DOCX was generated — detectable because its hash no longer matches `srcsha`). Use `git merge-file` semantics; conflicts surface as normal conflict markers. This turns "someone edited the Word doc" from a disaster into a mergeable branch.
+5. **3-way merge**: base = embedded canonical MD; theirs = regenerated canonical
+   MD from the edited DOCX; mine = current canonical MD on disk (which may have
+   moved on since the DOCX was generated — detectable because its hash no longer
+   matches `srcsha`). Use `git merge-file` semantics; conflicts surface as normal
+   conflict markers. This turns "someone edited the Word doc" from a disaster
+   into a mergeable branch.
 6. **Fidelity report**: anything that didn't invert cleanly (direct formatting with no style, unknown constructs, images added in Word) is listed with locations rather than silently dropped or invented.
 
 ### 7.4 Canonical MD (the symmetry contract)
 
-Define one canonical spelling (like Prettier): `-` bullets, `**` bold, fenced
-code with language tags, pipe tables padded to uniform width, one blank line
-between blocks. Guarantee: `docx2md(md2docx(x)) == canonicalize(x)`. Ship
-`md2docx --normalize` so sources can be pre-canonicalized; after that the
-round-trip is idempotent and diffs are pure signal. Add a `--check` CI mode
-that round-trips every doc and fails on fidelity loss.
+The C3 1.1 supported profile now defines one canonical spelling: LF, no BOM,
+`-` bullets, `**` bold, untagged fenced code, normalized pipe tables, one blank
+line between emitted blocks/list items, no trailing whitespace, and one final
+newline. It proves `docx2md(md2docx(x)) == canonicalize(x)`.
+`md2docx --normalize` writes or prints that spelling, and `--check` requires
+both canonical input and an exact isolated DOCX cycle.
 
 ### 7.5 Honest limits
 
@@ -200,12 +216,15 @@ that round-trips every doc and fails on fidelity loss.
   properties on import. A GDocs-edited doc round-trips at "style-inference only"
   tier — still workable (headings/lists/tables map), but without the embedded
   merge base. If GDocs editing is the primary workflow, keep the merge base
-  *outside* the file (e.g., `srcsha` → git object lookup: the hash already
-  stamped in core props is enough to find the exact source version in the repo).
-- **Formatting invented in Word** (manual colors, text boxes, floating images)
-  has no MD equivalent — the fidelity report flags it; the merge keeps the text.
-- **Tracked changes**: reject-or-accept before reverse conversion; `docx2md`
-  should refuse files with pending revisions rather than guess.
+  *outside* the file under a caller-pinned full digest or signed identity. The
+  legacy 16-hex core `srcsha` is an informational lookup hint, not sufficient
+  merge or authentication authority.
+- **Formatting invented in Word** (unknown direct formatting, text boxes,
+  floating images, unsupported styles) has no unique Markdown inverse. The
+  current supported profile refuses it with a stable diagnostic rather than
+  retaining only guessed text.
+- **Tracked changes** are implemented as a hard refusal: accept/reject them
+  before reverse conversion.
 
 ---
 
@@ -216,7 +235,7 @@ that round-trips every doc and fails on fidelity loss.
 | **P0 — foundation** | markdown-it-py AST swap; package layout + CLI; JSONC themes + registry + `extends`; logo/branding + first-page header; page-number tokens; real hyperlinks; nested lists/numbering; PNG/JPG + SVG-rasterize images; wide-table rungs 1–3 (shrink + landscape); code-block wrap/shrink; warnings framework | ~1 week |
 | **P1 — polish** | Pygments highlighting; callout boxes; TOC + bookmarks; table alignment/zebra/header-repeat; column-chunking + record-card table modes; frontmatter; schema validation; strikethrough/task lists; golden + visual tests | ~1 week |
 | **P2 — depth** | Footnotes; native SVG embedding; mermaid; HTML passthrough; cover pages; pipx publishing; per-table/per-block directive vocabulary | as needed |
-| **Symmetry track** (parallel, see §7) | P0: named custom styles in forward converter; embed source MD as custom XML part; canonical-MD normalizer. P1: `docx2md` style-inversion + 3-way merge + fidelity report; table-caption breadcrumbs. P2: SDT block tagging. Core-properties provenance stamp already shipped (v0.2.0). | ~1 week for P0+P1 |
+| **Symmetry track** (parallel, see §7) | **Supported-profile foundation shipped:** exact embedded original/canonical source, canonical normalizer/check, strict style inversion/refusals, fidelity report, three-way merge, and C11 Quick Look evidence. Future expansion: pinned CommonMark AST, named-style breadth, table captions, richer constructs, native Word lifecycle, then optional SDT block tagging. | Foundation complete; expansion as needed |
 
 **Two things to keep from the prototype:** the marking-banner promotion (it's a
 genuinely useful, un-Googleable behavior) and the theme deep-merge. **One thing

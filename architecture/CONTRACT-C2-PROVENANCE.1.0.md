@@ -1,7 +1,9 @@
 # CONTRACT-C2-PROVENANCE.1.0
 
+<!-- SUPERSEDED BY: CONTRACT-C2-PROVENANCE.2.0 -->
+
 **Version:** 1.0
-**Status:** verified
+**Status:** superseded
 **Owner:** Will Ackerly
 **Type:** Data Model
 **Cross-repo Promotability:** No

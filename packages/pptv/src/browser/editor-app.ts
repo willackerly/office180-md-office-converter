@@ -6,7 +6,7 @@
  * through EditorSession/C5, and reconstructs previews from fresh C6 data.
  *
  * CONTRACT:C4-PPTV-SOURCE.1.1
- * CONTRACT:C5-PPTV-PATCH.1.1
+ * CONTRACT:C5-PPTV-PATCH.1.2
  * CONTRACT:C6-PPTV-RESOLVED.1.1
  * CONTRACT:C8-PPTV-TEXT-FIT.1.1
  */

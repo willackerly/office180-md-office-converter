@@ -6,7 +6,7 @@
  * source/hash snapshot so undo can restore lexical spelling byte-for-byte.
  *
  * CONTRACT:C4-PPTV-SOURCE.1.1
- * CONTRACT:C5-PPTV-PATCH.1.1
+ * CONTRACT:C5-PPTV-PATCH.1.2
  */
 
 import { loadPptvDocument } from "../core/deck.js";

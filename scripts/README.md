@@ -40,6 +40,87 @@ Each script is standalone, runs in a few seconds, and exits 0 (pass) or 1 (fail)
 | `refresh-context.sh` | Session start / checkpoint — QUICKCONTEXT freshness + worktree state |
 | `inbox-watch.sh [--preview] [inbox ...]` | Session-scoped held-inbox monitor; reports new append-only peer memos after arming. Watch only inboxes this repo holds, run it through a persistent monitor, and never wire it into CI. A live holder, unsafe lock, invalid filename, or non-regular memo fails closed |
 
+## Visual evidence
+
+`visual-evidence.py` creates and validates the content-bound C11 evidence
+envelope. Its renderer classes stay separate: a Quick Look or browser pass
+does not imply native Word or PowerPoint open/edit/save/reopen evidence.
+
+| Command | Purpose |
+|---------|---------|
+| `validate` | Validate the envelope, privacy rules, self-hash, and bound files |
+| `capture-browser-svg` | Capture one trusted, validated standalone `*.pptv.svg` through pinned Playwright Chromium |
+| `capture-quicklook` | Capture one trusted DOCX/PPTX macOS Quick Look preview smoke |
+| `compare` | Compare two passing capture images under explicit thresholds and an optional hashed mask |
+| `record-status` | Record an explicit unavailable or manual-required renderer/native gate without fabricating a capture |
+
+Run a standalone SVG browser smoke into the ignored Playwright result area:
+
+```bash
+.venv/bin/python scripts/visual-evidence.py capture-browser-svg \
+  examples/minimal-diagram.pptv.svg \
+  --output packages/pptv/test-results/c11-smoke/minimal.png \
+  --manifest packages/pptv/test-results/c11-smoke/minimal.evidence.json \
+  --checkpoint standalone-browser-smoke \
+  --root . --trusted \
+  --width-px 1600 --height-px 900 \
+  --background '#ffffff' --timeout 30
+
+.venv/bin/python scripts/visual-evidence.py validate \
+  packages/pptv/test-results/c11-smoke/minimal.evidence.json \
+  --root .
+```
+
+The browser command accepts only a repository-contained `.pptv.svg` and a new
+`.png` destination after the source passes `pnpm pptv validate`. The internal
+`capture-browser-svg.mjs` helper rechecks the validated hash, serves randomized
+ephemeral `127.0.0.1` routes rather than `file://`, disables page JavaScript
+and service workers, blocks non-capture requests, fixes DPR/locale/timezone and
+records the exact Chromium profile. Do not call the helper directly to bypass
+the Python trust, containment, validator, evidence, and atomic-publish checks.
+
+The current browser profile captures one centered `contain` view at DPR 1,
+uses an opaque `#RRGGBB` background, limits each dimension to 4096 pixels and
+the canvas to 16,777,216 pixels, and may letterbox. It does not capture HTML
+decks or PPTX files. Host fonts are uncontrolled and therefore recorded as
+`fonts: []`; browser success is neither C8 exact-font proof nor native Office
+fidelity.
+
+Capture exit codes are 0 for passed, 1 for failed, 2 for manual-required, and 3
+for unavailable. Run the focused harness directly or through the aggregate
+Python target:
+
+```bash
+.venv/bin/python tests/test_visual_evidence.py
+pnpm test:python
+```
+
+### Checked round-trip bundles
+
+Two generators exercise the complete supported paths and publish durable C11
+evidence only after structural, semantic, visual, hash, and privacy checks pass:
+
+| Generator | Proven lane |
+|-----------|-------------|
+| `generate-docx-roundtrip-evidence.py` | canonical Markdown → DOCX → deliberate supported body edit → recovered Markdown → regenerated DOCX |
+| `generate-pptv-roundtrip-evidence.mjs` | standalone PPTV atom → explicit C9 composition/mapped PPTX → deliberate supported DrawingML edit → C10 patch → recovered atom → regenerated PPTX |
+
+```bash
+.venv/bin/python scripts/generate-docx-roundtrip-evidence.py \
+  --destination tests/fixtures/roundtrip-evidence/docx
+
+node scripts/generate-pptv-roundtrip-evidence.mjs \
+  --destination tests/fixtures/roundtrip-evidence/pptv
+```
+
+Both commands refuse an existing destination, build in a private sibling
+staging directory, validate every evidence envelope and bound artifact, scan
+durable package members for workstation/private data, write a complete
+`SHA256SUMS`, and rename the completed bundle into place only at the end. The
+checked fixtures record native Word/PowerPoint as `manual-required`; the
+deterministic Python/OOXML edit simulations and Quick Look previews never
+masquerade as native Office lifecycle evidence.
+
 ## Installation
 
 ```bash
@@ -64,6 +145,7 @@ pnpm pack:check
 - **bash** — all scripts are Bash 3.2 compatible
 - **jq, grep, find, date, git** — Steward and enforcement dependencies
 - **Node.js 20+ and pnpm** — TypeScript checks and aggregate test command
+- **Pinned Playwright Chromium** — trusted standalone PPTV SVG browser capture
 - **`.venv/bin/python` with `python-docx`** — Python round-trip tests invoked by
   `pnpm test`
 

@@ -1,24 +1,46 @@
 /**
  * Hash-bound, all-or-nothing PPTV source patching.
  *
- * CONTRACT:C5-PPTV-PATCH.1.1
+ * CONTRACT:C5-PPTV-PATCH.1.2
  */
 
 import { loadDeck, loadDiagram, PptvLoadError } from "../core/deck.js";
 import { STABLE_ID_PATTERN } from "../core/manifest.js";
+import {
+  resolvePptvDeck,
+  resolvePptvDiagram,
+  type PptvResolvedDiagramObject,
+  type PptvResolvedObject,
+} from "../core/resolved.js";
 import { hasErrors } from "../core/source.js";
 import type {
   AppliedSourceEdit,
+  DeleteObjectOperation,
   Diagnostic,
   PatchResult,
+  PptvConcreteNativeStyle,
+  PptvConnectorEndpoints,
   PptvDeck,
   PptvDocument,
+  PptvEllipseGeometry,
+  PptvLegacyOperation,
   PptvNode,
+  PptvObjectGeometry,
   PptvOperation,
   PptvPatch,
+  PptvPatchBounds,
+  PptvPatchPoint,
+  PptvRectGeometry,
+  SetChildOrderOperation,
+  SetConnectorEndpointsOperation,
   SetActiveThemeOperation,
+  SetGroupTranslationOperation,
+  SetNativeStyleOperation,
+  SetObjectGeometryOperation,
   SetSlideOrderOperation,
+  SetTextFrameOperation,
   SetTextOperation,
+  SourceRange,
 } from "../core/types.js";
 
 const SHA256_PATTERN = /^[a-f0-9]{64}$/;
@@ -30,6 +52,13 @@ interface PatchPlan {
   edits: AppliedSourceEdit[];
   affectedIds: string[];
   diagnostics: Diagnostic[];
+}
+
+type ResolvedObject = PptvResolvedObject | PptvResolvedDiagramObject;
+
+interface ResolvedPatchState {
+  objects: ReadonlyMap<string, ResolvedObject>;
+  roots: ReadonlyMap<string, readonly ResolvedObject[]>;
 }
 
 export async function validatePatch(
@@ -88,7 +117,14 @@ export async function applyPatch(
       trustedDocument,
       candidateSource,
     );
-    const resultErrors = candidateDocument.diagnostics.filter(
+    const profileDiagnostics =
+      plan.patch.schema === "pptv-patch/0.2"
+        ? resolvePatchState(candidateDocument).diagnostics
+        : [];
+    const resultErrors = [
+      ...candidateDocument.diagnostics,
+      ...profileDiagnostics,
+    ].filter(
       (diagnostic) =>
         diagnostic.severity === "error" || diagnostic.severity === "fatal",
     );
@@ -133,6 +169,7 @@ function planPatch(document: PptvDocument, input: unknown): PatchPlan {
   const edits: AppliedSourceEdit[] = [];
   const affectedIds: string[] = [];
   const patch = decoded.patch;
+  let resolvedState: ResolvedPatchState | undefined;
 
   if (hasErrors(document.diagnostics)) {
     diagnostics.push({
@@ -156,6 +193,30 @@ function planPatch(document: PptvDocument, input: unknown): PatchPlan {
       message: `Patch base ${patch.baseSha256} does not match source ${document.source.sha256}.`,
     });
   }
+
+  if (patch.schema === "pptv-patch/0.2") {
+    const resolution = resolvePatchState(document);
+    resolvedState = resolution.state;
+    if (resolvedState === undefined) {
+      diagnostics.push({
+        code: "PPTV-PATCH-INVALID-BASE",
+        severity: "error",
+        message:
+          "pptv-patch/0.2 requires a source snapshot that resolves completely through C6.",
+        related: resolution.diagnostics.map((diagnostic) => ({
+          message: `${diagnostic.code}: ${diagnostic.message}`,
+          ...(diagnostic.range === undefined
+            ? {}
+            : { range: diagnostic.range }),
+        })),
+      });
+    }
+  }
+
+  const deletingIds =
+    patch.schema === "pptv-patch/0.2"
+      ? collectDeletionIds(document, patch.ops)
+      : new Set<string>();
 
   for (const [operationIndex, operation] of patch.ops.entries()) {
     if (operation.op === "set-text") {
@@ -182,7 +243,7 @@ function planPatch(document: PptvDocument, input: unknown): PatchPlan {
         affectedIds,
         diagnostics,
       );
-    } else {
+    } else if (operation.op === "set-slide-order") {
       if (document.sourceKind === "svg") {
         diagnostics.push(
           unsupportedDiagramOperation(operationIndex, operation.op),
@@ -197,6 +258,79 @@ function planPatch(document: PptvDocument, input: unknown): PatchPlan {
         affectedIds,
         diagnostics,
       );
+    } else if (resolvedState !== undefined) {
+      if (operation.op === "set-object-geometry") {
+        planSetObjectGeometry(
+          document,
+          resolvedState,
+          operation,
+          operationIndex,
+          edits,
+          affectedIds,
+          diagnostics,
+        );
+      } else if (operation.op === "set-connector-endpoints") {
+        planSetConnectorEndpoints(
+          document,
+          resolvedState,
+          operation,
+          operationIndex,
+          edits,
+          affectedIds,
+          diagnostics,
+        );
+      } else if (operation.op === "set-group-translation") {
+        planSetGroupTranslation(
+          document,
+          resolvedState,
+          operation,
+          operationIndex,
+          edits,
+          affectedIds,
+          diagnostics,
+        );
+      } else if (operation.op === "set-text-frame") {
+        planSetTextFrame(
+          document,
+          resolvedState,
+          operation,
+          operationIndex,
+          edits,
+          affectedIds,
+          diagnostics,
+        );
+      } else if (operation.op === "set-child-order") {
+        planSetChildOrder(
+          document,
+          resolvedState,
+          operation,
+          operationIndex,
+          edits,
+          affectedIds,
+          diagnostics,
+        );
+      } else if (operation.op === "delete-object") {
+        planDeleteObject(
+          document,
+          resolvedState,
+          deletingIds,
+          operation,
+          operationIndex,
+          edits,
+          affectedIds,
+          diagnostics,
+        );
+      } else {
+        planSetNativeStyle(
+          document,
+          resolvedState,
+          operation,
+          operationIndex,
+          edits,
+          affectedIds,
+          diagnostics,
+        );
+      }
     }
   }
 
@@ -456,6 +590,937 @@ function planSetSlideOrder(
   affectedIds.push(...operation.order);
 }
 
+function resolvePatchState(document: PptvDocument): {
+  state?: ResolvedPatchState;
+  diagnostics: readonly Diagnostic[];
+} {
+  const result =
+    document.sourceKind === "html"
+      ? resolvePptvDeck(document)
+      : resolvePptvDiagram(document);
+  if (result.model === undefined) return { diagnostics: result.diagnostics };
+
+  const objects = new Map<string, ResolvedObject>();
+  const roots = new Map<string, readonly ResolvedObject[]>();
+  if (result.model.schema === "pptv-resolved/0.1") {
+    for (const slide of result.model.slides) {
+      roots.set(slide.id, slide.objects);
+      indexResolvedObjects(slide.objects, objects);
+    }
+  } else {
+    roots.set(result.model.diagramId, result.model.objects);
+    indexResolvedObjects(result.model.objects, objects);
+  }
+  return { state: { objects, roots }, diagnostics: result.diagnostics };
+}
+
+function indexResolvedObjects(
+  values: readonly ResolvedObject[],
+  target: Map<string, ResolvedObject>,
+): void {
+  for (const value of values) {
+    target.set(value.id, value);
+    if (value.kind === "group") {
+      indexResolvedObjects(value.children, target);
+    }
+  }
+}
+
+function planSetObjectGeometry(
+  document: PptvDocument,
+  state: ResolvedPatchState,
+  operation: SetObjectGeometryOperation,
+  operationIndex: number,
+  edits: AppliedSourceEdit[],
+  affectedIds: string[],
+  diagnostics: Diagnostic[],
+): void {
+  const object = state.objects.get(operation.id);
+  const indexed = document.index.objects.get(operation.id);
+  if (object === undefined || indexed === undefined) {
+    diagnostics.push(
+      targetDiagnostic(operationIndex, `Unknown object "${operation.id}".`),
+    );
+    return;
+  }
+  if (
+    operation.oldGeometry.kind !== operation.geometry.kind ||
+    object.kind !== operation.geometry.kind
+  ) {
+    diagnostics.push(
+      targetDiagnostic(
+        operationIndex,
+        `Object "${operation.id}" does not match ${operation.geometry.kind} geometry.`,
+      ),
+    );
+    return;
+  }
+
+  if (
+    object.kind === "rect" &&
+    operation.geometry.kind === "rect" &&
+    operation.oldGeometry.kind === "rect"
+  ) {
+    const current: PptvRectGeometry = {
+      kind: "rect",
+      x: object.x,
+      y: object.y,
+      width: object.width,
+      height: object.height,
+    };
+    if (!sameRectGeometry(current, operation.oldGeometry)) {
+      diagnostics.push(
+        preconditionDiagnostic(operationIndex, operation.id, "rect geometry"),
+      );
+      return;
+    }
+    planChangedAttributes(
+      document,
+      indexed.attributeRanges,
+      [
+        ["x", current.x, operation.geometry.x],
+        ["y", current.y, operation.geometry.y],
+        ["width", current.width, operation.geometry.width],
+        ["height", current.height, operation.geometry.height],
+      ],
+      operationIndex,
+      operation.id,
+      edits,
+      affectedIds,
+      diagnostics,
+    );
+    return;
+  }
+
+  if (
+    object.kind === "ellipse" &&
+    operation.geometry.kind === "ellipse" &&
+    operation.oldGeometry.kind === "ellipse"
+  ) {
+    if (object.sourceElement !== "ellipse") {
+      diagnostics.push({
+        code: "PPTV-PATCH-UNSAFE-RANGE",
+        severity: "error",
+        message: `Object "${operation.id}" is represented by <circle>; set-object-geometry does not change shape representation.`,
+        objectId: operation.id,
+        range: indexed.elementRange,
+      });
+      return;
+    }
+    const current: PptvEllipseGeometry = {
+      kind: "ellipse",
+      cx: object.cx,
+      cy: object.cy,
+      rx: object.rx,
+      ry: object.ry,
+    };
+    if (!sameEllipseGeometry(current, operation.oldGeometry)) {
+      diagnostics.push(
+        preconditionDiagnostic(
+          operationIndex,
+          operation.id,
+          "ellipse geometry",
+        ),
+      );
+      return;
+    }
+    planChangedAttributes(
+      document,
+      indexed.attributeRanges,
+      [
+        ["cx", current.cx, operation.geometry.cx],
+        ["cy", current.cy, operation.geometry.cy],
+        ["rx", current.rx, operation.geometry.rx],
+        ["ry", current.ry, operation.geometry.ry],
+      ],
+      operationIndex,
+      operation.id,
+      edits,
+      affectedIds,
+      diagnostics,
+    );
+    return;
+  }
+
+  diagnostics.push(
+    targetDiagnostic(
+      operationIndex,
+      `Object "${operation.id}" is not a supported rect or ellipse target.`,
+    ),
+  );
+}
+
+function planSetConnectorEndpoints(
+  document: PptvDocument,
+  state: ResolvedPatchState,
+  operation: SetConnectorEndpointsOperation,
+  operationIndex: number,
+  edits: AppliedSourceEdit[],
+  affectedIds: string[],
+  diagnostics: Diagnostic[],
+): void {
+  const object = state.objects.get(operation.id);
+  const indexed = document.index.objects.get(operation.id);
+  if (object === undefined || indexed === undefined) {
+    diagnostics.push(
+      targetDiagnostic(operationIndex, `Unknown object "${operation.id}".`),
+    );
+    return;
+  }
+  if (object.kind !== "line") {
+    diagnostics.push(
+      targetDiagnostic(
+        operationIndex,
+        `Object "${operation.id}" is not a native connector.`,
+      ),
+    );
+    return;
+  }
+  const current: PptvConnectorEndpoints = {
+    x1: object.x1,
+    y1: object.y1,
+    x2: object.x2,
+    y2: object.y2,
+  };
+  if (!sameEndpoints(current, operation.oldEndpoints)) {
+    diagnostics.push(
+      preconditionDiagnostic(
+        operationIndex,
+        operation.id,
+        "connector endpoints",
+      ),
+    );
+    return;
+  }
+  planChangedAttributes(
+    document,
+    indexed.attributeRanges,
+    [
+      ["x1", current.x1, operation.endpoints.x1],
+      ["y1", current.y1, operation.endpoints.y1],
+      ["x2", current.x2, operation.endpoints.x2],
+      ["y2", current.y2, operation.endpoints.y2],
+    ],
+    operationIndex,
+    operation.id,
+    edits,
+    affectedIds,
+    diagnostics,
+  );
+}
+
+function planSetGroupTranslation(
+  document: PptvDocument,
+  state: ResolvedPatchState,
+  operation: SetGroupTranslationOperation,
+  operationIndex: number,
+  edits: AppliedSourceEdit[],
+  affectedIds: string[],
+  diagnostics: Diagnostic[],
+): void {
+  const object = state.objects.get(operation.id);
+  const indexed = document.index.objects.get(operation.id);
+  if (object === undefined || indexed === undefined) {
+    diagnostics.push(
+      targetDiagnostic(operationIndex, `Unknown object "${operation.id}".`),
+    );
+    return;
+  }
+  if (object.kind !== "group") {
+    diagnostics.push(
+      targetDiagnostic(
+        operationIndex,
+        `Object "${operation.id}" is not a native group.`,
+      ),
+    );
+    return;
+  }
+  const current = { x: object.translateX, y: object.translateY };
+  if (!samePoint(current, operation.oldTranslation)) {
+    diagnostics.push(
+      preconditionDiagnostic(operationIndex, operation.id, "group translation"),
+    );
+    return;
+  }
+  const range = indexed.attributeRanges.get("transform");
+  if (range === undefined) {
+    diagnostics.push({
+      code: "PPTV-PATCH-UNSAFE-RANGE",
+      severity: "error",
+      message: `Group "${operation.id}" has an implicit translation; 0.2 does not synthesize transform attributes.`,
+      objectId: operation.id,
+      range: indexed.openTagRange,
+    });
+    return;
+  }
+  if (samePoint(current, operation.translation)) {
+    affectedIds.push(operation.id);
+    return;
+  }
+  const edit = replaceAttributeValue(
+    document,
+    range,
+    "transform",
+    `translate(${formatNumber(operation.translation.x)} ${formatNumber(operation.translation.y)})`,
+    operationIndex,
+    operation.id,
+    diagnostics,
+  );
+  if (edit !== undefined) {
+    edits.push(edit);
+    affectedIds.push(operation.id);
+  }
+}
+
+function planSetTextFrame(
+  document: PptvDocument,
+  state: ResolvedPatchState,
+  operation: SetTextFrameOperation,
+  operationIndex: number,
+  edits: AppliedSourceEdit[],
+  affectedIds: string[],
+  diagnostics: Diagnostic[],
+): void {
+  const object = state.objects.get(operation.id);
+  const indexed = document.index.objects.get(operation.id);
+  const node = findObject(document, operation.id);
+  if (object === undefined || indexed === undefined || node === undefined) {
+    diagnostics.push(
+      targetDiagnostic(operationIndex, `Unknown object "${operation.id}".`),
+    );
+    return;
+  }
+  if (object.kind !== "text") {
+    diagnostics.push(
+      targetDiagnostic(
+        operationIndex,
+        `Object "${operation.id}" is not native text.`,
+      ),
+    );
+    return;
+  }
+  if (
+    object.lines.length !== 1 ||
+    indexed.directTextRange === undefined ||
+    node.children.length !== 0
+  ) {
+    diagnostics.push({
+      code: "PPTV-PATCH-UNSAFE-RANGE",
+      severity: "error",
+      message: `Text "${operation.id}" is nested or mixed; 0.2 frame edits require exactly one direct hard line.`,
+      objectId: operation.id,
+      range: indexed.elementRange,
+    });
+    return;
+  }
+  const line = object.lines[0];
+  if (
+    line === undefined ||
+    !sameBounds(object.frame, operation.oldFrame) ||
+    !samePoint(line, operation.oldLineAnchor)
+  ) {
+    diagnostics.push(
+      preconditionDiagnostic(
+        operationIndex,
+        operation.id,
+        "text frame or line anchor",
+      ),
+    );
+    return;
+  }
+  planChangedAttributes(
+    document,
+    indexed.attributeRanges,
+    [
+      [
+        "data-pptv-frame",
+        formatBounds(object.frame),
+        formatBounds(operation.frame),
+      ],
+      ["x", line.x, operation.lineAnchor.x],
+      ["y", line.y, operation.lineAnchor.y],
+    ],
+    operationIndex,
+    operation.id,
+    edits,
+    affectedIds,
+    diagnostics,
+  );
+}
+
+function planSetChildOrder(
+  document: PptvDocument,
+  state: ResolvedPatchState,
+  operation: SetChildOrderOperation,
+  operationIndex: number,
+  edits: AppliedSourceEdit[],
+  affectedIds: string[],
+  diagnostics: Diagnostic[],
+): void {
+  const resolvedChildren =
+    state.roots.get(operation.parentId) ??
+    getResolvedGroupChildren(state, operation.parentId);
+  const sourceChildren = getSourceContainerChildren(
+    document,
+    operation.parentId,
+  );
+  if (resolvedChildren === undefined || sourceChildren === undefined) {
+    diagnostics.push(
+      targetDiagnostic(
+        operationIndex,
+        `Unknown diagram, slide, or native group "${operation.parentId}".`,
+      ),
+    );
+    return;
+  }
+  const currentOrder = resolvedChildren.map((child) => child.id);
+  const sourceOrder = sourceChildren.map((child) => child.id);
+  if (!sameArray(sourceOrder, currentOrder)) {
+    diagnostics.push({
+      code: "PPTV-PATCH-UNSAFE-RANGE",
+      severity: "error",
+      message: `Container "${operation.parentId}" has ignored or mixed direct children and cannot be reordered surgically.`,
+    });
+    return;
+  }
+  if (!sameArray(operation.oldOrder, currentOrder)) {
+    diagnostics.push(
+      preconditionDiagnostic(
+        operationIndex,
+        operation.parentId,
+        "direct child order",
+      ),
+    );
+    return;
+  }
+  if (!isPermutation(operation.order, currentOrder)) {
+    diagnostics.push({
+      code: "PPTV-PATCH-PRECONDITION",
+      severity: "error",
+      message: `Operation ${operationIndex} set-child-order must be a permutation of the current direct child IDs.`,
+    });
+    return;
+  }
+
+  const localEdits: AppliedSourceEdit[] = [];
+  for (let index = 0; index < currentOrder.length; index += 1) {
+    const currentId = currentOrder[index];
+    const desiredId = operation.order[index];
+    if (
+      currentId === undefined ||
+      desiredId === undefined ||
+      currentId === desiredId
+    ) {
+      continue;
+    }
+    const currentRange = document.index.objects.get(currentId)?.elementRange;
+    const desiredRange = document.index.objects.get(desiredId)?.elementRange;
+    if (currentRange === undefined || desiredRange === undefined) {
+      diagnostics.push({
+        code: "PPTV-PATCH-UNSAFE-RANGE",
+        severity: "error",
+        message: `Cannot locate exact child element ranges for container "${operation.parentId}".`,
+      });
+      return;
+    }
+    localEdits.push({
+      range: currentRange,
+      replacement: document.source.text.slice(
+        desiredRange.charStart,
+        desiredRange.charEnd,
+      ),
+      operationIndex,
+    });
+  }
+  edits.push(...localEdits);
+  affectedIds.push(operation.parentId, ...operation.order);
+}
+
+function planDeleteObject(
+  document: PptvDocument,
+  state: ResolvedPatchState,
+  deletingIds: ReadonlySet<string>,
+  operation: DeleteObjectOperation,
+  operationIndex: number,
+  edits: AppliedSourceEdit[],
+  affectedIds: string[],
+  diagnostics: Diagnostic[],
+): void {
+  if (isRootId(document, operation.id)) {
+    diagnostics.push({
+      code: "PPTV-PATCH-UNSUPPORTED",
+      severity: "error",
+      message: `Operation ${operationIndex} cannot delete diagram or slide root "${operation.id}".`,
+    });
+    return;
+  }
+  const object = state.objects.get(operation.id);
+  const indexed = document.index.objects.get(operation.id);
+  const node = findObject(document, operation.id);
+  if (object === undefined || indexed === undefined || node === undefined) {
+    diagnostics.push(
+      targetDiagnostic(operationIndex, `Unknown object "${operation.id}".`),
+    );
+    return;
+  }
+  if (node.exportMode !== "native" || node.opaque) {
+    diagnostics.push({
+      code: "PPTV-PATCH-UNSAFE-RANGE",
+      severity: "error",
+      message: `Object "${operation.id}" is opaque or non-native and cannot be deleted through the typed 0.2 operation.`,
+      objectId: operation.id,
+      range: indexed.elementRange,
+    });
+    return;
+  }
+  if (
+    operation.oldParentId !== object.parentId ||
+    operation.oldOrder !== object.order
+  ) {
+    diagnostics.push(
+      preconditionDiagnostic(
+        operationIndex,
+        operation.id,
+        "parent or child order",
+      ),
+    );
+    return;
+  }
+  const subtreeIds = collectNodeIds(node);
+  const hazard = findConnectorReferenceHazard(
+    document,
+    new Set(subtreeIds),
+    deletingIds,
+  );
+  if (hazard !== undefined) {
+    diagnostics.push({
+      code: "PPTV-PATCH-REFERENCE",
+      severity: "error",
+      message: `Connector "${hazard.id}" survives this transaction and refers to the deletion subtree rooted at "${operation.id}".`,
+      objectId: operation.id,
+      range: indexed.elementRange,
+      related: [
+        {
+          message: "Surviving connector is here.",
+          range: hazard.sourceRange,
+        },
+      ],
+    });
+    return;
+  }
+  edits.push({
+    range: indexed.elementRange,
+    replacement: "",
+    operationIndex,
+  });
+  affectedIds.push(...subtreeIds);
+}
+
+function planSetNativeStyle(
+  document: PptvDocument,
+  state: ResolvedPatchState,
+  operation: SetNativeStyleOperation,
+  operationIndex: number,
+  edits: AppliedSourceEdit[],
+  affectedIds: string[],
+  diagnostics: Diagnostic[],
+): void {
+  const object = state.objects.get(operation.id);
+  const indexed = document.index.objects.get(operation.id);
+  if (object === undefined || indexed === undefined) {
+    diagnostics.push(
+      targetDiagnostic(operationIndex, `Unknown object "${operation.id}".`),
+    );
+    return;
+  }
+  if (!sameStyle(object.style, operation.oldStyle)) {
+    diagnostics.push(
+      preconditionDiagnostic(operationIndex, operation.id, "native style"),
+    );
+    return;
+  }
+  if (
+    (object.style.fontFamily === undefined) !==
+      (operation.style.fontFamily === undefined) ||
+    (object.style.fontSize === undefined) !==
+      (operation.style.fontSize === undefined)
+  ) {
+    diagnostics.push({
+      code: "PPTV-PATCH-UNSAFE-RANGE",
+      severity: "error",
+      message: `Style operation ${operationIndex} cannot add or remove optional font properties.`,
+      objectId: operation.id,
+    });
+    return;
+  }
+
+  const properties: Array<{
+    key: keyof PptvConcreteNativeStyle;
+    attribute: string;
+    current: string | number | undefined;
+    next: string | number | undefined;
+  }> = [
+    {
+      key: "fill",
+      attribute: "fill",
+      current: object.style.fill,
+      next: operation.style.fill,
+    },
+    {
+      key: "stroke",
+      attribute: "stroke",
+      current: object.style.stroke,
+      next: operation.style.stroke,
+    },
+    {
+      key: "strokeWidth",
+      attribute: "stroke-width",
+      current: object.style.strokeWidth,
+      next: operation.style.strokeWidth,
+    },
+    {
+      key: "opacity",
+      attribute: "opacity",
+      current: object.style.opacity,
+      next: operation.style.opacity,
+    },
+    {
+      key: "fontFamily",
+      attribute: "font-family",
+      current: object.style.fontFamily,
+      next: operation.style.fontFamily,
+    },
+    {
+      key: "fontSize",
+      attribute: "font-size",
+      current: object.style.fontSize,
+      next: operation.style.fontSize,
+    },
+    {
+      key: "fontWeight",
+      attribute: "font-weight",
+      current: object.style.fontWeight,
+      next: operation.style.fontWeight,
+    },
+    {
+      key: "fontStyle",
+      attribute: "font-style",
+      current: object.style.fontStyle,
+      next: operation.style.fontStyle,
+    },
+    {
+      key: "textAnchor",
+      attribute: "text-anchor",
+      current: object.style.textAnchor,
+      next: operation.style.textAnchor,
+    },
+  ];
+  const localEdits: AppliedSourceEdit[] = [];
+  for (const property of properties) {
+    if (property.current === property.next) continue;
+    const provenance = object.styleProvenance[property.key];
+    const range = indexed.attributeRanges.get(property.attribute);
+    if (
+      property.next === undefined ||
+      provenance === undefined ||
+      provenance.origin !== "presentation-attribute" ||
+      range === undefined
+    ) {
+      diagnostics.push({
+        code: "PPTV-PATCH-UNSAFE-RANGE",
+        severity: "error",
+        message: `Style property "${property.key}" on "${operation.id}" is absent, inherited, inline, or otherwise not represented by one direct presentation attribute.`,
+        objectId: operation.id,
+        range: indexed.elementRange,
+      });
+      return;
+    }
+    const edit = replaceAttributeValue(
+      document,
+      range,
+      property.attribute,
+      typeof property.next === "number"
+        ? formatNumber(property.next)
+        : property.next,
+      operationIndex,
+      operation.id,
+      diagnostics,
+    );
+    if (edit === undefined) return;
+    localEdits.push(edit);
+  }
+  edits.push(...localEdits);
+  affectedIds.push(operation.id);
+}
+
+function planChangedAttributes(
+  document: PptvDocument,
+  ranges: ReadonlyMap<string, SourceRange>,
+  changes: ReadonlyArray<
+    readonly [name: string, current: string | number, next: string | number]
+  >,
+  operationIndex: number,
+  objectId: string,
+  edits: AppliedSourceEdit[],
+  affectedIds: string[],
+  diagnostics: Diagnostic[],
+): void {
+  const localEdits: AppliedSourceEdit[] = [];
+  for (const [name, current, next] of changes) {
+    if (current === next) continue;
+    const range = ranges.get(name);
+    if (range === undefined) {
+      diagnostics.push({
+        code: "PPTV-PATCH-UNSAFE-RANGE",
+        severity: "error",
+        message: `Object "${objectId}" has no existing "${name}" attribute value to replace.`,
+        objectId,
+      });
+      return;
+    }
+    const edit = replaceAttributeValue(
+      document,
+      range,
+      name,
+      typeof next === "number" ? formatNumber(next) : next,
+      operationIndex,
+      objectId,
+      diagnostics,
+    );
+    if (edit === undefined) return;
+    localEdits.push(edit);
+  }
+  edits.push(...localEdits);
+  affectedIds.push(objectId);
+}
+
+function replaceAttributeValue(
+  document: PptvDocument,
+  range: SourceRange,
+  expectedName: string,
+  value: string,
+  operationIndex: number,
+  objectId: string,
+  diagnostics: Diagnostic[],
+): AppliedSourceEdit | undefined {
+  const raw = document.source.text.slice(range.charStart, range.charEnd);
+  const match = /^([^\s=]+)(\s*=\s*)(["'])([\s\S]*)\3$/u.exec(raw);
+  const actualName = match?.[1];
+  const quote = match?.[3];
+  if (
+    match === null ||
+    actualName === undefined ||
+    actualName.toLowerCase() !== expectedName ||
+    (quote !== '"' && quote !== "'")
+  ) {
+    diagnostics.push({
+      code: "PPTV-PATCH-UNSAFE-RANGE",
+      severity: "error",
+      message: `Operation ${operationIndex} cannot isolate one quoted "${expectedName}" attribute value on "${objectId}".`,
+      objectId,
+      range,
+    });
+    return undefined;
+  }
+  return {
+    range,
+    replacement: `${actualName}${match[2] ?? "="}${quote}${escapeXmlAttribute(value, quote)}${quote}`,
+    operationIndex,
+  };
+}
+
+function getResolvedGroupChildren(
+  state: ResolvedPatchState,
+  parentId: string,
+): readonly ResolvedObject[] | undefined {
+  const parent = state.objects.get(parentId);
+  return parent?.kind === "group" ? parent.children : undefined;
+}
+
+function getSourceContainerChildren(
+  document: PptvDocument,
+  parentId: string,
+): readonly PptvNode[] | undefined {
+  if (document.sourceKind === "svg" && document.id === parentId) {
+    return document.children;
+  }
+  if (document.sourceKind === "html") {
+    const slide = document.slides.get(parentId);
+    if (slide !== undefined) return slide.children;
+  }
+  const parent = findObject(document, parentId);
+  return parent?.role === "group" &&
+    parent.exportMode === "native" &&
+    !parent.opaque
+    ? parent.children
+    : undefined;
+}
+
+function collectDeletionIds(
+  document: PptvDocument,
+  operations: readonly PptvOperation[],
+): Set<string> {
+  const ids = new Set<string>();
+  for (const operation of operations) {
+    if (operation.op !== "delete-object") continue;
+    const node = findObject(document, operation.id);
+    if (node === undefined) continue;
+    for (const id of collectNodeIds(node)) ids.add(id);
+  }
+  return ids;
+}
+
+function collectNodeIds(node: PptvNode): string[] {
+  const ids = [node.id];
+  for (const child of node.children) ids.push(...collectNodeIds(child));
+  return ids;
+}
+
+function findConnectorReferenceHazard(
+  document: PptvDocument,
+  deletedSubtreeIds: ReadonlySet<string>,
+  allDeletingIds: ReadonlySet<string>,
+): PptvNode | undefined {
+  let hazard: PptvNode | undefined;
+  visitDocumentNodes(document, (node) => {
+    if (
+      hazard !== undefined ||
+      node.role !== "connector" ||
+      allDeletingIds.has(node.id)
+    ) {
+      return;
+    }
+    const from = node.attributes["data-pptv-from"];
+    const to = node.attributes["data-pptv-to"];
+    if (
+      (from !== undefined && deletedSubtreeIds.has(from)) ||
+      (to !== undefined && deletedSubtreeIds.has(to))
+    ) {
+      hazard = node;
+    }
+  });
+  return hazard;
+}
+
+function visitDocumentNodes(
+  document: PptvDocument,
+  visitor: (node: PptvNode) => void,
+): void {
+  const visit = (nodes: readonly PptvNode[]): void => {
+    for (const node of nodes) {
+      visitor(node);
+      visit(node.children);
+    }
+  };
+  if (document.sourceKind === "svg") {
+    visit(document.children);
+  } else {
+    for (const slide of document.slides.values()) visit(slide.children);
+  }
+}
+
+function isRootId(document: PptvDocument, id: string): boolean {
+  return document.sourceKind === "svg"
+    ? document.id === id
+    : document.slides.has(id);
+}
+
+function preconditionDiagnostic(
+  operationIndex: number,
+  objectId: string,
+  label: string,
+): Diagnostic {
+  return {
+    code: "PPTV-PATCH-PRECONDITION",
+    severity: "error",
+    message: `Operation ${operationIndex} ${label} precondition does not match object "${objectId}".`,
+    objectId,
+  };
+}
+
+function sameRectGeometry(
+  left: PptvRectGeometry,
+  right: PptvRectGeometry,
+): boolean {
+  return (
+    left.x === right.x &&
+    left.y === right.y &&
+    left.width === right.width &&
+    left.height === right.height
+  );
+}
+
+function sameEllipseGeometry(
+  left: PptvEllipseGeometry,
+  right: PptvEllipseGeometry,
+): boolean {
+  return (
+    left.cx === right.cx &&
+    left.cy === right.cy &&
+    left.rx === right.rx &&
+    left.ry === right.ry
+  );
+}
+
+function sameEndpoints(
+  left: PptvConnectorEndpoints,
+  right: PptvConnectorEndpoints,
+): boolean {
+  return (
+    left.x1 === right.x1 &&
+    left.y1 === right.y1 &&
+    left.x2 === right.x2 &&
+    left.y2 === right.y2
+  );
+}
+
+function samePoint(left: PptvPatchPoint, right: PptvPatchPoint): boolean {
+  return left.x === right.x && left.y === right.y;
+}
+
+function sameBounds(left: PptvPatchBounds, right: PptvPatchBounds): boolean {
+  return (
+    left.x === right.x &&
+    left.y === right.y &&
+    left.width === right.width &&
+    left.height === right.height
+  );
+}
+
+function sameStyle(
+  left: PptvConcreteNativeStyle,
+  right: PptvConcreteNativeStyle,
+): boolean {
+  return (
+    left.fill === right.fill &&
+    left.stroke === right.stroke &&
+    left.strokeWidth === right.strokeWidth &&
+    left.opacity === right.opacity &&
+    left.fontFamily === right.fontFamily &&
+    left.fontSize === right.fontSize &&
+    left.fontWeight === right.fontWeight &&
+    left.fontStyle === right.fontStyle &&
+    left.textAnchor === right.textAnchor
+  );
+}
+
+function formatBounds(bounds: PptvPatchBounds): string {
+  return [bounds.x, bounds.y, bounds.width, bounds.height]
+    .map(formatNumber)
+    .join(" ");
+}
+
+function formatNumber(value: number): string {
+  return Object.is(value, -0) ? "0" : String(value);
+}
+
+function escapeXmlAttribute(value: string, quote: '"' | "'"): string {
+  return value
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(quote, quote === '"' ? "&quot;" : "&apos;");
+}
+
 function decodePatch(input: unknown): {
   patch?: PptvPatch;
   diagnostics: Diagnostic[];
@@ -486,11 +1551,11 @@ function decodePatch(input: unknown): {
       message: `Unknown patch field "${key}".`,
     });
   }
-  if (input.schema !== "pptv-patch/0.1") {
+  if (input.schema !== "pptv-patch/0.1" && input.schema !== "pptv-patch/0.2") {
     diagnostics.push({
       code: "PPTV-PATCH-SCHEMA",
       severity: "error",
-      message: 'Patch schema must equal "pptv-patch/0.1".',
+      message: 'Patch schema must equal "pptv-patch/0.1" or "pptv-patch/0.2".',
     });
   }
   if (
@@ -532,15 +1597,24 @@ function decodePatch(input: unknown): {
   const operations: PptvOperation[] = [];
   if (Array.isArray(input.ops)) {
     for (const [index, value] of input.ops.entries()) {
-      const operation = decodeOperation(value, index, diagnostics);
+      const operation = decodeOperation(
+        value,
+        index,
+        diagnostics,
+        input.schema,
+      );
       if (operation !== undefined) operations.push(operation);
     }
   }
-  if (hasErrors(diagnostics) || typeof input.baseSha256 !== "string")
+  if (
+    hasErrors(diagnostics) ||
+    typeof input.baseSha256 !== "string" ||
+    (input.schema !== "pptv-patch/0.1" && input.schema !== "pptv-patch/0.2")
+  ) {
     return { diagnostics };
+  }
 
-  const patch: PptvPatch = {
-    schema: "pptv-patch/0.1",
+  const metadata = {
     baseSha256: input.baseSha256,
     ...(typeof input.transactionId === "string"
       ? { transactionId: input.transactionId }
@@ -549,8 +1623,15 @@ function decodePatch(input: unknown): {
     ...(typeof input.timestamp === "string"
       ? { timestamp: input.timestamp }
       : {}),
-    ops: operations,
   };
+  const patch: PptvPatch =
+    input.schema === "pptv-patch/0.1"
+      ? {
+          schema: "pptv-patch/0.1",
+          ...metadata,
+          ops: operations as PptvLegacyOperation[],
+        }
+      : { schema: "pptv-patch/0.2", ...metadata, ops: operations };
   return { patch, diagnostics };
 }
 
@@ -558,6 +1639,7 @@ function decodeOperation(
   input: unknown,
   index: number,
   diagnostics: Diagnostic[],
+  schema: unknown,
 ): PptvOperation | undefined {
   if (!isRecord(input) || typeof input.op !== "string") {
     diagnostics.push(
@@ -728,12 +1810,626 @@ function decodeOperation(
     };
   }
 
+  if (schema !== "pptv-patch/0.2") {
+    diagnostics.push({
+      code: "PPTV-PATCH-UNSUPPORTED",
+      severity: "error",
+      message: `Operation ${index} uses unsupported op "${input.op}" for pptv-patch/0.1.`,
+    });
+    return undefined;
+  }
+
+  if (input.op === "set-object-geometry") {
+    reportUnknownOperationKeys(
+      input,
+      index,
+      ["op", "id", "oldGeometry", "geometry"],
+      diagnostics,
+    );
+    if (!validStableId(input.id)) {
+      diagnostics.push(
+        schemaOperationDiagnostic(
+          index,
+          "set-object-geometry requires a stable id.",
+        ),
+      );
+      return undefined;
+    }
+    const oldGeometry = decodeGeometry(
+      input.oldGeometry,
+      index,
+      "oldGeometry",
+      diagnostics,
+    );
+    const geometry = decodeGeometry(
+      input.geometry,
+      index,
+      "geometry",
+      diagnostics,
+    );
+    if (oldGeometry === undefined || geometry === undefined) return undefined;
+    if (oldGeometry.kind !== geometry.kind) {
+      diagnostics.push(
+        schemaOperationDiagnostic(
+          index,
+          "set-object-geometry oldGeometry and geometry kinds must match.",
+        ),
+      );
+      return undefined;
+    }
+    return {
+      op: "set-object-geometry",
+      id: input.id,
+      oldGeometry,
+      geometry,
+    };
+  }
+
+  if (input.op === "set-connector-endpoints") {
+    reportUnknownOperationKeys(
+      input,
+      index,
+      ["op", "id", "oldEndpoints", "endpoints"],
+      diagnostics,
+    );
+    if (!validStableId(input.id)) {
+      diagnostics.push(
+        schemaOperationDiagnostic(
+          index,
+          "set-connector-endpoints requires a stable id.",
+        ),
+      );
+      return undefined;
+    }
+    const oldEndpoints = decodeEndpoints(
+      input.oldEndpoints,
+      index,
+      "oldEndpoints",
+      diagnostics,
+      false,
+    );
+    const endpoints = decodeEndpoints(
+      input.endpoints,
+      index,
+      "endpoints",
+      diagnostics,
+      true,
+    );
+    if (oldEndpoints === undefined || endpoints === undefined) return undefined;
+    return {
+      op: "set-connector-endpoints",
+      id: input.id,
+      oldEndpoints,
+      endpoints,
+    };
+  }
+
+  if (input.op === "set-group-translation") {
+    reportUnknownOperationKeys(
+      input,
+      index,
+      ["op", "id", "oldTranslation", "translation"],
+      diagnostics,
+    );
+    if (!validStableId(input.id)) {
+      diagnostics.push(
+        schemaOperationDiagnostic(
+          index,
+          "set-group-translation requires a stable id.",
+        ),
+      );
+      return undefined;
+    }
+    const oldTranslation = decodePoint(
+      input.oldTranslation,
+      index,
+      "oldTranslation",
+      diagnostics,
+    );
+    const translation = decodePoint(
+      input.translation,
+      index,
+      "translation",
+      diagnostics,
+    );
+    if (oldTranslation === undefined || translation === undefined)
+      return undefined;
+    return {
+      op: "set-group-translation",
+      id: input.id,
+      oldTranslation,
+      translation,
+    };
+  }
+
+  if (input.op === "set-text-frame") {
+    reportUnknownOperationKeys(
+      input,
+      index,
+      ["op", "id", "oldFrame", "frame", "oldLineAnchor", "lineAnchor"],
+      diagnostics,
+    );
+    if (!validStableId(input.id)) {
+      diagnostics.push(
+        schemaOperationDiagnostic(
+          index,
+          "set-text-frame requires a stable id.",
+        ),
+      );
+      return undefined;
+    }
+    const oldFrame = decodeBounds(
+      input.oldFrame,
+      index,
+      "oldFrame",
+      diagnostics,
+    );
+    const frame = decodeBounds(input.frame, index, "frame", diagnostics);
+    const oldLineAnchor = decodePoint(
+      input.oldLineAnchor,
+      index,
+      "oldLineAnchor",
+      diagnostics,
+    );
+    const lineAnchor = decodePoint(
+      input.lineAnchor,
+      index,
+      "lineAnchor",
+      diagnostics,
+    );
+    if (
+      oldFrame === undefined ||
+      frame === undefined ||
+      oldLineAnchor === undefined ||
+      lineAnchor === undefined
+    ) {
+      return undefined;
+    }
+    return {
+      op: "set-text-frame",
+      id: input.id,
+      oldFrame,
+      frame,
+      oldLineAnchor,
+      lineAnchor,
+    };
+  }
+
+  if (input.op === "set-child-order") {
+    reportUnknownOperationKeys(
+      input,
+      index,
+      ["op", "parentId", "oldOrder", "order"],
+      diagnostics,
+    );
+    if (
+      !validStableId(input.parentId) ||
+      !validStableIdArray(input.oldOrder) ||
+      !validStableIdArray(input.order)
+    ) {
+      diagnostics.push(
+        schemaOperationDiagnostic(
+          index,
+          "set-child-order requires stable parentId and unique stable-ID oldOrder/order arrays.",
+        ),
+      );
+      return undefined;
+    }
+    return {
+      op: "set-child-order",
+      parentId: input.parentId,
+      oldOrder: input.oldOrder,
+      order: input.order,
+    };
+  }
+
+  if (input.op === "delete-object") {
+    reportUnknownOperationKeys(
+      input,
+      index,
+      ["op", "id", "oldParentId", "oldOrder"],
+      diagnostics,
+    );
+    if (
+      !validStableId(input.id) ||
+      !(input.oldParentId === null || validStableId(input.oldParentId)) ||
+      !Number.isInteger(input.oldOrder) ||
+      (input.oldOrder as number) < 0
+    ) {
+      diagnostics.push(
+        schemaOperationDiagnostic(
+          index,
+          "delete-object requires stable id, nullable stable oldParentId, and nonnegative integer oldOrder.",
+        ),
+      );
+      return undefined;
+    }
+    return {
+      op: "delete-object",
+      id: input.id,
+      oldParentId: input.oldParentId,
+      oldOrder: input.oldOrder as number,
+    };
+  }
+
+  if (input.op === "set-native-style") {
+    reportUnknownOperationKeys(
+      input,
+      index,
+      ["op", "id", "oldStyle", "style"],
+      diagnostics,
+    );
+    if (!validStableId(input.id)) {
+      diagnostics.push(
+        schemaOperationDiagnostic(
+          index,
+          "set-native-style requires a stable id.",
+        ),
+      );
+      return undefined;
+    }
+    const oldStyle = decodeConcreteStyle(
+      input.oldStyle,
+      index,
+      "oldStyle",
+      diagnostics,
+    );
+    const style = decodeConcreteStyle(input.style, index, "style", diagnostics);
+    if (oldStyle === undefined || style === undefined) return undefined;
+    return {
+      op: "set-native-style",
+      id: input.id,
+      oldStyle,
+      style,
+    };
+  }
+
   diagnostics.push({
     code: "PPTV-PATCH-UNSUPPORTED",
     severity: "error",
     message: `Operation ${index} uses unsupported op "${input.op}".`,
   });
   return undefined;
+}
+
+function decodeGeometry(
+  input: unknown,
+  index: number,
+  label: string,
+  diagnostics: Diagnostic[],
+): PptvObjectGeometry | undefined {
+  if (!isRecord(input)) {
+    diagnostics.push(
+      schemaOperationDiagnostic(index, `${label} must be a geometry object.`),
+    );
+    return undefined;
+  }
+  if (input.kind === "rect") {
+    reportUnknownNestedKeys(
+      input,
+      index,
+      label,
+      ["kind", "x", "y", "width", "height"],
+      diagnostics,
+    );
+    if (
+      !isFiniteNumber(input.x) ||
+      !isFiniteNumber(input.y) ||
+      !isPositiveFiniteNumber(input.width) ||
+      !isPositiveFiniteNumber(input.height)
+    ) {
+      diagnostics.push(
+        schemaOperationDiagnostic(
+          index,
+          `${label} rect requires finite x/y and positive finite width/height.`,
+        ),
+      );
+      return undefined;
+    }
+    return {
+      kind: "rect",
+      x: normalizePatchZero(input.x),
+      y: normalizePatchZero(input.y),
+      width: input.width,
+      height: input.height,
+    };
+  }
+  if (input.kind === "ellipse") {
+    reportUnknownNestedKeys(
+      input,
+      index,
+      label,
+      ["kind", "cx", "cy", "rx", "ry"],
+      diagnostics,
+    );
+    if (
+      !isFiniteNumber(input.cx) ||
+      !isFiniteNumber(input.cy) ||
+      !isPositiveFiniteNumber(input.rx) ||
+      !isPositiveFiniteNumber(input.ry)
+    ) {
+      diagnostics.push(
+        schemaOperationDiagnostic(
+          index,
+          `${label} ellipse requires finite cx/cy and positive finite rx/ry.`,
+        ),
+      );
+      return undefined;
+    }
+    return {
+      kind: "ellipse",
+      cx: normalizePatchZero(input.cx),
+      cy: normalizePatchZero(input.cy),
+      rx: input.rx,
+      ry: input.ry,
+    };
+  }
+  diagnostics.push(
+    schemaOperationDiagnostic(
+      index,
+      `${label} kind must be "rect" or "ellipse".`,
+    ),
+  );
+  return undefined;
+}
+
+function decodeEndpoints(
+  input: unknown,
+  index: number,
+  label: string,
+  diagnostics: Diagnostic[],
+  _replacement: boolean,
+): PptvConnectorEndpoints | undefined {
+  if (!isRecord(input)) {
+    diagnostics.push(
+      schemaOperationDiagnostic(index, `${label} must be an endpoint object.`),
+    );
+    return undefined;
+  }
+  reportUnknownNestedKeys(
+    input,
+    index,
+    label,
+    ["x1", "y1", "x2", "y2"],
+    diagnostics,
+  );
+  if (
+    !isFiniteNumber(input.x1) ||
+    !isFiniteNumber(input.y1) ||
+    !isFiniteNumber(input.x2) ||
+    !isFiniteNumber(input.y2)
+  ) {
+    diagnostics.push(
+      schemaOperationDiagnostic(
+        index,
+        `${label} requires four finite numbers.`,
+      ),
+    );
+    return undefined;
+  }
+  const endpoints = {
+    x1: normalizePatchZero(input.x1),
+    y1: normalizePatchZero(input.y1),
+    x2: normalizePatchZero(input.x2),
+    y2: normalizePatchZero(input.y2),
+  };
+  if (endpoints.x1 === endpoints.x2 && endpoints.y1 === endpoints.y2) {
+    diagnostics.push(
+      schemaOperationDiagnostic(
+        index,
+        `${label} connector endpoints must be distinct.`,
+      ),
+    );
+    return undefined;
+  }
+  return endpoints;
+}
+
+function decodePoint(
+  input: unknown,
+  index: number,
+  label: string,
+  diagnostics: Diagnostic[],
+): PptvPatchPoint | undefined {
+  if (!isRecord(input)) {
+    diagnostics.push(
+      schemaOperationDiagnostic(index, `${label} must be a point object.`),
+    );
+    return undefined;
+  }
+  reportUnknownNestedKeys(input, index, label, ["x", "y"], diagnostics);
+  if (!isFiniteNumber(input.x) || !isFiniteNumber(input.y)) {
+    diagnostics.push(
+      schemaOperationDiagnostic(index, `${label} requires finite x and y.`),
+    );
+    return undefined;
+  }
+  return {
+    x: normalizePatchZero(input.x),
+    y: normalizePatchZero(input.y),
+  };
+}
+
+function decodeBounds(
+  input: unknown,
+  index: number,
+  label: string,
+  diagnostics: Diagnostic[],
+): PptvPatchBounds | undefined {
+  if (!isRecord(input)) {
+    diagnostics.push(
+      schemaOperationDiagnostic(index, `${label} must be a bounds object.`),
+    );
+    return undefined;
+  }
+  reportUnknownNestedKeys(
+    input,
+    index,
+    label,
+    ["x", "y", "width", "height"],
+    diagnostics,
+  );
+  if (
+    !isFiniteNumber(input.x) ||
+    !isFiniteNumber(input.y) ||
+    !isPositiveFiniteNumber(input.width) ||
+    !isPositiveFiniteNumber(input.height)
+  ) {
+    diagnostics.push(
+      schemaOperationDiagnostic(
+        index,
+        `${label} requires finite x/y and positive finite width/height.`,
+      ),
+    );
+    return undefined;
+  }
+  return {
+    x: normalizePatchZero(input.x),
+    y: normalizePatchZero(input.y),
+    width: input.width,
+    height: input.height,
+  };
+}
+
+function decodeConcreteStyle(
+  input: unknown,
+  index: number,
+  label: string,
+  diagnostics: Diagnostic[],
+): PptvConcreteNativeStyle | undefined {
+  if (!isRecord(input)) {
+    diagnostics.push(
+      schemaOperationDiagnostic(index, `${label} must be a style object.`),
+    );
+    return undefined;
+  }
+  reportUnknownNestedKeys(
+    input,
+    index,
+    label,
+    [
+      "fill",
+      "stroke",
+      "strokeWidth",
+      "opacity",
+      "fontFamily",
+      "fontSize",
+      "fontWeight",
+      "fontStyle",
+      "textAnchor",
+    ],
+    diagnostics,
+  );
+  if (
+    !isConcretePaint(input.fill) ||
+    !isConcretePaint(input.stroke) ||
+    !isFiniteNumber(input.strokeWidth) ||
+    input.strokeWidth < 0 ||
+    !isFiniteNumber(input.opacity) ||
+    input.opacity < 0 ||
+    input.opacity > 1 ||
+    (input.fontFamily !== undefined &&
+      !isConcreteFontFamily(input.fontFamily)) ||
+    (input.fontSize !== undefined && !isPositiveFiniteNumber(input.fontSize)) ||
+    (input.fontWeight !== 400 && input.fontWeight !== 700) ||
+    (input.fontStyle !== "normal" && input.fontStyle !== "italic") ||
+    (input.textAnchor !== "start" &&
+      input.textAnchor !== "middle" &&
+      input.textAnchor !== "end")
+  ) {
+    diagnostics.push(
+      schemaOperationDiagnostic(
+        index,
+        `${label} must be one complete concrete C6 native style.`,
+      ),
+    );
+    return undefined;
+  }
+  return {
+    fill: input.fill,
+    stroke: input.stroke,
+    strokeWidth: normalizePatchZero(input.strokeWidth),
+    opacity: normalizePatchZero(input.opacity),
+    ...(typeof input.fontFamily === "string"
+      ? { fontFamily: input.fontFamily }
+      : {}),
+    ...(typeof input.fontSize === "number" ? { fontSize: input.fontSize } : {}),
+    fontWeight: input.fontWeight,
+    fontStyle: input.fontStyle,
+    textAnchor: input.textAnchor,
+  };
+}
+
+function reportUnknownNestedKeys(
+  value: Record<string, unknown>,
+  index: number,
+  label: string,
+  allowed: readonly string[],
+  diagnostics: Diagnostic[],
+): void {
+  for (const key of unknownKeys(value, allowed)) {
+    diagnostics.push(
+      schemaOperationDiagnostic(index, `Unknown ${label} field "${key}".`),
+    );
+  }
+}
+
+function validStableId(value: unknown): value is string {
+  return typeof value === "string" && STABLE_ID_PATTERN.test(value);
+}
+
+function validStableIdArray(value: unknown): value is string[] {
+  return (
+    isStringArray(value) &&
+    value.every((id) => STABLE_ID_PATTERN.test(id)) &&
+    new Set(value).size === value.length
+  );
+}
+
+function isFiniteNumber(value: unknown): value is number {
+  return typeof value === "number" && Number.isFinite(value);
+}
+
+function isPositiveFiniteNumber(value: unknown): value is number {
+  return isFiniteNumber(value) && value > 0;
+}
+
+function normalizePatchZero(value: number): number {
+  return Object.is(value, -0) ? 0 : value;
+}
+
+function isConcretePaint(value: unknown): value is string {
+  return (
+    typeof value === "string" &&
+    (value === "none" || /^#[0-9a-f]{6}$/u.test(value))
+  );
+}
+
+const GENERIC_FONT_FAMILIES = new Set([
+  "cursive",
+  "emoji",
+  "fangsong",
+  "fantasy",
+  "math",
+  "monospace",
+  "sans-serif",
+  "serif",
+  "system-ui",
+  "ui-monospace",
+  "ui-rounded",
+  "ui-sans-serif",
+  "ui-serif",
+]);
+
+function isConcreteFontFamily(value: unknown): value is string {
+  return (
+    typeof value === "string" &&
+    !value.includes(",") &&
+    /^-?[_A-Za-z][_A-Za-z0-9-]*(?:\s+-?[_A-Za-z][_A-Za-z0-9-]*)*$/u.test(
+      value,
+    ) &&
+    !GENERIC_FONT_FAMILIES.has(value.toLowerCase())
+  );
 }
 
 function findObject(document: PptvDocument, id: string): PptvNode | undefined {

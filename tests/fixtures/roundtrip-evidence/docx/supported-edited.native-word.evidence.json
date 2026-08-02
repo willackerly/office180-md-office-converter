@@ -1,0 +1,61 @@
+{
+  "capture": {
+    "command": {
+      "argv": [
+        "manual-status-record"
+      ],
+      "exit_code": null,
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "timeout_seconds": 1
+    },
+    "diagnostic": "Native Microsoft Word open, representative edit, save, and reopen were not automated by this generator; manual lifecycle validation remains required.",
+    "environment": {
+      "architecture": "arm64",
+      "display_scale": 1.0,
+      "locale": "C/C.UTF-8/C/C/C/C",
+      "os": "Darwin",
+      "os_version": "26.5.2"
+    },
+    "fonts": [],
+    "input": {
+      "background": "not-captured",
+      "index": 1,
+      "pixel_size": 1,
+      "unit": "page"
+    },
+    "output": {
+      "colorspace": null,
+      "height_px": null,
+      "media_type": null,
+      "page_count": null,
+      "page_sha256": [],
+      "path": null,
+      "sha256": null,
+      "width_px": null
+    },
+    "renderer": {
+      "executable_path": "/Applications/Microsoft Word.app",
+      "product": "Microsoft Word",
+      "version": "16.111.2"
+    },
+    "renderer_class": "native-word",
+    "status": "manual-required"
+  },
+  "evidence_sha256": "50969d890451c74209e0ccda225787f58788e3d8b8953bb1f9f99acad94da95b",
+  "native_lifecycle": {
+    "application": "Microsoft Word",
+    "diagnostic": "Native Microsoft Word open, representative edit, save, and reopen were not automated by this generator; manual lifecycle validation remains required.",
+    "method": "manual",
+    "renderer_class": "native-word",
+    "status": "manual-required",
+    "version": "16.111.2"
+  },
+  "schema": "office180-visual-evidence/0.1",
+  "subject": {
+    "artifact_path": "supported-edited.docx",
+    "artifact_sha256": "4706144d3ed3c06aabeff076097746cf7c061dc2ce1e495fe5e3b48415d9fd08",
+    "checkpoint": "native-word-edit-save-reopen",
+    "lane": "markdown-docx"
+  }
+}

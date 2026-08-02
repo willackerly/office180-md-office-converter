@@ -3,6 +3,7 @@
  *
  * CONTRACT:C6-PPTV-RESOLVED.1.1
  * CONTRACT:C7-PPTX-CANARY.1.1
+ * CONTRACT:C9-PPTV-PPTX-BASELINE.1.0
  */
 
 import JSZip from "jszip";
@@ -120,6 +121,17 @@ export interface PptxCanaryArtifact {
   readonly sourceSha256: string;
 }
 
+/** @internal C9 package lineage; not re-exported from the public Node entry. */
+export interface PptxCanaryPackageLineage {
+  /**
+   * Optional package lineage used by C9. Omitting every field preserves the
+   * byte-exact C7 canary package.
+   */
+  readonly compiler?: string;
+  readonly coreTitle?: string;
+  readonly customProperties?: Readonly<Record<string, string>>;
+}
+
 interface SlideInfo {
   readonly slide: PptvResolvedSlide;
   readonly partNumber: number;
@@ -136,8 +148,23 @@ interface RenderContext {
 export async function compilePptxCanary(
   input: PptvResolvedDeck | PptvResolvedResult,
 ): Promise<PptxCanaryArtifact> {
+  return compilePptxCanaryPackage(input, {});
+}
+
+/** @internal C9 assembly hook; the public C7 canary remains byte-exact. */
+export async function compilePptxCanaryWithLineage(
+  input: PptvResolvedDeck | PptvResolvedResult,
+  lineage: PptxCanaryPackageLineage,
+): Promise<PptxCanaryArtifact> {
+  return compilePptxCanaryPackage(input, lineage);
+}
+
+async function compilePptxCanaryPackage(
+  input: PptvResolvedDeck | PptvResolvedResult,
+  lineage: PptxCanaryPackageLineage,
+): Promise<PptxCanaryArtifact> {
   const model = resolvedModel(input);
-  const graph = createPptxCanaryGraph(model);
+  const graph = createPptxCanaryGraphWithLineage(model, lineage);
   validatePptxCanaryGraph(graph);
   const packageParts = materializePackageParts(graph);
   if (packageParts.length > 65_535) {
@@ -193,7 +220,15 @@ export async function compilePptxCanary(
 export function createPptxCanaryGraph(
   model: PptvResolvedDeck,
 ): PptxCanaryGraph {
+  return createPptxCanaryGraphWithLineage(model, {});
+}
+
+function createPptxCanaryGraphWithLineage(
+  model: PptvResolvedDeck,
+  lineage: PptxCanaryPackageLineage,
+): PptxCanaryGraph {
   validateResolvedDeck(model);
+  validatePackageLineage(lineage);
   const slideInfos = createSlideInfos(model.slides);
   const parts: PptxCanaryPart[] = [];
   const relationships: PptxCanaryRelationship[] = [];
@@ -206,11 +241,15 @@ export function createPptxCanaryGraph(
   };
 
   addXml("docProps/app.xml", CONTENT_TYPES.app, renderAppProperties(model));
-  addXml("docProps/core.xml", CONTENT_TYPES.core, renderCoreProperties());
+  addXml(
+    "docProps/core.xml",
+    CONTENT_TYPES.core,
+    renderCoreProperties(lineage.coreTitle),
+  );
   addXml(
     "docProps/custom.xml",
     CONTENT_TYPES.custom,
-    renderCustomProperties(model),
+    renderCustomProperties(model, lineage),
   );
   addXml(
     "ppt/presentation.xml",
@@ -858,14 +897,16 @@ ${titles}
 </Properties>`);
 }
 
-function renderCoreProperties(): string {
+function renderCoreProperties(
+  title = "PPTV deterministic compiler canary",
+): string {
   return xmlDocument(`<cp:coreProperties
   xmlns:cp="http://schemas.openxmlformats.org/package/2006/metadata/core-properties"
   xmlns:dc="http://purl.org/dc/elements/1.1/"
   xmlns:dcterms="http://purl.org/dc/terms/"
   xmlns:dcmitype="http://purl.org/dc/dcmitype/"
   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
-  <dc:title>PPTV deterministic compiler canary</dc:title>
+  <dc:title>${xmlText(title)}</dc:title>
   <dc:creator>office180</dc:creator>
   <cp:lastModifiedBy>office180</cp:lastModifiedBy>
   <dcterms:created xsi:type="dcterms:W3CDTF">${FIXED_DATE_ISO}</dcterms:created>
@@ -873,12 +914,18 @@ function renderCoreProperties(): string {
 </cp:coreProperties>`);
 }
 
-function renderCustomProperties(model: PptvResolvedDeck): string {
+function renderCustomProperties(
+  model: PptvResolvedDeck,
+  lineage: PptxCanaryPackageLineage,
+): string {
   const values = [
-    ["pptv.compiler", "office180-pptv-pptx-canary/0.1"],
+    ["pptv.compiler", lineage.compiler ?? "office180-pptv-pptx-canary/0.1"],
     ["pptv.resolvedSchema", model.schema],
     ["pptv.activeTheme", model.activeTheme],
     ["pptv.sourceSha256", model.sourceSha256],
+    ...Object.entries(lineage.customProperties ?? {}).sort(([left], [right]) =>
+      compareText(left, right),
+    ),
   ] as const;
   return xmlDocument(`<Properties
   xmlns="http://schemas.openxmlformats.org/officeDocument/2006/custom-properties"
@@ -890,6 +937,37 @@ ${values
   )
   .join("\n")}
 </Properties>`);
+}
+
+function validatePackageLineage(lineage: PptxCanaryPackageLineage): void {
+  for (const [label, value] of [
+    ["compiler", lineage.compiler],
+    ["core title", lineage.coreTitle],
+  ] as const) {
+    if (value !== undefined && value.length === 0) {
+      fail("PPTV-PPTX-INVALID-MODEL", `The ${label} option cannot be empty.`);
+    }
+  }
+  const reserved = new Set([
+    "pptv.compiler",
+    "pptv.resolvedSchema",
+    "pptv.activeTheme",
+    "pptv.sourceSha256",
+  ]);
+  for (const [name, value] of Object.entries(lineage.customProperties ?? {})) {
+    if (
+      name.length === 0 ||
+      value.length === 0 ||
+      reserved.has(name) ||
+      /[\u0000-\u001f\u007f]/u.test(name) ||
+      /[\u0000-\u0008\u000b\u000c\u000e-\u001f\u007f]/u.test(value)
+    ) {
+      fail(
+        "PPTV-PPTX-INVALID-MODEL",
+        `Invalid or reserved custom package property "${name}".`,
+      );
+    }
+  }
 }
 
 function renderPresentation(
@@ -1279,7 +1357,7 @@ ${indent}          <a:latin typeface="${xmlAttribute(fontFamily)}"/>
 ${indent}          <a:ea typeface="${xmlAttribute(fontFamily)}"/>
 ${indent}          <a:cs typeface="${xmlAttribute(fontFamily)}"/>
 ${indent}        </a:rPr>
-${indent}        <a:t>${xmlText(line.text)}</a:t>
+${indent}        <a:t${drawingTextSpaceAttribute(line.text)}>${xmlText(line.text)}</a:t>
 ${indent}      </a:r>
 ${indent}      <a:endParaRPr lang="en-US" sz="${fontSizePoints}" b="${object.style.fontWeight === 700 ? 1 : 0}" i="${object.style.fontStyle === "italic" ? 1 : 0}" dirty="0">
 ${renderTextOutline(object.style, `${indent}        `)}
@@ -1859,6 +1937,10 @@ function xmlText(value: string): string {
     .replaceAll("&", "&amp;")
     .replaceAll("<", "&lt;")
     .replaceAll(">", "&gt;");
+}
+
+function drawingTextSpaceAttribute(value: string): string {
+  return /^[\t\r\n ]|[\t\r\n ]$/u.test(value) ? ' xml:space="preserve"' : "";
 }
 
 function xmlAttribute(value: string): string {

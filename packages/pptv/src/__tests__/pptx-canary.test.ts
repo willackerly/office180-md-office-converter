@@ -667,6 +667,24 @@ describe("C7 deterministic PPTX compiler canary", () => {
     expect(cover).not.toContain("<a:spAutoFit");
   });
 
+  it("marks boundary whitespace for exact DrawingML text preservation", async () => {
+    const model = (await canaryModel()) as unknown as MutableDeck;
+    const title = requiredMutable(model, "cover.title");
+    const lines = title["lines"];
+    expect(Array.isArray(lines)).toBe(true);
+    if (!Array.isArray(lines) || lines.length !== 1) {
+      throw new Error("Expected one mutable title line");
+    }
+    (lines[0] as Record<string, unknown>)["text"] = " Boundary text ";
+
+    const artifact = await compilePptxCanary(
+      model as unknown as PptvResolvedDeck,
+    );
+    const zip = await JSZip.loadAsync(artifact.bytes);
+    const cover = await zip.file("ppt/slides/slide2.xml")?.async("string");
+    expect(cover).toContain('<a:t xml:space="preserve"> Boundary text </a:t>');
+  });
+
   it("maps all four connector endpoint quadrants to exact flips and bounds", async () => {
     const base = await canaryModel();
     const quadrants = [

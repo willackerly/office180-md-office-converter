@@ -3,10 +3,17 @@
 **A reconstruction and round-trip playbook for turning a designed SVG into
 an editable `.pptx` without losing the source of truth.**
 
+**Status:** general reconstruction and QA rationale. The repository implements
+one strict PPTV C9/C10 lane for a supported standalone atom, fixed 16:9 output,
+explicit identity or same-aspect uniform placement, and authenticated
+baseline-aware edit recovery. Arbitrary SVG conversion, hybrid asset export,
+alternate slide ratios, new-object identity allocation, and baseline-free PPTX
+import remain roadmap.
+
 This is a companion method to the repository's Markdown-to-DOCX workflow.
-It is not a shipped converter or a claim that arbitrary SVG can be mapped
-losslessly to PowerPoint shapes. The reliable result comes from a deliberate
-reconstruction:
+It is not a claim that arbitrary SVG can be mapped losslessly to PowerPoint
+shapes. `@office180/pptv` ships only the bounded profile summarized above; the
+broader reliable result described here comes from a deliberate reconstruction:
 
 - text becomes native PowerPoint text;
 - simple geometry becomes native PowerPoint shapes;
@@ -24,9 +31,11 @@ This workflow preserves the editability people actually need while keeping
 the original visual language intact.
 
 For SVG authored specifically for deterministic conversion, see the
-companion [`PPTV PowerPoint Vector Profile`](PPTV-PROFILE.md) proposal. PPTV
-encodes object identity, native-versus-asset intent, and DOM-order z-order
-directly in a conforming `.pptv.svg` source.
+implemented bounded
+[`PPTV PowerPoint Vector Profile`](PPTV-PROFILE.md) and its versioned
+contracts. PPTV encodes object identity, native-versus-asset intent, and
+DOM-order z-order directly in a conforming `.pptv.svg` source; the current C9
+compiler still admits only its explicitly documented primitive subset.
 
 ## How it complements Markdown and DOCX
 
@@ -103,16 +112,30 @@ The objective is not "100 percent native shapes." The objective is that text,
 layout, colors, and meaningful diagram structure are editable while complex
 artwork remains crisp and stable.
 
+The current C9 compiler implements the strict native rectangle, true
+circle/ellipse, straight connector, translated-group, and one-hard-line text
+subset. Rounded rectangles, multiline text, opaque SVG/raster assets, non-unit
+opacity, external resources, and other unsupported constructs fail closed; it
+never silently substitutes a rendered asset.
+
 ## 3. Match the source coordinate system
 
-Set the PowerPoint slide size to the SVG aspect ratio before creating objects.
-Use one deterministic transform for all source coordinates:
+Choose one explicit target rectangle before creating objects. The current C9
+lane keeps the PowerPoint slide fixed at `1600 × 900` logical units and places
+one atom inside it. Identity preserves scale; the only non-identity policy is
+uniform scale plus translation, and it requires the target rectangle to have
+the source viewBox aspect ratio. C9 never changes the slide ratio, stretches,
+crops, or letterboxes.
+
+For a source viewBox `(viewBox_x, viewBox_y, viewBox_width, viewBox_height)` and
+target `(target_x, target_y, target_width, target_height)`, require one scale:
 
 ```text
-ppt_x = svg_x * slide_width  / viewBox_width
-ppt_y = svg_y * slide_height / viewBox_height
-ppt_w = svg_w * slide_width  / viewBox_width
-ppt_h = svg_h * slide_height / viewBox_height
+scale = target_width / viewBox_width = target_height / viewBox_height
+ppt_x = target_x + (svg_x - viewBox_x) * scale
+ppt_y = target_y + (svg_y - viewBox_y) * scale
+ppt_w = svg_w * scale
+ppt_h = svg_h * scale
 ```
 
 Account for non-zero `viewBox` origins. Do not tune individual objects with
@@ -153,9 +176,10 @@ Rules:
 - The same semantic object keeps the same ID across regenerations.
 - Decorative fragments that must move together may be one embedded SVG with
   one ID.
-- A copied PowerPoint object initially duplicates its source ID. During
-  reverse inspection, treat that as a new object and assign a new ID before
-  establishing the next baseline.
+- A copied PowerPoint object initially duplicates its source ID. Current C10
+  refuses copied or duplicate identity and emits no partial patch. A future or
+  manual workflow must allocate a new canonical source ID before establishing a
+  new baseline.
 - Deleting an object retires its ID. Do not silently reuse it for a different
   concept.
 
@@ -238,8 +262,8 @@ Text is the most common source of visual drift.
 - Set margins, vertical anchoring, line spacing, and paragraph spacing
   intentionally.
 - Prefer source-consistent line breaks for tightly composed headings.
-- Disable auto-fit when exact geometry is required; use it only when editable
-  copy is expected to grow.
+- Keep auto-fit disabled. Growing copy requires an explicit source decision:
+  revise the words, frame, font size, or authored hard lines, then rerun C8.
 - Check that no text is clipped, unexpectedly wrapped, or shrunk.
 - Keep semantic text separate from decorative SVG icons.
 
@@ -288,6 +312,11 @@ cannot.
 ## 9. Bring human PowerPoint edits back
 
 Treat the delivered PPTX as an editable branch, not a new canonical source.
+Current C10 accepts only an edited descendant authenticated by the exact C9
+source/map baseline. It returns `unchanged`, `patchable`, `review-required`, or
+`refused`; copied/inserted objects, duplicate or missing identity, reparenting,
+group scaling, unsupported runs/effects, and arbitrary PPTX input never produce
+a partial patch.
 
 1. Preserve the original generated PPTX as the comparison baseline.
 2. Inspect the edited PPTX into a stable object listing.
@@ -301,7 +330,9 @@ Treat the delivered PPTX as an editable branch, not a new canonical source.
    - incidental Office serialization drift.
 4. Review the intentional differences with the editor.
 5. Port accepted changes into both the canonical SVG and generator.
-6. Assign stable IDs to accepted new or copied objects.
+6. For a broader future/manual workflow, assign stable IDs to accepted new or
+   copied objects in canonical source before generating a new baseline; current
+   C10 refuses them.
 7. Regenerate into a temporary output and compare it with the edited deck.
 8. Replace the delivery artifact only after the regenerated version preserves
    the accepted visual and semantic changes.

@@ -1,0 +1,61 @@
+{
+  "capture": {
+    "command": {
+      "argv": [
+        "manual-status-record"
+      ],
+      "exit_code": null,
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "timeout_seconds": 1
+    },
+    "diagnostic": "Native Microsoft PowerPoint open, representative edit, save, and reopen were not automated by this generator; manual lifecycle validation remains required.",
+    "environment": {
+      "architecture": "arm64",
+      "display_scale": 1.0,
+      "locale": "C/C.UTF-8/C/C/C/C",
+      "os": "Darwin",
+      "os_version": "26.5.2"
+    },
+    "fonts": [],
+    "input": {
+      "background": "not-captured",
+      "index": 1,
+      "pixel_size": 1,
+      "unit": "slide"
+    },
+    "output": {
+      "colorspace": null,
+      "height_px": null,
+      "media_type": null,
+      "page_count": null,
+      "page_sha256": [],
+      "path": null,
+      "sha256": null,
+      "width_px": null
+    },
+    "renderer": {
+      "executable_path": "/Applications/Microsoft PowerPoint.app/Contents/MacOS/Microsoft PowerPoint",
+      "product": "Microsoft PowerPoint",
+      "version": "16.111.2"
+    },
+    "renderer_class": "native-powerpoint",
+    "status": "manual-required"
+  },
+  "evidence_sha256": "3aa833a370c7591e26971f5db6209e03b2e14591dabf5fc468ca9e5cde5bb3f3",
+  "native_lifecycle": {
+    "application": "Microsoft PowerPoint",
+    "diagnostic": "Native Microsoft PowerPoint open, representative edit, save, and reopen were not automated by this generator; manual lifecycle validation remains required.",
+    "method": "manual",
+    "renderer_class": "native-powerpoint",
+    "status": "manual-required",
+    "version": "16.111.2"
+  },
+  "schema": "office180-visual-evidence/0.1",
+  "subject": {
+    "artifact_path": "supported-edited.pptx",
+    "artifact_sha256": "4cf72c93e821adc4460f723c2bbd5085b54116a9067907ed0c60ec6eeebb9ca9",
+    "checkpoint": "native-powerpoint-lifecycle",
+    "lane": "pptv-pptx"
+  }
+}

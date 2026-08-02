@@ -26,10 +26,12 @@ standalone diagram, declare both with presentation attributes or local
 `style`. In a deck, a supported base class and complete theme may resolve them.
 The source `x`/`y` baseline and line string are authoritative.
 
-For C7 output, use exactly one direct line per text object. If a paragraph is
-visually multiline, create one text object per explicit line and group them.
-An editor may later present those lines as one paragraph-like control, but
-serialization must preserve the explicit lines.
+For C7 deck output or a C9 atom baseline, use exactly one direct line per text
+object. If a paragraph is visually multiline, create one text object per
+explicit line and group them. An editor may later present those lines as one
+paragraph-like control, but serialization must preserve the explicit lines.
+C9 scales the explicit frame, anchor, baseline, line step, and font size
+uniformly; it never introduces PowerPoint wrapping or autofit.
 
 ## Anchor-aware capacity
 

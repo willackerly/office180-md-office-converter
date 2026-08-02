@@ -1,0 +1,20 @@
+{
+  "diagnostics": [],
+  "embeddedSource": {
+    "canonicalSha256": "f4bc912013a84b1cacc449a84293f66f561bc258ee344f89c3a38a51b6cccb48",
+    "originalSha256": "f4bc912013a84b1cacc449a84293f66f561bc258ee344f89c3a38a51b6cccb48",
+    "part": "customXml/item2.xml",
+    "schema": "office180-md-source/0.1",
+    "state": "internally-consistent"
+  },
+  "input": {
+    "path": "supported-edited.docx",
+    "sha256": "4706144d3ed3c06aabeff076097746cf7c061dc2ce1e495fe5e3b48415d9fd08"
+  },
+  "output": {
+    "bytes": 1132,
+    "sha256": "1999150e15f59ece6ba1ff90f91c083703ceea67200bd048363b56b3661c4c91"
+  },
+  "schema": "office180-docx-roundtrip-report/0.1",
+  "state": "exact-supported-profile"
+}

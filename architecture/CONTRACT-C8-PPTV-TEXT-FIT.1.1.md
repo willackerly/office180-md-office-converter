@@ -217,8 +217,8 @@ exact evidence.
 Checked evidence in
 `packages/pptv/test-fixtures/c8/browser-calibration-evidence.json` uses exact
 `@playwright/test@1.62.0`, exact `esbuild@0.28.1`, Fontkit 2.0.4, and the
-656,582-byte browser-kernel SHA-256
-`6e92938113408ffc0cb5ccecedac88a1c9cc1966f25724c533243259c0472661`,
+700,262-byte browser-kernel SHA-256
+`230628dca67cb9bc8b91b0dead32667688365e3af210fbcf466420cc44813208`,
 and the OFL ABeeZee Regular fixture SHA-256
 `2901c8df256648cc2bb2e3afb381cb8d28e65ed3dbe11de20695ae4d5ffdeda9`.
 Six samples cover kerning, spaces, mixed text, near-limit, exact-boundary, and

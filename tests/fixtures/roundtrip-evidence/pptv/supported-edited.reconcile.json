@@ -1,0 +1,114 @@
+{
+  "schema": "pptv-pptx-reconciliation/0.1",
+  "status": "patchable",
+  "sourceSha256": "91cb7546a81d2e4edc41e22e314c7e51194c32917133b2909113688f94021f11",
+  "baselineMapSha256": "0a814430d57342407ec28724b6f04cdac21e557dbcbeaf3ecec6f5b2f2e1dabf",
+  "editedPptxSha256": "4cf72c93e821adc4460f723c2bbd5085b54116a9067907ed0c60ec6eeebb9ca9",
+  "changes": [
+    {
+      "kind": "text",
+      "objectId": "roundtrip.title",
+      "field": "text",
+      "oldText": "SOURCE ROUND TRIP",
+      "newText": "EDITED ROUND TRIP",
+      "patchable": true
+    },
+    {
+      "kind": "geometry",
+      "field": "geometry",
+      "objectId": "roundtrip.card",
+      "oldValue": {
+        "kind": "rect",
+        "x": 70,
+        "y": 190,
+        "width": 310,
+        "height": 230
+      },
+      "newValue": {
+        "kind": "rect",
+        "x": 80,
+        "y": 200,
+        "width": 300,
+        "height": 220
+      },
+      "patchable": true
+    },
+    {
+      "kind": "native-style",
+      "field": "style",
+      "objectId": "roundtrip.card",
+      "oldValue": {
+        "fill": "#dbeafe",
+        "stroke": "#2563eb",
+        "strokeWidth": 3,
+        "opacity": 1,
+        "fontWeight": 400,
+        "fontStyle": "normal",
+        "textAnchor": "start"
+      },
+      "newValue": {
+        "fill": "#dcfce7",
+        "stroke": "#16a34a",
+        "strokeWidth": 4,
+        "opacity": 1,
+        "fontWeight": 400,
+        "fontStyle": "normal",
+        "textAnchor": "start"
+      },
+      "patchable": true
+    }
+  ],
+  "patch": {
+    "schema": "pptv-patch/0.2",
+    "baseSha256": "91cb7546a81d2e4edc41e22e314c7e51194c32917133b2909113688f94021f11",
+    "ops": [
+      {
+        "op": "set-text",
+        "id": "roundtrip.title",
+        "oldText": "SOURCE ROUND TRIP",
+        "value": "EDITED ROUND TRIP"
+      },
+      {
+        "op": "set-object-geometry",
+        "id": "roundtrip.card",
+        "oldGeometry": {
+          "kind": "rect",
+          "x": 70,
+          "y": 190,
+          "width": 310,
+          "height": 230
+        },
+        "geometry": {
+          "kind": "rect",
+          "x": 80,
+          "y": 200,
+          "width": 300,
+          "height": 220
+        }
+      },
+      {
+        "op": "set-native-style",
+        "id": "roundtrip.card",
+        "oldStyle": {
+          "fill": "#dbeafe",
+          "stroke": "#2563eb",
+          "strokeWidth": 3,
+          "opacity": 1,
+          "fontWeight": 400,
+          "fontStyle": "normal",
+          "textAnchor": "start"
+        },
+        "style": {
+          "fill": "#dcfce7",
+          "stroke": "#16a34a",
+          "strokeWidth": 4,
+          "opacity": 1,
+          "fontWeight": 400,
+          "fontStyle": "normal",
+          "textAnchor": "start"
+        }
+      }
+    ]
+  },
+  "diagnostics": []
+}

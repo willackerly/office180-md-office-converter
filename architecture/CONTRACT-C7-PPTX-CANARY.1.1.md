@@ -116,10 +116,10 @@ stroke is not equivalent to SVG object/group compositing.
   two-dimensional.
 - Text frames map exactly. The text body explicitly uses `wrap="none"`,
   `a:noAutofit`, and zero `lIns`/`tIns`/`rIns`/`bIns`.
-- The one source line maps to one `a:p`/`a:r`/`a:t` sequence. DrawingML's
-  `a:t` is emitted without `xml:space` because its schema type is `xsd:string`
-  (whose whitespace facet is already `preserve`) and does not admit the XML
-  attribute. Paragraph alignment/margins retain the declared horizontal anchor.
+- The one source line maps to one `a:p`/`a:r`/`a:t` sequence. `a:t` carries
+  `xml:space="preserve"` exactly when the source line begins or ends with XML
+  whitespace; ordinary lines omit the attribute. Paragraph alignment/margins
+  retain the declared horizontal anchor.
   Paragraph indentation is zero, bullets are disabled, and the concrete font
   family is emitted for Latin, East Asian, and complex-script text so theme
   inheritance cannot silently substitute a typeface.
@@ -208,6 +208,7 @@ timestamps, and no ZIP64. Package-limit overflow fails.
 - [x] Two-slide manifest order and native painter order are retained
 - [x] Plain rectangle, ellipse, line, translated group, and direct hard-line
       text XML contain exact integer mappings and stable names/IDs
+- [x] Leading/trailing hard-line whitespace receives `xml:space="preserve"`
 - [x] All connector flip quadrants, nested group transforms, DrawingML range
       boundaries, object/slide numeric-ID collisions, central-directory order,
       zero extras/comments, and ZIP extension exclusions have adversarial tests
@@ -227,6 +228,8 @@ scale. Source
 `a4e23c1b7b8dc7034150352dea5bbf03028a76f50025059de259a80af1563bf8`
 produced the 17-part, 26,412-byte canary
 `8709452fe68f909ca4c469486e6e4c3e7bbde25dff114fdc79587cc75b8e8c96`.
+The 2026-08-01 boundary-whitespace amendment leaves this canonical fixture
+byte-identical, so its native claims remain bound to the 2026-07-29 Office run.
 That exact artifact:
 
 - passed the applicable ISO/ECMA PresentationML, DrawingML, document-property,
@@ -257,5 +260,5 @@ remains outside the current claim.
 
 | Version | Date       | Change                                                                                                                                        | Migration                                            |
 | ------- | ---------- | --------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------- |
-| 1.1     | 2026-07-29 | Correct font-size and line-step mapping to geometry-derived 60 hundredth-points per unit; renew exact artifact/schema/OpenDocKit/native evidence | Regenerate C7 artifacts; source remains unchanged    |
+| 1.1     | 2026-08-01 | Correct font-size/line-step mapping, retain the byte-identical 2026-07-29 native canary evidence, and preserve intentional boundary whitespace with conditional DrawingML `xml:space` | Regenerate affected C7 artifacts; source remains unchanged |
 | 1.0     | 2026-07-29 | Initial deterministic primitive-only fresh-PPTX canary                                                                                        | No prior compiler artifact                           |

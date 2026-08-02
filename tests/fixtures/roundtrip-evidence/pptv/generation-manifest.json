@@ -1,0 +1,418 @@
+{
+  "schema": "office180-pptv-roundtrip-evidence-generation/0.1",
+  "generatedAt": "2026-08-02T00:02:54.733Z",
+  "generator": {
+    "path": "scripts/generate-pptv-roundtrip-evidence.mjs",
+    "sha256": "d53cb4406326387c923955aa9565925500779acc8d7a309535326888fde4e6b5",
+    "runtime": {
+      "node": "v25.1.0",
+      "pnpm": "10.20.0"
+    },
+    "dependencies": [
+      {
+        "path": "scripts/visual-evidence.py",
+        "sha256": "3ac6d2e55a2782c529e452bdee1d9fabf88dabb8f1200ba29366e75e5c7c3e61"
+      },
+      {
+        "path": "scripts/capture-browser-svg.mjs",
+        "sha256": "e9a796cae4be7f03939a39863d4f0f0b8caf6658964f677512474c7e352387b4"
+      },
+      {
+        "path": "packages/pptv/src/node/pptx-baseline.ts",
+        "sha256": "b04f6f247c40d629647031fbb2f888bc31a5c0b94d1dcd57481f5b05fd29cbbc"
+      },
+      {
+        "path": "packages/pptv/src/node/reconcile.ts",
+        "sha256": "fac5449fa009b5614cbc720bc72549b3848824f4560f3abb90e218e5d59940c4"
+      }
+    ]
+  },
+  "source": {
+    "path": "supported-original.pptv.svg",
+    "sha256": "91cb7546a81d2e4edc41e22e314c7e51194c32917133b2909113688f94021f11",
+    "id": "roundtrip",
+    "profile": "0.1",
+    "placement": {
+      "slideId": "supported-roundtrip",
+      "policy": "uniform-scale-translate",
+      "x": 200,
+      "y": 0,
+      "width": 1200,
+      "height": 900,
+      "scale": 1.5,
+      "translateX": 200,
+      "translateY": 0
+    },
+    "font": {
+      "family": "ABeeZee",
+      "path": "packages/pptv/test-fixtures/fonts/ABeeZee-Regular.ttf",
+      "sha256": "2901c8df256648cc2bb2e3afb381cb8d28e65ed3dbe11de20695ae4d5ffdeda9",
+      "licensePath": "packages/pptv/test-fixtures/fonts/OFL.txt",
+      "licenseSha256": "f0376d04eb58fb19e9f1690a99a1eb37380ad0246f7d503f2abd8e8a74ed12be",
+      "fixtureManifestSha256": "98514425fbc60d16e67260e190e92e687f336b3f92a20c5d540d8dd786f1d13e"
+    }
+  },
+  "edit": {
+    "method": "deterministic trusted DrawingML rewrite",
+    "slidePart": "ppt/slides/slide1.xml",
+    "baselineSlideSha256": "3b7335c0f04c8ebb7b1154dad80aa669e405309ac28af1cdb11c42d02c17447a",
+    "editedSlideSha256": "9f0c0d53f9e10499f0acf8f85b6cfc43b67068e868fd7d52b13714f43568ca8f",
+    "text": {
+      "objectId": "roundtrip.title",
+      "oldText": "SOURCE ROUND TRIP",
+      "newText": "EDITED ROUND TRIP"
+    },
+    "geometry": {
+      "objectId": "roundtrip.card",
+      "oldValue": {
+        "x": 70,
+        "y": 190,
+        "width": 310,
+        "height": 230
+      },
+      "newValue": {
+        "x": 80,
+        "y": 200,
+        "width": 300,
+        "height": 220
+      }
+    },
+    "style": {
+      "objectId": "roundtrip.card",
+      "oldValue": {
+        "fill": "#dbeafe",
+        "stroke": "#2563eb",
+        "strokeWidth": 3
+      },
+      "newValue": {
+        "fill": "#dcfce7",
+        "stroke": "#16a34a",
+        "strokeWidth": 4
+      }
+    }
+  },
+  "c8TextFit": {
+    "original": {
+      "total": 6,
+      "clear": 6,
+      "nearLimit": 0,
+      "overflow": 0,
+      "unverified": 0
+    },
+    "recovered": {
+      "total": 6,
+      "clear": 6,
+      "nearLimit": 0,
+      "overflow": 0,
+      "unverified": 0
+    }
+  },
+  "c9": {
+    "baseline": {
+      "sourceSha": "91cb7546a81d2e4edc41e22e314c7e51194c32917133b2909113688f94021f11",
+      "composedSha": "c3fde65f00394df4fb3065e2dc9794ad42261f260467f5e9a3d19f58bc0a3636",
+      "pptxSha": "7ea97b85eca73ab196a8201003dbb8764d7e9fc9e785df176b532d3d52131904",
+      "mapSha": "0a814430d57342407ec28724b6f04cdac21e557dbcbeaf3ecec6f5b2f2e1dabf"
+    },
+    "regenerated": {
+      "sourceSha": "b1b23147e3512ba80a276b79837599d1d954c2968626d1bc44c70d860023cffa",
+      "composedSha": "bf91cecb8aff9e48c7e9bf654493b091e76c9561a909498dd13aeb329cf39a81",
+      "pptxSha": "d02246f4090b3378fb6a29dfbc5f6dd0cb69b731e44a64f0a21fda4df9c66771",
+      "mapSha": "818cee3dcce52d6570225b7cf53ae257ee3580a65e68aa43cc7d5001b7b771a6"
+    }
+  },
+  "c10": {
+    "status": "patchable",
+    "changeCount": 3,
+    "operationKinds": [
+      "set-text",
+      "set-object-geometry",
+      "set-native-style"
+    ],
+    "regeneratedStatus": "unchanged"
+  },
+  "comparisons": {
+    "browserOriginalToRecovered": {
+      "status": "passed",
+      "metrics": {
+        "changed_fraction": 0.12173263888888888,
+        "changed_pixels": 175295,
+        "compared_pixels": 1440000,
+        "masked_pixels": 0,
+        "max_channel_delta": 233,
+        "mean_absolute_error": 2.9728897569444444,
+        "total_pixels": 1440000
+      },
+      "changedBounds": [
+        302,
+        104,
+        757,
+        529
+      ],
+      "expectedEditRegion": [
+        240,
+        45,
+        940,
+        640
+      ]
+    },
+    "quickLookBaselineToEdited": {
+      "status": "passed",
+      "metrics": {
+        "changed_fraction": 0.12126385809312638,
+        "changed_pixels": 175008,
+        "compared_pixels": 1443200,
+        "masked_pixels": 0,
+        "max_channel_delta": 233,
+        "mean_absolute_error": 2.4121175166297117,
+        "total_pixels": 1443200
+      },
+      "changedBounds": [
+        305,
+        76,
+        752,
+        559
+      ],
+      "expectedEditRegion": [
+        240,
+        45,
+        940,
+        640
+      ]
+    },
+    "quickLookEditedToRegenerated": {
+      "status": "passed",
+      "metrics": {
+        "changed_fraction": 0,
+        "changed_pixels": 0,
+        "compared_pixels": 1443200,
+        "masked_pixels": 0,
+        "max_channel_delta": 0,
+        "mean_absolute_error": 0,
+        "total_pixels": 1443200
+      }
+    },
+    "semantic": {
+      "schema": "pptv-edited-regenerated-comparison/0.1",
+      "status": "passed",
+      "method": [
+        "C10 typed apply/C9 regeneration proof",
+        "byte-identical mapped slide XML",
+        "independent regenerated C10 no-op",
+        "same-renderer zero-pixel Quick Look comparison"
+      ],
+      "editedPptxSha256": "4cf72c93e821adc4460f723c2bbd5085b54116a9067907ed0c60ec6eeebb9ca9",
+      "regeneratedPptxSha256": "d02246f4090b3378fb6a29dfbc5f6dd0cb69b731e44a64f0a21fda4df9c66771",
+      "packageBytesEqual": false,
+      "slidePart": {
+        "path": "ppt/slides/slide1.xml",
+        "bytesEqual": true,
+        "editedSha256": "9f0c0d53f9e10499f0acf8f85b6cfc43b67068e868fd7d52b13714f43568ca8f",
+        "regeneratedSha256": "9f0c0d53f9e10499f0acf8f85b6cfc43b67068e868fd7d52b13714f43568ca8f"
+      },
+      "reconciliation": {
+        "editedStatus": "patchable",
+        "editedReportSha256": "f7a723ab93c16c4b96de33aaaa54684b27198a1bd86d1d74756fb12845134ccb",
+        "patchSha256": "631da8587e5ec71578b4f0303139359d9836eb753d90f04b5004544c67689d1e",
+        "regeneratedStatus": "unchanged",
+        "regeneratedReportSha256": "e1f3eea09f5c175d10ae0035b4431747e379afaba4fd4d6947907170cd448272"
+      },
+      "quickLook": {
+        "comparisonEvidenceSha256": "687ba74c29c8bfd64a9f0fb1dfe7dd7b7db1b1a30e7d4691b9091345e7f9c4cd",
+        "changedPixels": 0,
+        "changedFraction": 0,
+        "meanAbsoluteError": 0,
+        "maxChannelDelta": 0
+      }
+    }
+  },
+  "nativePowerPoint": {
+    "status": "manual-required",
+    "version": "16.111.2",
+    "diagnostic": "Native Microsoft PowerPoint open, representative edit, save, and reopen were not automated by this generator; manual lifecycle validation remains required."
+  },
+  "privacyScan": {
+    "status": "passed",
+    "scope": "Every durable file, every PPTX member, workstation paths/account metadata, host identity, credential patterns, sensitive environment values, and prohibited public marking strings",
+    "files": 32,
+    "pptxPackageMembers": 45
+  },
+  "c11ManifestCount": 9,
+  "commands": [
+    [
+      "node",
+      "scripts/generate-pptv-roundtrip-evidence.mjs",
+      "--destination",
+      "tests/fixtures/roundtrip-evidence/pptv"
+    ],
+    [
+      ".venv/bin/python",
+      "scripts/visual-evidence.py",
+      "validate",
+      "<manifest>",
+      "--root",
+      "tests/fixtures/roundtrip-evidence/pptv"
+    ],
+    [
+      "shasum",
+      "-a",
+      "256",
+      "-c",
+      "SHA256SUMS"
+    ]
+  ],
+  "limitations": [
+    "The representative PPTX edit is a deterministic trusted DrawingML simulation, not a native PowerPoint edit.",
+    "Quick Look and browser evidence are renderer-specific and use host fonts.",
+    "Native PowerPoint open, edit, save, and reopen remains manual-required or unavailable as recorded.",
+    "Package bytes need not match because regenerated lineage binds the recovered source.",
+    "No C11 human-review envelope or cross-host fidelity claim is made."
+  ],
+  "artifacts": [
+    {
+      "path": "supported-baseline-vs-edited.quicklook.comparison.evidence.json",
+      "sha256": "64ffaec9fc4f0e8e9b380018458f9996beaf8b99f3f11ab8c8186322b748fae2",
+      "bytes": 3410
+    },
+    {
+      "path": "supported-baseline.pptv.map.json",
+      "sha256": "0a814430d57342407ec28724b6f04cdac21e557dbcbeaf3ecec6f5b2f2e1dabf",
+      "bytes": 58774
+    },
+    {
+      "path": "supported-baseline.pptx",
+      "sha256": "7ea97b85eca73ab196a8201003dbb8764d7e9fc9e785df176b532d3d52131904",
+      "bytes": 26484
+    },
+    {
+      "path": "supported-baseline.quicklook.evidence.json",
+      "sha256": "f217049570a397dee6a843436d5cc9d5e278307e7840386c4210d91f89fb06d3",
+      "bytes": 1885
+    },
+    {
+      "path": "supported-baseline.quicklook.png",
+      "sha256": "e85f46c222d5ad7bafcdde855601d5e5671aa4a67849846a7bde1b8182ddb498",
+      "bytes": 97419
+    },
+    {
+      "path": "supported-composed.pptv.html",
+      "sha256": "c3fde65f00394df4fb3065e2dc9794ad42261f260467f5e9a3d19f58bc0a3636",
+      "bytes": 6671
+    },
+    {
+      "path": "supported-edited-vs-regenerated.quicklook.comparison.evidence.json",
+      "sha256": "2246b25d619e4169d9da0aff58ab9fb91b33eca111162cb52b876dc604de9a6e",
+      "bytes": 3336
+    },
+    {
+      "path": "supported-edited-vs-regenerated.semantic-comparison.json",
+      "sha256": "d303a511a9b7fc0427b6b5b03546fca84d2fd3d9507318cddedfcb5a4effc6a2",
+      "bytes": 1356
+    },
+    {
+      "path": "supported-edited.native-powerpoint.evidence.json",
+      "sha256": "1652d14e42b45b4217a2bd36b223f67d658e98c0c71028836fa3a01fd40ce544",
+      "bytes": 2054
+    },
+    {
+      "path": "supported-edited.pptx",
+      "sha256": "4cf72c93e821adc4460f723c2bbd5085b54116a9067907ed0c60ec6eeebb9ca9",
+      "bytes": 26484
+    },
+    {
+      "path": "supported-edited.quicklook.evidence.json",
+      "sha256": "c4ecb1b6d9bdd75e734136c9b0a798f0f6633d4a64babd3c8e0872a8a92d4024",
+      "bytes": 1892
+    },
+    {
+      "path": "supported-edited.quicklook.png",
+      "sha256": "6b6e8c38094fb531e6369adcd93d9bd821cb37fca42534898d03837d4f58af36",
+      "bytes": 95994
+    },
+    {
+      "path": "supported-edited.reconcile.json",
+      "sha256": "f7a723ab93c16c4b96de33aaaa54684b27198a1bd86d1d74756fb12845134ccb",
+      "bytes": 2777
+    },
+    {
+      "path": "supported-font-map.json",
+      "sha256": "54fb3800bd17d780ecce41955843225af3d2c8b5ccfacdff6a38037f210b44f5",
+      "bytes": 264
+    },
+    {
+      "path": "supported-original-vs-recovered.browser.comparison.evidence.json",
+      "sha256": "1d5c34b6f87b5dc75a5023ff2715dd6b841fba4deed6172dcdb9e01242e8e500",
+      "bytes": 4329
+    },
+    {
+      "path": "supported-original.browser.evidence.json",
+      "sha256": "9106e16112ff221d79b69d817162598ec833de90752bd66bfb783556c177dc8b",
+      "bytes": 2807
+    },
+    {
+      "path": "supported-original.browser.png",
+      "sha256": "764cd3fc2afb0359b466ba131e5db66a280d7564118201af94023cf13988f377",
+      "bytes": 60988
+    },
+    {
+      "path": "supported-original.pptv.svg",
+      "sha256": "91cb7546a81d2e4edc41e22e314c7e51194c32917133b2909113688f94021f11",
+      "bytes": 4279
+    },
+    {
+      "path": "supported-original.text-fit.json",
+      "sha256": "4e00f26e9c90eb73f9f9fc8d27ba24787a681ba368510d2573e03b04989bd713",
+      "bytes": 4393
+    },
+    {
+      "path": "supported-recovered.browser.evidence.json",
+      "sha256": "10f866c2303ffb2baf9d32d0644bbd21720d82356975c686546aa09e35f52848",
+      "bytes": 2811
+    },
+    {
+      "path": "supported-recovered.browser.png",
+      "sha256": "02f8de51d4e09dc7d842c2d75169f390d5b04144fb6290c5ccfbba7a63ef09a6",
+      "bytes": 57776
+    },
+    {
+      "path": "supported-recovered.pptv.patch.json",
+      "sha256": "631da8587e5ec71578b4f0303139359d9836eb753d90f04b5004544c67689d1e",
+      "bytes": 1130
+    },
+    {
+      "path": "supported-recovered.pptv.svg",
+      "sha256": "b1b23147e3512ba80a276b79837599d1d954c2968626d1bc44c70d860023cffa",
+      "bytes": 4279
+    },
+    {
+      "path": "supported-recovered.text-fit.json",
+      "sha256": "6bc0a923375cba91321aebf1fee5607c8aed8cbf0ab749bbbce1f22d87e7794e",
+      "bytes": 4393
+    },
+    {
+      "path": "supported-regenerated.pptv.map.json",
+      "sha256": "818cee3dcce52d6570225b7cf53ae257ee3580a65e68aa43cc7d5001b7b771a6",
+      "bytes": 58772
+    },
+    {
+      "path": "supported-regenerated.pptx",
+      "sha256": "d02246f4090b3378fb6a29dfbc5f6dd0cb69b731e44a64f0a21fda4df9c66771",
+      "bytes": 26484
+    },
+    {
+      "path": "supported-regenerated.quicklook.evidence.json",
+      "sha256": "9c073ea274a365cbccb75f908260f7b849225fbb5a0042b849f5818fdd7554fd",
+      "bytes": 1901
+    },
+    {
+      "path": "supported-regenerated.quicklook.png",
+      "sha256": "6b6e8c38094fb531e6369adcd93d9bd821cb37fca42534898d03837d4f58af36",
+      "bytes": 95994
+    },
+    {
+      "path": "supported-regenerated.reconcile.json",
+      "sha256": "e1f3eea09f5c175d10ae0035b4431747e379afaba4fd4d6947907170cd448272",
+      "bytes": 377
+    }
+  ]
+}

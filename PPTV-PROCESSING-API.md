@@ -1,8 +1,10 @@
 # PPTV Processing API and Semantic Operations
 
-**Status:** 0.1 first-class deck/diagram source, patch, resolved, text-fit,
-browser/editor, and extraction APIs plus strict deck-only C7 PowerPoint canary
-implemented; broader editing/normalization/reconciliation remain roadmap
+**Status:** `@office180/pptv` `0.1.0-alpha.4` implements the strict PPTV 0.1
+deck/diagram kernel, C5 0.1/0.2 patch protocols, C6/C8 projections, trusted
+browser editor, C7 deck canary, bounded C9 atom composition/PPTX compilation,
+and C10 mapped-PPTX reconciliation; C11 automates browser/Quick Look evidence,
+while general authoring/import and native Office lifecycle proof remain open.
 **Primary implementation language:** TypeScript  
 **Companions:** [`PPTV-DESIGN-INDEX.md`](PPTV-DESIGN-INDEX.md),
 [`PPTV-HTML-CONTAINER.md`](PPTV-HTML-CONTAINER.md), and
@@ -27,10 +29,13 @@ The processing API must make cheap questions cheap. A request for slide order or
 visible text must not require resolving every CSS rule, expanding every symbol,
 loading every asset, measuring every font, or parsing the final runtime.
 
-### Normative 0.1 boundary
+### Executable 0.1 boundary
 
-The executable behavior is the single `@office180/pptv` package, C4 through C8,
-the published schemas, and their tests. It currently provides:
+The executable source profile remains PPTV `0.1`: authored hard lines,
+no wrapping, and no autofit. The package version is
+`@office180/pptv@0.1.0-alpha.4`; the banked 0.1.1 paragraph-resilience design is
+not accepted syntax or compiler behavior. The single package, C4 through C10,
+the published schemas, C11 evidence tooling, and their tests currently provide:
 
 - `scanPptvSource`; deck-only `parseManifest`/`validateManifest`; explicit
   `loadDeck` and `loadDiagram`; and discriminated-union `loadPptvDocument`;
@@ -39,8 +44,11 @@ the published schemas, and their tests. It currently provides:
 - deck-specific and diagram-specific outline, inventory, text, semantic,
   editing, query, C6 resolved, and C8 text-fit projections;
 - asynchronous `validatePatch` and `applyPatch` over either artifact:
-  `set-text` works for a safe direct text node in either, while
-  `set-active-theme` and `set-slide-order` are deck-only;
+  `pptv-patch/0.1` preserves the legacy direct-text and deck theme/order
+  surface, while opt-in `pptv-patch/0.2` adds exact typed rectangle/ellipse
+  geometry, connector endpoints, explicit group translation, one-line text
+  frame/anchor, within-parent painter order, safe deletion, and complete
+  directly represented native style;
 - `extractPptvDiagram`, which deterministically hydrates one fully resolved
   deck slide into a validated, context-free `.pptv.svg` atom;
 - pure C6 constrained-CSS/geometry/group/hard-line resolution: fixed 16:9 for
@@ -51,21 +59,33 @@ the published schemas, and their tests. It currently provides:
 - the Node-only deterministic C7 strict-subset PPTX compiler/graph validator,
   intentionally limited to self-contained HTML decks; and
 - pure C8 non-mutating text-fit evidence plus the Node-only explicit exact-font
-  adapter for both artifact kinds.
+  adapter for both artifact kinds;
+- C9 explicit identity or aspect-preserving uniform composition of one
+  standalone atom into a deterministic one-slide deck and mapped native PPTX;
+- C10 fail-closed inspection of an edited descendant of that exact C9
+  baseline, producing a reviewable C5 0.2 patch only for authenticated,
+  representable differences and proving it by patch/apply/recompile; and
+- C11 browser-SVG and Quick Look capture/comparison envelopes with explicit
+  native Office `manual-required`/unavailable states.
 
-Interfaces in this document that exceed the narrow C6 resolver, editor
-surface, C7 canary, or C8 preflight—rich text/geometry/structural editing,
-external dependencies, canonical serialization, broader rendering/PPTX, or
-reconciliation—remain roadmap unless explicitly identified as implemented
-0.1.
+Interfaces in this document that exceed those bounded surfaces—rich text,
+structural insertion/reparenting, browser geometry/style controls, external
+dependencies, canonical serialization, arbitrary SVG/PPTX import, broader
+rendering, or native Office save/reopen automation—remain roadmap unless
+explicitly identified as implemented.
 
 Behavioral authority lives in
 [`CONTRACT:C4-PPTV-SOURCE.1.1`](architecture/CONTRACT-C4-PPTV-SOURCE.1.1.md),
-[`CONTRACT:C5-PPTV-PATCH.1.1`](architecture/CONTRACT-C5-PPTV-PATCH.1.1.md),
+[`CONTRACT:C5-PPTV-PATCH.1.2`](architecture/CONTRACT-C5-PPTV-PATCH.1.2.md),
 [`CONTRACT:C6-PPTV-RESOLVED.1.1`](architecture/CONTRACT-C6-PPTV-RESOLVED.1.1.md),
 [`CONTRACT:C7-PPTX-CANARY.1.1`](architecture/CONTRACT-C7-PPTX-CANARY.1.1.md),
 and
-[`CONTRACT:C8-PPTV-TEXT-FIT.1.1`](architecture/CONTRACT-C8-PPTV-TEXT-FIT.1.1.md).
+[`CONTRACT:C8-PPTV-TEXT-FIT.1.1`](architecture/CONTRACT-C8-PPTV-TEXT-FIT.1.1.md),
+plus the bounded in-progress promotion contracts
+[`CONTRACT:C9-PPTV-PPTX-BASELINE.1.0`](architecture/CONTRACT-C9-PPTV-PPTX-BASELINE.1.0.md),
+[`CONTRACT:C10-PPTV-PPTX-RECONCILIATION.1.0`](architecture/CONTRACT-C10-PPTV-PPTX-RECONCILIATION.1.0.md),
+and
+[`CONTRACT:C11-OFFICE-VISUAL-EVIDENCE.1.0`](architecture/CONTRACT-C11-OFFICE-VISUAL-EVIDENCE.1.0.md).
 
 ## 2. Hard invariants
 
@@ -107,7 +127,11 @@ Raw source text and byte spans
        -> outline / semantic / editing / resolved projections
        -> browser DOM
        -> editor interaction projection
-       -> PPTX adapter IR
+       -> C7 deck canary
+       -> C9 explicit atom composition -> mapped PPTX baseline
+            -> C10 authenticated edited-PPTX inspection
+            -> reviewable C5 0.2 patch -> C9 regeneration proof
+       -> C11 renderer-specific evidence envelopes
 ```
 
 The exact declarative source bytes are persistent authority. The hierarchical
@@ -176,8 +200,8 @@ The portable 0.1 core accepts bytes or text without assuming a filesystem:
 
 ```ts
 export type PptvInput =
-  | { kind: 'text'; text: string; name?: string }
-  | { kind: 'bytes'; bytes: Uint8Array; name?: string };
+  | { kind: "text"; text: string; name?: string }
+  | { kind: "bytes"; bytes: Uint8Array; name?: string };
 ```
 
 The Node CLI is a separate host layer that reads exact file bytes. Browser
@@ -219,26 +243,26 @@ The fuller roadmap remains:
 
 ```ts
 export type PptvLoadLevel =
-  | 'scan'
-  | 'manifest'
-  | 'outline'
-  | 'semantic'
-  | 'editing'
-  | 'resolved'
-  | 'normalized';
+  | "scan"
+  | "manifest"
+  | "outline"
+  | "semantic"
+  | "editing"
+  | "resolved"
+  | "normalized";
 ```
 
 ### 5.1 Roadmap work matrix
 
-| Level | Required work | Explicitly deferred |
-|---|---|---|
-| `scan` | recognize container; locate top-level blocks | JSON parse, slide parse, CSS, assets |
-| `manifest` | parse and validate leading manifest | slide geometry, CSS, assets |
-| `outline` | manifest plus slide/object shallow index and text snippets | computed styles, paths, fonts, assets |
-| `semantic` | selected hierarchical objects and relationships | computed paint, font measurement, expansion |
-| `editing` | geometry, classes, token references, source ownership | expensive filters, rasterization, PPTX |
-| `resolved` | computed CSS, transforms, dependencies, fonts | target-specific PPTX writing |
-| `normalized` | deterministic compiler-ready model | none within supported profile |
+| Level        | Required work                                              | Explicitly deferred                         |
+| ------------ | ---------------------------------------------------------- | ------------------------------------------- |
+| `scan`       | recognize container; locate top-level blocks               | JSON parse, slide parse, CSS, assets        |
+| `manifest`   | parse and validate leading manifest                        | slide geometry, CSS, assets                 |
+| `outline`    | manifest plus slide/object shallow index and text snippets | computed styles, paths, fonts, assets       |
+| `semantic`   | selected hierarchical objects and relationships            | computed paint, font measurement, expansion |
+| `editing`    | geometry, classes, token references, source ownership      | expensive filters, rasterization, PPTX      |
+| `resolved`   | computed CSS, transforms, dependencies, fonts              | target-specific PPTX writing                |
+| `normalized` | deterministic compiler-ready model                         | none within supported profile               |
 
 A tool must not silently promote a request to a much more expensive level unless
 an operation actually requires it.
@@ -257,7 +281,7 @@ export interface ScanOptions {
 
 export function scanPptvSource(
   input: PptvInput,
-  options?: ScanOptions
+  options?: ScanOptions,
 ): Promise<PptvScan>;
 ```
 
@@ -265,8 +289,8 @@ export function scanPptvSource(
 
 ```ts
 export interface PptvScan {
-  kind: 'svg' | 'html' | 'manifest' | 'unknown';
-  encoding: 'utf-8';
+  kind: "svg" | "html" | "manifest" | "unknown";
+  encoding: "utf-8";
   source: PptvSourceDocument;
   versionHint?: string;
   sections: PptvSectionRef[];
@@ -275,15 +299,15 @@ export interface PptvScan {
 
 export interface PptvSectionRef {
   kind:
-    | 'html-head'
-    | 'manifest'
-    | 'output-mount'
-    | 'slide'
-    | 'library'
-    | 'theme'
-    | 'viewer-runtime'
-    | 'editor-runtime'
-    | 'unknown';
+    | "html-head"
+    | "manifest"
+    | "output-mount"
+    | "slide"
+    | "library"
+    | "theme"
+    | "viewer-runtime"
+    | "editor-runtime"
+    | "unknown";
   id?: string;
   range: SourceRange;
   openTagRange?: SourceRange;
@@ -423,7 +447,7 @@ export interface PptvManifestSlide {
 export function parseManifest(scan: PptvScan): ManifestParseResult;
 export function validateManifest(
   manifest: PptvManifest,
-  scan: PptvScan
+  scan: PptvScan,
 ): Diagnostic[];
 ```
 
@@ -452,7 +476,7 @@ data and never executes source runtime text.
 ```ts
 export interface PptvDeck {
   readonly version: string;
-  readonly sourceKind: 'html';
+  readonly sourceKind: "html";
   readonly title?: string;
   readonly activeTheme?: string;
   readonly slideOrder: readonly string[];
@@ -464,7 +488,7 @@ export interface PptvDeck {
   readonly index: PptvSourceIndex;
   readonly manifest: PptvManifest;
   readonly materialization: {
-    readonly level: 'semantic';
+    readonly level: "semantic";
     readonly slideIds: readonly string[];
     readonly complete: boolean;
   };
@@ -472,8 +496,8 @@ export interface PptvDeck {
 }
 
 export interface PptvDiagram {
-  readonly version: '0.1';
-  readonly sourceKind: 'svg';
+  readonly version: "0.1";
+  readonly sourceKind: "svg";
   readonly id: string;
   readonly viewBox: readonly [number, number, number, number];
   readonly children: readonly PptvNode[];
@@ -506,8 +530,8 @@ requires every slide to use `viewBox="0 0 1600 900"` and derives the fixed
 ```ts
 export interface PptvNode {
   readonly id: string;
-  readonly role: 'shape' | 'text' | 'connector' | 'group' | 'asset';
-  readonly exportMode: 'native' | 'svg' | 'raster' | 'ignore';
+  readonly role: "shape" | "text" | "connector" | "group" | "asset";
+  readonly exportMode: "native" | "svg" | "raster" | "ignore";
   readonly elementName: string;
   readonly classes: readonly string[];
   readonly attributes: Readonly<Record<string, string>>;
@@ -545,11 +569,16 @@ The semantic/editing projections expose the supported plain/direct-text
 surface. C6 separately retains authored hard lines plus computed typography and
 style provenance; it still does not claim a general rich-run model.
 
+The executable 0.1 profile never reflows these lines. It does not wrap,
+autofit, shrink, or infer line breaks. The proposed 0.1.1 paragraph-intent and
+PowerPoint frame policies are banked design only; they require successor
+source/resolution/compiler contracts before any producer may emit them.
+
 ### 9.4 Connectors
 
 ```ts
 export interface PptvResolvedLine extends PptvResolvedObjectBase {
-  readonly kind: 'line';
+  readonly kind: "line";
   readonly x1: number;
   readonly y1: number;
   readonly x2: number;
@@ -563,8 +592,10 @@ Endpoint references are semantic relationships. Geometry remains explicit and
 is not silently recomputed. The C4 semantic node retains raw `line`/`polyline`
 attributes; C6 resolves supported straight lines, validates optional
 `data-pptv-from`/`data-pptv-to` references within the artifact, and emits the
-specialized resolved line. Elbow routing, marker semantics, and connector
-editing remain roadmap.
+specialized resolved line. C5 0.2 can replace all four existing endpoints of a
+resolved native `<line>` while preserving stable relationship references.
+Elbow routing, marker semantics, automatic endpoint following, and browser
+connector controls remain roadmap.
 
 ## 10. C6 CSS and theme processing
 
@@ -578,7 +609,10 @@ The resolver supports the profile's exact selector/property/value subset,
 source-order cascade, inherited supported typography/paint, explicit defaults,
 and style provenance. Unsupported selectors, declarations, variables,
 resource-bearing CSS, or ambiguous authority are diagnostics. C5 can select an
-already-declared deck theme, but theme-token mutation remains roadmap.
+already-declared deck theme. C5 0.2 can replace a complete concrete native
+style only when every affected property already comes from its own direct SVG
+presentation attribute; it never rewrites base rules, inline style, tokens, or
+defaults. Theme-token mutation remains roadmap.
 
 ### 10.1 Style levels
 
@@ -594,10 +628,7 @@ computed   final supported property values for a specific element
 
 ```ts
 export type PptvStyleOrigin =
-  | 'default'
-  | 'presentation-attribute'
-  | 'base-rule'
-  | 'inline-style';
+  "default" | "presentation-attribute" | "base-rule" | "inline-style";
 
 export interface PptvResolvedPropertyProvenance {
   readonly origin: PptvStyleOrigin;
@@ -618,12 +649,12 @@ coincidence.
 ```ts
 export function resolvePptvStyles(deck: PptvDeck): PptvStyleResolution;
 export function resolvePptvDiagramStyles(
-  diagram: PptvDiagram
+  diagram: PptvDiagram,
 ): PptvStyleResolution;
 
 export function resolvePptvDeck(deck: PptvDeck): PptvResolvedResult;
 export function resolvePptvDiagram(
-  diagram: PptvDiagram
+  diagram: PptvDiagram,
 ): PptvResolvedDiagramResult;
 ```
 
@@ -646,28 +677,28 @@ export interface LoadDeckOptions {
 
 export function loadDeck(
   input: PptvInput,
-  options?: LoadDeckOptions
+  options?: LoadDeckOptions,
 ): Promise<PptvDeck>;
 
 export function loadDiagram(
   input: PptvInput,
-  options?: LoadDiagramOptions
+  options?: LoadDiagramOptions,
 ): Promise<PptvDiagram>;
 
 export function loadPptvDocument(
   input: PptvInput,
-  options?: LoadPptvDocumentOptions
+  options?: LoadPptvDocumentOptions,
 ): Promise<PptvDocument>;
 ```
 
 Examples:
 
 ```ts
-await loadDeck(input, { slides: ['architecture'] });
+await loadDeck(input, { slides: ["architecture"] });
 await loadDeck(input);
 await loadDiagram(svgInput);
 const document = await loadPptvDocument(deckOrDiagramInput);
-if (document.sourceKind === 'svg') {
+if (document.sourceKind === "svg") {
   console.log(document.id);
 }
 ```
@@ -683,7 +714,7 @@ is the operative strictness configuration and defaults to true.
 ### 12.1 Views
 
 ```ts
-export type ProjectionView = 'semantic' | 'editing';
+export type ProjectionView = "semantic" | "editing";
 ```
 
 - **Outline:** `outlineManifest()`/`outlineDeck()` return deck metadata and
@@ -705,7 +736,7 @@ normalization remain roadmap.
 export interface PptvQuery {
   slideId?: string;
   ids?: string[];
-  role?: PptvNode['role'];
+  role?: PptvNode["role"];
   className?: string;
   elementName?: string;
   textContains?: string;
@@ -720,42 +751,40 @@ export function inventoryDiagram(diagram: PptvDiagram): DiagramInventory;
 export function getSlide(
   deck: PptvDeck,
   slideId: string,
-  view?: ProjectionView
+  view?: ProjectionView,
 ): SlideProjection | undefined;
 export function getDiagram(
   diagram: PptvDiagram,
-  view?: ProjectionView
+  view?: ProjectionView,
 ): DiagramProjection;
 
 export function getObject(
   deck: PptvDeck,
   objectId: string,
-  view?: ProjectionView
+  view?: ProjectionView,
 ): ObjectProjection | undefined;
 export function getDiagramObject(
   diagram: PptvDiagram,
   objectId: string,
-  view?: ProjectionView
+  view?: ProjectionView,
 ): DiagramObjectProjection | undefined;
 
 export function queryObjects(
   deck: PptvDeck,
   query: PptvQuery,
-  view?: ProjectionView
+  view?: ProjectionView,
 ): ObjectProjection[];
 export function queryDiagramObjects(
   diagram: PptvDiagram,
   query: PptvDiagramQuery,
-  view?: ProjectionView
+  view?: ProjectionView,
 ): DiagramQueryProjection;
 
 export function extractText(
   deck: PptvDeck,
-  options?: { slideId?: string; includeHidden?: boolean }
+  options?: { slideId?: string; includeHidden?: boolean },
 ): TextProjection;
-export function extractDiagramText(
-  diagram: PptvDiagram
-): DiagramTextProjection;
+export function extractDiagramText(diagram: PptvDiagram): DiagramTextProjection;
 ```
 
 Results preserve manifest and DOM order unless a caller explicitly requests a
@@ -771,13 +800,13 @@ should not serialize the Map-rich in-process deck or diagram directly.
 export function preflightTextFit(
   deck: PptvResolvedDeck,
   measurer: PptvTextMeasurer,
-  options?: PptvTextFitOptions
+  options?: PptvTextFitOptions,
 ): PptvTextFitResult; // schema: pptv-text-fit/0.1, slideId per line
 
 export function preflightDiagramTextFit(
   diagram: PptvResolvedDiagram,
   measurer: PptvDiagramTextMeasurer,
-  options?: PptvTextFitOptions
+  options?: PptvTextFitOptions,
 ): PptvDiagramTextFitResult; // schema: pptv-diagram-text-fit/0.1, diagramId
 ```
 
@@ -793,7 +822,7 @@ and compare current browser measurements with the Node evidence.
 ```ts
 export function extractPptvDiagram(
   deck: PptvDeck,
-  slideId: string
+  slideId: string,
 ): Promise<PptvDiagramExtractionResult>;
 ```
 
@@ -826,23 +855,34 @@ race-safely if the destination already exists.
 ### 13.1 Envelope
 
 ```ts
-export interface PptvPatch {
-  schema: 'pptv-patch/0.1';
+interface PptvPatchMetadata {
   baseSha256: string;
   transactionId?: string;
   author?: string;
   timestamp?: string;
+}
+
+export interface PptvPatch01 extends PptvPatchMetadata {
+  schema: "pptv-patch/0.1";
+  ops: PptvLegacyOperation[];
+}
+
+export interface PptvPatch02 extends PptvPatchMetadata {
+  schema: "pptv-patch/0.2";
   ops: PptvOperation[];
 }
+
+export type PptvPatch = PptvPatch01 | PptvPatch02;
 ```
 
 `baseSha256` is mandatory and hashes the exact retained UTF-8 source bytes,
 including a leading BOM. There is no unsafe hash bypass in the library or
-reference CLI.
+reference CLI. The 0.1 envelope remains byte- and behavior-compatible; a
+producer opts into 0.2 only when it needs a typed native-object operation.
 
 ### 13.2 Operation preconditions
 
-The 0.1 operations have only these operation-specific preconditions:
+The legacy operations retain their optional preconditions:
 
 ```ts
 set-text:         oldText?: string
@@ -850,33 +890,45 @@ set-active-theme: oldTheme?: string
 set-slide-order:  oldOrder?: string[]
 ```
 
-Preconditions allow a patch to fail cleanly when another human or agent changed
-the source after the patch was prepared.
+Every operation introduced by 0.2 has a mandatory complete old value:
+`oldGeometry`, `oldEndpoints`, `oldTranslation`,
+`oldFrame` + `oldLineAnchor`, `oldOrder`, `oldParentId` + `oldOrder`, or
+`oldStyle`. These values are compared with the current C6 projection before
+any replacement is planned. The old-value and source-hash checks make
+concurrent or stale changes fail cleanly.
 
-### 13.3 Implemented 0.1 operation vocabulary
+### 13.3 Implemented operation vocabulary
 
-```text
-set-text
-set-slide-order
-set-active-theme
-```
+`pptv-patch/0.1` accepts:
 
-`set-text` is limited to a native, non-opaque text object with one safe direct
-text range. It compares `oldText` with decoded semantic text while preserving
-whitespace, rejects XML control characters, and escapes `&`, `<`, and `>`.
-It is implemented for both `PptvDeck` and `PptvDiagram`.
+- `set-text` for one safe direct native text range in either artifact;
+- deck-only `set-active-theme`; and
+- deck-only `set-slide-order`.
 
-`set-active-theme` selects an existing indexed theme, optionally checks
-`oldTheme`, and replaces an existing manifest `theme` value. It does not add
-the field or edit CSS. It is deck-only.
+`pptv-patch/0.2` accepts those legacy operations plus:
 
-`set-slide-order` optionally checks `oldOrder`, requires an exact permutation
-of current slide IDs, and reorders complete original manifest entries so
-object-form layout/hidden metadata is preserved. It is deck-only.
+- `set-object-geometry` for existing native `<rect>` or true `<ellipse>`
+  geometry;
+- `set-connector-endpoints` for all four existing `<line>` coordinates;
+- `set-group-translation` for an already explicit C6 `translate(...)`;
+- `set-text-frame` for an existing direct one-hard-line frame and anchor;
+- `set-child-order` for an exact direct-child permutation in a diagram root,
+  slide root, or native group;
+- `delete-object` for one safe exact native subtree; and
+- `set-native-style` for the complete concrete C6 style when every affected
+  property is already represented by its own presentation attribute.
 
-Attribute/class/token/geometry/structure/connector operations are roadmap and
-must not be sent to 0.1. A diagram patch containing either deck-only operation
-fails atomically with an artifact-specific capability diagnostic.
+The typed surface is deliberately representation-preserving. It does not add
+missing attributes, convert circles to ellipses, rewrite inline/CSS/theme
+style, insert objects, reparent, scale groups, or provide a generic attribute
+writer. Deletion accounts for connector references across the complete
+transaction. Every 0.2 apply reloads through C4 and resolves through C6 before
+success.
+
+These operations are available through the portable patch API and CLI. The
+generated browser editor UI still exposes only direct text plus deck
+theme/order controls; it does not yet present geometry, style, ordering, or
+deletion controls.
 
 ### 13.4 Representative operations
 
@@ -905,57 +957,86 @@ fails atomically with an artifact-specific capability diagnostic.
 }
 ```
 
+```json
+{
+  "schema": "pptv-patch/0.2",
+  "baseSha256": "...",
+  "ops": [
+    {
+      "op": "set-object-geometry",
+      "id": "architecture.service",
+      "oldGeometry": {
+        "kind": "rect",
+        "x": 100,
+        "y": 120,
+        "width": 300,
+        "height": 160
+      },
+      "geometry": {
+        "kind": "rect",
+        "x": 120,
+        "y": 120,
+        "width": 320,
+        "height": 160
+      }
+    }
+  ]
+}
+```
+
 ### 13.5 Transaction behavior
 
 ```ts
 export function validatePatch(
   document: PptvDocument,
-  patch: unknown
+  patch: unknown,
 ): Promise<Diagnostic[]>;
 
 export function applyPatch(
   document: PptvDocument,
-  patch: unknown
+  patch: unknown,
 ): Promise<PatchResult>;
 ```
 
 Both functions accept `unknown` because runtime schema validation is part of the
-contract. Both are asynchronous because they reconstruct a fresh trusted deck
-from `deck.source.text` and verify its retained hash before trusting any index
-or range.
+contract. Both are asynchronous because they reconstruct a fresh trusted
+same-kind document from its retained source text and verify its hash before
+trusting any index or range.
 
 Validation/application order:
 
 1. reconstruct and verify a complete trusted base snapshot of the same
    artifact kind;
-2. validate envelope/schema, source hash, every operation, target, and
-   precondition;
+2. validate envelope/schema, source hash, every operation, target,
+   representation, and precondition, resolving the base through C6 for 0.2;
 3. plan the complete set of source replacements and reject intersecting ranges,
    including competing zero-width insertions;
 4. reject the complete transaction if any operation is invalid;
 5. for `applyPatch`, apply replacements from later UTF-16 offsets to earlier
    offsets;
-6. rescan and semantically reload the complete candidate; and
+6. rescan and semantically reload the complete candidate, resolving it through
+   C6 for 0.2; and
 7. return new source text, exact-byte hash, a validated `deck` or `diagram`,
    edits, and affected IDs only on success.
 
 `validatePatch()` stops after validating the complete plan; it does not build
-or reload a candidate. No operation in a failed transaction is committed, and
+or reload a candidate. `applyPatch()` performs candidate C4 reload and, for
+0.2, C6 validation. No operation in a failed transaction is committed, and
 failure exposes no replacement source/deck/edit list/affected IDs.
 
-### 13.6 Layout-aware operations (roadmap)
+### 13.6 Layout generation (roadmap)
 
-The first core should avoid hidden automatic layout. `move`, `resize`, and
-connector geometry changes are explicit.
+The core avoids hidden automatic layout. Supported geometry, translation,
+frame, order, and connector changes are explicit typed operations.
 
 A future layout engine may offer separate commands that generate an ordinary
 reviewable patch:
 
 ```ts
 const patch = autoLayout(deck, {
-  slideId: 'architecture',
-  algorithm: 'layered',
-  preserveLocked: true
+  slideId: "architecture",
+  algorithm: "layered",
+  preserveLocked: true,
 });
 ```
 
@@ -974,7 +1055,7 @@ with a stale-on-disk hash check.
 ### 14.1 Roadmap modes
 
 ```ts
-export type SerializeMode = 'preserve' | 'canonical';
+export type SerializeMode = "preserve" | "canonical";
 ```
 
 The implemented preserve path changes the smallest supported safe source range
@@ -988,10 +1069,18 @@ sources, or major structural rewrites.
 - A text replacement edits only the text range when possible.
 - A manifest reorder edits only the `slides` value.
 - An active-theme edit changes only the manifest `theme` string value.
+- A 0.2 typed value change replaces only existing attribute value ranges and
+  preserves each attribute name, envelope, quote kind, surrounding whitespace,
+  and every unrelated byte.
+- A child-order operation moves complete existing child-element payloads among
+  their source slots while keeping interstitial bytes in place.
+- A deletion removes the one exact validated object-element range.
 - Unchanged runtime and inactive theme blocks remain byte-identical.
 - A leading BOM and unchanged newline spelling remain byte-identical.
 
-Attribute, token, and structural replacement rules are roadmap.
+Generic attributes, missing-attribute insertion, token/rule rewrites,
+structural insertion/reparenting, and canonical whole-document serialization
+remain roadmap.
 
 ### 14.3 Canonical-mode rules
 
@@ -1016,13 +1105,17 @@ pretend unspecified formatting is normative.
 ```ts
 export function serializeDeck(
   deck: PptvDeck,
-  options?: { mode?: SerializeMode; includeViewer?: boolean; includeEditor?: boolean }
+  options?: {
+    mode?: SerializeMode;
+    includeViewer?: boolean;
+    includeEditor?: boolean;
+  },
 ): string;
 
 export async function writeDeck(
   deck: PptvDeck,
   destination: PptvDestination,
-  options?: WriteOptions
+  options?: WriteOptions,
 ): Promise<WriteResult>;
 ```
 
@@ -1032,7 +1125,9 @@ destination and uniquely refuses overwrite. Node output writes use a temporary
 peer, fsync, and atomic same-filesystem publication; portable core/ops code
 never writes.
 
-## 15. Normalization (roadmap)
+## 15. Normalization and target adapters
+
+### 15.1 General normalization (roadmap)
 
 ```ts
 export interface NormalizeOptions {
@@ -1046,7 +1141,7 @@ export interface NormalizeOptions {
 
 export function normalizeDeck(
   deck: PptvDeck,
-  options?: NormalizeOptions
+  options?: NormalizeOptions,
 ): Promise<NormalizedPptvDeck>;
 ```
 
@@ -1064,17 +1159,84 @@ Normalization:
 
 Normalization must not silently convert a requested native object to raster.
 
+### 15.2 Implemented bounded C9/C10 PowerPoint path
+
+The C9 atom path does not wait for a general normalization API and does not
+coerce arbitrary SVG. It consumes one complete C4/C6 standalone diagram plus a
+caller-supplied widescreen placement:
+
+```ts
+composePptvDiagramDeck(
+  diagram: PptvDiagram,
+  placement: PptvPlacement
+): Promise<PptvDiagramCompositionArtifact>
+
+compilePptxBaseline(
+  diagram: PptvDiagram,
+  options: { placement: PptvPlacement }
+): Promise<PptvPptxBaselineArtifact>
+```
+
+`identity` requires matching extents. `uniform-scale-translate` requires an
+exact aspect match and records one positive scale and translation. C9 never
+infers physical size, stretches, crops, or letterboxes. It emits a
+deterministic self-contained one-slide deck aggregation, a native PPTX, and a
+canonical `pptv-pptx-map/0.1` sidecar that binds the atom, composed deck,
+placement, supported object inventory, and PPTX hashes. The atom remains source
+authority. Current C9 compilation accepts atoms only; deck input stays on the
+independent C7 canary.
+
+The Node boundary exposes fail-closed inspection and reconciliation:
+
+```ts
+inspectPptxForReconciliation(
+  editedPptxBytes,
+  baselineMap
+): Promise<PptxInspectionResult>
+
+reconcilePptx(
+  source: PptvDocument,
+  baselineMap: PptvPptxMap,
+  editedPptxBytes: Uint8Array
+): Promise<PptvReconciliationResult>
+```
+
+The implemented C10 slice accepts only an edited descendant of an exact C9
+standalone-atom baseline. It authenticates raw ZIP/OPC structure, lineage,
+source/map hashes, stable `src.<stable-id>` names, hierarchy/order, and the
+supported DrawingML subset. It can propose direct text plus the complete C5
+0.2 typed surface. Before returning `patchable`, it applies the proposal to
+temporary source, reloads C4/C6, recompiles with the exact recorded placement,
+and requires supported DrawingML semantic equality. Missing/duplicate identity,
+new/copied objects, insertion, reparenting, group scaling, representation
+changes, inherited/inline style rewrites, unsupported runs/effects, or
+arbitrary baseline-free PPTX input remain review-required or refused. Source
+and presentation inputs are never overwritten.
+
+### 15.3 Implemented C11 evidence boundary
+
+`scripts/visual-evidence.py` provides versioned, hash-bound browser SVG and
+Quick Look captures, deterministic image comparison, schema validation, and
+explicit native lifecycle status records for both Office lanes. Quick Look is
+an automated preview smoke, not Word or PowerPoint proof. Browser evidence is
+engine/environment-specific; uncontrolled fonts are reported honestly.
+Native PowerPoint representative edit/save/reopen remains
+`manual-required`/unavailable until a bounded native lifecycle succeeds, and
+full promotion still requires human review bound to the exact evidence hash.
+
 ## 16. Browser runtime and trusted editor-pack boundaries
 
 The browser-safe export at `@office180/pptv/browser` includes:
 
 ```ts
-export class EditorSession { /* exact-source C4/C5 session */ }
+export class EditorSession {
+  /* exact-source C4/C5 session */
+}
 export function inspectPptvConformance(
-  input: PptvInput
+  input: PptvInput,
 ): Promise<PptvBrowserConformanceResult>;
 export function preparePptvBrowserTextMeasurer(
-  options: PreparePptvBrowserTextMeasurerOptions
+  options: PreparePptvBrowserTextMeasurerOptions,
 ): Promise<PptvPreparedBrowserTextMeasurer>;
 ```
 
@@ -1093,7 +1255,7 @@ font bytes are inert base64 payloads. Source viewer/editor scripts are never
 inserted into markup or executed.
 
 The generated `pptv-editor/0.1` application is writable only through
-`EditorSession` and the C5 vocabulary:
+`EditorSession` and C5 transactions. Its current UI exposes:
 
 - safe direct text for decks or diagrams;
 - active-theme selection and slide reordering for decks;
@@ -1106,6 +1268,9 @@ The generated `pptv-editor/0.1` application is writable only through
 
 It has no geometry, rich-`tspan`, structure, or arbitrary source editor. A
 failed integrity check or invalid source makes writable controls read-only.
+The portable C5 0.2 kernel can apply typed geometry/style/order/deletion
+transactions programmatically, including transactions proposed by C10; that
+does not imply corresponding editor controls.
 
 The source-embedded `pptv-browser/0.1` viewer remains a fixed digest-recognized
 artifact whose behavior is ignored during semantic loading. No embedded editor
@@ -1126,10 +1291,11 @@ pointer/keyboard action
   -> patch or remount affected SVG DOM
 ```
 
-Every implemented commit produces an ordinary hash-bound C5 transaction and
+Every editor commit produces an ordinary hash-bound legacy C5 transaction and
 reloads complete candidate source. Undo and redo retain bounded exact-source
 snapshots, never arbitrary live DOM state. Selection and C6 preview are derived
-state.
+state. The 0.2 protocol supplies the persistence substrate for future typed
+controls without making those controls part of this MVP.
 
 Live pointer transforms, move/resize, alignment, structural changes, connector
 rerouting, rich-text editing, and a reusable native interaction component are
@@ -1186,7 +1352,7 @@ The dependency graph should make these relationships explicit.
 ```ts
 export interface Diagnostic {
   code: string;
-  severity: 'info' | 'warning' | 'error' | 'fatal';
+  severity: "info" | "warning" | "error" | "fatal";
   message: string;
   range?: SourceRange;
   slideId?: string;
@@ -1240,7 +1406,7 @@ filesystem/network capabilities are roadmap.
 
 ## 21. CLI contract
 
-Implemented 0.1 commands:
+Implemented alpha.4 commands over the PPTV 0.1 source profile:
 
 ```text
 pptv outline <file.pptv.html|file.pptv.svg> [--format text|json]
@@ -1251,6 +1417,16 @@ pptv extract <deck.pptv.html> --slide ID --output file.pptv.svg
 pptv editor-pack <file.pptv.html|file.pptv.svg> --output PATH
                  [--font-map PATH] [--near-limit N] [--format text|json]
 pptv pptx-canary <deck.pptv.html> --output PATH [--format text|json]
+pptv compose <atom.pptv.svg> --placement X,Y,W,H --output deck.pptv.html
+             [--slide-id ID] [--policy identity|uniform-scale-translate]
+             [--format text|json]
+pptv compile <atom.pptv.svg> --placement X,Y,W,H --output file.pptx
+             --map file.pptv.map.json [--slide-id ID]
+             [--policy identity|uniform-scale-translate]
+             [--format text|json]
+pptv reconcile <edited.pptx> --source atom.pptv.svg
+               --baseline file.pptv.map.json --patch proposal.pptv.patch.json
+               --report reconciliation.json [--format text|json]
 pptv text-fit <file.pptv.html|file.pptv.svg> --font-map PATH
               [--near-limit N] [--format text|json]
 pptv text <file.pptv.html|file.pptv.svg>
@@ -1268,7 +1444,13 @@ pptv patch <file.pptv.html|file.pptv.svg> <patch.json>
 `--slide` and `--include-hidden` are deck-only query options.
 `set-active-theme` and `set-slide-order` are deck-only patch operations.
 `extract` and C7 `pptx-canary` accept only self-contained HTML decks.
-Standalone diagrams remain first-class for all other commands listed above.
+`compose` and `compile` accept only one standalone atom and require explicit
+placement; their outputs are deterministic aggregation/delivery artifacts, not
+new source authority. `compile` publishes the PPTX and sidecar map as one
+exclusive transaction. `reconcile` accepts only an edited descendant of that
+mapped atom baseline, always writes its report, and writes a patch only for
+`patchable` status. It never applies the patch or overwrites any input.
+Standalone diagrams remain first-class for every other applicable command.
 
 Roadmap commands:
 
@@ -1276,11 +1458,14 @@ Roadmap commands:
 pptv theme <file> [--active] [--tokens] [--trace OBJECT PROPERTY]
 pptv normalize <file> [--output PATH]
 pptv render <file> [--slide ID] [--output PATH]
-pptv build-pptx <file> [--template PATH] [--output PATH]
-pptv inspect-pptx <file.pptx> [--baseline MAP]
-pptv reconcile <file.pptx> --source <file.pptv.html> --baseline <map.json>
+pptv build-pptx <general-input> [--template PATH] [--output PATH]
+pptv import-pptx <unmapped-file.pptx> [--output PATH]
 pptv agent-guide [--profile pptv-agent/1]
 ```
+
+The roadmap `build-pptx`/`import-pptx` names denote broader or baseline-free
+work. They are not aliases for the implemented bounded `compile`/`reconcile`
+commands.
 
 Exit behavior:
 
@@ -1320,11 +1505,14 @@ A narrow adapter can consume public, bounded surfaces such as:
 The direction remains:
 
 ```text
-PPTV semantic tree -> adapter-specific IR -> PPTX
-edited PPTX -> OpenDocKit inspection -> PPTV semantic patch report
+PPTV semantic tree -> bounded C7/C9 writer -> PPTX
+mapped edited PPTX -> bounded C10 inspector -> C5 semantic patch report
+                         optional OpenDocKit/Office independent oracle
 ```
 
 OpenDocKit's arbitrary-PPTX IR does not become the canonical native PPTV model.
+The shipped C9 writer and C10 inspector are local Node boundaries with no
+OpenDocKit runtime dependency.
 
 The current private editor/PPTX write paths are blocked from direct reuse:
 
@@ -1364,15 +1552,21 @@ and tokens emitted in addition to wall-clock time.
 
 ## 24. Test and conformance obligations
 
-The 0.1 suite currently covers source recognition/ranges/BOM/CRLF/non-BMP,
+The current suite covers source recognition/ranges/BOM/CRLF/non-BMP,
 standalone namespace-aware XML failures, strict ordering/security,
 manifest/deck and diagram hierarchy, artifact-specific projections, diagram
-hydration, all three patch operations and atomic failures, CLI
+hydration, legacy patch compatibility, all seven C5 0.2 typed operations and
+atomic failures, CLI
 check/explicit-write/no-overwrite behavior, C6 deck/diagram
 style/geometry/text resolution, C8 deck/diagram exact-font evidence,
 Node/browser conformance and calibration, writable editor sessions/packs, and
-C7 deterministic deck-only PPTX graph/ZIP/mapping errors. The following corpus
-also includes the larger roadmap beyond that implemented slice.
+C7 deterministic deck-only PPTX graph/ZIP/mapping errors. C9 adds
+identity/uniform atom composition, deterministic PPTX/map, lineage and
+exclusive-publication tests. C10 adds authenticated no-op and typed edit
+round trips, exact inverse placement, raw-ZIP collision checks, unsupported
+DrawingML/identity/structure refusals, and apply/recompile equality. C11 adds
+capture/comparison/status/schema/privacy tests. The following corpus also
+includes the larger roadmap beyond those implemented slices.
 
 ### 24.1 Fixture classes
 
@@ -1436,9 +1630,10 @@ unrelated CSS, paths, assets, runtime code, or slides.
 ### Phase A — contracts and fixtures
 
 - **Implemented:** C4/C5/C6/C8 deck-and-diagram contracts, the deck-only C7
-  contract, manifest/patch schemas, exact offset/hash/BOM/XML policy, minimal
-  HTML, standalone SVG, and C6 kitchen-sink fixtures, and executable diagnostic
-  tests.
+  contract, bounded C9/C10/C11 contracts, manifest and C5 0.1/0.2 patch
+  schemas, the C11 evidence schema, exact offset/hash/BOM/XML policy, minimal
+  HTML, standalone SVG, C6 kitchen-sink, mapped-PPTX, reconciliation, and visual
+  evidence fixtures, and executable diagnostic tests.
 - **Remaining:** projection/diagnostic schemas if needed, canonical formatting,
   and a broader invalid-fixture corpus.
 
@@ -1457,10 +1652,15 @@ unrelated CSS, paths, assets, runtime code, or slides.
 
 - **Implemented:** transactional direct text for decks and diagrams plus
   deck-only active-theme selection and exact slide-order patches, all with
-  preserve replacement and same-kind candidate reload; deterministic
-  deck-slide hydration into an independently validated diagram atom.
-- **Remaining:** attribute/class/token/geometry/structural operations, canonical
-  serialization, and normalization.
+  preserve replacement and same-kind candidate reload; opt-in C5 0.2
+  rectangle/ellipse geometry, connector endpoint, explicit group translation,
+  direct one-line frame/anchor, child-order, safe-delete, and complete
+  directly represented native-style patches with C6 preconditions and
+  candidate revalidation; deterministic deck-slide hydration into an
+  independently validated diagram atom.
+- **Remaining:** generic attribute/class/token operations, insertion,
+  reparenting, representation-changing transforms, rich text, canonical
+  serialization, and general normalization.
 
 ### Phase D — viewer and editor
 
@@ -1483,9 +1683,22 @@ unrelated CSS, paths, assets, runtime code, or slides.
   and independent OpenDocKit reopen.
 - **Native evidence:** the minimal fixture opens without repair and exports a
   coherent two-page 16:9 PDF in PowerPoint 16.111.2.
-- **Remaining:** atomic assets, multiline hard lines, source-map schema,
-  expanded native fixtures, quantitative render comparison, reliable PPTX
-  save/reopen, and edited-PPTX reconciliation.
+- **Implemented bounded C9 baseline:** explicit identity or same-aspect uniform
+  atom composition, independently reloaded one-slide deck, native primitive
+  PPTX, complete deterministic `pptv-pptx-map/0.1`, stable names, lineage, and
+  atomic paired publication.
+- **Implemented bounded C10 reverse path:** exact source/map/PPTX
+  authentication, fail-closed DrawingML/ZIP inspection, typed text/geometry/
+  endpoint/translation/frame/order/deletion/style patch proposal, temporary C5
+  apply, and exact-placement C9 regeneration proof.
+- **Implemented C11 automation:** hash-bound trusted browser-SVG and Quick Look
+  capture, deterministic comparison, checked evidence envelopes/privacy, and
+  explicit native lifecycle status.
+- **Remaining:** atomic assets, multiline hard lines, broader source forms,
+  arbitrary PPTX import, expanded cross-renderer quantitative evidence,
+  controlled-font visual capture, human review, and reliable representative
+  native PowerPoint edit/save/reopen. The latter remains manual-required and is
+  not implied by Quick Look or browser success.
 
 ## 26. Design conclusion
 

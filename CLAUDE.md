@@ -1,7 +1,7 @@
 # Claude Code Configuration
 
 <!-- FRESHNESS: Update this date every time you modify this file -->
-<!-- freshness: 2026-07-30 -->
+<!-- freshness: 2026-08-01 -->
 
 Claude-specific orientation for the dual DOCX and PPTV converter repository.
 Behavioral authority remains in `architecture/CONTRACT-*.md`; this file only
@@ -39,11 +39,13 @@ This source repository has two implementation tracks and no deployed service:
   no-reflow PPTV sources, semantic patches, editor sessions, resolved
   projections, exact-font text-fit evidence, and a narrow fresh-PPTX compiler.
 
-The eight current contracts are:
+The eleven current contracts are:
 
 - C1 theme schema, C2 DOCX provenance, and C3 Markdown/DOCX round trip.
 - C4 PPTV source, C5 semantic patching, C6 compiler-grade resolution,
   C7 fresh-PPTX canary, and C8 text-fit evidence.
+- C9 supported PPTX baseline/composition/map, C10 edited-PPTX reconciliation,
+  and C11 cross-lane visual/native evidence.
 
 Read the relevant contract before changing behavior. A persistent schema,
 authority, or operation change must update and version its contract before or
@@ -54,7 +56,9 @@ with the implementation.
 - Exact declarative source bytes are persistent authority.
 - Standalone `.pptv.svg` is the default diagram atom and loads as
   `PptvDiagram`; `.pptv.html` is the deck aggregation and loads as `PptvDeck`.
-  Never synthesize one artifact kind from the other.
+  Never coerce one source kind into the other implicitly. C9's explicit
+  identity/uniform atom composition may create a one-slide HTML aggregation
+  artifact and mapped PPTX while the atom remains authoritative.
 - Stable IDs are identity, manifest order is slide order, and SVG sibling
   order is painter order.
 - Do not execute embedded source runtimes to infer meaning.
@@ -84,7 +88,7 @@ The current source/editor/compiler state and the next gates are summarized in
 - OpenDocKit is an independent sibling-repository validation oracle and a
   possible future home for a narrow shared metrics/package-writing seam. It is
   not a runtime or contract dependency.
-- The repo-scoped PPTV authoring skill is operational guidance over C4–C8, not
+- The repo-scoped PPTV authoring skill is operational guidance over C4–C10, not
   a separate format authority.
 - This repository adopts Rebar `v3.0.0-beta` at Tier 3. The SessionStart hook,
   generated registry, Steward, and CI/document gates are real enforcement
@@ -111,9 +115,11 @@ pnpm build
 pnpm pack:check
 ```
 
-The Python suite is `tests/test_roundtrip.py`; the TypeScript suite runs under
-Vitest. Native PowerPoint/render validation is a separate manual gate for C7
-compiler expansion and must not be inferred from unit tests.
+The Python suites are `tests/test_roundtrip.py` and
+`tests/test_visual_evidence.py`; the TypeScript suite runs under Vitest.
+Browser/Quick Look capture is automated C11 evidence. Native Word/PowerPoint
+representative edit/save/reopen remains a distinct manual gate and must not be
+inferred from unit tests or preview rendering.
 
 At checkpoint or handoff:
 
