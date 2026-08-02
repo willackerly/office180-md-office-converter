@@ -1,0 +1,196 @@
+{
+  "artifacts": [
+    {
+      "bytes": 3482,
+      "path": "supported-canonical-vs-edited.comparison.evidence.json",
+      "sha256": "0ff1e7a731da969b5b6f8450ab8a720c2cd111e7350dd13ceecdcc5ca1c75c0a"
+    },
+    {
+      "bytes": 41072,
+      "path": "supported-canonical.docx",
+      "sha256": "d5dc28d3a48f2a20a0f064dd2057b50d4634116493e21d99f4ad1211ead3b5c8"
+    },
+    {
+      "bytes": 1144,
+      "path": "supported-canonical.md",
+      "sha256": "f4bc912013a84b1cacc449a84293f66f561bc258ee344f89c3a38a51b6cccb48"
+    },
+    {
+      "bytes": 1894,
+      "path": "supported-canonical.quicklook.evidence.json",
+      "sha256": "5315ec4ab25e5c92b531dad37740528c8c1999347b85dd8fb8a3122b92fda5cd"
+    },
+    {
+      "bytes": 193028,
+      "path": "supported-canonical.quicklook.png",
+      "sha256": "53a67216390a2874f7f2fa8479df5188bd28ff404e3144f1350f8146295e26d4"
+    },
+    {
+      "bytes": 3345,
+      "path": "supported-edited-vs-regenerated.comparison.evidence.json",
+      "sha256": "1456680d4762db3c090c21247445f2b748efe500766e35f877080dcaa4eff333"
+    },
+    {
+      "bytes": 41079,
+      "path": "supported-edited.docx",
+      "sha256": "4706144d3ed3c06aabeff076097746cf7c061dc2ce1e495fe5e3b48415d9fd08"
+    },
+    {
+      "bytes": 1980,
+      "path": "supported-edited.native-word.evidence.json",
+      "sha256": "fa5ef0d5f7b4f5c60b8c9eb5edc8cd85ff5ad9ae96f65665fc02c5ef42e53882"
+    },
+    {
+      "bytes": 1891,
+      "path": "supported-edited.quicklook.evidence.json",
+      "sha256": "e9c58a81381c43383451c283829ae33c46ba2ee959d3ac2a858e6cbe2eac2a34"
+    },
+    {
+      "bytes": 192544,
+      "path": "supported-edited.quicklook.png",
+      "sha256": "c398f667898670645e39d3a260ca393b9033e81c9b73505b2257d7cce438341f"
+    },
+    {
+      "bytes": 689,
+      "path": "supported-edited.report.json",
+      "sha256": "ce758dd9c1451245c6feca345697265560532fb9498a8b1ab6743b02648d4429"
+    },
+    {
+      "bytes": 1144,
+      "path": "supported-embedded-base.md",
+      "sha256": "f4bc912013a84b1cacc449a84293f66f561bc258ee344f89c3a38a51b6cccb48"
+    },
+    {
+      "bytes": 1132,
+      "path": "supported-recovered.md",
+      "sha256": "1999150e15f59ece6ba1ff90f91c083703ceea67200bd048363b56b3661c4c91"
+    },
+    {
+      "bytes": 41102,
+      "path": "supported-regenerated.docx",
+      "sha256": "be0c18b388e6d05f684a2d849fa7f4323fc2c46bc538c939226b819b87ca832c"
+    },
+    {
+      "bytes": 1909,
+      "path": "supported-regenerated.quicklook.evidence.json",
+      "sha256": "fd066ad3442263263f80dc292c2d0e54ba4e637a1ec23c7c46b4385226ad31c5"
+    },
+    {
+      "bytes": 192544,
+      "path": "supported-regenerated.quicklook.png",
+      "sha256": "c398f667898670645e39d3a260ca393b9033e81c9b73505b2257d7cce438341f"
+    }
+  ],
+  "commands": [
+    [
+      ".venv/bin/python",
+      "scripts/generate-docx-roundtrip-evidence.py",
+      "--destination",
+      "tests/fixtures/roundtrip-evidence/docx"
+    ],
+    [
+      ".venv/bin/python",
+      "scripts/visual-evidence.py",
+      "validate",
+      "<manifest>",
+      "--root",
+      "tests/fixtures/roundtrip-evidence/docx"
+    ],
+    [
+      "shasum",
+      "-a",
+      "256",
+      "-c",
+      "SHA256SUMS"
+    ]
+  ],
+  "edit": {
+    "after": "This reviewed paragraph remains one supported plain-text paragraph after the Word-like edit.",
+    "before": "This paragraph soft-wraps across several source lines that should join into one paragraph in the output.",
+    "method": "python-docx single-run text replacement and package save",
+    "paragraph_style": "Normal",
+    "run_formatting": {
+      "bold": null,
+      "color": null,
+      "font": "Calibri",
+      "italic": null,
+      "size_pt": null
+    }
+  },
+  "generator": {
+    "dependencies": [
+      {
+        "path": "md2docx.py",
+        "sha256": "af3f817054f242f0561bc157b23846f23259211842a86bedc95b263a8bd4276c"
+      },
+      {
+        "path": "docx2md.py",
+        "sha256": "86efa9cf891dd3a881b6c3c063e46f2440035b13e5f8f6dfe9cb1604717ace2a"
+      },
+      {
+        "path": "scripts/visual-evidence.py",
+        "sha256": "3ac6d2e55a2782c529e452bdee1d9fabf88dabb8f1200ba29366e75e5c7c3e61"
+      }
+    ],
+    "path": "scripts/generate-docx-roundtrip-evidence.py",
+    "runtime": {
+      "python": "3.12.1",
+      "python_docx": "1.2.0"
+    },
+    "sha256": "ef4ce348a2b86a3f7452f76f3b1e513f5f2dcdc97d5f92d1fe23e30b65581c4f"
+  },
+  "limitations": [
+    "Quick Look is a first-page automated preview, not native Word.",
+    "The automated edit uses python-docx and preserves one supported paragraph/run formatting signature.",
+    "Native Word open, edit, save, and reopen remains manual or unavailable as recorded in its evidence envelope.",
+    "Quick Look uses host fonts; no exact font-byte claim is made.",
+    "DOCX package bytes vary across runs because provenance and ZIP metadata include generation-time values.",
+    "No C11 human-review envelope is claimed by this generator."
+  ],
+  "native_word": {
+    "diagnostic": "Native Microsoft Word open, representative edit, save, and reopen were not automated by this generator; manual lifecycle validation remains required.",
+    "status": "manual-required"
+  },
+  "privacy_scan": {
+    "docx_package_members": 66,
+    "files": 19,
+    "scope": "Every durable file, every DOCX member, both fixed temporary Markdown sources, and sensitive environment values",
+    "status": "passed"
+  },
+  "quicklook_comparisons": {
+    "canonical_to_edited": {
+      "changed_bounds": [
+        222,
+        238,
+        790,
+        19
+      ],
+      "changed_fraction": 0.003646669341894061,
+      "changed_pixels": 7270,
+      "expected_crop": [
+        170,
+        220,
+        900,
+        60
+      ],
+      "max_channel_delta": 229,
+      "mean_absolute_error": 0.31103443519261637,
+      "status": "passed"
+    },
+    "edited_to_regenerated": {
+      "changed_fraction": 0.0,
+      "changed_pixels": 0,
+      "max_channel_delta": 0,
+      "mean_absolute_error": 0.0,
+      "status": "passed"
+    }
+  },
+  "schema": "office180-docx-roundtrip-evidence-generation/0.1",
+  "source": {
+    "fixed_generation_path": "/private/tmp/office180-evidence/source/supported-canonical.md",
+    "fixture_path": "tests/fixtures/kitchen-sink.md",
+    "fixture_sha256": "ffadf5fde95ca113154f12ecb35db75c8d000a9643c56a052efa0ba63122cb7d",
+    "theme_path": "themes/neutral.json",
+    "theme_sha256": "e0546fc39f7f1a6536deb14ed0a28de05155f4602d61fc4d79db418e82386c8e"
+  }
+}

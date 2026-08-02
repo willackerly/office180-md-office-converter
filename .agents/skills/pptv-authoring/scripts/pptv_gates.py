@@ -27,7 +27,10 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--artifacts-dir",
         type=Path,
-        help="retain editor-pack and PPTX outputs in this directory",
+        help=(
+            "retain editor pack and applicable C7/C9 deck, PPTX, and map "
+            "outputs in this directory"
+        ),
     )
     parser.add_argument(
         "--font-map",
@@ -39,6 +42,23 @@ def parse_args() -> argparse.Namespace:
         type=float,
         default=0.9,
         help="C8 warning threshold (default: 0.9)",
+    )
+    parser.add_argument(
+        "--placement",
+        help=(
+            "for a diagram, retain C9 composition/PPTX/map artifacts using "
+            "explicit X,Y,W,H slide placement"
+        ),
+    )
+    parser.add_argument(
+        "--placement-policy",
+        choices=("identity", "uniform-scale-translate"),
+        default="identity",
+        help="C9 diagram placement policy (default: identity)",
+    )
+    parser.add_argument(
+        "--slide-id",
+        help="optional C9 composed slide ID (default: diagram root ID)",
     )
     return parser.parse_args()
 
@@ -122,12 +142,23 @@ def run_artifact_gates(
     output: Path,
     font_map: Path | None,
     near_limit: float,
+    placement: str | None,
+    placement_policy: str,
+    slide_id: str | None,
 ) -> None:
     stem = source_stem(source, kind)
     editor_pack = output / f"{stem}.editable.pptv.html"
     artifacts = [editor_pack]
     if kind == "deck":
         artifacts.append(output / f"{stem}.pptx")
+    elif placement is not None:
+        artifacts.extend(
+            [
+                output / f"{stem}.composed.pptv.html",
+                output / f"{stem}.pptx",
+                output / f"{stem}.pptv.map.json",
+            ]
+        )
     for artifact in artifacts:
         if artifact.exists():
             raise SystemExit(f"refusing to overwrite existing artifact: {artifact}")
@@ -150,10 +181,49 @@ def run_artifact_gates(
     run(repo, editor_arguments)
     print(f"writable trusted editor pack: {editor_pack}")
     if kind == "diagram":
-        print(
-            "SKIP PPTX canary: standalone PPTV diagrams are not C7 "
-            "presentation inputs."
+        if placement is None:
+            print(
+                "SKIP C9 PPTX baseline: supply --placement X,Y,W,H; "
+                "composition geometry is never inferred."
+            )
+            return
+        common_arguments = [
+            str(source),
+            "--placement",
+            placement,
+            "--policy",
+            placement_policy,
+        ]
+        if slide_id is not None:
+            common_arguments.extend(["--slide-id", slide_id])
+        composed_deck, pptx, sidecar_map = artifacts[1:]
+        run(
+            repo,
+            [
+                "compose",
+                *common_arguments,
+                "--output",
+                str(composed_deck),
+                "--format",
+                "json",
+            ],
         )
+        print(f"C9 composed deck: {composed_deck}")
+        run(
+            repo,
+            [
+                "compile",
+                *common_arguments,
+                "--output",
+                str(pptx),
+                "--map",
+                str(sidecar_map),
+                "--format",
+                "json",
+            ],
+        )
+        print(f"C9 mapped PPTX: {pptx}")
+        print(f"C9 sidecar map: {sidecar_map}")
         return
 
     pptx = artifacts[1]
@@ -180,6 +250,11 @@ def main() -> int:
     if not source.is_file():
         raise SystemExit(f"PPTV source does not exist: {source}")
     kind = detect_source_kind(source)
+    if kind == "deck" and args.placement is not None:
+        raise SystemExit(
+            "--placement is a C9 standalone-diagram option; "
+            "HTML decks use their authored 1600 x 900 slide geometry"
+        )
     artifacts_dir = (
         None
         if args.artifacts_dir is None
@@ -228,6 +303,9 @@ def main() -> int:
                 Path(temporary),
                 font_map,
                 args.near_limit,
+                args.placement,
+                args.placement_policy,
+                args.slide_id,
             )
     else:
         run_artifact_gates(
@@ -237,6 +315,9 @@ def main() -> int:
             artifacts_dir,
             font_map,
             args.near_limit,
+            args.placement,
+            args.placement_policy,
+            args.slide_id,
         )
 
     print("All configured PPTV authoring gates passed.")

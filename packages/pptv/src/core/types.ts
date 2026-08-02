@@ -2,7 +2,7 @@
  * Public PPTV core types.
  *
  * CONTRACT:C4-PPTV-SOURCE.1.1
- * CONTRACT:C5-PPTV-PATCH.1.1
+ * CONTRACT:C5-PPTV-PATCH.1.2
  */
 
 export type PptvInput =
@@ -438,17 +438,137 @@ export interface SetSlideOrderOperation {
   oldOrder?: string[];
 }
 
-export type PptvOperation =
+export interface PptvRectGeometry {
+  kind: "rect";
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+}
+
+export interface PptvEllipseGeometry {
+  kind: "ellipse";
+  cx: number;
+  cy: number;
+  rx: number;
+  ry: number;
+}
+
+export type PptvObjectGeometry = PptvRectGeometry | PptvEllipseGeometry;
+
+export interface SetObjectGeometryOperation {
+  op: "set-object-geometry";
+  id: string;
+  oldGeometry: PptvObjectGeometry;
+  geometry: PptvObjectGeometry;
+}
+
+export interface PptvConnectorEndpoints {
+  x1: number;
+  y1: number;
+  x2: number;
+  y2: number;
+}
+
+export interface SetConnectorEndpointsOperation {
+  op: "set-connector-endpoints";
+  id: string;
+  oldEndpoints: PptvConnectorEndpoints;
+  endpoints: PptvConnectorEndpoints;
+}
+
+export interface PptvPatchPoint {
+  x: number;
+  y: number;
+}
+
+export interface SetGroupTranslationOperation {
+  op: "set-group-translation";
+  id: string;
+  oldTranslation: PptvPatchPoint;
+  translation: PptvPatchPoint;
+}
+
+export interface PptvPatchBounds {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+}
+
+export interface SetTextFrameOperation {
+  op: "set-text-frame";
+  id: string;
+  oldFrame: PptvPatchBounds;
+  frame: PptvPatchBounds;
+  oldLineAnchor: PptvPatchPoint;
+  lineAnchor: PptvPatchPoint;
+}
+
+export interface SetChildOrderOperation {
+  op: "set-child-order";
+  parentId: string;
+  oldOrder: string[];
+  order: string[];
+}
+
+export interface DeleteObjectOperation {
+  op: "delete-object";
+  id: string;
+  oldParentId: string | null;
+  oldOrder: number;
+}
+
+export interface PptvConcreteNativeStyle {
+  fill: string;
+  stroke: string;
+  strokeWidth: number;
+  opacity: number;
+  fontFamily?: string;
+  fontSize?: number;
+  fontWeight: 400 | 700;
+  fontStyle: "normal" | "italic";
+  textAnchor: "start" | "middle" | "end";
+}
+
+export interface SetNativeStyleOperation {
+  op: "set-native-style";
+  id: string;
+  oldStyle: PptvConcreteNativeStyle;
+  style: PptvConcreteNativeStyle;
+}
+
+export type PptvLegacyOperation =
   SetTextOperation | SetActiveThemeOperation | SetSlideOrderOperation;
 
-export interface PptvPatch {
-  schema: "pptv-patch/0.1";
+export type PptvOperation =
+  | PptvLegacyOperation
+  | SetObjectGeometryOperation
+  | SetConnectorEndpointsOperation
+  | SetGroupTranslationOperation
+  | SetTextFrameOperation
+  | SetChildOrderOperation
+  | DeleteObjectOperation
+  | SetNativeStyleOperation;
+
+interface PptvPatchMetadata {
   baseSha256: string;
   transactionId?: string;
   author?: string;
   timestamp?: string;
+}
+
+export interface PptvPatch01 extends PptvPatchMetadata {
+  schema: "pptv-patch/0.1";
+  ops: PptvLegacyOperation[];
+}
+
+export interface PptvPatch02 extends PptvPatchMetadata {
+  schema: "pptv-patch/0.2";
   ops: PptvOperation[];
 }
+
+export type PptvPatch = PptvPatch01 | PptvPatch02;
 
 export interface AppliedSourceEdit {
   range: SourceRange;

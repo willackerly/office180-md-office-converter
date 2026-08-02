@@ -1,0 +1,62 @@
+{
+  "capture": {
+    "command": {
+      "argv": [
+        "/usr/bin/qlmanage",
+        "-t",
+        "-s",
+        "1600",
+        "-o",
+        "$TEMP",
+        "$TEMP/input-7ea97b85eca73ab1.pptx"
+      ],
+      "exit_code": 0,
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdout_sha256": "a0d2e73c86c711e834f76e3c524c3731344c6419aa3c3219b69559fcf1f8c87a",
+      "timeout_seconds": 45.0
+    },
+    "diagnostic": null,
+    "environment": {
+      "architecture": "arm64",
+      "display_scale": 1.0,
+      "locale": "C/C.UTF-8/C/C/C/C",
+      "os": "Darwin",
+      "os_version": "26.5.2"
+    },
+    "fonts": [],
+    "input": {
+      "background": "renderer-default",
+      "index": 1,
+      "pixel_size": 1600,
+      "unit": "slide"
+    },
+    "output": {
+      "colorspace": "png-rgba-8",
+      "height_px": 902,
+      "media_type": "image/png",
+      "page_count": 1,
+      "page_sha256": [
+        "e85f46c222d5ad7bafcdde855601d5e5671aa4a67849846a7bde1b8182ddb498"
+      ],
+      "path": "supported-baseline.quicklook.png",
+      "sha256": "e85f46c222d5ad7bafcdde855601d5e5671aa4a67849846a7bde1b8182ddb498",
+      "width_px": 1600
+    },
+    "renderer": {
+      "executable_path": "/System/Library/QuickLook/Office.qlgenerator",
+      "identity_sha256": "f9945b5974ea2cdc3a51921f827f6946c9719c107a0326ce68267632c49ec0c9",
+      "product": "macOS Quick Look Office generator",
+      "version": "48"
+    },
+    "renderer_class": "quick-look",
+    "status": "passed"
+  },
+  "evidence_sha256": "c4be534168af677f969471fd4408e05cfec6ade0953dd254eafaf4d81f8bb2dc",
+  "schema": "office180-visual-evidence/0.1",
+  "subject": {
+    "artifact_path": "supported-baseline.pptx",
+    "artifact_sha256": "7ea97b85eca73ab196a8201003dbb8764d7e9fc9e785df176b532d3d52131904",
+    "checkpoint": "generated-c9-baseline",
+    "lane": "pptv-pptx"
+  }
+}

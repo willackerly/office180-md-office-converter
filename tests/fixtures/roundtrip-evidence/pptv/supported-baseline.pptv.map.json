@@ -1,0 +1,2078 @@
+{
+  "compiler": "office180-pptv-pptx-baseline/0.1",
+  "composition": {
+    "composedDeckSha256": "c3fde65f00394df4fb3065e2dc9794ad42261f260467f5e9a3d19f58bc0a3636",
+    "placement": {
+      "height": 900,
+      "policy": "uniform-scale-translate",
+      "slideId": "supported-roundtrip",
+      "width": 1200,
+      "x": 200,
+      "y": 0
+    },
+    "scale": 1.5,
+    "translateX": 200,
+    "translateY": 0
+  },
+  "pptx": {
+    "byteLength": 26484,
+    "partNames": [
+      "[Content_Types].xml",
+      "_rels/.rels",
+      "docProps/app.xml",
+      "docProps/core.xml",
+      "docProps/custom.xml",
+      "ppt/_rels/presentation.xml.rels",
+      "ppt/presProps.xml",
+      "ppt/presentation.xml",
+      "ppt/slideLayouts/_rels/slideLayout1.xml.rels",
+      "ppt/slideLayouts/slideLayout1.xml",
+      "ppt/slideMasters/_rels/slideMaster1.xml.rels",
+      "ppt/slideMasters/slideMaster1.xml",
+      "ppt/slides/_rels/slide1.xml.rels",
+      "ppt/slides/slide1.xml",
+      "ppt/theme/theme1.xml"
+    ],
+    "sha256": "7ea97b85eca73ab196a8201003dbb8764d7e9fc9e785df176b532d3d52131904"
+  },
+  "resolvedSchema": "pptv-resolved/0.1",
+  "schema": "pptv-pptx-map/0.1",
+  "slides": [
+    {
+      "id": "supported-roundtrip",
+      "objects": [
+        {
+          "capability": {
+            "classification": "native",
+            "compilerCapability": "c9-native-primitive/0.1",
+            "exportMode": "native"
+          },
+          "composed": {
+            "geometry": {
+              "height": 900,
+              "width": 1200,
+              "x": 200,
+              "y": 0
+            },
+            "kind": "rect",
+            "localBounds": {
+              "height": 900,
+              "width": 1200,
+              "x": 200,
+              "y": 0
+            },
+            "style": {
+              "fill": "#f8fafc",
+              "fontStyle": "normal",
+              "fontWeight": 400,
+              "opacity": 1,
+              "stroke": "none",
+              "strokeWidth": 0,
+              "textAnchor": "start"
+            },
+            "worldBounds": {
+              "height": 900,
+              "width": 1200,
+              "x": 200,
+              "y": 0
+            },
+            "worldOffset": {
+              "x": 0,
+              "y": 0
+            }
+          },
+          "composition": {
+            "scale": 1.5,
+            "translateX": 200,
+            "translateY": 0
+          },
+          "emitted": {
+            "cNvPrName": "src.roundtrip.background",
+            "cNvPrNumericId": 1623810520,
+            "drawingMl": {
+              "fill": {
+                "kind": "solid",
+                "srgbColor": "F8FAFC"
+              },
+              "line": {
+                "paint": {
+                  "kind": "none"
+                },
+                "widthEmu": 0
+              },
+              "presetGeometry": "rect",
+              "transform": {
+                "extCxEmu": 9144000,
+                "extCyEmu": 6858000,
+                "offXEmu": 1524000,
+                "offYEmu": 0
+              }
+            },
+            "element": "p:sp",
+            "partName": "ppt/slides/slide1.xml"
+          },
+          "id": "roundtrip.background",
+          "kind": "rect",
+          "order": 0,
+          "parentId": null,
+          "resolved": {
+            "geometry": {
+              "height": 600,
+              "width": 800,
+              "x": 0,
+              "y": 0
+            },
+            "kind": "rect",
+            "localBounds": {
+              "height": 600,
+              "width": 800,
+              "x": 0,
+              "y": 0
+            },
+            "style": {
+              "fill": "#f8fafc",
+              "fontStyle": "normal",
+              "fontWeight": 400,
+              "opacity": 1,
+              "stroke": "none",
+              "strokeWidth": 0,
+              "textAnchor": "start"
+            },
+            "worldBounds": {
+              "height": 600,
+              "width": 800,
+              "x": 0,
+              "y": 0
+            },
+            "worldOffset": {
+              "x": 0,
+              "y": 0
+            }
+          },
+          "source": {
+            "attributes": {
+              "data-pptv-export": "native",
+              "data-pptv-role": "shape",
+              "fill": "#f8fafc",
+              "height": "600",
+              "id": "roundtrip.background",
+              "stroke": "none",
+              "stroke-width": "0",
+              "width": "800",
+              "x": "0",
+              "y": "0"
+            },
+            "element": "rect",
+            "exportMode": "native",
+            "order": 0,
+            "parentId": null,
+            "role": "shape",
+            "sourceRange": {
+              "byteEnd": 951,
+              "byteStart": 754,
+              "charEnd": 951,
+              "charStart": 754,
+              "columnEnd": 56,
+              "columnStart": 3,
+              "lineEnd": 21,
+              "lineStart": 17
+            }
+          }
+        },
+        {
+          "capability": {
+            "classification": "native",
+            "compilerCapability": "c9-native-primitive/0.1",
+            "exportMode": "native"
+          },
+          "composed": {
+            "geometry": {
+              "anchor": "middle",
+              "autofit": "none",
+              "frame": {
+                "height": 105,
+                "width": 1035,
+                "x": 282.5,
+                "y": 63
+              },
+              "lineStep": 69,
+              "lines": [
+                {
+                  "text": "SOURCE ROUND TRIP",
+                  "x": 800,
+                  "y": 139.5
+                }
+              ],
+              "margins": {
+                "bottom": 0,
+                "left": 0,
+                "right": 0,
+                "top": 0
+              },
+              "wrap": "none"
+            },
+            "kind": "text",
+            "localBounds": {
+              "height": 105,
+              "width": 1035,
+              "x": 282.5,
+              "y": 63
+            },
+            "style": {
+              "fill": "#0f172a",
+              "fontFamily": "ABeeZee",
+              "fontSize": 51,
+              "fontStyle": "normal",
+              "fontWeight": 400,
+              "opacity": 1,
+              "stroke": "none",
+              "strokeWidth": 0,
+              "textAnchor": "middle"
+            },
+            "worldBounds": {
+              "height": 105,
+              "width": 1035,
+              "x": 282.5,
+              "y": 63
+            },
+            "worldOffset": {
+              "x": 0,
+              "y": 0
+            }
+          },
+          "composition": {
+            "scale": 1.5,
+            "translateX": 200,
+            "translateY": 0
+          },
+          "emitted": {
+            "cNvPrName": "src.roundtrip.title",
+            "cNvPrNumericId": 1156357276,
+            "drawingMl": {
+              "body": {
+                "autofit": "none",
+                "marginsEmu": {
+                  "bottom": 0,
+                  "left": 0,
+                  "right": 0,
+                  "top": 0
+                },
+                "verticalAnchor": "top",
+                "wrap": "none"
+              },
+              "frameFill": {
+                "kind": "none"
+              },
+              "frameLine": {
+                "kind": "none"
+              },
+              "paragraph": {
+                "alignment": "center",
+                "bullets": "none",
+                "indentEmu": 0,
+                "lineSpacingHundredthPoints": 4140,
+                "marginLeftEmu": 0,
+                "marginRightEmu": 0,
+                "spacingAfterHundredthPoints": 0,
+                "spacingBeforeHundredthPoints": 0
+              },
+              "presetGeometry": "rect",
+              "run": {
+                "bold": false,
+                "fill": {
+                  "kind": "solid",
+                  "srgbColor": "0F172A"
+                },
+                "fontFamily": "ABeeZee",
+                "fontSizeHundredthPoints": 3060,
+                "italic": false,
+                "outline": {
+                  "paint": {
+                    "kind": "none"
+                  },
+                  "widthEmu": 0
+                },
+                "text": "SOURCE ROUND TRIP"
+              },
+              "transform": {
+                "extCxEmu": 7886700,
+                "extCyEmu": 800100,
+                "offXEmu": 2152650,
+                "offYEmu": 480060
+              }
+            },
+            "element": "p:sp",
+            "partName": "ppt/slides/slide1.xml"
+          },
+          "id": "roundtrip.title",
+          "kind": "text",
+          "order": 1,
+          "parentId": null,
+          "resolved": {
+            "geometry": {
+              "anchor": "middle",
+              "autofit": "none",
+              "frame": {
+                "height": 70,
+                "width": 690,
+                "x": 55,
+                "y": 42
+              },
+              "lineStep": 46,
+              "lines": [
+                {
+                  "text": "SOURCE ROUND TRIP",
+                  "x": 400,
+                  "y": 93
+                }
+              ],
+              "margins": {
+                "bottom": 0,
+                "left": 0,
+                "right": 0,
+                "top": 0
+              },
+              "wrap": "none"
+            },
+            "kind": "text",
+            "localBounds": {
+              "height": 70,
+              "width": 690,
+              "x": 55,
+              "y": 42
+            },
+            "style": {
+              "fill": "#0f172a",
+              "fontFamily": "ABeeZee",
+              "fontSize": 34,
+              "fontStyle": "normal",
+              "fontWeight": 400,
+              "opacity": 1,
+              "stroke": "none",
+              "strokeWidth": 0,
+              "textAnchor": "middle"
+            },
+            "worldBounds": {
+              "height": 70,
+              "width": 690,
+              "x": 55,
+              "y": 42
+            },
+            "worldOffset": {
+              "x": 0,
+              "y": 0
+            }
+          },
+          "source": {
+            "attributes": {
+              "data-pptv-export": "native",
+              "data-pptv-frame": "55 42 690 70",
+              "data-pptv-line-step": "46",
+              "data-pptv-role": "text",
+              "fill": "#0f172a",
+              "font-family": "ABeeZee",
+              "font-size": "34",
+              "font-style": "normal",
+              "font-weight": "400",
+              "id": "roundtrip.title",
+              "stroke": "none",
+              "stroke-width": "0",
+              "text-anchor": "middle",
+              "x": "400",
+              "y": "93"
+            },
+            "element": "text",
+            "exportMode": "native",
+            "order": 1,
+            "parentId": null,
+            "role": "text",
+            "sourceRange": {
+              "byteEnd": 1339,
+              "byteStart": 955,
+              "charEnd": 1339,
+              "charStart": 955,
+              "columnEnd": 54,
+              "columnStart": 3,
+              "lineEnd": 32,
+              "lineStart": 23
+            },
+            "text": "SOURCE ROUND TRIP"
+          }
+        },
+        {
+          "capability": {
+            "classification": "native",
+            "compilerCapability": "c9-native-primitive/0.1",
+            "exportMode": "native"
+          },
+          "composed": {
+            "geometry": {
+              "anchor": "middle",
+              "autofit": "none",
+              "frame": {
+                "height": 63,
+                "width": 870,
+                "x": 365,
+                "y": 174
+              },
+              "lineStep": 42,
+              "lines": [
+                {
+                  "text": "One canonical atom, one reviewable semantic patch",
+                  "x": 800,
+                  "y": 219
+                }
+              ],
+              "margins": {
+                "bottom": 0,
+                "left": 0,
+                "right": 0,
+                "top": 0
+              },
+              "wrap": "none"
+            },
+            "kind": "text",
+            "localBounds": {
+              "height": 63,
+              "width": 870,
+              "x": 365,
+              "y": 174
+            },
+            "style": {
+              "fill": "#475569",
+              "fontFamily": "ABeeZee",
+              "fontSize": 27,
+              "fontStyle": "normal",
+              "fontWeight": 400,
+              "opacity": 1,
+              "stroke": "none",
+              "strokeWidth": 0,
+              "textAnchor": "middle"
+            },
+            "worldBounds": {
+              "height": 63,
+              "width": 870,
+              "x": 365,
+              "y": 174
+            },
+            "worldOffset": {
+              "x": 0,
+              "y": 0
+            }
+          },
+          "composition": {
+            "scale": 1.5,
+            "translateX": 200,
+            "translateY": 0
+          },
+          "emitted": {
+            "cNvPrName": "src.roundtrip.subtitle",
+            "cNvPrNumericId": 467999118,
+            "drawingMl": {
+              "body": {
+                "autofit": "none",
+                "marginsEmu": {
+                  "bottom": 0,
+                  "left": 0,
+                  "right": 0,
+                  "top": 0
+                },
+                "verticalAnchor": "top",
+                "wrap": "none"
+              },
+              "frameFill": {
+                "kind": "none"
+              },
+              "frameLine": {
+                "kind": "none"
+              },
+              "paragraph": {
+                "alignment": "center",
+                "bullets": "none",
+                "indentEmu": 0,
+                "lineSpacingHundredthPoints": 2520,
+                "marginLeftEmu": 0,
+                "marginRightEmu": 0,
+                "spacingAfterHundredthPoints": 0,
+                "spacingBeforeHundredthPoints": 0
+              },
+              "presetGeometry": "rect",
+              "run": {
+                "bold": false,
+                "fill": {
+                  "kind": "solid",
+                  "srgbColor": "475569"
+                },
+                "fontFamily": "ABeeZee",
+                "fontSizeHundredthPoints": 1620,
+                "italic": false,
+                "outline": {
+                  "paint": {
+                    "kind": "none"
+                  },
+                  "widthEmu": 0
+                },
+                "text": "One canonical atom, one reviewable semantic patch"
+              },
+              "transform": {
+                "extCxEmu": 6629400,
+                "extCyEmu": 480060,
+                "offXEmu": 2781300,
+                "offYEmu": 1325880
+              }
+            },
+            "element": "p:sp",
+            "partName": "ppt/slides/slide1.xml"
+          },
+          "id": "roundtrip.subtitle",
+          "kind": "text",
+          "order": 2,
+          "parentId": null,
+          "resolved": {
+            "geometry": {
+              "anchor": "middle",
+              "autofit": "none",
+              "frame": {
+                "height": 42,
+                "width": 580,
+                "x": 110,
+                "y": 116
+              },
+              "lineStep": 28,
+              "lines": [
+                {
+                  "text": "One canonical atom, one reviewable semantic patch",
+                  "x": 400,
+                  "y": 146
+                }
+              ],
+              "margins": {
+                "bottom": 0,
+                "left": 0,
+                "right": 0,
+                "top": 0
+              },
+              "wrap": "none"
+            },
+            "kind": "text",
+            "localBounds": {
+              "height": 42,
+              "width": 580,
+              "x": 110,
+              "y": 116
+            },
+            "style": {
+              "fill": "#475569",
+              "fontFamily": "ABeeZee",
+              "fontSize": 18,
+              "fontStyle": "normal",
+              "fontWeight": 400,
+              "opacity": 1,
+              "stroke": "none",
+              "strokeWidth": 0,
+              "textAnchor": "middle"
+            },
+            "worldBounds": {
+              "height": 42,
+              "width": 580,
+              "x": 110,
+              "y": 116
+            },
+            "worldOffset": {
+              "x": 0,
+              "y": 0
+            }
+          },
+          "source": {
+            "attributes": {
+              "data-pptv-export": "native",
+              "data-pptv-frame": "110 116 580 42",
+              "data-pptv-line-step": "28",
+              "data-pptv-role": "text",
+              "fill": "#475569",
+              "font-family": "ABeeZee",
+              "font-size": "18",
+              "font-style": "normal",
+              "font-weight": "400",
+              "id": "roundtrip.subtitle",
+              "stroke": "none",
+              "stroke-width": "0",
+              "text-anchor": "middle",
+              "x": "400",
+              "y": "146"
+            },
+            "element": "text",
+            "exportMode": "native",
+            "order": 2,
+            "parentId": null,
+            "role": "text",
+            "sourceRange": {
+              "byteEnd": 1765,
+              "byteStart": 1343,
+              "charEnd": 1765,
+              "charStart": 1343,
+              "columnEnd": 86,
+              "columnStart": 3,
+              "lineEnd": 43,
+              "lineStart": 34
+            },
+            "text": "One canonical atom, one reviewable semantic patch"
+          }
+        },
+        {
+          "capability": {
+            "classification": "native",
+            "compilerCapability": "c9-native-primitive/0.1",
+            "exportMode": "native"
+          },
+          "composed": {
+            "geometry": {
+              "height": 345,
+              "width": 465,
+              "x": 305,
+              "y": 285
+            },
+            "kind": "rect",
+            "localBounds": {
+              "height": 345,
+              "width": 465,
+              "x": 305,
+              "y": 285
+            },
+            "style": {
+              "fill": "#dbeafe",
+              "fontStyle": "normal",
+              "fontWeight": 400,
+              "opacity": 1,
+              "stroke": "#2563eb",
+              "strokeWidth": 4.5,
+              "textAnchor": "start"
+            },
+            "worldBounds": {
+              "height": 345,
+              "width": 465,
+              "x": 305,
+              "y": 285
+            },
+            "worldOffset": {
+              "x": 0,
+              "y": 0
+            }
+          },
+          "composition": {
+            "scale": 1.5,
+            "translateX": 200,
+            "translateY": 0
+          },
+          "emitted": {
+            "cNvPrName": "src.roundtrip.card",
+            "cNvPrNumericId": 728589742,
+            "drawingMl": {
+              "fill": {
+                "kind": "solid",
+                "srgbColor": "DBEAFE"
+              },
+              "line": {
+                "paint": {
+                  "kind": "solid",
+                  "srgbColor": "2563EB"
+                },
+                "widthEmu": 34290
+              },
+              "presetGeometry": "rect",
+              "transform": {
+                "extCxEmu": 3543300,
+                "extCyEmu": 2628900,
+                "offXEmu": 2324100,
+                "offYEmu": 2171700
+              }
+            },
+            "element": "p:sp",
+            "partName": "ppt/slides/slide1.xml"
+          },
+          "id": "roundtrip.card",
+          "kind": "rect",
+          "order": 3,
+          "parentId": null,
+          "resolved": {
+            "geometry": {
+              "height": 230,
+              "width": 310,
+              "x": 70,
+              "y": 190
+            },
+            "kind": "rect",
+            "localBounds": {
+              "height": 230,
+              "width": 310,
+              "x": 70,
+              "y": 190
+            },
+            "style": {
+              "fill": "#dbeafe",
+              "fontStyle": "normal",
+              "fontWeight": 400,
+              "opacity": 1,
+              "stroke": "#2563eb",
+              "strokeWidth": 3,
+              "textAnchor": "start"
+            },
+            "worldBounds": {
+              "height": 230,
+              "width": 310,
+              "x": 70,
+              "y": 190
+            },
+            "worldOffset": {
+              "x": 0,
+              "y": 0
+            }
+          },
+          "source": {
+            "attributes": {
+              "data-pptv-export": "native",
+              "data-pptv-role": "shape",
+              "fill": "#dbeafe",
+              "height": "230",
+              "id": "roundtrip.card",
+              "stroke": "#2563eb",
+              "stroke-width": "3",
+              "width": "310",
+              "x": "70",
+              "y": "190"
+            },
+            "element": "rect",
+            "exportMode": "native",
+            "order": 3,
+            "parentId": null,
+            "role": "shape",
+            "sourceRange": {
+              "byteEnd": 1966,
+              "byteStart": 1769,
+              "charEnd": 1966,
+              "charStart": 1769,
+              "columnEnd": 59,
+              "columnStart": 3,
+              "lineEnd": 49,
+              "lineStart": 45
+            }
+          }
+        },
+        {
+          "capability": {
+            "classification": "native",
+            "compilerCapability": "c9-native-primitive/0.1",
+            "exportMode": "native"
+          },
+          "composed": {
+            "geometry": {
+              "anchor": "middle",
+              "autofit": "none",
+              "frame": {
+                "height": 72,
+                "width": 375,
+                "x": 350,
+                "y": 337.5
+              },
+              "lineStep": 45,
+              "lines": [
+                {
+                  "text": "Canonical source",
+                  "x": 537.5,
+                  "y": 390
+                }
+              ],
+              "margins": {
+                "bottom": 0,
+                "left": 0,
+                "right": 0,
+                "top": 0
+              },
+              "wrap": "none"
+            },
+            "kind": "text",
+            "localBounds": {
+              "height": 72,
+              "width": 375,
+              "x": 350,
+              "y": 337.5
+            },
+            "style": {
+              "fill": "#1e3a8a",
+              "fontFamily": "ABeeZee",
+              "fontSize": 33,
+              "fontStyle": "normal",
+              "fontWeight": 400,
+              "opacity": 1,
+              "stroke": "none",
+              "strokeWidth": 0,
+              "textAnchor": "middle"
+            },
+            "worldBounds": {
+              "height": 72,
+              "width": 375,
+              "x": 350,
+              "y": 337.5
+            },
+            "worldOffset": {
+              "x": 0,
+              "y": 0
+            }
+          },
+          "composition": {
+            "scale": 1.5,
+            "translateX": 200,
+            "translateY": 0
+          },
+          "emitted": {
+            "cNvPrName": "src.roundtrip.card.label",
+            "cNvPrNumericId": 597250734,
+            "drawingMl": {
+              "body": {
+                "autofit": "none",
+                "marginsEmu": {
+                  "bottom": 0,
+                  "left": 0,
+                  "right": 0,
+                  "top": 0
+                },
+                "verticalAnchor": "top",
+                "wrap": "none"
+              },
+              "frameFill": {
+                "kind": "none"
+              },
+              "frameLine": {
+                "kind": "none"
+              },
+              "paragraph": {
+                "alignment": "center",
+                "bullets": "none",
+                "indentEmu": 0,
+                "lineSpacingHundredthPoints": 2700,
+                "marginLeftEmu": 0,
+                "marginRightEmu": 0,
+                "spacingAfterHundredthPoints": 0,
+                "spacingBeforeHundredthPoints": 0
+              },
+              "presetGeometry": "rect",
+              "run": {
+                "bold": false,
+                "fill": {
+                  "kind": "solid",
+                  "srgbColor": "1E3A8A"
+                },
+                "fontFamily": "ABeeZee",
+                "fontSizeHundredthPoints": 1980,
+                "italic": false,
+                "outline": {
+                  "paint": {
+                    "kind": "none"
+                  },
+                  "widthEmu": 0
+                },
+                "text": "Canonical source"
+              },
+              "transform": {
+                "extCxEmu": 2857500,
+                "extCyEmu": 548640,
+                "offXEmu": 2667000,
+                "offYEmu": 2571750
+              }
+            },
+            "element": "p:sp",
+            "partName": "ppt/slides/slide1.xml"
+          },
+          "id": "roundtrip.card.label",
+          "kind": "text",
+          "order": 4,
+          "parentId": null,
+          "resolved": {
+            "geometry": {
+              "anchor": "middle",
+              "autofit": "none",
+              "frame": {
+                "height": 48,
+                "width": 250,
+                "x": 100,
+                "y": 225
+              },
+              "lineStep": 30,
+              "lines": [
+                {
+                  "text": "Canonical source",
+                  "x": 225,
+                  "y": 260
+                }
+              ],
+              "margins": {
+                "bottom": 0,
+                "left": 0,
+                "right": 0,
+                "top": 0
+              },
+              "wrap": "none"
+            },
+            "kind": "text",
+            "localBounds": {
+              "height": 48,
+              "width": 250,
+              "x": 100,
+              "y": 225
+            },
+            "style": {
+              "fill": "#1e3a8a",
+              "fontFamily": "ABeeZee",
+              "fontSize": 22,
+              "fontStyle": "normal",
+              "fontWeight": 400,
+              "opacity": 1,
+              "stroke": "none",
+              "strokeWidth": 0,
+              "textAnchor": "middle"
+            },
+            "worldBounds": {
+              "height": 48,
+              "width": 250,
+              "x": 100,
+              "y": 225
+            },
+            "worldOffset": {
+              "x": 0,
+              "y": 0
+            }
+          },
+          "source": {
+            "attributes": {
+              "data-pptv-export": "native",
+              "data-pptv-frame": "100 225 250 48",
+              "data-pptv-line-step": "30",
+              "data-pptv-role": "text",
+              "fill": "#1e3a8a",
+              "font-family": "ABeeZee",
+              "font-size": "22",
+              "font-style": "normal",
+              "font-weight": "400",
+              "id": "roundtrip.card.label",
+              "stroke": "none",
+              "stroke-width": "0",
+              "text-anchor": "middle",
+              "x": "225",
+              "y": "260"
+            },
+            "element": "text",
+            "exportMode": "native",
+            "order": 4,
+            "parentId": null,
+            "role": "text",
+            "sourceRange": {
+              "byteEnd": 2361,
+              "byteStart": 1970,
+              "charEnd": 2361,
+              "charStart": 1970,
+              "columnEnd": 53,
+              "columnStart": 3,
+              "lineEnd": 60,
+              "lineStart": 51
+            },
+            "text": "Canonical source"
+          }
+        },
+        {
+          "capability": {
+            "classification": "native",
+            "compilerCapability": "c9-native-primitive/0.1",
+            "exportMode": "native"
+          },
+          "composed": {
+            "geometry": {
+              "anchor": "middle",
+              "autofit": "none",
+              "frame": {
+                "height": 69,
+                "width": 399,
+                "x": 338,
+                "y": 453
+              },
+              "lineStep": 39,
+              "lines": [
+                {
+                  "text": "Text + geometry + style",
+                  "x": 537.5,
+                  "y": 501
+                }
+              ],
+              "margins": {
+                "bottom": 0,
+                "left": 0,
+                "right": 0,
+                "top": 0
+              },
+              "wrap": "none"
+            },
+            "kind": "text",
+            "localBounds": {
+              "height": 69,
+              "width": 399,
+              "x": 338,
+              "y": 453
+            },
+            "style": {
+              "fill": "#334155",
+              "fontFamily": "ABeeZee",
+              "fontSize": 25.5,
+              "fontStyle": "normal",
+              "fontWeight": 400,
+              "opacity": 1,
+              "stroke": "none",
+              "strokeWidth": 0,
+              "textAnchor": "middle"
+            },
+            "worldBounds": {
+              "height": 69,
+              "width": 399,
+              "x": 338,
+              "y": 453
+            },
+            "worldOffset": {
+              "x": 0,
+              "y": 0
+            }
+          },
+          "composition": {
+            "scale": 1.5,
+            "translateX": 200,
+            "translateY": 0
+          },
+          "emitted": {
+            "cNvPrName": "src.roundtrip.card.detail",
+            "cNvPrNumericId": 707430281,
+            "drawingMl": {
+              "body": {
+                "autofit": "none",
+                "marginsEmu": {
+                  "bottom": 0,
+                  "left": 0,
+                  "right": 0,
+                  "top": 0
+                },
+                "verticalAnchor": "top",
+                "wrap": "none"
+              },
+              "frameFill": {
+                "kind": "none"
+              },
+              "frameLine": {
+                "kind": "none"
+              },
+              "paragraph": {
+                "alignment": "center",
+                "bullets": "none",
+                "indentEmu": 0,
+                "lineSpacingHundredthPoints": 2340,
+                "marginLeftEmu": 0,
+                "marginRightEmu": 0,
+                "spacingAfterHundredthPoints": 0,
+                "spacingBeforeHundredthPoints": 0
+              },
+              "presetGeometry": "rect",
+              "run": {
+                "bold": false,
+                "fill": {
+                  "kind": "solid",
+                  "srgbColor": "334155"
+                },
+                "fontFamily": "ABeeZee",
+                "fontSizeHundredthPoints": 1530,
+                "italic": false,
+                "outline": {
+                  "paint": {
+                    "kind": "none"
+                  },
+                  "widthEmu": 0
+                },
+                "text": "Text + geometry + style"
+              },
+              "transform": {
+                "extCxEmu": 3040380,
+                "extCyEmu": 525780,
+                "offXEmu": 2575560,
+                "offYEmu": 3451860
+              }
+            },
+            "element": "p:sp",
+            "partName": "ppt/slides/slide1.xml"
+          },
+          "id": "roundtrip.card.detail",
+          "kind": "text",
+          "order": 5,
+          "parentId": null,
+          "resolved": {
+            "geometry": {
+              "anchor": "middle",
+              "autofit": "none",
+              "frame": {
+                "height": 46,
+                "width": 266,
+                "x": 92,
+                "y": 302
+              },
+              "lineStep": 26,
+              "lines": [
+                {
+                  "text": "Text + geometry + style",
+                  "x": 225,
+                  "y": 334
+                }
+              ],
+              "margins": {
+                "bottom": 0,
+                "left": 0,
+                "right": 0,
+                "top": 0
+              },
+              "wrap": "none"
+            },
+            "kind": "text",
+            "localBounds": {
+              "height": 46,
+              "width": 266,
+              "x": 92,
+              "y": 302
+            },
+            "style": {
+              "fill": "#334155",
+              "fontFamily": "ABeeZee",
+              "fontSize": 17,
+              "fontStyle": "normal",
+              "fontWeight": 400,
+              "opacity": 1,
+              "stroke": "none",
+              "strokeWidth": 0,
+              "textAnchor": "middle"
+            },
+            "worldBounds": {
+              "height": 46,
+              "width": 266,
+              "x": 92,
+              "y": 302
+            },
+            "worldOffset": {
+              "x": 0,
+              "y": 0
+            }
+          },
+          "source": {
+            "attributes": {
+              "data-pptv-export": "native",
+              "data-pptv-frame": "92 302 266 46",
+              "data-pptv-line-step": "26",
+              "data-pptv-role": "text",
+              "fill": "#334155",
+              "font-family": "ABeeZee",
+              "font-size": "17",
+              "font-style": "normal",
+              "font-weight": "400",
+              "id": "roundtrip.card.detail",
+              "stroke": "none",
+              "stroke-width": "0",
+              "text-anchor": "middle",
+              "x": "225",
+              "y": "334"
+            },
+            "element": "text",
+            "exportMode": "native",
+            "order": 5,
+            "parentId": null,
+            "role": "text",
+            "sourceRange": {
+              "byteEnd": 2763,
+              "byteStart": 2365,
+              "charEnd": 2763,
+              "charStart": 2365,
+              "columnEnd": 60,
+              "columnStart": 3,
+              "lineEnd": 71,
+              "lineStart": 62
+            },
+            "text": "Text + geometry + style"
+          }
+        },
+        {
+          "capability": {
+            "classification": "native",
+            "compilerCapability": "c9-native-primitive/0.1",
+            "exportMode": "native"
+          },
+          "composed": {
+            "geometry": {
+              "fromId": "roundtrip.card",
+              "toId": "roundtrip.result",
+              "x1": 770,
+              "x2": 972.5,
+              "y1": 457.5,
+              "y2": 457.5
+            },
+            "kind": "line",
+            "localBounds": {
+              "height": 0,
+              "width": 202.5,
+              "x": 770,
+              "y": 457.5
+            },
+            "style": {
+              "fill": "none",
+              "fontStyle": "normal",
+              "fontWeight": 400,
+              "opacity": 1,
+              "stroke": "#64748b",
+              "strokeWidth": 6,
+              "textAnchor": "start"
+            },
+            "worldBounds": {
+              "height": 0,
+              "width": 202.5,
+              "x": 770,
+              "y": 457.5
+            },
+            "worldOffset": {
+              "x": 0,
+              "y": 0
+            }
+          },
+          "composition": {
+            "scale": 1.5,
+            "translateX": 200,
+            "translateY": 0
+          },
+          "emitted": {
+            "cNvPrName": "src.roundtrip.connector",
+            "cNvPrNumericId": 948681459,
+            "drawingMl": {
+              "line": {
+                "paint": {
+                  "kind": "solid",
+                  "srgbColor": "64748B"
+                },
+                "widthEmu": 45720
+              },
+              "presetGeometry": "line",
+              "transform": {
+                "extCxEmu": 1543050,
+                "extCyEmu": 0,
+                "flipH": false,
+                "flipV": false,
+                "offXEmu": 5867400,
+                "offYEmu": 3486150
+              }
+            },
+            "element": "p:cxnSp",
+            "partName": "ppt/slides/slide1.xml"
+          },
+          "id": "roundtrip.connector",
+          "kind": "line",
+          "order": 6,
+          "parentId": null,
+          "resolved": {
+            "geometry": {
+              "fromId": "roundtrip.card",
+              "toId": "roundtrip.result",
+              "x1": 380,
+              "x2": 515,
+              "y1": 305,
+              "y2": 305
+            },
+            "kind": "line",
+            "localBounds": {
+              "height": 0,
+              "width": 135,
+              "x": 380,
+              "y": 305
+            },
+            "style": {
+              "fill": "none",
+              "fontStyle": "normal",
+              "fontWeight": 400,
+              "opacity": 1,
+              "stroke": "#64748b",
+              "strokeWidth": 4,
+              "textAnchor": "start"
+            },
+            "worldBounds": {
+              "height": 0,
+              "width": 135,
+              "x": 380,
+              "y": 305
+            },
+            "worldOffset": {
+              "x": 0,
+              "y": 0
+            }
+          },
+          "source": {
+            "attributes": {
+              "data-pptv-export": "native",
+              "data-pptv-from": "roundtrip.card",
+              "data-pptv-role": "connector",
+              "data-pptv-to": "roundtrip.result",
+              "fill": "none",
+              "id": "roundtrip.connector",
+              "stroke": "#64748b",
+              "stroke-width": "4",
+              "x1": "380",
+              "x2": "515",
+              "y1": "305",
+              "y2": "305"
+            },
+            "element": "line",
+            "exportMode": "native",
+            "order": 6,
+            "parentId": null,
+            "role": "connector",
+            "sourceRange": {
+              "byteEnd": 3046,
+              "byteStart": 2767,
+              "charEnd": 3046,
+              "charStart": 2767,
+              "columnEnd": 56,
+              "columnStart": 3,
+              "lineEnd": 79,
+              "lineStart": 73
+            }
+          }
+        },
+        {
+          "capability": {
+            "classification": "native",
+            "compilerCapability": "c9-native-primitive/0.1",
+            "exportMode": "native"
+          },
+          "composed": {
+            "geometry": {
+              "cx": 1130,
+              "cy": 457.5,
+              "rx": 157.5,
+              "ry": 132,
+              "sourceElement": "ellipse"
+            },
+            "kind": "ellipse",
+            "localBounds": {
+              "height": 264,
+              "width": 315,
+              "x": 972.5,
+              "y": 325.5
+            },
+            "style": {
+              "fill": "#ede9fe",
+              "fontStyle": "normal",
+              "fontWeight": 400,
+              "opacity": 1,
+              "stroke": "#7c3aed",
+              "strokeWidth": 4.5,
+              "textAnchor": "start"
+            },
+            "worldBounds": {
+              "height": 264,
+              "width": 315,
+              "x": 972.5,
+              "y": 325.5
+            },
+            "worldOffset": {
+              "x": 0,
+              "y": 0
+            }
+          },
+          "composition": {
+            "scale": 1.5,
+            "translateX": 200,
+            "translateY": 0
+          },
+          "emitted": {
+            "cNvPrName": "src.roundtrip.result",
+            "cNvPrNumericId": 276331801,
+            "drawingMl": {
+              "fill": {
+                "kind": "solid",
+                "srgbColor": "EDE9FE"
+              },
+              "line": {
+                "paint": {
+                  "kind": "solid",
+                  "srgbColor": "7C3AED"
+                },
+                "widthEmu": 34290
+              },
+              "presetGeometry": "ellipse",
+              "transform": {
+                "extCxEmu": 2400300,
+                "extCyEmu": 2011680,
+                "offXEmu": 7410450,
+                "offYEmu": 2480310
+              }
+            },
+            "element": "p:sp",
+            "partName": "ppt/slides/slide1.xml"
+          },
+          "id": "roundtrip.result",
+          "kind": "ellipse",
+          "order": 7,
+          "parentId": null,
+          "resolved": {
+            "geometry": {
+              "cx": 620,
+              "cy": 305,
+              "rx": 105,
+              "ry": 88,
+              "sourceElement": "ellipse"
+            },
+            "kind": "ellipse",
+            "localBounds": {
+              "height": 176,
+              "width": 210,
+              "x": 515,
+              "y": 217
+            },
+            "style": {
+              "fill": "#ede9fe",
+              "fontStyle": "normal",
+              "fontWeight": 400,
+              "opacity": 1,
+              "stroke": "#7c3aed",
+              "strokeWidth": 3,
+              "textAnchor": "start"
+            },
+            "worldBounds": {
+              "height": 176,
+              "width": 210,
+              "x": 515,
+              "y": 217
+            },
+            "worldOffset": {
+              "x": 0,
+              "y": 0
+            }
+          },
+          "source": {
+            "attributes": {
+              "cx": "620",
+              "cy": "305",
+              "data-pptv-export": "native",
+              "data-pptv-role": "shape",
+              "fill": "#ede9fe",
+              "id": "roundtrip.result",
+              "rx": "105",
+              "ry": "88",
+              "stroke": "#7c3aed",
+              "stroke-width": "3"
+            },
+            "element": "ellipse",
+            "exportMode": "native",
+            "order": 7,
+            "parentId": null,
+            "role": "shape",
+            "sourceRange": {
+              "byteEnd": 3259,
+              "byteStart": 3050,
+              "charEnd": 3259,
+              "charStart": 3050,
+              "columnEnd": 62,
+              "columnStart": 3,
+              "lineEnd": 85,
+              "lineStart": 81
+            }
+          }
+        },
+        {
+          "capability": {
+            "classification": "native",
+            "compilerCapability": "c9-native-primitive/0.1",
+            "exportMode": "native"
+          },
+          "composed": {
+            "geometry": {
+              "anchor": "middle",
+              "autofit": "none",
+              "frame": {
+                "height": 87,
+                "width": 240,
+                "x": 1010,
+                "y": 405
+              },
+              "lineStep": 45,
+              "lines": [
+                {
+                  "text": "Recovered",
+                  "x": 1130,
+                  "y": 463.5
+                }
+              ],
+              "margins": {
+                "bottom": 0,
+                "left": 0,
+                "right": 0,
+                "top": 0
+              },
+              "wrap": "none"
+            },
+            "kind": "text",
+            "localBounds": {
+              "height": 87,
+              "width": 240,
+              "x": 1010,
+              "y": 405
+            },
+            "style": {
+              "fill": "#4c1d95",
+              "fontFamily": "ABeeZee",
+              "fontSize": 33,
+              "fontStyle": "normal",
+              "fontWeight": 400,
+              "opacity": 1,
+              "stroke": "none",
+              "strokeWidth": 0,
+              "textAnchor": "middle"
+            },
+            "worldBounds": {
+              "height": 87,
+              "width": 240,
+              "x": 1010,
+              "y": 405
+            },
+            "worldOffset": {
+              "x": 0,
+              "y": 0
+            }
+          },
+          "composition": {
+            "scale": 1.5,
+            "translateX": 200,
+            "translateY": 0
+          },
+          "emitted": {
+            "cNvPrName": "src.roundtrip.result.label",
+            "cNvPrNumericId": 153034549,
+            "drawingMl": {
+              "body": {
+                "autofit": "none",
+                "marginsEmu": {
+                  "bottom": 0,
+                  "left": 0,
+                  "right": 0,
+                  "top": 0
+                },
+                "verticalAnchor": "top",
+                "wrap": "none"
+              },
+              "frameFill": {
+                "kind": "none"
+              },
+              "frameLine": {
+                "kind": "none"
+              },
+              "paragraph": {
+                "alignment": "center",
+                "bullets": "none",
+                "indentEmu": 0,
+                "lineSpacingHundredthPoints": 2700,
+                "marginLeftEmu": 0,
+                "marginRightEmu": 0,
+                "spacingAfterHundredthPoints": 0,
+                "spacingBeforeHundredthPoints": 0
+              },
+              "presetGeometry": "rect",
+              "run": {
+                "bold": false,
+                "fill": {
+                  "kind": "solid",
+                  "srgbColor": "4C1D95"
+                },
+                "fontFamily": "ABeeZee",
+                "fontSizeHundredthPoints": 1980,
+                "italic": false,
+                "outline": {
+                  "paint": {
+                    "kind": "none"
+                  },
+                  "widthEmu": 0
+                },
+                "text": "Recovered"
+              },
+              "transform": {
+                "extCxEmu": 1828800,
+                "extCyEmu": 662940,
+                "offXEmu": 7696200,
+                "offYEmu": 3086100
+              }
+            },
+            "element": "p:sp",
+            "partName": "ppt/slides/slide1.xml"
+          },
+          "id": "roundtrip.result.label",
+          "kind": "text",
+          "order": 8,
+          "parentId": null,
+          "resolved": {
+            "geometry": {
+              "anchor": "middle",
+              "autofit": "none",
+              "frame": {
+                "height": 58,
+                "width": 160,
+                "x": 540,
+                "y": 270
+              },
+              "lineStep": 30,
+              "lines": [
+                {
+                  "text": "Recovered",
+                  "x": 620,
+                  "y": 309
+                }
+              ],
+              "margins": {
+                "bottom": 0,
+                "left": 0,
+                "right": 0,
+                "top": 0
+              },
+              "wrap": "none"
+            },
+            "kind": "text",
+            "localBounds": {
+              "height": 58,
+              "width": 160,
+              "x": 540,
+              "y": 270
+            },
+            "style": {
+              "fill": "#4c1d95",
+              "fontFamily": "ABeeZee",
+              "fontSize": 22,
+              "fontStyle": "normal",
+              "fontWeight": 400,
+              "opacity": 1,
+              "stroke": "none",
+              "strokeWidth": 0,
+              "textAnchor": "middle"
+            },
+            "worldBounds": {
+              "height": 58,
+              "width": 160,
+              "x": 540,
+              "y": 270
+            },
+            "worldOffset": {
+              "x": 0,
+              "y": 0
+            }
+          },
+          "source": {
+            "attributes": {
+              "data-pptv-export": "native",
+              "data-pptv-frame": "540 270 160 58",
+              "data-pptv-line-step": "30",
+              "data-pptv-role": "text",
+              "fill": "#4c1d95",
+              "font-family": "ABeeZee",
+              "font-size": "22",
+              "font-style": "normal",
+              "font-weight": "400",
+              "id": "roundtrip.result.label",
+              "stroke": "none",
+              "stroke-width": "0",
+              "text-anchor": "middle",
+              "x": "620",
+              "y": "309"
+            },
+            "element": "text",
+            "exportMode": "native",
+            "order": 8,
+            "parentId": null,
+            "role": "text",
+            "sourceRange": {
+              "byteEnd": 3649,
+              "byteStart": 3263,
+              "charEnd": 3649,
+              "charStart": 3263,
+              "columnEnd": 46,
+              "columnStart": 3,
+              "lineEnd": 96,
+              "lineStart": 87
+            },
+            "text": "Recovered"
+          }
+        },
+        {
+          "capability": {
+            "classification": "native",
+            "compilerCapability": "c9-native-primitive/0.1",
+            "exportMode": "native"
+          },
+          "composed": {
+            "geometry": {
+              "height": 81,
+              "width": 930,
+              "x": 335,
+              "y": 750
+            },
+            "kind": "rect",
+            "localBounds": {
+              "height": 81,
+              "width": 930,
+              "x": 335,
+              "y": 750
+            },
+            "style": {
+              "fill": "#e2e8f0",
+              "fontStyle": "normal",
+              "fontWeight": 400,
+              "opacity": 1,
+              "stroke": "#94a3b8",
+              "strokeWidth": 3,
+              "textAnchor": "start"
+            },
+            "worldBounds": {
+              "height": 81,
+              "width": 930,
+              "x": 335,
+              "y": 750
+            },
+            "worldOffset": {
+              "x": 0,
+              "y": 0
+            }
+          },
+          "composition": {
+            "scale": 1.5,
+            "translateX": 200,
+            "translateY": 0
+          },
+          "emitted": {
+            "cNvPrName": "src.roundtrip.footer",
+            "cNvPrNumericId": 1595696523,
+            "drawingMl": {
+              "fill": {
+                "kind": "solid",
+                "srgbColor": "E2E8F0"
+              },
+              "line": {
+                "paint": {
+                  "kind": "solid",
+                  "srgbColor": "94A3B8"
+                },
+                "widthEmu": 22860
+              },
+              "presetGeometry": "rect",
+              "transform": {
+                "extCxEmu": 7086600,
+                "extCyEmu": 617220,
+                "offXEmu": 2552700,
+                "offYEmu": 5715000
+              }
+            },
+            "element": "p:sp",
+            "partName": "ppt/slides/slide1.xml"
+          },
+          "id": "roundtrip.footer",
+          "kind": "rect",
+          "order": 9,
+          "parentId": null,
+          "resolved": {
+            "geometry": {
+              "height": 54,
+              "width": 620,
+              "x": 90,
+              "y": 500
+            },
+            "kind": "rect",
+            "localBounds": {
+              "height": 54,
+              "width": 620,
+              "x": 90,
+              "y": 500
+            },
+            "style": {
+              "fill": "#e2e8f0",
+              "fontStyle": "normal",
+              "fontWeight": 400,
+              "opacity": 1,
+              "stroke": "#94a3b8",
+              "strokeWidth": 2,
+              "textAnchor": "start"
+            },
+            "worldBounds": {
+              "height": 54,
+              "width": 620,
+              "x": 90,
+              "y": 500
+            },
+            "worldOffset": {
+              "x": 0,
+              "y": 0
+            }
+          },
+          "source": {
+            "attributes": {
+              "data-pptv-export": "native",
+              "data-pptv-role": "shape",
+              "fill": "#e2e8f0",
+              "height": "54",
+              "id": "roundtrip.footer",
+              "stroke": "#94a3b8",
+              "stroke-width": "2",
+              "width": "620",
+              "x": "90",
+              "y": "500"
+            },
+            "element": "rect",
+            "exportMode": "native",
+            "order": 9,
+            "parentId": null,
+            "role": "shape",
+            "sourceRange": {
+              "byteEnd": 3851,
+              "byteStart": 3653,
+              "charEnd": 3851,
+              "charStart": 3653,
+              "columnEnd": 59,
+              "columnStart": 3,
+              "lineEnd": 102,
+              "lineStart": 98
+            }
+          }
+        },
+        {
+          "capability": {
+            "classification": "native",
+            "compilerCapability": "c9-native-primitive/0.1",
+            "exportMode": "native"
+          },
+          "composed": {
+            "geometry": {
+              "anchor": "middle",
+              "autofit": "none",
+              "frame": {
+                "height": 57,
+                "width": 840,
+                "x": 380,
+                "y": 762
+              },
+              "lineStep": 37.5,
+              "lines": [
+                {
+                  "text": "C9 baseline / C10 patch / C9 regenerate",
+                  "x": 800,
+                  "y": 804
+                }
+              ],
+              "margins": {
+                "bottom": 0,
+                "left": 0,
+                "right": 0,
+                "top": 0
+              },
+              "wrap": "none"
+            },
+            "kind": "text",
+            "localBounds": {
+              "height": 57,
+              "width": 840,
+              "x": 380,
+              "y": 762
+            },
+            "style": {
+              "fill": "#334155",
+              "fontFamily": "ABeeZee",
+              "fontSize": 24,
+              "fontStyle": "normal",
+              "fontWeight": 400,
+              "opacity": 1,
+              "stroke": "none",
+              "strokeWidth": 0,
+              "textAnchor": "middle"
+            },
+            "worldBounds": {
+              "height": 57,
+              "width": 840,
+              "x": 380,
+              "y": 762
+            },
+            "worldOffset": {
+              "x": 0,
+              "y": 0
+            }
+          },
+          "composition": {
+            "scale": 1.5,
+            "translateX": 200,
+            "translateY": 0
+          },
+          "emitted": {
+            "cNvPrName": "src.roundtrip.footer.label",
+            "cNvPrNumericId": 1157180065,
+            "drawingMl": {
+              "body": {
+                "autofit": "none",
+                "marginsEmu": {
+                  "bottom": 0,
+                  "left": 0,
+                  "right": 0,
+                  "top": 0
+                },
+                "verticalAnchor": "top",
+                "wrap": "none"
+              },
+              "frameFill": {
+                "kind": "none"
+              },
+              "frameLine": {
+                "kind": "none"
+              },
+              "paragraph": {
+                "alignment": "center",
+                "bullets": "none",
+                "indentEmu": 0,
+                "lineSpacingHundredthPoints": 2250,
+                "marginLeftEmu": 0,
+                "marginRightEmu": 0,
+                "spacingAfterHundredthPoints": 0,
+                "spacingBeforeHundredthPoints": 0
+              },
+              "presetGeometry": "rect",
+              "run": {
+                "bold": false,
+                "fill": {
+                  "kind": "solid",
+                  "srgbColor": "334155"
+                },
+                "fontFamily": "ABeeZee",
+                "fontSizeHundredthPoints": 1440,
+                "italic": false,
+                "outline": {
+                  "paint": {
+                    "kind": "none"
+                  },
+                  "widthEmu": 0
+                },
+                "text": "C9 baseline / C10 patch / C9 regenerate"
+              },
+              "transform": {
+                "extCxEmu": 6400800,
+                "extCyEmu": 434340,
+                "offXEmu": 2895600,
+                "offYEmu": 5806440
+              }
+            },
+            "element": "p:sp",
+            "partName": "ppt/slides/slide1.xml"
+          },
+          "id": "roundtrip.footer.label",
+          "kind": "text",
+          "order": 10,
+          "parentId": null,
+          "resolved": {
+            "geometry": {
+              "anchor": "middle",
+              "autofit": "none",
+              "frame": {
+                "height": 38,
+                "width": 560,
+                "x": 120,
+                "y": 508
+              },
+              "lineStep": 25,
+              "lines": [
+                {
+                  "text": "C9 baseline / C10 patch / C9 regenerate",
+                  "x": 400,
+                  "y": 536
+                }
+              ],
+              "margins": {
+                "bottom": 0,
+                "left": 0,
+                "right": 0,
+                "top": 0
+              },
+              "wrap": "none"
+            },
+            "kind": "text",
+            "localBounds": {
+              "height": 38,
+              "width": 560,
+              "x": 120,
+              "y": 508
+            },
+            "style": {
+              "fill": "#334155",
+              "fontFamily": "ABeeZee",
+              "fontSize": 16,
+              "fontStyle": "normal",
+              "fontWeight": 400,
+              "opacity": 1,
+              "stroke": "none",
+              "strokeWidth": 0,
+              "textAnchor": "middle"
+            },
+            "worldBounds": {
+              "height": 38,
+              "width": 560,
+              "x": 120,
+              "y": 508
+            },
+            "worldOffset": {
+              "x": 0,
+              "y": 0
+            }
+          },
+          "source": {
+            "attributes": {
+              "data-pptv-export": "native",
+              "data-pptv-frame": "120 508 560 38",
+              "data-pptv-line-step": "25",
+              "data-pptv-role": "text",
+              "fill": "#334155",
+              "font-family": "ABeeZee",
+              "font-size": "16",
+              "font-style": "normal",
+              "font-weight": "400",
+              "id": "roundtrip.footer.label",
+              "stroke": "none",
+              "stroke-width": "0",
+              "text-anchor": "middle",
+              "x": "400",
+              "y": "536"
+            },
+            "element": "text",
+            "exportMode": "native",
+            "order": 10,
+            "parentId": null,
+            "role": "text",
+            "sourceRange": {
+              "byteEnd": 4271,
+              "byteStart": 3855,
+              "charEnd": 4271,
+              "charStart": 3855,
+              "columnEnd": 76,
+              "columnStart": 3,
+              "lineEnd": 113,
+              "lineStart": 104
+            },
+            "text": "C9 baseline / C10 patch / C9 regenerate"
+          }
+        }
+      ],
+      "order": 0,
+      "partName": "ppt/slides/slide1.xml",
+      "presentationNumericId": 48142607,
+      "presentationRelationshipId": "rId1"
+    }
+  ],
+  "source": {
+    "id": "roundtrip",
+    "kind": "diagram",
+    "profile": "0.1",
+    "sha256": "91cb7546a81d2e4edc41e22e314c7e51194c32917133b2909113688f94021f11"
+  },
+  "sourceResolvedSchema": "pptv-resolved-diagram/0.1"
+}

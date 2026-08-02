@@ -113,7 +113,7 @@ describe("checked browser C8 calibration evidence", () => {
 
     expect(evidence).toMatchObject({
       schema: "pptv-browser-text-calibration-evidence/0.1",
-      capturedOn: "2026-07-30",
+      capturedOn: "2026-08-01",
       overallStatus: "pass-with-explicit-engine-and-platform-variance",
       privacy: { status: "safe" },
       coverage: {

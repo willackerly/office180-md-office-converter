@@ -1,7 +1,7 @@
 # Agent Guidelines
 
 <!-- FRESHNESS: Update this date every time you modify this file -->
-<!-- freshness: 2026-07-30 -->
+<!-- freshness: 2026-08-01 -->
 
 **How AI agents work effectively on the DOCX and PPTV tracks.**
 
@@ -37,9 +37,13 @@ verify the repository pointer, and ask before installing anything.
   OpenDocKit reopen, and native PowerPoint open/render smoke; quantitative
   comparison and PPTX save/reopen remain gates. C8 exact-font, anchor-aware
   preflight has checked worked-deck and browser evidence; native PowerPoint
-  text calibration remains. Broader compilation and reconciliation stay on
-  the roadmap. PPTV source/profile 0.1.1 text resilience is banked design,
-  not accepted syntax or current package behavior.
+  text calibration remains. C9 now composes one atom through explicit identity
+  or aspect-preserving uniform placement into a mapped native PPTX; C10
+  authenticates that baseline and proposes supported typed C5 1.2 edits back
+  to the atom. C11 automates browser/Quick Look comparisons, while full native
+  representative edit/save/reopen remains manual. PPTV source/profile 0.1.1
+  text resilience is banked design, not accepted syntax or current package
+  behavior.
 - **Team size:** Solo (Will Ackerly)
 - **Rebar tier:** 3 (Enforced) — the `v3.0.0-beta` SessionStart, generated
   registry, Steward, contract/document gates, ground truth, and compliance
@@ -55,18 +59,22 @@ verify the repository pointer, and ask before installing anything.
 ### Core Principle
 **Don't implement without a contract. Don't modify code without checking its contract.**
 
-Eight behavioral contracts live in `architecture/CONTRACT-*.md`:
+Eleven current behavioral contract IDs live in `architecture/CONTRACT-*.md`;
+the superseded C2 1.0 major-version file remains alongside C2 2.0 for history:
 
 | Contract | Covers |
 |----------|--------|
 | `CONTRACT:C1-THEME-SCHEMA.1.0` | Theme JSON keys, deep-merge semantics, template resolution order |
-| `CONTRACT:C2-PROVENANCE.1.0` | DOCX core-properties provenance stamp fields |
-| `CONTRACT:C3-ROUNDTRIP.1.0` | Canonical-MD round-trip guarantee (`docx2md`'s style→construct inversion) |
+| `CONTRACT:C2-PROVENANCE.2.0` | DOCX core stamp plus exact embedded original/canonical merge bases |
+| `CONTRACT:C3-ROUNDTRIP.1.1` | Exact canonical Markdown/DOCX inversion, refusals, reports, and merge |
 | `CONTRACT:C4-PPTV-SOURCE.1.1` | Exact-source PPTV scan, manifest, identity/order, semantic read model |
-| `CONTRACT:C5-PPTV-PATCH.1.1` | Hash-bound atomic PPTV semantic patch transactions |
+| `CONTRACT:C5-PPTV-PATCH.1.2` | Hash-bound legacy and typed native-object patch transactions |
 | `CONTRACT:C6-PPTV-RESOLVED.1.1` | Fixed-canvas compiler-grade style, geometry, group, and hard-line projection |
 | `CONTRACT:C7-PPTX-CANARY.1.1` | Deterministic primitive-only fresh-PPTX canary and strict OPC graph |
 | `CONTRACT:C8-PPTV-TEXT-FIT.1.1` | Pure anchor-aware text-fit evidence and explicit exact-font adapter |
+| `CONTRACT:C9-PPTV-PPTX-BASELINE.1.0` | Supported editable-PPTX baseline, explicit atom placement, and source map |
+| `CONTRACT:C10-PPTV-PPTX-RECONCILIATION.1.0` | Baseline-aware edited-PPTX inspection and reviewable patch proposal |
+| `CONTRACT:C11-OFFICE-VISUAL-EVIDENCE.1.0` | Cross-lane visual capture, comparison, native lifecycle, and review evidence |
 
 ### The Four Contract Principles
 1. **Don't implement without a contract** — new schema-level surfaces,
@@ -86,7 +94,7 @@ Eight behavioral contracts live in `architecture/CONTRACT-*.md`:
 """md2docx — Markdown → styled DOCX, themed by a JSON template.
 
 CONTRACT:C1-THEME-SCHEMA.1.0
-CONTRACT:C2-PROVENANCE.1.0
+CONTRACT:C2-PROVENANCE.2.0
 """
 ```
 
@@ -224,11 +232,11 @@ pnpm build
   Issues) that `ROADMAP.md` §0 addresses by swapping to `markdown-it-py`.
   Don't patch around individual parser bugs; they're a known class fixed
   by that rewrite.
-- The round-trip contract is **style-driven inversion**, not byte-for-byte
-  symmetry. The forward converter's choice of Word style (`Heading 2`,
-  `List Bullet`, a shaded paragraph, a left border) is itself the
-  contract; changing which style marks a construct is a breaking change
-  to `CONTRACT:C3-ROUNDTRIP.1.0`, not a free-standing bug fix.
+- The round-trip contract is **style-driven inversion with byte-exact canonical
+  Markdown equality**, not DOCX byte symmetry. The forward converter's choice
+  of Word style (`Heading 2`, `List Bullet`, a shaded paragraph, a left border)
+  is itself the contract; changing which style marks a construct is a contract
+  change to `CONTRACT:C3-ROUNDTRIP.1.1`, not a free-standing bug fix.
 - The marking-style banner feature (a `**CUI...**`-shaped first line) is
   generic and intentionally documented with a placeholder example
   (`**CUI//TEST**` in `tests/fixtures/kitchen-sink.md`). Never introduce a
@@ -241,11 +249,12 @@ pnpm build
   stable IDs are identity. Do not add competing array-index, z-index, browser
   node, or PowerPoint numeric-ID authorities.
 - Standalone `.pptv.svg` is the default diagram atom; `.pptv.html` is the deck
-  aggregation and only current C7 input. Do not synthesize a deck/slide/theme
-  for a diagram, infer physical size from its arbitrary logical viewBox, or
-  describe external manifests, geometry/rich-text edits, general PPTX
-  conversion, native text calibration, or native/render fidelity as
-  implemented.
+  aggregation and only C7 input. C9 may create a deterministic one-slide deck
+  artifact and mapped native PPTX only from explicit identity or
+  aspect-preserving uniform placement; the atom remains source authority.
+  Never infer physical size, stretch/crop/letterbox, or describe external
+  manifests, rich-text editing, general PPTX conversion, native text
+  calibration, or full native/render fidelity as implemented.
 - A successful slide extraction is hydration, not a blind byte slice: localize
   supported resolved style, retain identity/hierarchy/order/hard lines, and
   independently reload/resolve the result before publishing any SVG bytes. New
@@ -287,7 +296,7 @@ collaboration target; it is not a runtime dependency.
 
 ### Current: Guided Development
 - **READ** any project file to understand context
-- **MODIFY** code within the eight established contracts
+- **MODIFY** code within the eleven established contracts
 - **CREATE** tests, documentation, new themes, new contracts (for genuinely
   new surfaces)
 - **RUN** quality checks and enforcement scripts
@@ -309,11 +318,13 @@ collaboration target; it is not a runtime dependency.
 
 ## Success Metrics
 
-- Both test suites stay at 0 failing and 0 skipped
+- TypeScript, DOCX round-trip, visual-evidence, and browser suites stay at
+  0 failing and 0 skipped
 - `scripts/check-compliance.sh` and `scripts/check-ground-truth.sh` pass
 - TypeScript format/type/build gates pass
-- Documentation distinguishes verified C4/C5/C6 behavior, in-progress C7/C8
-  work, native-validation evidence, and the remaining PPTV roadmap
+- Documentation distinguishes verified C4/C5/C6 behavior; bounded implemented
+  C7–C11 surfaces; automated browser/Quick Look evidence; remaining native
+  Office promotion gates; and the future 0.1.1/general-format roadmap
 
 ---
 

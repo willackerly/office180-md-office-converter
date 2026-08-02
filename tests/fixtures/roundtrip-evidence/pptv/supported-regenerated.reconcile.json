@@ -1,0 +1,9 @@
+{
+  "schema": "pptv-pptx-reconciliation/0.1",
+  "status": "unchanged",
+  "sourceSha256": "b1b23147e3512ba80a276b79837599d1d954c2968626d1bc44c70d860023cffa",
+  "baselineMapSha256": "818cee3dcce52d6570225b7cf53ae257ee3580a65e68aa43cc7d5001b7b771a6",
+  "editedPptxSha256": "d02246f4090b3378fb6a29dfbc5f6dd0cb69b731e44a64f0a21fda4df9c66771",
+  "changes": [],
+  "diagnostics": []
+}

@@ -20,11 +20,15 @@ adding paragraph intent for text that users reasonably expect to edit as a
 wrapping paragraph in PowerPoint. It deliberately prefers a small, diagnosed
 horizontal bleed over an unrequested line break.
 
-This document records a future design target. It does not change:
+This document records a future design target. It was banked while
+`@office180/pptv@0.1.0-alpha.3` was current; the later alpha.4 round-trip
+release deliberately leaves the same text semantics untouched. It does not
+change:
 
 - the currently accepted source/container identifier `0.1`;
-- `@office180/pptv@0.1.0-alpha.3`;
-- contracts C4-C8 at revision 1.1;
+- current `@office180/pptv@0.1.0-alpha.4` runtime behavior;
+- C4/C6-C8 at revision 1.1, C5 at revision 1.2, or the C9/C10 1.0
+  compiler/reconciliation profiles;
 - the `pptv-resolved*/0.1`, `pptv-text-fit*/0.1`, browser, or compiler
   capability identifiers;
 - the current C7 one-line `wrap="none"` canary; or

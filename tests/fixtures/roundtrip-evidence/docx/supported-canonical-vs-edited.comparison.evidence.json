@@ -1,0 +1,117 @@
+{
+  "capture": {
+    "command": {
+      "argv": [
+        "/usr/bin/qlmanage",
+        "-t",
+        "-s",
+        "1600",
+        "-o",
+        "$TEMP",
+        "$TEMP/input-4706144d3ed3c06a.docx"
+      ],
+      "exit_code": 0,
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdout_sha256": "26d6e6f62012f9a25ec3528facbd867889f1d69fd1388429f35c9775a2c5b096",
+      "timeout_seconds": 30.0
+    },
+    "diagnostic": null,
+    "environment": {
+      "architecture": "arm64",
+      "display_scale": 1.0,
+      "locale": "C/C.UTF-8/C/C/C/C",
+      "os": "Darwin",
+      "os_version": "26.5.2"
+    },
+    "fonts": [],
+    "input": {
+      "background": "renderer-default",
+      "index": 1,
+      "pixel_size": 1600,
+      "unit": "page"
+    },
+    "output": {
+      "colorspace": "png-rgba-8",
+      "height_px": 1600,
+      "media_type": "image/png",
+      "page_count": 1,
+      "page_sha256": [
+        "c398f667898670645e39d3a260ca393b9033e81c9b73505b2257d7cce438341f"
+      ],
+      "path": "supported-edited.quicklook.png",
+      "sha256": "c398f667898670645e39d3a260ca393b9033e81c9b73505b2257d7cce438341f",
+      "width_px": 1246
+    },
+    "renderer": {
+      "executable_path": "/System/Library/QuickLook/Office.qlgenerator",
+      "identity_sha256": "ef02064d13f661e0cb26804967ec3fad9e60bd9d04279b454103f5e98b213925",
+      "product": "macOS Quick Look Office generator",
+      "version": "48"
+    },
+    "renderer_class": "quick-look",
+    "status": "passed"
+  },
+  "comparison": {
+    "baseline": {
+      "evidence_sha256": "7558fec00f60cf3c37917db1a63747497f0234b325b34e37aafe918d2e87ea4f",
+      "image_path": "supported-canonical.quicklook.png",
+      "image_sha256": "53a67216390a2874f7f2fa8479df5188bd28ff404e3144f1350f8146295e26d4"
+    },
+    "candidate": {
+      "evidence_sha256": "98d09fa47c2fbcc3de0ef613bece25123641f9adbf516d25842352898136ceac",
+      "image_path": "supported-edited.quicklook.png",
+      "image_sha256": "c398f667898670645e39d3a260ca393b9033e81c9b73505b2257d7cce438341f"
+    },
+    "changed_bounds": [
+      222,
+      238,
+      790,
+      19
+    ],
+    "crop_regions": [
+      [
+        170,
+        220,
+        900,
+        60
+      ]
+    ],
+    "diagnostic": null,
+    "dimensions": {
+      "colorspace": "sRGB RGBA8",
+      "height_px": 1600,
+      "width_px": 1246
+    },
+    "implementation": {
+      "executable_path": "/opt/homebrew/bin/magick",
+      "name": "ImageMagick RGBA normalization",
+      "version": "Version: ImageMagick 7.1.2-13 Q16-HDRI aarch64 23522 https://imagemagick.org"
+    },
+    "mask": null,
+    "metrics": {
+      "changed_fraction": 0.003646669341894061,
+      "changed_pixels": 7270,
+      "compared_pixels": 1993600,
+      "masked_pixels": 0,
+      "max_channel_delta": 229,
+      "mean_absolute_error": 0.31103443519261637,
+      "total_pixels": 1993600
+    },
+    "status": "passed",
+    "thresholds": {
+      "antialias_tolerance": 0,
+      "max_changed_fraction": 0.01,
+      "max_channel_delta": 255,
+      "max_masked_fraction": 0.0,
+      "max_mean_absolute_error": 1.0
+    }
+  },
+  "evidence_sha256": "4415350f5cc72073d2084e02927773dc472f2bb9c7fb096bfa9a52a9187444fb",
+  "schema": "office180-visual-evidence/0.1",
+  "subject": {
+    "artifact_path": "supported-edited.docx",
+    "artifact_sha256": "4706144d3ed3c06aabeff076097746cf7c061dc2ce1e495fe5e3b48415d9fd08",
+    "checkpoint": "python-docx-plain-text-edit",
+    "lane": "markdown-docx"
+  }
+}

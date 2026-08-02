@@ -1,6 +1,6 @@
 ---
 name: pptv-authoring
-description: Create, edit, inspect, validate, hydrate, and compile strict no-reflow PPTV diagrams and presentations. Use when asked to author or repair a standalone PPTV SVG atom or PPTV HTML deck, turn a brief into editable vector source, choose stable IDs/groups/connectors/text frames, audit text overflow, extract a deck slide into an independent atom, prepare a writable trusted browser editor, or compile a supported deck to the native PPTX canary.
+description: Create, edit, inspect, validate, hydrate, compose, compile, and reconcile strict no-reflow PPTV diagrams and presentations. Use when asked to author or repair a standalone PPTV SVG atom or PPTV HTML deck, turn a brief into editable vector source, choose stable IDs/groups/connectors/text frames, audit text overflow, extract a deck slide into an independent atom, prepare a writable trusted browser editor, compile a supported atom or deck to native PPTX, or recover contracted edits from a mapped PPTX.
 ---
 
 # PPTV Authoring
@@ -15,8 +15,11 @@ authoritative. Prefer deterministic, diagnosable output over implicit layout.
   live-editable unit and may declare any finite `X Y WIDTH HEIGHT` canvas with
   positive width and height.
 - Use one self-contained `*.pptv.html` envelope for a multi-slide deck, themes,
-  the fixed viewer, or a C7 PowerPoint deliverable. Deck slides remain exactly
-  `viewBox="0 0 1600 900"`.
+  the fixed viewer, or a C7 deck-native PowerPoint deliverable. Deck slides
+  remain exactly `viewBox="0 0 1600 900"`.
+- Keep the SVG atom authoritative when the destination is a one-slide
+  PowerPoint deliverable. C9 composes it into a deterministic deck and mapped
+  native PPTX only after the author supplies an explicit placement policy.
 
 Never execute unknown embedded content to discover meaning. Validate untrusted
 bytes first. Direct browser open is only for source the user trusts.
@@ -74,8 +77,8 @@ manifest, theme block, or runtime.
 8. Use local presentation attributes or local `style` declarations on a
    standalone diagram. Use the deck's supported base classes and complete
    theme tokens in HTML.
-9. Use one text object per visible line when a deck must pass the current
-   C7 PPTX compiler.
+9. Use one text object per visible line when a deck must pass C7 or an atom
+   must pass the C9 native PPTX baseline compiler.
 10. Prefer integer coordinates, dimensions, strokes, font sizes, and line steps
    so C7's exact SVG-unit/point mapping cannot require rounding.
 
@@ -110,8 +113,8 @@ pnpm pptv resolve source.pptv.svg --format json
 pnpm pptv text-fit source.pptv.svg --font-map fonts.json
 ```
 
-For supported edits, use stable-ID, source-hash-bound patches with `oldText`.
-Standalone diagrams support `set-text` only; theme and slide-order operations
+For a direct text-only edit, use a stable-ID, source-hash-bound
+`pptv-patch/0.1` transaction with `oldText`. Theme and slide-order operations
 remain deck-only. Check the transaction before writing and always name a new
 output:
 
@@ -121,9 +124,20 @@ pnpm pptv patch source.pptv.svg change.pptv.patch.json \
   --output source.updated.pptv.svg
 ```
 
-Do not invent geometry, grouping, connector, or class patch operations. Hand
-edit source only when authoring new structure or when the requested operation
-is outside the current patch surface, then run every gate.
+Use `pptv-patch/0.2` only for the exact contracted atom operations: rectangle
+or ellipse geometry, connector endpoints, explicit group translation, a
+single-line text frame/anchor, sibling painter order, safe subtree deletion,
+or a complete concrete native presentation style. Every operation carries
+old values, exact source ranges, and both C6 base and candidate snapshots.
+Generic attribute writes, insertion, reparenting, arbitrary transforms,
+rich-text rewriting, and unresolved or overlapping edits remain unsupported.
+Hand-edit source when authoring new structure or when a requested operation is
+outside this surface, then run every gate.
+
+The browser editor currently exposes direct text editing only. The broader 0.2
+surface is available through validated patches and mapped-PPTX reconciliation;
+do not imply that a missing editor control means a source operation is safe to
+approximate.
 
 ## Hydrate one deck slide into an atom
 
@@ -171,29 +185,77 @@ Geometry, connector, group, structured-line/rich-text, style-rule, insertion,
 and deletion controls remain unsupported. Treat direct-open and file-handle
 features as trusted-source-only.
 
+## Compose and round-trip an atom through PowerPoint
+
+An atom does not need to become canonical HTML before export. C9 treats HTML
+as a deterministic aggregation artifact and keeps the original
+`*.pptv.svg` hash as source identity. Supply the target rectangle explicitly;
+the compiler never guesses, stretches, crops, or letterboxes:
+
+```bash
+pnpm pptv compose architecture.pptv.svg \
+  --placement 40,50,1200,800 --policy identity \
+  --output architecture.composed.pptv.html --format json
+pnpm pptv compile architecture.pptv.svg \
+  --placement 40,50,1200,800 --policy identity \
+  --output architecture.pptx --map architecture.pptv.map.json \
+  --format json
+```
+
+Use `identity` when placement width and height exactly equal the atom viewBox
+extent. Use `uniform-scale-translate` only when the target rectangle has the
+same aspect ratio. Both policies preserve stable IDs, hierarchy, painter order,
+and native-object lineage.
+
+After an edit/save in PowerPoint, reconcile the edited package against the
+exact atom and C9 sidecar map:
+
+```bash
+pnpm pptv reconcile architecture.edited.pptx \
+  --source architecture.pptv.svg \
+  --baseline architecture.pptv.map.json \
+  --patch architecture.recovered.pptv.patch.json \
+  --report architecture.reconcile.json --format json
+pnpm pptv patch architecture.pptv.svg \
+  architecture.recovered.pptv.patch.json --check
+pnpm pptv patch architecture.pptv.svg \
+  architecture.recovered.pptv.patch.json \
+  --output architecture.recovered.pptv.svg
+```
+
+Reconciliation is baseline-aware reverse compilation, not arbitrary PPTX
+import. It authenticates source, map, lineage, package topology, stable shape
+names, and the supported edit delta; ambiguous, copied, inserted, reparented,
+or otherwise unsupported content fails closed. It never overwrites the source.
+Recompile the recovered atom with the same placement and compare the edited and
+regenerated PPTX renderings before claiming visual fidelity.
+
 ## Run the gates
 
 From the `office180-md-office-converter` repository root:
 
 ```bash
 python3 .agents/skills/pptv-authoring/scripts/pptv_gates.py \
-  source.pptv.svg --repo . --font-map fonts.json
+  source.pptv.svg --repo . --font-map fonts.json \
+  --placement 40,50,1200,800 --placement-policy identity
 ```
 
 The helper detects deck versus diagram from matching suffix and content,
 validates, resolves, inspects outline/text projections, runs exact-font
 source-kind-specific C8 text fit, and builds a writable trusted editor pack.
 When `--font-map` is present, the same exact font evidence is embedded in the
-pack. For an HTML deck it also compiles the strict PPTX canary. For a standalone
-diagram it always reports a C7 skip: `*.pptv.svg` is not a presentation compiler
-input, even at a 16:9 ratio. Without `--font-map`, the helper explicitly skips
-C8 fit evidence.
+pack. For an HTML deck it compiles the strict C7 PPTX canary. For a standalone
+diagram with `--placement`, it retains the C9 composed deck, mapped PPTX, and
+sidecar map. Without explicit placement it reports a C9 skip rather than
+guessing composition geometry. Without `--font-map`, it explicitly skips C8
+fit evidence.
 
 When deliverable artifacts are requested, retain them in one pass:
 
 ```bash
 python3 .agents/skills/pptv-authoring/scripts/pptv_gates.py \
   source.pptv.svg --repo . --font-map fonts.json \
+  --placement 40,50,1200,800 --placement-policy identity \
   --artifacts-dir path/to/output
 ```
 

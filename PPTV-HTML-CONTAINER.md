@@ -1,9 +1,12 @@
 # PPTV HTML Container
 
-**Status:** first-class diagram atom plus HTML deck aggregation implemented
-through C4-C6, with hydrated extraction, the writable trusted editor, and the
-strict deck-only C7 PPTX canary; external composition, structural editing, and
-broader PowerPoint conversion remain roadmap
+**Status:** `@office180/pptv@0.1.0-alpha.4` implements the source/container 0.1
+deck and diagram surfaces through C4-C8, C5 1.2 typed patches, bounded C9 atom
+composition/PPTX compilation, and C10 mapped-PPTX reconciliation. Repository
+C11 tooling adds browser/Quick Look evidence. The browser editor UI remains
+direct-text plus deck theme/order only; general deck or multi-atom composition,
+baseline-free PPTX import, native Office save/reopen, and source/profile 0.1.1
+remain roadmap.
 
 PPTV HTML is the declarative, single-file aggregation envelope for a deck of
 PPTV SVG slides. It keeps canonical slide content web-native and
@@ -13,7 +16,8 @@ definitions, and agent access explicit and cheap to process.
 For one diagram or documentation figure, the default authoring atom is an
 independent `*.pptv.svg`, not a synthetic one-slide HTML deck. Use HTML when the
 artifact needs multiple slides, shared deck themes, the fixed browser viewer,
-or the C7 PowerPoint canary.
+or the C7 PowerPoint canary. Use the standalone atom itself for the bounded C9
+`compose` and `compile` path.
 
 The compound extension is:
 
@@ -30,15 +34,16 @@ mydeck.pptv-manifest.json
 The manifest is currently inventory-only orchestration metadata, not a
 semantic load/edit surface or a JSON encoding of PPTV itself.
 
-## Implemented 0.1 boundary
+## Implemented source/profile 0.1 boundary
 
-`@office180/pptv` implements C4-C6 for both self-contained HTML decks and
-standalone SVG diagrams. Both paths retain exact decoded source and UTF-8
-bytes, including a leading BOM and original newline spelling; compute SHA-256
-over those bytes; record half-open UTF-8 byte and UTF-16 code-unit ranges; load
-stable-ID SVG hierarchy without executing source code; and support
-source-hash-bound direct-text patches. Active-theme and slide-order patches are
-explicitly deck-only.
+In package `0.1.0-alpha.4`, `@office180/pptv` implements C4-C6 for both
+self-contained HTML decks and standalone SVG diagrams. Both paths retain exact
+decoded source and UTF-8 bytes, including a leading BOM and original newline
+spelling; compute SHA-256 over those bytes; record half-open UTF-8 byte and
+UTF-16 code-unit ranges; and load stable-ID SVG hierarchy without executing
+source code. C5 1.2 preserves `pptv-patch/0.1` direct-text plus deck-only
+active-theme/slide-order transactions and adds opt-in `pptv-patch/0.2` typed
+native-object operations.
 
 For HTML, the kernel also validates the fixed viewer by version and content
 digest, loads manifest-selected slide order, and resolves the strict
@@ -56,6 +61,15 @@ path. External assembly manifests remain recognition/inventory only. Libraries
 are indexed and security-checked but are not expanded. Metadata mirrors,
 theme-list authority, library references, and external dependency resolution
 remain outside the implemented contract.
+
+C7 remains the strict deck-only fresh-PPTX canary, while C8 provides
+non-mutating exact-font text-fit evidence. C9 explicitly composes one
+standalone atom into one deterministic one-slide deck or compiles that same
+placement to a mapped native PPTX. C10 reconciles only an edited descendant of
+that exact atom/map baseline into a reviewable C5 0.2 proposal. C11 supplies
+content-bound trusted-SVG browser capture, Quick Look smoke, and deterministic
+same-renderer comparison envelopes; none of those results substitutes for a
+native PowerPoint edit/save/reopen check.
 
 ## Design goals
 
@@ -371,8 +385,8 @@ The 0.1 manifest validator requires the selected theme to exist exactly once.
 The source kernel stores each theme as inert CSS text. C6 independently parses a
 narrow base/component cascade, requires every theme to provide the same complete
 token map, selects only the active theme, and retains token/style provenance. It
-does not yet emit native PowerPoint theme bindings; C7 writes concrete resolved
-colors/fonts.
+does not yet emit native PowerPoint theme bindings; the C7 and bounded C9
+writers use concrete resolved colors/fonts.
 
 Using inert data blocks rather than live style elements permits the canonical
 source order while avoiding accidental cross-theme cascade behavior. The browser
@@ -388,8 +402,8 @@ presentation values are local. Hydrated extraction bridges the two forms by
 resolving the selected deck theme first and writing those concrete supported
 values into the new diagram; it does not copy a live theme system or make the
 diagram depend on its source deck. Native PowerPoint theme binding remains a
-future compiler behavior; the current C7 canary writes concrete resolved
-colors and fonts.
+future compiler behavior; the current C7/C9 native subsets write concrete
+resolved colors and fonts.
 
 ## Runtime rules
 
@@ -462,8 +476,9 @@ to manage generated core files.
 
 ## Agent-efficient processing
 
-The 0.1 implementation exposes outline, text, semantic, editing, and C6
-resolved projections for either a self-contained deck or standalone diagram.
+For source/profile 0.1, the alpha.4 implementation exposes outline, text,
+semantic, editing, and C6 resolved projections for either a self-contained
+deck or standalone diagram.
 The resolved views include constrained style provenance, finite geometry,
 connector references, groups, and explicit text while keeping source-kind
 schemas distinct. Library expansion, external resources, richer relationship
@@ -537,8 +552,9 @@ styles/fonts, translated groups, text frames, and opaque SVG bounds.
 
 ### Semantic patches
 
-Agents should normally edit through the stable-ID/source-bound 0.1 operations
-rather than rewriting XML:
+Agents should normally edit through the stable-ID/source-bound C5 1.2
+operations rather than rewriting XML. Legacy text and deck-control work may
+continue to use the 0.1 envelope:
 
 ```json
 {
@@ -572,20 +588,30 @@ before it resolves ranges. `validatePatch()` validates the complete edit plan.
 candidate before returning success. Failed transactions return no replacement
 source or document.
 
-The implemented vocabulary is:
+The implementation accepts that exact `pptv-patch/0.1` vocabulary and an
+opt-in `pptv-patch/0.2` envelope. The 0.2 envelope also supports:
 
 ```text
-set-text
-set-active-theme
-set-slide-order
+set-object-geometry
+set-connector-endpoints
+set-group-translation
+set-text-frame
+set-child-order
+delete-object
+set-native-style
 ```
 
 `set-text` applies to a deck or standalone diagram. `set-active-theme` and
 `set-slide-order` are deck-only and fail explicitly on a diagram rather than
-creating synthetic deck state.
-
-Attribute/class/token/geometry/connector/grouping/duplication operations require
-new smallest-safe replacement contracts and tests before implementation.
+creating synthetic deck state. Every 0.2-only operation carries its complete
+old C6 value, requires one unambiguous existing source representation, and
+reloads and resolves the complete same-kind candidate before success. The
+typed surface covers rect/ellipse geometry, line endpoints, an existing
+explicit group translation, a direct one-line text frame/anchor, a complete
+within-parent child permutation, safe native-subtree deletion, and complete
+concrete native style represented by presentation attributes. It is not a
+generic attribute/class/token writer and does not authorize insertion,
+duplication, reparenting, group scaling, arbitrary transforms, or rich text.
 
 ## Agent guidance and trust
 
@@ -621,7 +647,7 @@ prompt-injection channel.
 
 ## CLI surface
 
-Implemented in 0.1:
+Implemented by `@office180/pptv@0.1.0-alpha.4` over source/profile 0.1:
 
 ```text
 pptv outline
@@ -630,6 +656,9 @@ pptv resolve
 pptv extract
 pptv editor-pack
 pptv pptx-canary
+pptv compose
+pptv compile
+pptv reconcile
 pptv text-fit
 pptv text
 pptv show
@@ -637,28 +666,42 @@ pptv list
 pptv patch
 ```
 
-`outline`, `validate`, `resolve`, `text`, `show`, `list`, direct-text `patch`,
-`text-fit`, and `editor-pack` accept either `.pptv.html` or `.pptv.svg`.
-Deck-only options fail explicitly for a diagram. `patch` requires exactly one
-of `--check` or an explicit `--output`; `extract`, `editor-pack`, and
-`pptx-canary` also require explicit atomic destinations; and `text-fit`
-requires an explicit exact-font map. `extract` accepts an HTML deck plus one
-slide ID and emits a standalone SVG. `pptx-canary` accepts HTML decks only and
-never wraps an SVG into a synthetic slide, even when its viewBox is 16:9.
+`outline`, `validate`, `resolve`, `text`, `show`, `list`, `patch`, `text-fit`,
+and `editor-pack` accept either `.pptv.html` or `.pptv.svg`. Deck-only options
+fail explicitly for a diagram. `patch` requires exactly one of `--check` or an
+explicit `--output`; `extract`, `editor-pack`, and `pptx-canary` also require
+explicit atomic destinations; and `text-fit` requires an explicit exact-font
+map. `extract` accepts an HTML deck plus one slide ID and emits a standalone
+SVG. `pptx-canary` accepts HTML decks only and never wraps an SVG into a
+synthetic slide, even when its viewBox is 16:9.
 
-The broader roadmap is:
+`compose` and `compile` are the bounded C9 standalone-atom path. Both require
+an explicit `X,Y,W,H` placement on a `1600 × 900` slide and accept either
+identity or an explicitly selected exact-aspect uniform scale plus translation.
+`compose` writes one deterministic self-contained deck; `compile` atomically
+writes the native PPTX and its complete hash-bound sidecar map. They do not
+accept deck input or infer physical size.
+
+`reconcile` is the bounded C10 reverse path, not an arbitrary importer. It
+authenticates an edited descendant against the exact C9 atom/map/placement,
+writes a no-overwrite report, and writes a `pptv-patch/0.2` proposal only for a
+wholly patchable supported result. Applying that proposal is a separate
+`pptv patch` action.
+
+Unimplemented broader command concepts include:
 
 ```text
 pptv theme
 pptv normalize
 pptv render
-pptv build-pptx
-pptv inspect-pptx
-pptv reconcile
 pptv bundle
 pptv explode
 pptv agent-guide
 ```
+
+General deck/multi-atom composition, deck-mode C9 compilation, and
+baseline-free PowerPoint import remain capability work, not alternate meanings
+of the implemented `compose`, `compile`, or `reconcile` commands.
 
 The CLI is the universal substrate. MCP servers, editor integrations, and agent
 skills should call the same underlying library rather than implement independent
@@ -690,15 +733,21 @@ requires explicit user authorization; after the initial choice, every save
 compares the on-disk hash with the last successful editor save and refuses a
 stale overwrite.
 
-Text remains strictly no-reflow. Neither patches, the editor, C6, C8, nor C7
-wrap, autofit, shrink, move, resize, or re-line authored text. With an explicit
-font map, the pack embeds only the selected exact font bytes, their identity,
-and matching Node C8 evidence; the browser measures the same bytes and labels
-its engine/version. The editor displays the worse current Node/browser status.
-If an edit invalidates the embedded Node evidence, that line becomes
-`unverified` until exact evidence is recomputed, even when the browser can
-measure it. This is conservative overflow evidence, not browser/native
-PowerPoint parity or automatic repair.
+Those are the browser UI's only write controls. The portable C5 kernel can
+apply 0.2 typed geometry, connector, explicit group translation, direct
+one-line text-frame, child-order, safe-deletion, and direct native-style
+transactions programmatically, and C10 may propose them, but the editor does
+not expose corresponding gestures or property controls.
+
+Text remains strictly no-reflow. Neither C5 patches, the editor, nor C6-C10
+wrap, autofit, shrink, or re-line authored text. With an explicit font map, the
+pack embeds only the selected exact font bytes, their identity, and matching
+Node C8 evidence; the browser measures the same bytes and labels its
+engine/version. The editor displays the worse current Node/browser status. If
+an edit invalidates the embedded Node evidence, that line becomes `unverified`
+until exact evidence is recomputed, even when the browser can measure it. This
+is conservative overflow evidence, not browser/native PowerPoint parity or
+automatic repair.
 
 ## Implemented conformance boundary
 
@@ -746,13 +795,19 @@ rules:
 - stable IDs remain canonical object identity;
 - author intent still selects native versus asset representation;
 - SVG DOM order still defines object z-order; and
-- future reverse conversion must produce a reviewable semantic patch.
+- reverse conversion must produce a reviewable semantic patch; C10 implements
+  that rule only for an authenticated C9 atom/map baseline.
 
 The implemented source behavior for both deck and diagram is governed by C4,
-safe writes by C5, and source-kind-specific resolved projections by C6. C8
-adds non-mutating exact-font line-fit evidence. The writable trusted editor and
-hydrated slide extraction consume those contracted surfaces without creating a
-second source authority. C7 remains a strict fresh-PPTX canary for HTML decks
-only. Geometry/structured-text editing, external composition, broader
-compilation, native save/reopen and quantitative fidelity, and reconciliation
-remain future work until promoted through their own contracts and fixtures.
+C5 1.2, and C6. C7 remains a strict fresh-PPTX canary for HTML decks, C8 adds
+non-mutating exact-font line-fit evidence, C9 composes/compiles one explicitly
+placed standalone atom, C10 reconciles supported edits from that exact mapped
+branch, and C11 records renderer-specific browser/Quick Look captures and
+comparisons. The writable trusted editor and hydrated slide extraction consume
+those contracted surfaces without creating a second source authority.
+
+Browser geometry/style/structure controls, general deck or multi-atom
+composition, arbitrary or baseline-free PPTX import, richer text/assets,
+broader compilation, native Office edit/save/reopen automation and
+cross-renderer fidelity, and the banked source/profile 0.1.1 behavior remain
+future work.

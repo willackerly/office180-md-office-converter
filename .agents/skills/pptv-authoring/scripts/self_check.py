@@ -213,8 +213,11 @@ def main() -> int:
                 artifacts,
                 font_map,
                 0.87,
+                None,
+                "identity",
+                None,
             )
-            require(len(captured) == 1, "diagram gates attempted C7 compilation")
+            require(len(captured) == 1, "diagram gates inferred C9 placement")
             require(
                 captured[0][0] == "editor-pack",
                 "diagram gates did not build an editor pack",
@@ -228,11 +231,49 @@ def main() -> int:
             captured.clear()
             gates.run_artifact_gates(
                 root,
+                diagram,
+                "diagram",
+                artifacts,
+                font_map,
+                0.87,
+                "0,0,1200,800",
+                "identity",
+                "diagram.slide",
+            )
+            require(
+                [arguments[0] for arguments in captured]
+                == ["editor-pack", "compose", "compile"],
+                "diagram gates did not retain the editor-plus-C9 path",
+            )
+            require(
+                captured[1][1:8]
+                == [
+                    str(diagram),
+                    "--placement",
+                    "0,0,1200,800",
+                    "--policy",
+                    "identity",
+                    "--slide-id",
+                    "diagram.slide",
+                ],
+                "diagram composition did not retain explicit placement policy",
+            )
+            require(
+                "--map" in captured[2],
+                "diagram C9 compile did not retain its sidecar map",
+            )
+
+            captured.clear()
+            gates.run_artifact_gates(
+                root,
                 deck,
                 "deck",
                 artifacts,
                 None,
                 0.9,
+                None,
+                "identity",
+                None,
             )
             require(
                 [arguments[0] for arguments in captured]

@@ -1,0 +1,159 @@
+{
+  "schema": "pptv-diagram-text-fit/0.1",
+  "sourceSha256": "91cb7546a81d2e4edc41e22e314c7e51194c32917133b2909113688f94021f11",
+  "diagramId": "roundtrip",
+  "nearLimit": 0.9,
+  "summary": {
+    "total": 6,
+    "clear": 6,
+    "nearLimit": 0,
+    "overflow": 0,
+    "unverified": 0
+  },
+  "lines": [
+    {
+      "diagramId": "roundtrip",
+      "objectId": "roundtrip.title",
+      "lineIndex": 0,
+      "text": "SOURCE ROUND TRIP",
+      "anchor": "middle",
+      "anchorX": 400,
+      "frameX": 55,
+      "frameWidth": 690,
+      "availableWidth": 690,
+      "font": {
+        "family": "ABeeZee",
+        "size": 34,
+        "weight": 400,
+        "style": "normal"
+      },
+      "status": "clear",
+      "measuredWidth": 333.812,
+      "utilization": 0.4837855072463768,
+      "overrun": 0,
+      "method": "fontkit/2.0.4",
+      "fontIdentity": "2901c8df256648cc2bb2e3afb381cb8d28e65ed3dbe11de20695ae4d5ffdeda9#ABeeZee-Regular",
+      "missingCodepoints": []
+    },
+    {
+      "diagramId": "roundtrip",
+      "objectId": "roundtrip.subtitle",
+      "lineIndex": 0,
+      "text": "One canonical atom, one reviewable semantic patch",
+      "anchor": "middle",
+      "anchorX": 400,
+      "frameX": 110,
+      "frameWidth": 580,
+      "availableWidth": 580,
+      "font": {
+        "family": "ABeeZee",
+        "size": 18,
+        "weight": 400,
+        "style": "normal"
+      },
+      "status": "clear",
+      "measuredWidth": 447.012,
+      "utilization": 0.7707103448275862,
+      "overrun": 0,
+      "method": "fontkit/2.0.4",
+      "fontIdentity": "2901c8df256648cc2bb2e3afb381cb8d28e65ed3dbe11de20695ae4d5ffdeda9#ABeeZee-Regular",
+      "missingCodepoints": []
+    },
+    {
+      "diagramId": "roundtrip",
+      "objectId": "roundtrip.card.label",
+      "lineIndex": 0,
+      "text": "Canonical source",
+      "anchor": "middle",
+      "anchorX": 225,
+      "frameX": 100,
+      "frameWidth": 250,
+      "availableWidth": 250,
+      "font": {
+        "family": "ABeeZee",
+        "size": 22,
+        "weight": 400,
+        "style": "normal"
+      },
+      "status": "clear",
+      "measuredWidth": 175.626,
+      "utilization": 0.702504,
+      "overrun": 0,
+      "method": "fontkit/2.0.4",
+      "fontIdentity": "2901c8df256648cc2bb2e3afb381cb8d28e65ed3dbe11de20695ae4d5ffdeda9#ABeeZee-Regular",
+      "missingCodepoints": []
+    },
+    {
+      "diagramId": "roundtrip",
+      "objectId": "roundtrip.card.detail",
+      "lineIndex": 0,
+      "text": "Text + geometry + style",
+      "anchor": "middle",
+      "anchorX": 225,
+      "frameX": 92,
+      "frameWidth": 266,
+      "availableWidth": 266,
+      "font": {
+        "family": "ABeeZee",
+        "size": 17,
+        "weight": 400,
+        "style": "normal"
+      },
+      "status": "clear",
+      "measuredWidth": 188.003,
+      "utilization": 0.7067781954887218,
+      "overrun": 0,
+      "method": "fontkit/2.0.4",
+      "fontIdentity": "2901c8df256648cc2bb2e3afb381cb8d28e65ed3dbe11de20695ae4d5ffdeda9#ABeeZee-Regular",
+      "missingCodepoints": []
+    },
+    {
+      "diagramId": "roundtrip",
+      "objectId": "roundtrip.result.label",
+      "lineIndex": 0,
+      "text": "Recovered",
+      "anchor": "middle",
+      "anchorX": 620,
+      "frameX": 540,
+      "frameWidth": 160,
+      "availableWidth": 160,
+      "font": {
+        "family": "ABeeZee",
+        "size": 22,
+        "weight": 400,
+        "style": "normal"
+      },
+      "status": "clear",
+      "measuredWidth": 105.248,
+      "utilization": 0.6578,
+      "overrun": 0,
+      "method": "fontkit/2.0.4",
+      "fontIdentity": "2901c8df256648cc2bb2e3afb381cb8d28e65ed3dbe11de20695ae4d5ffdeda9#ABeeZee-Regular",
+      "missingCodepoints": []
+    },
+    {
+      "diagramId": "roundtrip",
+      "objectId": "roundtrip.footer.label",
+      "lineIndex": 0,
+      "text": "C9 baseline / C10 patch / C9 regenerate",
+      "anchor": "middle",
+      "anchorX": 400,
+      "frameX": 120,
+      "frameWidth": 560,
+      "availableWidth": 560,
+      "font": {
+        "family": "ABeeZee",
+        "size": 16,
+        "weight": 400,
+        "style": "normal"
+      },
+      "status": "clear",
+      "measuredWidth": 302.288,
+      "utilization": 0.5398000000000001,
+      "overrun": 0,
+      "method": "fontkit/2.0.4",
+      "fontIdentity": "2901c8df256648cc2bb2e3afb381cb8d28e65ed3dbe11de20695ae4d5ffdeda9#ABeeZee-Regular",
+      "missingCodepoints": []
+    }
+  ]
+}

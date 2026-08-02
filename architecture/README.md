@@ -30,13 +30,17 @@ architecture/
   CONTRACT-TEMPLATE.md              # annotated template for new contracts
   CONTRACT-REGISTRY.md              # generated contract index
   CONTRACT-C1-THEME-SCHEMA.1.0.md   # theme JSON keys, deep-merge, resolution order
-  CONTRACT-C2-PROVENANCE.1.0.md     # DOCX core-props provenance stamp
-  CONTRACT-C3-ROUNDTRIP.1.0.md      # canonical-MD round-trip guarantees
+  CONTRACT-C2-PROVENANCE.1.0.md     # superseded core-props-only provenance
+  CONTRACT-C2-PROVENANCE.2.0.md     # embedded original/canonical merge base
+  CONTRACT-C3-ROUNDTRIP.1.1.md      # exact canonical round trip and merge
   CONTRACT-C4-PPTV-SOURCE.1.1.md    # PPTV deck/diagram exact-source read models
-  CONTRACT-C5-PPTV-PATCH.1.1.md     # PPTV deck/diagram atomic patch protocol
+  CONTRACT-C5-PPTV-PATCH.1.2.md     # legacy plus typed native-object patch protocol
   CONTRACT-C6-PPTV-RESOLVED.1.1.md  # PPTV deck/diagram resolved profiles
   CONTRACT-C7-PPTX-CANARY.1.1.md    # deterministic primitive-only PPTX canary
   CONTRACT-C8-PPTV-TEXT-FIT.1.1.md  # deck/diagram exact-font text-fit evidence
+  CONTRACT-C9-PPTV-PPTX-BASELINE.1.0.md # supported compiler/composition/map
+  CONTRACT-C10-PPTV-PPTX-RECONCILIATION.1.0.md # edited-PPTX semantic diff
+  CONTRACT-C11-OFFICE-VISUAL-EVIDENCE.1.0.md # cross-lane visual/native proof
 ```
 
 `CONTRACT-REGISTRY.md` is generated from the contract filesystem:
@@ -114,7 +118,7 @@ comment:
 """md2docx — Markdown → styled DOCX, themed by a JSON template.
 
 CONTRACT:C1-THEME-SCHEMA.1.0
-CONTRACT:C2-PROVENANCE.1.0
+CONTRACT:C2-PROVENANCE.2.0
 """
 ```
 

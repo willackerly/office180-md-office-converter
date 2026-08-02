@@ -49,10 +49,14 @@ extract_status() {
   echo "${status:-draft}"
 }
 
-# Extract purpose (first non-empty line after ## Purpose)
+# Extract purpose (first non-empty line after the current or legacy heading)
 extract_purpose() {
   local file="$1"
-  awk '/^## Purpose/{found=1; next} found && /^[^#]/ && NF{print; exit}' "$file" 2>/dev/null | head -c 80
+  awk '
+    /^## (Why this exists|Purpose)$/ { found=1; next }
+    found && /^## / { exit }
+    found && NF { print; exit }
+  ' "$file" 2>/dev/null | head -c 80
 }
 
 # Classify by prefix
@@ -257,10 +261,12 @@ HEADER
       for z in "${zombies[@]}"; do
         echo "$z"
       done
-      echo ""
     fi
 
     if [ ${#shadows[@]} -gt 0 ]; then
+      if [ ${#zombies[@]} -gt 0 ]; then
+        echo ""
+      fi
       echo "### Shadow refs — code references to nonexistent contracts"
       echo ""
       echo "(Either write the missing contract file or fix the typo in source.)"
@@ -268,7 +274,6 @@ HEADER
       for s in "${shadows[@]}"; do
         echo "$s"
       done
-      echo ""
     fi
   fi
 }

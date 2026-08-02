@@ -92,9 +92,10 @@ proceed — flag it in your results instead:
 
 - A change to `architecture/CONTRACT-C1-THEME-SCHEMA.1.0.md`'s schema keys
   (breaks every theme in `themes/`)
-- A change to `architecture/CONTRACT-C2-PROVENANCE.1.0.md`'s stamp fields
+- A change to `architecture/CONTRACT-C2-PROVENANCE.2.0.md`'s stamp or embedded
+  merge-base fields
   (breaks `docx2md.py`'s provenance readback)
-- A change to `architecture/CONTRACT-C3-ROUNDTRIP.1.0.md`'s inversion table
+- A change to `architecture/CONTRACT-C3-ROUNDTRIP.1.1.md`'s inversion table
   (breaks the round-trip guarantee)
 - A new third-party dependency
 - Anything that would change `md2docx.py`'s or `docx2md.py`'s public CLI

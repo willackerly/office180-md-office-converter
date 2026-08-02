@@ -9,14 +9,14 @@
     "editor:build": "pnpm --filter @office180/pptv editor:build",
     "editor:check": "pnpm --filter @office180/pptv editor:check",
     "pack:check": "pnpm --filter @office180/pptv pack:check",
-    "format": "prettier --write \"packages/pptv/src/**/*.ts\" \"packages/pptv/e2e/**/*.ts\" \"packages/pptv/scripts/*.mjs\" \"packages/pptv/*.ts\" \"packages/pptv/*.json\" \"packages/pptv/test-fixtures/**/*.json\" package.json pnpm-workspace.yaml tsconfig.base.json \"schemas/*.json\"",
-    "format:check": "prettier --check \"packages/pptv/src/**/*.ts\" \"packages/pptv/e2e/**/*.ts\" \"packages/pptv/scripts/*.mjs\" \"packages/pptv/*.ts\" \"packages/pptv/*.json\" \"packages/pptv/test-fixtures/**/*.json\" package.json pnpm-workspace.yaml tsconfig.base.json \"schemas/*.json\"",
+    "format": "prettier --write \"packages/pptv/src/**/*.ts\" \"packages/pptv/e2e/**/*.ts\" \"packages/pptv/scripts/*.mjs\" \"scripts/*.mjs\" \"packages/pptv/*.ts\" \"packages/pptv/*.json\" \"packages/pptv/test-fixtures/**/*.json\" package.json pnpm-workspace.yaml tsconfig.base.json \"schemas/*.json\"",
+    "format:check": "prettier --check \"packages/pptv/src/**/*.ts\" \"packages/pptv/e2e/**/*.ts\" \"packages/pptv/scripts/*.mjs\" \"scripts/*.mjs\" \"packages/pptv/*.ts\" \"packages/pptv/*.json\" \"packages/pptv/test-fixtures/**/*.json\" package.json pnpm-workspace.yaml tsconfig.base.json \"schemas/*.json\"",
     "typecheck": "pnpm --filter @office180/pptv typecheck",
     "test": "pnpm test:ts && pnpm test:python",
     "test:browser": "pnpm browser:check && pnpm --filter @office180/pptv test:browser",
     "test:browser:all": "pnpm browser:check && pnpm --filter @office180/pptv test:browser:all",
     "test:ts": "pnpm --filter @office180/pptv test",
-    "test:python": ".venv/bin/python tests/test_roundtrip.py",
+    "test:python": ".venv/bin/python tests/test_roundtrip.py && .venv/bin/python tests/test_visual_evidence.py",
     "pptv": "tsx packages/pptv/src/bin.ts"
   },
   "devDependencies": {

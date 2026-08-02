@@ -3,10 +3,12 @@
  * Reference Node CLI for the PPTV 0.1 source kernel.
  *
  * CONTRACT:C4-PPTV-SOURCE.1.1
- * CONTRACT:C5-PPTV-PATCH.1.1
+ * CONTRACT:C5-PPTV-PATCH.1.2
  * CONTRACT:C6-PPTV-RESOLVED.1.1
  * CONTRACT:C7-PPTX-CANARY.1.1
  * CONTRACT:C8-PPTV-TEXT-FIT.1.1
+ * CONTRACT:C9-PPTV-PPTX-BASELINE.1.0
+ * CONTRACT:C10-PPTV-PPTX-RECONCILIATION.1.0
  */
 
 import { dirname, resolve } from "node:path";
@@ -30,11 +32,25 @@ import {
   parseFontMap,
   type FontkitFontMap,
 } from "./node/fontkit-text-measurer.js";
-import { readJsonPath, readPptvPath, writeFileAtomic } from "./node/io.js";
+import {
+  readBytesPath,
+  readJsonPath,
+  readPptvPath,
+  writeFileAtomic,
+  writeFilesAtomicExclusive,
+} from "./node/io.js";
+import {
+  composePptvDiagramDeck,
+  compilePptxBaseline,
+  PptvPptxBaselineCompileError,
+  type PptvPlacement,
+  type PptvPptxMap,
+} from "./node/pptx-baseline.js";
 import {
   compilePptxCanary,
   PptxCanaryCompileError,
 } from "./node/pptx-canary.js";
+import { reconcilePptx } from "./node/reconcile.js";
 import { applyPatch } from "./ops/patch.js";
 import {
   extractDiagramText,
@@ -96,6 +112,12 @@ export async function runCli(
       return await runEditorPack(argv.slice(1), environment);
     if (command === "pptx-canary")
       return await runPptxCanary(argv.slice(1), environment);
+    if (command === "compose")
+      return await runCompose(argv.slice(1), environment);
+    if (command === "compile")
+      return await runCompile(argv.slice(1), environment);
+    if (command === "reconcile")
+      return await runReconcile(argv.slice(1), environment);
     if (command === "text-fit")
       return await runTextFit(argv.slice(1), environment);
     if (command === "text") return await runText(argv.slice(1), environment);
@@ -117,6 +139,118 @@ export async function runCli(
     environment.stderr(`PPTV environment failure: ${message}\n`);
     return 3;
   }
+}
+
+async function runReconcile(
+  args: readonly string[],
+  environment: CliEnvironment,
+): Promise<number> {
+  const parsedArgs = parseArguments(
+    args,
+    {
+      "--source": "value",
+      "--baseline": "value",
+      "--patch": "value",
+      "--report": "value",
+      "--format": "value",
+    },
+    1,
+    "reconcile requires exactly one edited PPTX path",
+  );
+  const editedPath = parsedArgs.positionals[0]!;
+  const sourcePath = readOption(parsedArgs, "--source");
+  const baselinePath = readOption(parsedArgs, "--baseline");
+  const patchOutput = readOption(parsedArgs, "--patch");
+  const reportOutput = readOption(parsedArgs, "--report");
+  const format = readFormat(parsedArgs, ["text", "json"]);
+  if (
+    sourcePath === undefined ||
+    baselinePath === undefined ||
+    patchOutput === undefined ||
+    reportOutput === undefined
+  ) {
+    throw new InvocationError(
+      "reconcile requires explicit --source, --baseline, --patch, and --report paths",
+    );
+  }
+  if (resolve(patchOutput) === resolve(reportOutput)) {
+    throw new InvocationError(
+      "reconcile --patch and --report destinations must be distinct",
+    );
+  }
+
+  let baselineInput: unknown;
+  try {
+    baselineInput = await readJsonPath(baselinePath);
+  } catch (error) {
+    if (error instanceof SyntaxError) {
+      throw new InvocationError(`Invalid baseline map JSON: ${error.message}`);
+    }
+    throw error;
+  }
+  const [source, editedPptxBytes] = await Promise.all([
+    loadPptvDocument(await readPptvPath(sourcePath)),
+    readBytesPath(editedPath),
+  ]);
+  const result = await reconcilePptx(
+    source,
+    baselineInput as PptvPptxMap,
+    editedPptxBytes,
+  );
+  const entries = [
+    {
+      path: reportOutput,
+      contents: `${JSON.stringify(result, null, 2)}\n`,
+    },
+    ...(result.status === "patchable" && result.patch !== undefined
+      ? [
+          {
+            path: patchOutput,
+            contents: `${JSON.stringify(result.patch, null, 2)}\n`,
+          },
+        ]
+      : []),
+  ];
+  try {
+    await writeFilesAtomicExclusive(entries);
+  } catch (error) {
+    if (!isFileExistsError(error)) throw error;
+    writeDiagnostics(
+      [
+        {
+          code: "PPTV-RECONCILE-EXISTS",
+          severity: "error",
+          message:
+            "reconcile refuses to overwrite an existing report or patch destination.",
+        },
+      ],
+      format,
+      environment,
+    );
+    return 1;
+  }
+
+  if (format === "json") {
+    writeJson(
+      {
+        schema: "pptv-reconcile-result/0.1",
+        status: result.status,
+        report: reportOutput,
+        ...(result.status === "patchable" ? { patch: patchOutput } : {}),
+        sourceSha256: result.sourceSha256,
+        baselineMapSha256: result.baselineMapSha256,
+        editedPptxSha256: result.editedPptxSha256,
+        changeCount: result.changes.length,
+        diagnostics: result.diagnostics,
+      },
+      environment,
+    );
+  } else {
+    environment.stdout(
+      `reconciliation ${result.status}: wrote ${reportOutput}${result.status === "patchable" ? ` and ${patchOutput}` : ""} (${result.changes.length} changes)\n`,
+    );
+  }
+  return result.status === "unchanged" || result.status === "patchable" ? 0 : 1;
 }
 
 async function runOutline(
@@ -438,6 +572,264 @@ async function runPptxCanary(
     );
     return 1;
   }
+}
+
+async function runCompile(
+  args: readonly string[],
+  environment: CliEnvironment,
+): Promise<number> {
+  const parsedArgs = parseArguments(
+    args,
+    {
+      "--output": "value",
+      "--map": "value",
+      "--placement": "value",
+      "--slide-id": "value",
+      "--policy": "value",
+      "--format": "value",
+    },
+    1,
+    "compile requires exactly one PPTV path",
+  );
+  const path = parsedArgs.positionals[0]!;
+  const output = readOption(parsedArgs, "--output");
+  const mapOutput = readOption(parsedArgs, "--map");
+  const placementText = readOption(parsedArgs, "--placement");
+  const format = readFormat(parsedArgs, ["text", "json"]);
+  if (
+    output === undefined ||
+    mapOutput === undefined ||
+    placementText === undefined
+  ) {
+    throw new InvocationError(
+      "compile requires explicit --placement X,Y,W,H, --output PATH, and --map PATH",
+    );
+  }
+  if (resolve(output) === resolve(mapOutput)) {
+    throw new InvocationError(
+      "compile --output and --map destinations must be distinct",
+    );
+  }
+
+  const document = await loadPptvDocument(await readPptvPath(path));
+  const policy = readPlacementPolicy(parsedArgs);
+  const placement = parsePlacement(
+    placementText,
+    readOption(parsedArgs, "--slide-id") ??
+      (document.sourceKind === "svg" ? document.id : "slide"),
+    policy,
+  );
+  try {
+    const artifact = await compilePptxBaseline(document, { placement });
+    try {
+      await writeFilesAtomicExclusive([
+        { path: output, contents: artifact.pptxBytes },
+        { path: mapOutput, contents: artifact.mapText },
+      ]);
+    } catch (error) {
+      if (!isFileExistsError(error)) throw error;
+      writeDiagnostics(
+        [
+          {
+            code: "PPTV-BASELINE-EXISTS",
+            severity: "error",
+            message:
+              "compile refuses to overwrite an existing PPTX or sidecar-map destination.",
+          },
+        ],
+        format,
+        environment,
+      );
+      return 1;
+    }
+
+    if (format === "json") {
+      writeJson(
+        {
+          schema: "pptv-pptx-baseline-result/0.1",
+          output,
+          map: mapOutput,
+          atomSha256: artifact.map.source.sha256,
+          composedDeckSha256: artifact.map.composition.composedDeckSha256,
+          pptxSha256: artifact.pptxSha256,
+          mapSha256: artifact.mapSha256,
+          partCount: artifact.map.pptx.partNames.length,
+          objectCount: artifact.map.slides[0]?.objects.length ?? 0,
+          placement: artifact.map.composition.placement,
+          diagnostics: artifact.diagnostics,
+        },
+        environment,
+      );
+    } else {
+      environment.stdout(
+        `wrote ${output} and ${mapOutput} (${artifact.map.slides[0]?.objects.length ?? 0} native objects, ${artifact.pptxSha256})\n`,
+      );
+    }
+    return 0;
+  } catch (error) {
+    if (!(error instanceof PptvPptxBaselineCompileError)) throw error;
+    writeDiagnostics(
+      [
+        ...document.diagnostics,
+        {
+          code: error.code,
+          severity: "error",
+          message: error.message,
+        },
+      ],
+      format,
+      environment,
+    );
+    return 1;
+  }
+}
+
+async function runCompose(
+  args: readonly string[],
+  environment: CliEnvironment,
+): Promise<number> {
+  const parsedArgs = parseArguments(
+    args,
+    {
+      "--output": "value",
+      "--placement": "value",
+      "--slide-id": "value",
+      "--policy": "value",
+      "--format": "value",
+    },
+    1,
+    "compose requires exactly one standalone PPTV atom path",
+  );
+  const path = parsedArgs.positionals[0]!;
+  const output = readOption(parsedArgs, "--output");
+  const placementText = readOption(parsedArgs, "--placement");
+  const format = readFormat(parsedArgs, ["text", "json"]);
+  if (output === undefined || placementText === undefined) {
+    throw new InvocationError(
+      "compose requires explicit --placement X,Y,W,H and --output PATH",
+    );
+  }
+  const document = await loadPptvDocument(await readPptvPath(path));
+  if (document.sourceKind !== "svg") {
+    writeDiagnostics(
+      [
+        ...document.diagnostics,
+        {
+          code: "PPTV-BASELINE-UNSUPPORTED",
+          severity: "error",
+          message: "compose accepts one standalone .pptv.svg atom only.",
+        },
+      ],
+      format,
+      environment,
+    );
+    return 1;
+  }
+  const placement = parsePlacement(
+    placementText,
+    readOption(parsedArgs, "--slide-id") ?? document.id,
+    readPlacementPolicy(parsedArgs),
+  );
+  try {
+    const artifact = await composePptvDiagramDeck(document, placement);
+    try {
+      await writeFileAtomic(output, artifact.sourceText, { overwrite: false });
+    } catch (error) {
+      if (!isFileExistsError(error)) throw error;
+      writeDiagnostics(
+        [
+          {
+            code: "PPTV-BASELINE-EXISTS",
+            severity: "error",
+            message:
+              "compose refuses to overwrite an existing deck destination.",
+          },
+        ],
+        format,
+        environment,
+      );
+      return 1;
+    }
+
+    if (format === "json") {
+      writeJson(
+        {
+          schema: "pptv-compose-result/0.1",
+          output,
+          atomSha256: document.source.sha256,
+          composedDeckSha256: artifact.sourceSha256,
+          placement: artifact.placement,
+          transform: {
+            scale: artifact.scale,
+            translateX: artifact.translateX,
+            translateY: artifact.translateY,
+          },
+          diagnostics: artifact.diagnostics,
+        },
+        environment,
+      );
+    } else {
+      environment.stdout(
+        `wrote ${output} (one-slide deck ${artifact.sourceSha256}, scale ${artifact.scale})\n`,
+      );
+    }
+    return 0;
+  } catch (error) {
+    if (!(error instanceof PptvPptxBaselineCompileError)) throw error;
+    writeDiagnostics(
+      [
+        ...document.diagnostics,
+        {
+          code: error.code,
+          severity: "error",
+          message: error.message,
+        },
+      ],
+      format,
+      environment,
+    );
+    return 1;
+  }
+}
+
+function parsePlacement(
+  value: string,
+  slideId: string,
+  policy: PptvPlacement["policy"],
+): PptvPlacement {
+  const fields = value.split(",");
+  if (
+    fields.length !== 4 ||
+    fields.some((field) => field.trim().length === 0)
+  ) {
+    throw new InvocationError(
+      "--placement requires exactly four comma-separated numbers: X,Y,W,H",
+    );
+  }
+  const [x, y, width, height] = fields.map((field) => Number(field.trim())) as [
+    number,
+    number,
+    number,
+    number,
+  ];
+  if (![x, y, width, height].every(Number.isFinite)) {
+    throw new InvocationError(
+      "--placement requires four finite comma-separated numbers",
+    );
+  }
+  return { slideId, x, y, width, height, policy };
+}
+
+function readPlacementPolicy(
+  parsedArgs: ParsedArguments,
+): PptvPlacement["policy"] {
+  const policy = readOption(parsedArgs, "--policy") ?? "identity";
+  if (policy !== "identity" && policy !== "uniform-scale-translate") {
+    throw new InvocationError(
+      '--policy must be "identity" or "uniform-scale-translate"',
+    );
+  }
+  return policy;
 }
 
 async function runTextFit(
@@ -920,10 +1312,13 @@ Usage:
   pptv extract <deck.pptv.html> --slide ID --output file.pptv.svg [--format text|json]
   pptv editor-pack <file.pptv.html|file.pptv.svg> --output PATH [--font-map PATH] [--near-limit N] [--format text|json]
   pptv pptx-canary <deck.pptv.html> --output PATH [--format text|json]
+  pptv compose <atom.pptv.svg> --placement X,Y,W,H --output PATH [--slide-id ID] [--policy identity|uniform-scale-translate] [--format text|json]
+  pptv compile <atom.pptv.svg> --placement X,Y,W,H --output PATH --map PATH [--slide-id ID] [--policy identity|uniform-scale-translate] [--format text|json]
+  pptv reconcile <edited.pptx> --source atom.pptv.svg --baseline atom.pptv.map.json --patch PATH --report PATH [--format text|json]
   pptv text-fit <file.pptv.html|file.pptv.svg> --font-map PATH [--near-limit N] [--format text|json]
-  pptv text <file.pptv.html|file.pptv.svg> [--slide ID] [--format text|json|jsonl]
+  pptv text <file.pptv.html|file.pptv.svg> [--slide ID] [--include-hidden] [--format text|json|jsonl]
   pptv show <file.pptv.html|file.pptv.svg> <id> [--view semantic|editing] [--format json]
-  pptv list <file.pptv.html|file.pptv.svg> [--slide ID] [--role ROLE] [--class CLASS] [--text TEXT]
+  pptv list <file.pptv.html|file.pptv.svg> [--slide ID] [--role ROLE] [--class CLASS] [--text TEXT] [--view semantic|editing] [--format text|json|jsonl]
   pptv patch <file.pptv.html|file.pptv.svg> <patch.json> (--check | --output PATH) [--format text|json]
 `;
 }

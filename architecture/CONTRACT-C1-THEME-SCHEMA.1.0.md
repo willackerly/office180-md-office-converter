@@ -27,7 +27,7 @@ when inverting a document back to Markdown.
 - **`docx2md.py`** — indirectly: it infers structure from *styles* the
   forward converter applied using this schema (mono font, shading fill,
   left border), so a schema change to those specific keys is a breaking
-  change for the round-trip contract (`CONTRACT:C3-ROUNDTRIP.1.0`).
+  change for the round-trip contract (`CONTRACT:C3-ROUNDTRIP.1.1`).
 
 ## Scenarios (illustrative)
 

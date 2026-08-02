@@ -6,9 +6,9 @@
 
 | Track | Canonical source | Office artifact | Status |
 |---|---|---|---|
-| Markdown / Word | `.md` | `.docx` | Implemented and tested |
-| PPTV diagrams | standalone `.pptv.svg` atom | SVG / deck input | First-class semantic load, query, text edit, resolve, text-fit, trusted editor, and clean download |
-| PPTV / PowerPoint | `.pptv.html` deck aggregation | `.pptx` | Writable trusted deck editor, slide-to-atom extraction, and strict native-shape PPTX canary implemented |
+| Markdown / Word | `.md` | `.docx` | Exact supported-profile canonical round trip, embedded merge base, reports, three-way merge, and Quick Look evidence implemented |
+| PPTV diagrams | standalone `.pptv.svg` atom | `.pptx` branch | First-class source/editing plus explicit composition, mapped native PPTX, typed edit recovery, and browser/Quick Look evidence implemented |
+| PPTV decks | `.pptv.html` aggregation | `.pptx` | Writable trusted deck editor, slide-to-atom hydration, and strict native-shape C7 canary implemented |
 
 ## What ships
 
@@ -19,18 +19,21 @@ one TypeScript package/CLI—with no server:
   file. Headings, lists, tables, fenced code, inline formatting, blockquotes,
   and an optional marking-style banner all map to real Word styles.
 - **`docx2md.py`** — converts that `.docx` back to canonical Markdown by
-  inverting the same style choices, so editing the generated document in
-  Word (or Google Docs) and converting it back doesn't silently lose or
-  invent content.
+  inverting the same style choices. The supported profile has one canonical
+  spelling, embeds exact original/canonical merge-base bytes, refuses unsafe
+  Word constructs, emits a hash-bound fidelity report, and can three-way merge
+  supported Word edits into independently changed canonical Markdown.
 - **`@office180/pptv`** — a TypeScript source kernel and CLI whose default
   visual atom is a strict, standalone `.pptv.svg` diagram. It also loads
   `.pptv.html` as a whole-deck aggregation, preserves stable IDs and exact
-  source bytes, applies atomic text edits to either form, applies theme/order
-  edits to decks, resolves compiler-grade geometry/style/hard-line text, warns
-  about exact-font overruns, hydrates any resolvable deck slide back into an
-  independent SVG atom, and generates a writable trusted editor. Its Node
-  boundary emits the narrow fail-closed native-shape PPTX canary for exact
-  16:9 HTML decks.
+  source bytes, applies hash-bound legacy or typed native-object edits, applies
+  theme/order edits to decks, resolves compiler-grade
+  geometry/style/hard-line text, warns about exact-font overruns, hydrates any
+  resolvable deck slide back into an independent SVG atom, and generates a
+  writable trusted editor. Its Node boundary emits the C7 deck canary and the
+  C9 standalone-atom path: explicit identity/uniform composition, native PPTX,
+  complete sidecar map, and baseline-aware C10 patch proposal after supported
+  PowerPoint edits.
 
 ## PowerPoint design track
 
@@ -52,8 +55,8 @@ proposals:
   `.editable.pptv.html`, and selective OpenDocKit reuse.
 - **[PPTV Implementation Plan](PPTV-IMPLEMENTATION-PLAN.md)** separates
   arbitrary-aspect standalone diagrams from the initial exact-16:9 PowerPoint
-  deck profile and sequences the remaining compiler, OpenDocKit, and
-  reconciliation gates.
+  deck profile, records the implemented mapped atom round trip, and sequences
+  remaining native Office, editor, OpenDocKit, and profile-expansion gates.
 - **[PPTV 0.1.1 Text Resilience](PPTV-TEXT-RESILIENCE-0.1.1.md)** banks the
   future paragraph-intent/export/import policy while keeping explicit SVG lines
   authoritative. It is a design milestone, not current runtime or npm support.
@@ -79,20 +82,35 @@ into a fresh deterministic PPTX; the minimal artifact passes ISO/ECMA schema
 validation, independent OpenDocKit reopen, and native PowerPoint open/render
 without repair. C8 provides exact-font, anchor-aware, no-reflow overrun
 evidence in Node and the editor. Checked browser calibration records an
-engine-specific WebKit kerning variance instead of hiding it. Broader
-compilation, quantitative render comparison, native text calibration, and
-native PPTX save/reopen remain open gates.
+engine-specific WebKit kerning variance instead of hiding it.
+
+C9 implements explicit identity or aspect-preserving uniform atom placement,
+deterministic one-slide composition, a supported editable native PPTX, and a
+hash-bound object map. C10 authenticates that exact branch and translates the
+supported DrawingML edit subset into reviewable `pptv-patch/0.2` operations;
+it is not arbitrary PPTX import. C11 provides checked browser/Quick Look
+capture and quantitative comparison for both Office lanes. Full native
+representative edit/save/reopen, native text calibration, and human-reviewed
+cross-renderer fidelity remain explicit promotion gates.
+
+The reproducible checked bundles are
+[`tests/fixtures/roundtrip-evidence/docx/`](tests/fixtures/roundtrip-evidence/docx/)
+and
+[`tests/fixtures/roundtrip-evidence/pptv/`](tests/fixtures/roundtrip-evidence/pptv/).
+Each includes exact source/artifact hashes, renderer evidence, comparison
+metrics, explicit native status, and its generator/verification instructions.
 
 ### Repo-scoped PPTV authoring skill
 
 Codex discovers the versioned
 [`$pptv-authoring` skill](.agents/skills/pptv-authoring/SKILL.md) from
 `.agents/skills/` in this repository. It defaults to a standalone diagram for
-one figure and to HTML only when authoring a deck/PPTX deliverable. Use it to
+one figure and to HTML only when authoring a multi-slide deck. Use it to
 choose stable groups/IDs/text frames, run exact-font overflow preflight, edit
-or extract atoms, and compile the supported deck canary. Its diagram and deck
-starters are validation-locked fixtures. The skill is an operational workflow
-over the versioned contracts and CLI, not a separate specification.
+or extract atoms, compose/compile a mapped atom PPTX, reconcile supported edits,
+and compile the deck canary. Its diagram and deck starters are validation-locked
+fixtures. The skill is an operational workflow over the versioned contracts
+and CLI, not a separate specification.
 
 Every canonical standalone atom written by the starter or extractor carries a
 non-rendering discovery comment that points unfamiliar agents to that skill and
@@ -137,6 +155,18 @@ pnpm pptv outline examples/minimal-diagram.pptv.svg
 pnpm pptv resolve examples/minimal-diagram.pptv.svg
 pnpm pptv editor-pack examples/minimal-diagram.pptv.svg \
   --output minimal-diagram.editable.html
+pnpm pptv compose examples/minimal-diagram.pptv.svg \
+  --placement 0,0,1200,800 --policy identity \
+  --output minimal-diagram.composed.pptv.html
+pnpm pptv compile examples/minimal-diagram.pptv.svg \
+  --placement 0,0,1200,800 --policy identity \
+  --output minimal-diagram.pptx --map minimal-diagram.pptv.map.json
+pnpm pptv reconcile minimal-diagram.edited.pptx \
+  --source examples/minimal-diagram.pptv.svg \
+  --baseline minimal-diagram.pptv.map.json \
+  --patch recovered.pptv.patch.json --report reconciliation.json
+pnpm pptv patch examples/minimal-diagram.pptv.svg \
+  recovered.pptv.patch.json --output minimal-diagram.recovered.pptv.svg
 
 pnpm pptv outline examples/minimal-deck.pptv.html
 pnpm pptv validate examples/minimal-deck.pptv.html
@@ -163,8 +193,11 @@ pnpm pptv patch deck.pptv.html change.pptv.patch.json \
   --output deck.updated.pptv.html
 ```
 
-Version 0.1 applies direct-text transactions to diagrams or decks and keeps
-active-theme/slide-order transactions explicitly deck-only. `editor-pack`
+`pptv-patch/0.1` preserves direct-text transactions for diagrams/decks and
+active-theme/slide-order transactions for decks. `pptv-patch/0.2` adds exact,
+old-value-preconditioned geometry, connector, group-translation, direct text
+frame, sibling-order, safe-deletion, and complete native-style operations.
+`editor-pack`
 embeds inert exact bytes under strict CSP, verifies the source hash, reconstructs
 only from literal C6 data, and commits through the same C5 session for exact
 undo/redo. It exports current clean source rather than wrapper DOM; supported
@@ -177,12 +210,12 @@ An embedded HTML-deck slide may depend on deck CSS/theme context. `extract`
 therefore does not byte-slice blindly: it resolves that context, writes
 concrete local presentation values, removes deck-only authority, reloads and
 resolves the candidate as a standalone diagram, and emits nothing on failure.
-External manifests, CSS token editing, geometry/rich-text editing, atom-to-deck
-composition, PPTX features beyond C7, quantitative render fidelity,
-reconciliation, and native PPTX save/reopen remain outside the verified
-surface. Future composition is planned as an explicit transform/scaling-policy
-operation with an identity path for compatible atoms and fail-closed aspect
-mismatch—never a silent stretch. See
+External manifests, CSS token editing, rich-text/insertion/reparenting,
+general SVG/PPTX conversion, baseline-free PPTX import, and full native
+edit/save/reopen remain outside the supported surface. C9 composition requires
+an explicit transform/scaling policy and fails on aspect mismatch—never a
+silent stretch. C10 refuses ambiguous or unsupported edits and never overwrites
+source or PPTX. See
 [`packages/pptv/README.md`](packages/pptv/README.md).
 
 ### Markdown → DOCX
@@ -274,17 +307,24 @@ every conforming reader preserves):
   tplsha: 5e2f...  (16-hex sha256 of the template file)
   srcsha: a91c...  (16-hex sha256 of the source .md file)
   gen: 2026-07-08T21:04Z
-  subject (source path): ~/docs/example.md
+  subject (source path): /absolute/path/to/example.md
   category (template):   Plum
   keywords: md2docx
 ------------------------
 ```
 
-`docx2md.py` reads this back and prints it to stderr before converting —
-it's how the reverse tool knows which theme produced a document's styling,
-and (via `srcsha`) whether the original source file has changed since the
-DOCX was generated. Full field-by-field spec:
-`architecture/CONTRACT-C2-PROVENANCE.1.0.md`.
+`docx2md.py` reads this back and prints it to stderr before converting.
+Generated documents now also carry a separate, related custom XML item with
+the exact original UTF-8 source and the exact canonical Markdown used to build
+the Word body. Both payloads have full SHA-256 bindings; malformed, stripped,
+duplicated, or tampered merge bases are explicit states. The compact core stamp
+remains compatible with C2 1.0. Current specification:
+`architecture/CONTRACT-C2-PROVENANCE.2.0.md`.
+
+The C2 1.0 core subject is a legacy resolved absolute-path field and can reveal
+local path context. C2 2.0 adds no further account/host identity; public checked
+evidence is generated from a fixed `/private/tmp/office180-evidence/` source.
+Changing the legacy subject requires an explicit provenance/privacy migration.
 
 ---
 
@@ -297,35 +337,45 @@ a code block, a left-bordered indent for a blockquote, a mono-font shaded
 run for inline code, and so on), and the reverse converter inverts that
 same mapping.
 
-That makes a real workflow possible: generate a `.docx`, hand it to
-someone who edits it in Word, run `docx2md.py` on the result, and get back
-**canonical Markdown** — one blank line between blocks, `-` bullets,
-`**bold**`, no trailing whitespace — rather than a mess of Word's internal
-formatting choices. `tests/test_roundtrip.py` proves this for every
-construct the tools support: it converts `tests/fixtures/kitchen-sink.md`
-forward, then back, and asserts the round trip loses nothing and invents
-nothing (a structure-agnostic word-bag comparison — see the test file for
-exactly what that means and what's deliberately out of scope, like
-relative-link URLs and true byte-for-byte canonical-MD equality).
+That makes a real workflow possible: normalize Markdown, generate a `.docx`,
+let someone edit its supported styled body, and recover canonical Markdown.
+The current suite proves the exact equation
+`docx2md(md2docx(x)) == canonicalize(x)`, not only token preservation. It also
+proves non-conflicting Word and Markdown branch edits merge through the
+verified embedded base, while same-region edits return explicit diff3 conflict
+markers.
 
-Honest limits — Google Docs strips non-standard OPC parts on import, links
-are demoted rather than preserved as real hyperlinks, and 3-way merge
-tooling doesn't exist yet — are documented in `ROADMAP.md` §7.5 and in
-`architecture/CONTRACT-C3-ROUNDTRIP.1.0.md`.
+```bash
+python md2docx.py --normalize draft.md -o canonical.md
+python md2docx.py --check canonical.md
+python md2docx.py canonical.md -o review.docx
+python docx2md.py review.docx -o edited.md --report fidelity.json
+python docx2md.py review.docx \
+  --merge-current canonical.md --out merged.md --report merge.json
+```
 
-**DOCX roadmap:** `ROADMAP.md` is the full hand-off plan — a
-CommonMark AST rewrite, wide-table strategies, image support, JSONC
-themes with an `extends` chain, and the rest of the symmetry track
-(custom-XML source embedding, 3-way merge, a fidelity report).
+Pending tracked changes, images, text boxes, unknown styles, nested lists,
+native numbering, and unsupported Markdown constructs refuse with stable codes
+instead of being flattened. Google Docs may strip the merge-base part, and
+links retain the documented print-oriented demotion rather than becoming real
+hyperlinks. Native Word automation is still an explicit unavailable gate on
+this host; independent package reopen/save and Quick Look are separate
+evidence, not substitutes. See `architecture/CONTRACT-C3-ROUNDTRIP.1.1.md`.
+
+**DOCX roadmap:** `ROADMAP.md` is the remaining hand-off plan — a pinned
+CommonMark AST, wide-table strategies, image support, JSONC themes with an
+`extends` chain, real hyperlinks, and broader symmetry fixtures. The exact
+canonical, embedded-source, refusal/report, and three-way-merge foundation is
+implemented.
 
 **PowerPoint roadmap:** `PPTV-DESIGN-INDEX.md` is the entry point for the
 broader SVG/HTML source model, processing API, native editor, PowerPoint
-adapter, reverse-patch semantics, and conformance path. Contracts C4, C5, and
-C6 plus their schemas/fixtures define the verified 0.1 diagram/deck
-source/patch/resolution/hydration surface. C7 and C8 remain in-progress
-native compiler/verification surfaces with explicit calibration, fidelity, and
-save/reopen gates. Typed geometry/structure editing, the full compiler, and
-reconciliation remain forward design until promoted the same way.
+adapter, reverse-patch semantics, and conformance path. C4–C6 define the
+verified source/typed-patch/resolution surface; C7–C10 implement the strict deck
+canary and mapped standalone-atom round trip; C11 supplies automated evidence.
+Remaining work is native representative edit/save/reopen, browser controls for
+the typed operation surface, richer assets/text, and separately versioned
+profile expansion—not arbitrary best-effort PPTX conversion.
 
 ---
 

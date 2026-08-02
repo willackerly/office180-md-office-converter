@@ -1,0 +1,6 @@
+P3
+# The center pixel on the second row differs from baseline by 32/channel.
+3 2
+255
+255 0 0   0 255 0   0 0 255
+255 255 255   160 160 160   0 0 0

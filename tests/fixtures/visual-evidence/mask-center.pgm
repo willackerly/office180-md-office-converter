@@ -1,0 +1,6 @@
+P2
+# White means ignored; only the changed center pixel is masked.
+3 2
+255
+0 0 0
+0 255 0
