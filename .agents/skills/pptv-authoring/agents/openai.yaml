@@ -1,4 +1,4 @@
 interface:
   display_name: "PPTV Authoring"
-  short_description: "Author, hydrate, and edit no-reflow PPTV"
-  default_prompt: "Use $pptv-authoring to create, hydrate, preflight, or edit a strict no-reflow PPTV atom or deck."
+  short_description: "Author atom-first no-reflow visual source"
+  default_prompt: "Use $pptv-authoring to create, read, compare, edit, or compile a fully hydrated SVG atom, using HTML only for a real deck or report."

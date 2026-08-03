@@ -2,7 +2,7 @@
 /**
  * Bounded Playwright/Chromium capture for one validated PPTV SVG atom.
  *
- * CONTRACT:C11-OFFICE-VISUAL-EVIDENCE.1.0
+ * CONTRACT:C11-OFFICE-VISUAL-EVIDENCE.1.1
  */
 
 import { createHash, randomBytes } from "node:crypto";

@@ -19,29 +19,33 @@ fi
 broken=0
 total=0
 
-# Find all CONTRACT: references in Python and TypeScript source files.
+# Find all CONTRACT: references in supported source files.
 while IFS= read -r line; do
-  file=$(echo "$line" | cut -d: -f1)
-  lineno=$(echo "$line" | cut -d: -f2)
+  file="${line%%:*}"
+  remainder="${line#*:}"
+  lineno="${remainder%%:*}"
 
-  # Extract the contract ID (e.g., C1-THEME-SCHEMA.1.0)
-  ref=$(echo "$line" | grep -o 'CONTRACT:[A-Za-z0-9_-]*\.[0-9]*\.[0-9]*' | head -1 | sed 's/CONTRACT://')
+  # Extract every contract ID on the line (e.g., C1-THEME-SCHEMA.1.1).
+  while IFS= read -r match; do
+    ref="${match#CONTRACT:}"
+    total=$((total + 1))
 
-  [ -z "$ref" ] && continue
-  total=$((total + 1))
-
-  # Check if the contract file exists
-  expected="${ARCH_DIR}/CONTRACT-${ref}.md"
-  if [ ! -f "$expected" ]; then
-    echo "BROKEN: $file:$lineno references CONTRACT:$ref"
-    echo "        Expected: $expected"
-    broken=$((broken + 1))
-  fi
+    # Check if the contract file exists
+    expected="${ARCH_DIR}/CONTRACT-${ref}.md"
+    if [ ! -f "$expected" ]; then
+      echo "BROKEN: $file:$lineno references CONTRACT:$ref"
+      echo "        Expected: $expected"
+      broken=$((broken + 1))
+    fi
+  done < <(
+    printf '%s\n' "$line" |
+      grep -o 'CONTRACT:[A-Za-z0-9_-]*\.[0-9]*\.[0-9]*'
+  )
 done < <(grep -rn "CONTRACT:[A-Za-z0-9_-]*\.[0-9]*\.[0-9]*" \
   --exclude-dir=".git" --exclude-dir=".venv" --exclude-dir="node_modules" \
   --exclude-dir="dist" --exclude-dir="vendor" --exclude-dir=".claude" \
   --include="*.py" --include="*.go" --include="*.ts" --include="*.tsx" \
-  --include="*.js" --include="*.rs" --include="*.jsx" \
+  --include="*.js" --include="*.mjs" --include="*.rs" --include="*.jsx" \
   . 2>/dev/null | grep -v "node_modules\|vendor\|dist\|\.git\|\.claude/worktrees")
 
 echo ""

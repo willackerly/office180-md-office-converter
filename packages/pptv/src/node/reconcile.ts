@@ -2,15 +2,16 @@
  * Baseline-aware, typed native-object PPTX reconciliation.
  *
  * CONTRACT:C4-PPTV-SOURCE.1.1
- * CONTRACT:C5-PPTV-PATCH.1.2
+ * CONTRACT:C5-PPTV-PATCH.1.3
  * CONTRACT:C6-PPTV-RESOLVED.1.1
  * CONTRACT:C9-PPTV-PPTX-BASELINE.1.0
- * CONTRACT:C10-PPTV-PPTX-RECONCILIATION.1.0
+ * CONTRACT:C10-PPTV-PPTX-RECONCILIATION.1.2
  */
 
 import { createHash } from "node:crypto";
 
 import type {
+  CloneConnectorOperation,
   Diagnostic,
   PptvConcreteNativeStyle,
   PptvConnectorEndpoints,
@@ -18,6 +19,7 @@ import type {
   PptvObjectGeometry,
   PptvOperation,
   PptvPatch,
+  PptvPatchOperation,
   PptvPatchBounds,
   PptvPatchPoint,
 } from "../core/types.js";
@@ -31,10 +33,27 @@ import {
 import {
   inspectPptxForReconciliation,
   type PptxInspection,
+  type PptxIdentityMatch,
+  type PptxIdentityOccurrence,
   type PptxInspectedGeometry,
   type PptxInspectedObject,
   type PptxInspectedStyle,
 } from "./pptx-inspect.js";
+import {
+  connectorDuplicateResolutionGuidance,
+  connectorOccurrenceFingerprintSha256,
+  parsePptvReconcileResolution,
+  PptvReconcileResolutionError,
+  type PptvReconcileResolution,
+} from "./reconcile-resolution.js";
+import {
+  buildReconciliationPresentation,
+  operationId,
+  type PptvCandidateOperation,
+  type PptvReconciliationFinding,
+  type PptvReconciliationFindingInput,
+  type PptvReconciliationSummary,
+} from "./reconciliation-report.js";
 
 const INVALID_MAP_SHA256 = "0".repeat(64);
 const SHA256_PATTERN = /^[0-9a-f]{64}$/u;
@@ -45,6 +64,7 @@ const TRUST_DIAGNOSTIC_CODES = new Set([
   "PPTV-RECONCILE-INVALID-PPTX",
   "PPTV-RECONCILE-LINEAGE",
   "PPTV-RECONCILE-MISSING-ID",
+  "PPTV-RECONCILE-RESOLUTION",
 ]);
 const IGNORED_METADATA_PARTS = new Set([
   "docProps/app.xml",
@@ -101,20 +121,39 @@ export type PptvOfficeChange =
   PptvOfficeTextChange | PptvOfficeTypedChange | PptvOfficeUnsupportedChange;
 
 export interface PptvReconciliationResult {
-  readonly schema: "pptv-pptx-reconciliation/0.1";
+  readonly schema: "pptv-pptx-reconciliation/0.2";
   readonly status: PptvReconciliationStatus;
   readonly sourceSha256: string;
   readonly baselineMapSha256: string;
   readonly editedPptxSha256: string;
+  readonly nativeBaselinePptxSha256?: string;
   readonly changes: readonly PptvOfficeChange[];
+  readonly summary: PptvReconciliationSummary;
+  readonly findings: readonly PptvReconciliationFinding[];
+  readonly candidateOperations: readonly PptvCandidateOperation[];
   readonly patch?: PptvPatch;
   readonly diagnostics: readonly Diagnostic[];
+}
+
+export interface PptvReconciliationOptions {
+  /**
+   * Optional exact native-save baseline. It must authenticate against the map
+   * and have the same normalized supported slide semantics as deterministic C9
+   * regeneration before it can become the comparison base.
+   */
+  readonly nativeBaselinePptxBytes?: Uint8Array;
+  /**
+   * Optional explicit human-reviewed recovery for exactly one copied mapped
+   * connector. Runtime validation is strict even for typed callers.
+   */
+  readonly resolution?: PptvReconcileResolution;
 }
 
 export async function reconcilePptx(
   source: PptvDocument,
   baselineInput: PptvPptxMap,
   editedPptxBytes: Uint8Array,
+  options: PptvReconciliationOptions = {},
 ): Promise<PptvReconciliationResult> {
   const sourceSha256 = source.source.sha256;
   const editedPptxSha256 = sha256(editedPptxBytes);
@@ -127,6 +166,11 @@ export async function reconcilePptx(
     sourceSha256,
     baselineMapSha256,
     editedPptxSha256,
+    ...(options.nativeBaselinePptxBytes === undefined
+      ? {}
+      : {
+          nativeBaselinePptxSha256: sha256(options.nativeBaselinePptxBytes),
+        }),
   };
 
   if (
@@ -182,9 +226,16 @@ export async function reconcilePptx(
     );
   }
 
-  const [baselineInspectionResult, editedInspectionResult] = await Promise.all([
+  const [
+    baselineInspectionResult,
+    editedInspectionResult,
+    nativeBaselineInspectionResult,
+  ] = await Promise.all([
     inspectPptxForReconciliation(regenerated.pptxBytes, baseline),
     inspectPptxForReconciliation(editedPptxBytes, baseline),
+    options.nativeBaselinePptxBytes === undefined
+      ? Promise.resolve(undefined)
+      : inspectPptxForReconciliation(options.nativeBaselinePptxBytes, baseline),
   ]);
   if (
     baselineInspectionResult.inspection === undefined ||
@@ -205,25 +256,131 @@ export async function reconcilePptx(
       editedInspectionResult.diagnostics,
     );
   }
+  if (nativeBaselineInspectionResult !== undefined) {
+    if (
+      nativeBaselineInspectionResult.inspection === undefined ||
+      nativeBaselineInspectionResult.diagnostics.some(isErrorDiagnostic)
+    ) {
+      return refused(
+        context,
+        "PPTV-RECONCILE-INVALID-BASELINE",
+        "Optional native-save baseline did not pass authenticated C10 inspection.",
+        nativeBaselineInspectionResult.diagnostics,
+      );
+    }
+    if (
+      !sameSupportedSlideSemantics(
+        baselineInspectionResult.inspection,
+        nativeBaselineInspectionResult.inspection,
+      )
+    ) {
+      return refused(
+        context,
+        "PPTV-RECONCILE-INVALID-BASELINE",
+        "Optional native-save baseline does not have the same normalized supported slide semantics as deterministic C9 regeneration.",
+      );
+    }
+  }
 
-  const diagnostics = [...editedInspectionResult.diagnostics];
+  let diagnostics = [...editedInspectionResult.diagnostics];
   const changes: PptvOfficeChange[] = [];
   const operations: PptvOperation[] = [];
+  const comparisonBaseline =
+    nativeBaselineInspectionResult?.inspection ??
+    baselineInspectionResult.inspection;
   compareInspections(
-    baselineInspectionResult.inspection,
+    comparisonBaseline,
     editedInspectionResult.inspection,
     baseline,
     changes,
     operations,
     diagnostics,
   );
+  let connectorClonePlan: ReviewedConnectorClonePlan | undefined;
+  const resolutionFindingInputs: PptvReconciliationFindingInput[] = [];
+  if (options.resolution !== undefined) {
+    try {
+      const resolution = parsePptvReconcileResolution(options.resolution);
+      connectorClonePlan = planReviewedConnectorClone(
+        source,
+        baseline,
+        comparisonBaseline,
+        editedInspectionResult.inspection,
+        resolution,
+        context,
+      );
+      const resolvedSlideStructureMessage = `Unsupported slide-level structure changed in "${connectorClonePlan.slidePartName}".`;
+      diagnostics = diagnostics.filter(
+        (diagnostic) =>
+          !(
+            (diagnostic.code === "PPTV-RECONCILE-DUPLICATE-ID" &&
+              diagnostic.objectId === connectorClonePlan?.duplicateId) ||
+            (diagnostic.code === "PPTV-RECONCILE-UNSUPPORTED" &&
+              diagnostic.message === resolvedSlideStructureMessage)
+          ),
+      );
+      for (let index = changes.length - 1; index >= 0; index -= 1) {
+        const change = changes[index];
+        if (
+          change?.kind === "unsupported" &&
+          change.scope === "slide" &&
+          change.field === "structure" &&
+          change.message === resolvedSlideStructureMessage
+        ) {
+          changes.splice(index, 1);
+        }
+      }
+      resolutionFindingInputs.push(
+        reviewedConnectorCloneFinding(connectorClonePlan),
+      );
+    } catch (error) {
+      diagnostics.push({
+        code: "PPTV-RECONCILE-RESOLUTION",
+        severity: "error",
+        message:
+          error instanceof PptvReconcileResolutionError
+            ? error.message
+            : `Reviewed connector-copy resolution failed: ${errorMessage(error)}`,
+      });
+    }
+  }
+  const patchOperations: PptvPatchOperation[] = [
+    ...operations,
+    ...(connectorClonePlan === undefined ? [] : [connectorClonePlan.operation]),
+  ];
+  const findingInputs = Object.freeze([
+    ...(nativeBaselineInspectionResult?.inspection === undefined
+      ? []
+      : reconciliationFindingInputs(
+          baselineInspectionResult.inspection,
+          nativeBaselineInspectionResult.inspection,
+          [],
+          [],
+          [],
+        )),
+    ...reconciliationFindingInputs(
+      comparisonBaseline,
+      editedInspectionResult.inspection,
+      changes,
+      patchOperations,
+      diagnostics,
+    ),
+    ...resolutionFindingInputs,
+  ]);
 
   if (
     diagnostics.some((diagnostic) =>
       TRUST_DIAGNOSTIC_CODES.has(diagnostic.code),
     )
   ) {
-    return resultWithDiagnostics("refused", context, changes, diagnostics);
+    return resultWithDiagnostics(
+      "refused",
+      context,
+      changes,
+      diagnostics,
+      findingInputs,
+      patchOperations,
+    );
   }
   if (diagnostics.some(isErrorDiagnostic)) {
     return resultWithDiagnostics(
@@ -231,20 +388,42 @@ export async function reconcilePptx(
       context,
       changes,
       diagnostics,
+      findingInputs,
+      patchOperations,
     );
   }
 
-  if (operations.length === 0) {
-    return resultWithDiagnostics("unchanged", context, [], diagnostics);
+  if (patchOperations.length === 0) {
+    return resultWithDiagnostics(
+      "unchanged",
+      context,
+      [],
+      diagnostics,
+      findingInputs,
+      [],
+    );
   }
-  const patch: PptvPatch = {
-    schema: "pptv-patch/0.2",
-    baseSha256: sourceSha256,
-    ops: operations,
-  };
+  const patch: PptvPatch =
+    connectorClonePlan === undefined
+      ? {
+          schema: "pptv-patch/0.2",
+          baseSha256: sourceSha256,
+          ops: operations,
+        }
+      : {
+          schema: "pptv-patch/0.3",
+          baseSha256: sourceSha256,
+          ops: patchOperations,
+        };
   const validation = await validatePatch(source, patch);
   if (validation.some(isErrorDiagnostic)) {
-    return patchFailure(context, changes, validation);
+    return patchFailure(
+      context,
+      changes,
+      validation,
+      findingInputs,
+      patchOperations,
+    );
   }
   const application = await applyPatch(source, patch);
   if (
@@ -252,7 +431,13 @@ export async function reconcilePptx(
     application.diagram === undefined ||
     application.sourceText === undefined
   ) {
-    return patchFailure(context, changes, application.diagnostics);
+    return patchFailure(
+      context,
+      changes,
+      application.diagnostics,
+      findingInputs,
+      patchOperations,
+    );
   }
 
   let patchedBaseline;
@@ -261,13 +446,19 @@ export async function reconcilePptx(
       placement: baseline.composition.placement,
     });
   } catch (error) {
-    return patchFailure(context, changes, [
-      {
-        code: "PPTV-RECONCILE-PATCH",
-        severity: "error",
-        message: `Applied C5 patch did not regenerate through C9: ${errorMessage(error)}`,
-      },
-    ]);
+    return patchFailure(
+      context,
+      changes,
+      [
+        {
+          code: "PPTV-RECONCILE-PATCH",
+          severity: "error",
+          message: `Applied C5 patch did not regenerate through C9: ${errorMessage(error)}`,
+        },
+      ],
+      findingInputs,
+      patchOperations,
+    );
   }
   const regeneratedInspection = await inspectPptxForReconciliation(
     patchedBaseline.pptxBytes,
@@ -276,27 +467,45 @@ export async function reconcilePptx(
   if (
     regeneratedInspection.inspection === undefined ||
     regeneratedInspection.diagnostics.some(isErrorDiagnostic) ||
-    !sameSupportedSlideSemantics(
-      editedInspectionResult.inspection,
-      regeneratedInspection.inspection,
-    )
+    !(connectorClonePlan === undefined
+      ? sameSupportedSlideSemantics(
+          editedInspectionResult.inspection,
+          regeneratedInspection.inspection,
+        )
+      : sameSupportedSlideSemanticsAfterConnectorClone(
+          editedInspectionResult.inspection,
+          regeneratedInspection.inspection,
+          connectorClonePlan,
+        ))
   ) {
-    return patchFailure(context, changes, [
-      {
-        code: "PPTV-RECONCILE-PATCH",
-        severity: "error",
-        message:
-          "Applied C5 patch did not regenerate the exact reconciled supported DrawingML semantics through C9.",
-      },
-      ...regeneratedInspection.diagnostics,
-    ]);
+    return patchFailure(
+      context,
+      changes,
+      [
+        {
+          code: "PPTV-RECONCILE-PATCH",
+          severity: "error",
+          message:
+            "Applied C5 patch did not regenerate the exact reconciled supported DrawingML semantics through C9.",
+        },
+        ...regeneratedInspection.diagnostics,
+      ],
+      findingInputs,
+      patchOperations,
+    );
   }
 
+  const presentation = buildReconciliationPresentation(
+    "patchable",
+    findingInputs,
+    patchOperations,
+  );
   return Object.freeze({
-    schema: "pptv-pptx-reconciliation/0.1",
+    schema: "pptv-pptx-reconciliation/0.2",
     status: "patchable",
     ...context,
     changes: Object.freeze(changes),
+    ...presentation,
     patch: deepFreeze(patch),
     diagnostics: Object.freeze(diagnostics),
   });
@@ -311,7 +520,7 @@ function compareInspections(
   diagnostics: Diagnostic[],
 ): void {
   const slidePartNames = new Set(map.slides.map((slide) => slide.partName));
-  for (const partName of baseline.partNames) {
+  for (const partName of baseline.semanticPartNames) {
     if (slidePartNames.has(partName) || IGNORED_METADATA_PARTS.has(partName)) {
       continue;
     }
@@ -357,9 +566,9 @@ function compareInspections(
       afterSlide.objects.map((object) => [object.id, object] as const),
     );
     const missingIds = new Set(
-      mapSlide.objects
-        .filter((object) => !afterById.has(object.id))
-        .map((object) => object.id),
+      afterSlide.identities
+        .filter((identity) => identity.status === "missing")
+        .map((identity) => identity.id),
     );
     for (const mapObject of mapSlide.objects) {
       const before = beforeById.get(mapObject.id);
@@ -1110,6 +1319,394 @@ function sameSupportedSlideSemantics(
   });
 }
 
+interface ReviewedConnectorClonePlan {
+  readonly duplicateId: string;
+  readonly newId: string;
+  readonly slidePartName: string;
+  readonly baselineOccurrence: PptxIdentityOccurrence;
+  readonly copiedOccurrence: PptxIdentityOccurrence;
+  readonly baselineOccurrenceFingerprintSha256: string;
+  readonly copiedOccurrenceFingerprintSha256: string;
+  readonly operation: CloneConnectorOperation;
+}
+
+function planReviewedConnectorClone(
+  source: PptvDocument,
+  map: PptvPptxMap,
+  comparisonBaseline: PptxInspection,
+  edited: PptxInspection,
+  resolution: PptvReconcileResolution,
+  context: ResultContext,
+): ReviewedConnectorClonePlan {
+  if (
+    resolution.sourceSha256 !== context.sourceSha256 ||
+    resolution.baselineMapSha256 !== context.baselineMapSha256 ||
+    resolution.editedPptxSha256 !== context.editedPptxSha256 ||
+    resolution.comparisonPptxSha256 !== comparisonBaseline.pptxSha256
+  ) {
+    throw new PptvReconcileResolutionError(
+      "Resolution hashes do not exactly match the current source, canonical map, edited PPTX, and authenticated comparison PPTX.",
+    );
+  }
+  const duplicateEntries = edited.slides.flatMap((slide) =>
+    slide.identities
+      .filter((identity) => identity.status === "duplicate")
+      .map((identity) => ({ slide, identity })),
+  );
+  if (
+    duplicateEntries.length !== 1 ||
+    duplicateEntries[0]?.identity.id !== resolution.duplicateId
+  ) {
+    throw new PptvReconcileResolutionError(
+      "Resolution requires exactly one duplicated mapped identity, and duplicateId must name it.",
+    );
+  }
+  const duplicateEntry = duplicateEntries[0];
+  const identity = duplicateEntry.identity;
+  if (identity.occurrences.length !== 2) {
+    throw new PptvReconcileResolutionError(
+      `Mapped identity "${resolution.duplicateId}" must have exactly two occurrences.`,
+    );
+  }
+  const mapSlide = map.slides.find(
+    (slide) => slide.partName === duplicateEntry.slide.partName,
+  );
+  const mapObject = mapSlide?.objects.find(
+    (object) => object.id === resolution.duplicateId,
+  );
+  if (
+    mapSlide === undefined ||
+    mapObject === undefined ||
+    mapObject.kind !== "line" ||
+    mapObject.emitted.element !== "p:cxnSp"
+  ) {
+    throw new PptvReconcileResolutionError(
+      "The duplicated mapped identity is not one supported native straight connector.",
+    );
+  }
+  const baselineSlide = comparisonBaseline.slides.find(
+    (slide) => slide.partName === mapSlide.partName,
+  );
+  if (
+    baselineSlide === undefined ||
+    baselineSlide.inventoryNormalizedSkeletonSignature !==
+      duplicateEntry.slide.inventoryNormalizedSkeletonSignature
+  ) {
+    throw new PptvReconcileResolutionError(
+      "The edited slide contains structure outside the one reviewed visible-object insertion.",
+    );
+  }
+  const baselineIdentity = baselineSlide?.identities.find(
+    (candidate) => candidate.id === resolution.duplicateId,
+  );
+  if (
+    baselineIdentity?.status !== "unique" ||
+    baselineIdentity.occurrences.length !== 1
+  ) {
+    throw new PptvReconcileResolutionError(
+      "The authenticated comparison PPTX does not contain one unique template occurrence.",
+    );
+  }
+  const baselineOccurrence = baselineIdentity.occurrences[0]!;
+  const baselineFingerprintSha256 =
+    connectorOccurrenceFingerprintSha256(baselineOccurrence);
+  if (
+    baselineFingerprintSha256 === undefined ||
+    resolution.baselineOccurrenceFingerprintSha256 !== baselineFingerprintSha256
+  ) {
+    throw new PptvReconcileResolutionError(
+      "Resolution baselineOccurrenceFingerprintSha256 is stale or the template is not a strictly supported connector occurrence.",
+    );
+  }
+  const occurrenceFingerprints = identity.occurrences.map((occurrence) => ({
+    occurrence,
+    sha256: connectorOccurrenceFingerprintSha256(occurrence),
+  }));
+  if (occurrenceFingerprints.some((entry) => entry.sha256 === undefined)) {
+    throw new PptvReconcileResolutionError(
+      "Both duplicate occurrences must parse as complete supported native straight connectors.",
+    );
+  }
+  const baselineMatches = occurrenceFingerprints.filter(
+    (entry) => entry.sha256 === baselineFingerprintSha256,
+  );
+  if (baselineMatches.length !== 1) {
+    throw new PptvReconcileResolutionError(
+      "Exactly one duplicate occurrence must be structurally and semantically baseline-equivalent; zero or two matches are ambiguous.",
+    );
+  }
+  const matchedBaselineOccurrence = baselineMatches[0]!.occurrence;
+  const copiedEntry = occurrenceFingerprints.find(
+    (entry) => entry.occurrence !== matchedBaselineOccurrence,
+  )!;
+  if (
+    copiedEntry.sha256 === undefined ||
+    copiedEntry.sha256 !== resolution.copiedOccurrenceFingerprintSha256
+  ) {
+    throw new PptvReconcileResolutionError(
+      "Resolution copiedOccurrenceFingerprintSha256 does not exactly match the non-baseline occurrence.",
+    );
+  }
+  if (
+    matchedBaselineOccurrence.parentId !== mapObject.parentId ||
+    copiedEntry.occurrence.parentId !== mapObject.parentId
+  ) {
+    throw new PptvReconcileResolutionError(
+      "The template and copied connector must remain in the same mapped source parent.",
+    );
+  }
+  if (
+    map.source.id === resolution.newId ||
+    mapSlide.objects.some((object) => object.id === resolution.newId) ||
+    source.index.objects.has(resolution.newId)
+  ) {
+    throw new PptvReconcileResolutionError(
+      `Resolution newId "${resolution.newId}" is already used by canonical source.`,
+    );
+  }
+
+  const oldEndpoints = sourceConnectorEndpoints(mapObject);
+  const oldStyle = sourceStyle(mapObject);
+  const fromId = mapObject.source.attributes["data-pptv-from"];
+  const toId = mapObject.source.attributes["data-pptv-to"];
+  const copiedGeometry = copiedEntry.occurrence.geometry;
+  const copiedStyle = copiedEntry.occurrence.style;
+  const endpoints =
+    copiedGeometry?.kind === "line"
+      ? inverseEndpoints(mapObject, copiedGeometry)
+      : undefined;
+  const style =
+    copiedStyle === undefined
+      ? undefined
+      : inverseStyle(mapObject, copiedStyle);
+  if (
+    oldEndpoints === undefined ||
+    oldStyle === undefined ||
+    typeof fromId !== "string" ||
+    typeof toId !== "string" ||
+    endpoints === undefined ||
+    style === undefined ||
+    !styleChangeHasDirectRepresentation(mapObject, oldStyle, style)
+  ) {
+    throw new PptvReconcileResolutionError(
+      "The copied connector endpoints/style do not have one exact source-unit inverse over the template's direct SVG representation.",
+    );
+  }
+  const existingIds = new Set(mapSlide.objects.map((object) => object.id));
+  if (
+    !existingIds.has(resolution.connector.fromId) ||
+    !existingIds.has(resolution.connector.toId)
+  ) {
+    throw new PptvReconcileResolutionError(
+      "Resolution connector.fromId and connector.toId must explicitly name existing mapped source objects.",
+    );
+  }
+  const connector = {
+    fromId: resolution.connector.fromId,
+    toId: resolution.connector.toId,
+    endpoints,
+    style,
+  };
+  if (!sameJson(resolution.connector, connector)) {
+    throw new PptvReconcileResolutionError(
+      "Resolution connector endpoints/style do not exactly match the copied Office occurrence.",
+    );
+  }
+  const parentId = mapObject.parentId ?? map.source.id;
+  const oldOrder = mapSlide.objects
+    .filter((object) => object.parentId === mapObject.parentId)
+    .sort((left, right) => left.order - right.order)
+    .map((object) => object.id);
+  const order = deriveReviewedCloneOrder(
+    mapSlide.objects,
+    duplicateEntry.slide,
+    mapObject.parentId,
+    resolution.duplicateId,
+    resolution.newId,
+    matchedBaselineOccurrence,
+    copiedEntry.occurrence,
+  );
+  if (
+    resolution.parentId !== parentId ||
+    !sameStringArray(resolution.oldOrder, oldOrder) ||
+    !sameStringArray(resolution.order, order)
+  ) {
+    throw new PptvReconcileResolutionError(
+      "Resolution parentId/oldOrder/order does not exactly match the source parent and reviewed Office insertion position.",
+    );
+  }
+  const operation: CloneConnectorOperation = {
+    op: "clone-connector",
+    templateId: resolution.duplicateId,
+    newId: resolution.newId,
+    parentId,
+    oldOrder,
+    order,
+    oldConnector: {
+      fromId,
+      toId,
+      endpoints: oldEndpoints,
+      style: oldStyle,
+    },
+    connector,
+  };
+  return Object.freeze({
+    duplicateId: resolution.duplicateId,
+    newId: resolution.newId,
+    slidePartName: mapSlide.partName,
+    baselineOccurrence: matchedBaselineOccurrence,
+    copiedOccurrence: copiedEntry.occurrence,
+    baselineOccurrenceFingerprintSha256: baselineFingerprintSha256,
+    copiedOccurrenceFingerprintSha256: copiedEntry.sha256,
+    operation: deepFreeze(operation),
+  });
+}
+
+function deriveReviewedCloneOrder(
+  mapObjects: PptvPptxMap["slides"][number]["objects"],
+  editedSlide: PptxInspection["slides"][number],
+  parentId: string | null,
+  duplicateId: string,
+  newId: string,
+  baselineOccurrence: PptxIdentityOccurrence,
+  copiedOccurrence: PptxIdentityOccurrence,
+): string[] {
+  const siblings = mapObjects
+    .filter((object) => object.parentId === parentId)
+    .sort((left, right) => left.order - right.order);
+  const events: Array<{ readonly id: string; readonly order: number }> = [];
+  for (const sibling of siblings) {
+    if (sibling.id === duplicateId) {
+      events.push({ id: sibling.id, order: baselineOccurrence.order });
+      continue;
+    }
+    const identity = editedSlide.identities.find(
+      (candidate) => candidate.id === sibling.id,
+    );
+    if (
+      identity?.status !== "unique" ||
+      identity.occurrences.length !== 1 ||
+      identity.occurrences[0]?.parentId !== parentId
+    ) {
+      throw new PptvReconcileResolutionError(
+        "Every existing sibling must remain one unique object in the same parent before a reviewed insertion can be recovered.",
+      );
+    }
+    events.push({ id: sibling.id, order: identity.occurrences[0].order });
+  }
+  events.push({ id: newId, order: copiedOccurrence.order });
+  const ordered = [...events].sort(
+    (left, right) => left.order - right.order || compareText(left.id, right.id),
+  );
+  if (
+    new Set(ordered.map((entry) => entry.order)).size !== ordered.length ||
+    ordered.some((entry, index) => entry.order !== index)
+  ) {
+    throw new PptvReconcileResolutionError(
+      "Reviewed connector insertion order is not one complete unambiguous direct-child sequence.",
+    );
+  }
+  const oldOrder = siblings.map((object) => object.id);
+  const order = ordered.map((entry) => entry.id);
+  if (
+    !sameStringArray(
+      order.filter((id) => id !== newId),
+      oldOrder,
+    )
+  ) {
+    throw new PptvReconcileResolutionError(
+      "Reviewed connector insertion also reorders existing siblings.",
+    );
+  }
+  return order;
+}
+
+function sameSupportedSlideSemanticsAfterConnectorClone(
+  edited: PptxInspection,
+  regenerated: PptxInspection,
+  plan: ReviewedConnectorClonePlan,
+): boolean {
+  if (edited.slides.length !== regenerated.slides.length) return false;
+  return regenerated.slides.every((regeneratedSlide) => {
+    const editedSlide = edited.slides.find(
+      (slide) => slide.partName === regeneratedSlide.partName,
+    );
+    if (
+      editedSlide === undefined ||
+      editedSlide.inventoryNormalizedSkeletonSignature !==
+        regeneratedSlide.inventoryNormalizedSkeletonSignature ||
+      regeneratedSlide.identities.some(
+        (identity) => identity.status !== "unique",
+      )
+    ) {
+      return false;
+    }
+    const editedOccurrenceCount = editedSlide.identities.reduce(
+      (sum, identity) => sum + identity.occurrences.length,
+      0,
+    );
+    if (editedOccurrenceCount !== regeneratedSlide.objects.length) return false;
+    const editedById = new Map(
+      editedSlide.objects.map((object) => [object.id, object] as const),
+    );
+    return regeneratedSlide.objects.every((regeneratedObject) => {
+      if (
+        regeneratedSlide.partName === plan.slidePartName &&
+        regeneratedObject.id === plan.duplicateId
+      ) {
+        return sameOccurrenceAndRegeneratedObject(
+          plan.baselineOccurrence,
+          regeneratedObject,
+        );
+      }
+      if (
+        regeneratedSlide.partName === plan.slidePartName &&
+        regeneratedObject.id === plan.newId
+      ) {
+        return sameOccurrenceAndRegeneratedObject(
+          plan.copiedOccurrence,
+          regeneratedObject,
+        );
+      }
+      const editedObject = editedById.get(regeneratedObject.id);
+      return (
+        editedObject !== undefined &&
+        sameInspectedObjectSemantics(editedObject, regeneratedObject)
+      );
+    });
+  });
+}
+
+function sameOccurrenceAndRegeneratedObject(
+  occurrence: PptxIdentityOccurrence,
+  regenerated: PptxInspectedObject,
+): boolean {
+  return (
+    occurrence.element === regenerated.element &&
+    occurrence.parentId === regenerated.parentId &&
+    occurrence.order === regenerated.order &&
+    occurrence.identityNormalizedStructureSignature ===
+      regenerated.identityNormalizedStructureSignature &&
+    sameJson(occurrence.geometry, regenerated.geometry) &&
+    sameJson(occurrence.style, regenerated.style)
+  );
+}
+
+function sameInspectedObjectSemantics(
+  left: PptxInspectedObject,
+  right: PptxInspectedObject,
+): boolean {
+  return (
+    left.element === right.element &&
+    left.parentId === right.parentId &&
+    left.order === right.order &&
+    left.structureSignature === right.structureSignature &&
+    left.text === right.text &&
+    sameJson(left.geometry, right.geometry) &&
+    sameJson(left.style, right.style)
+  );
+}
+
 function finiteFields(
   value: Readonly<Record<string, unknown>>,
   fields: readonly string[],
@@ -1133,6 +1730,10 @@ function sameStringArray(
     left.length === right.length &&
     left.every((value, index) => value === right[index])
   );
+}
+
+function compareText(left: string, right: string): number {
+  return left < right ? -1 : left > right ? 1 : 0;
 }
 
 function cleanNumber(value: number): number {
@@ -1200,6 +1801,543 @@ function validPlacement(value: Record<string, unknown>): boolean {
   );
 }
 
+function reconciliationFindingInputs(
+  baseline: PptxInspection,
+  edited: PptxInspection,
+  changes: readonly PptvOfficeChange[],
+  operations: readonly PptvPatchOperation[],
+  diagnostics: readonly Diagnostic[],
+): readonly PptvReconciliationFindingInput[] {
+  const result: PptvReconciliationFindingInput[] = [];
+  const operationIds = operations.map(operationId);
+
+  for (const normalization of edited.normalizations) {
+    const baselineRaw = baseline.rawPartSignatures[normalization.partName];
+    const editedRaw = edited.rawPartSignatures[normalization.partName];
+    if (
+      baselineRaw === editedRaw &&
+      baseline.partSha256[normalization.partName] ===
+        edited.partSha256[normalization.partName]
+    ) {
+      continue;
+    }
+    result.push({
+      disposition: "auto-fixable",
+      effect: "normalization",
+      code: "PPTV-RECONCILE-NORMALIZED",
+      title: normalizationTitle(normalization.ruleId),
+      message: normalization.message,
+      occurrenceCount: normalization.occurrenceCount,
+      scope: {
+        kind: "part",
+        partName: normalization.partName,
+      },
+      evidence: [
+        {
+          kind: "digest",
+          ...(baseline.partSha256[normalization.partName] === undefined
+            ? {}
+            : {
+                baselineSha256: baseline.partSha256[normalization.partName],
+              }),
+          ...(edited.partSha256[normalization.partName] === undefined
+            ? {}
+            : { editedSha256: edited.partSha256[normalization.partName] }),
+        },
+        {
+          kind: "normalization-proof",
+          predicates: normalization.predicates,
+        },
+      ],
+      normalizationRule: {
+        id: normalization.ruleId,
+        proofStatus: "proven",
+        semanticScope: normalization.semanticScope,
+      },
+      suggestedResolution: {
+        summary:
+          "No source edit is required; retain the evidence and compare the canonical semantic form.",
+        options: [
+          {
+            id: "accept-proven-normalization",
+            description:
+              "Accept this narrowly proven serialization normalization.",
+            consequence:
+              "The exact edited PPTX remains untouched while C10 excludes this rewrite from the source delta.",
+          },
+        ],
+      },
+      blocks: [],
+    });
+  }
+
+  const objectNormalizationGroups = new Map<
+    string,
+    {
+      readonly ruleId: string;
+      readonly partName: string;
+      readonly semanticScope: string;
+      readonly message: string;
+      readonly objectIds: string[];
+    }
+  >();
+  for (const slide of edited.slides) {
+    for (const object of slide.objects) {
+      for (const normalization of object.normalizations) {
+        const baselineObject = baseline.slides
+          .find((candidate) => candidate.partName === slide.partName)
+          ?.objects.find((candidate) => candidate.id === object.id);
+        if (
+          baselineObject === undefined ||
+          baselineObject.structureSignature !== object.structureSignature
+        ) {
+          continue;
+        }
+        const key = `${normalization.ruleId}\0${normalization.partName}`;
+        const group = objectNormalizationGroups.get(key) ?? {
+          ruleId: normalization.ruleId,
+          partName: normalization.partName,
+          semanticScope: normalization.semanticScope,
+          message: normalization.message,
+          objectIds: [],
+        };
+        group.objectIds.push(object.id);
+        objectNormalizationGroups.set(key, group);
+      }
+    }
+  }
+  for (const group of objectNormalizationGroups.values()) {
+    result.push({
+      disposition: "auto-fixable",
+      effect: "normalization",
+      code: "PPTV-RECONCILE-NORMALIZED",
+      title: "End-paragraph insertion marker omitted",
+      message: group.message,
+      occurrenceCount: group.objectIds.length,
+      scope: { kind: "part", partName: group.partName },
+      evidence: [
+        {
+          kind: "normalization-proof",
+          edited: { objectIds: [...group.objectIds].sort(compareText) },
+          predicates: [
+            {
+              name: "single-complete-existing-run",
+              passed: true,
+              expected: group.objectIds.length,
+              actual: group.objectIds.length,
+            },
+            {
+              name: "normalized-structure-equals-baseline",
+              passed: true,
+              expected: true,
+              actual: true,
+            },
+          ],
+        },
+      ],
+      normalizationRule: {
+        id: group.ruleId,
+        proofStatus: "proven",
+        semanticScope: group.semanticScope,
+      },
+      suggestedResolution: {
+        summary:
+          "No source edit is required for existing rendered text; future PowerPoint insertion defaults are outside this equivalence.",
+        options: [
+          {
+            id: "accept-existing-content-equivalence",
+            description:
+              "Accept the omitted marker for the complete existing run.",
+            consequence:
+              "C9 regeneration restores the explicit end marker without changing the existing text run.",
+          },
+        ],
+      },
+      blocks: [],
+    });
+  }
+
+  for (const change of changes) {
+    const operation = matchingOperation(change, operations);
+    const candidateOperationId =
+      operation === undefined ? undefined : operationId(operation);
+    if (change.kind === "unsupported") {
+      result.push({
+        disposition: "review-required",
+        effect: "source-change",
+        code: "PPTV-RECONCILE-UNSUPPORTED",
+        title: `Unsupported ${change.field} change`,
+        message: change.message,
+        scope: {
+          kind: change.scope,
+          ...(change.objectId === undefined
+            ? {}
+            : { objectId: change.objectId }),
+          ...(change.scope === "package"
+            ? { partName: change.field }
+            : { field: change.field }),
+        },
+        evidence: [{ kind: "semantic-delta", edited: change.message }],
+        suggestedResolution: {
+          summary:
+            "Review or undo the unsupported Office edit, or author the intended structure explicitly in canonical PPTV source.",
+          options: [
+            {
+              id: "undo-and-rerun",
+              description:
+                "Undo the unsupported PowerPoint structure and rerun reconciliation.",
+              consequence:
+                "Remaining supported changes may become one validated patch.",
+            },
+            {
+              id: "author-in-source",
+              description:
+                "Represent the intended change explicitly in canonical PPTV source.",
+              consequence:
+                "Compile a new authenticated branch; do not infer source structure from this Office object.",
+            },
+          ],
+        },
+        blocks: operationIds,
+      });
+      continue;
+    }
+    const oldValue = change.kind === "text" ? change.oldText : change.oldValue;
+    const newValue = change.kind === "text" ? change.newText : change.newValue;
+    result.push({
+      disposition: "auto-fixable",
+      effect: "source-change",
+      code: "PPTV-RECONCILE-SUPPORTED-CHANGE",
+      title: supportedChangeTitle(change),
+      message: supportedChangeMessage(change),
+      scope: {
+        kind: "object",
+        ...(change.objectId === undefined ? {} : { objectId: change.objectId }),
+        ...(!("parentId" in change) || change.parentId === undefined
+          ? {}
+          : { objectId: change.parentId }),
+        field: change.field,
+      },
+      evidence: [
+        {
+          kind: "semantic-delta",
+          baseline: oldValue,
+          edited: newValue,
+        },
+      ],
+      suggestedResolution: {
+        summary:
+          "Apply only as part of the complete old-value-preconditioned C5 transaction after every blocker is resolved.",
+        options: [
+          {
+            id: "apply-validated-transaction",
+            description:
+              "Review the typed operation, run patch validation, and write a new source output.",
+            consequence:
+              "The edited PPTX and canonical input remain unchanged; regenerated C9 semantics must match.",
+          },
+        ],
+      },
+      ...(candidateOperationId === undefined ? {} : { candidateOperationId }),
+      blocks: [],
+    });
+  }
+
+  const representedMessages = new Set(
+    changes
+      .filter(
+        (change): change is PptvOfficeUnsupportedChange =>
+          change.kind === "unsupported",
+      )
+      .map((change) => change.message),
+  );
+  for (const diagnostic of diagnostics) {
+    if (
+      diagnostic.code === "PPTV-RECONCILE-DUPLICATE-ID" &&
+      diagnostic.objectId !== undefined
+    ) {
+      const identity = findIdentity(edited, diagnostic.objectId, "duplicate");
+      result.push(
+        duplicateIdentityFinding(
+          diagnostic,
+          findIdentity(baseline, diagnostic.objectId, "unique"),
+          identity,
+          operationIds,
+          baseline.pptxSha256,
+        ),
+      );
+      continue;
+    }
+    if (representedMessages.has(diagnostic.message)) continue;
+    if (
+      diagnostic.code === "PPTV-RECONCILE-UNSUPPORTED" &&
+      result.some(
+        (finding) =>
+          finding.code === diagnostic.code &&
+          finding.scope.objectId === diagnostic.objectId &&
+          finding.message.includes(diagnostic.objectId ?? "\u0000"),
+      )
+    ) {
+      continue;
+    }
+    result.push(diagnosticFindingInput(diagnostic, operationIds));
+  }
+  return Object.freeze(result);
+}
+
+function duplicateIdentityFinding(
+  diagnostic: Diagnostic,
+  baselineIdentity: PptxIdentityMatch | undefined,
+  identity: PptxIdentityMatch | undefined,
+  operationIds: readonly string[],
+  comparisonPptxSha256: string,
+): PptvReconciliationFindingInput {
+  const baselineOccurrence = baselineIdentity?.occurrences[0];
+  const baselineOccurrenceFingerprintSha256 =
+    baselineOccurrence === undefined
+      ? undefined
+      : connectorOccurrenceFingerprintSha256(baselineOccurrence);
+  const editedOccurrenceFingerprintSha256s =
+    identity?.occurrences.map((occurrence) =>
+      connectorOccurrenceFingerprintSha256(occurrence),
+    ) ?? [];
+  const resolutionGuidance = connectorDuplicateResolutionGuidance(
+    baselineOccurrenceFingerprintSha256,
+    editedOccurrenceFingerprintSha256s,
+  );
+  return {
+    disposition: "refused",
+    effect: "trust",
+    code: diagnostic.code,
+    title: "Duplicate stable Office identity",
+    message: diagnostic.message,
+    occurrenceCount: identity?.occurrences.length ?? 2,
+    scope: {
+      kind: "object",
+      ...(diagnostic.objectId === undefined
+        ? {}
+        : { objectId: diagnostic.objectId }),
+    },
+    evidence: [
+      {
+        kind: "identity-occurrence",
+        baseline: {
+          requiredOccurrenceCount: 1,
+          comparisonPptxSha256,
+          ...(baselineOccurrence === undefined
+            ? {}
+            : {
+                occurrenceFingerprintSha256:
+                  baselineOccurrenceFingerprintSha256,
+              }),
+        },
+        edited: {
+          occurrenceCount: identity?.occurrences.length ?? 0,
+          occurrences:
+            identity?.occurrences.map((occurrence) => ({
+              element: occurrence.element,
+              numericId: occurrence.numericId,
+              parentId: occurrence.parentId,
+              order: occurrence.order,
+              geometry: occurrence.geometry,
+              style: occurrence.style,
+              connections: occurrence.connections,
+              hasCreationId: occurrence.hasCreationId,
+              semanticError: occurrence.semanticError,
+              semanticFingerprintSha256:
+                connectorOccurrenceFingerprintSha256(occurrence),
+            })) ?? [],
+          numericIdsAreAuthority: false,
+          resolutionAssessment: resolutionGuidance.assessment,
+        },
+      },
+    ],
+    suggestedResolution: {
+      summary: resolutionGuidance.summary,
+      options: resolutionGuidance.options,
+    },
+    blocks: operationIds,
+  };
+}
+
+function reviewedConnectorCloneFinding(
+  plan: ReviewedConnectorClonePlan,
+): PptvReconciliationFindingInput {
+  const candidateOperationId = operationId(plan.operation);
+  return {
+    disposition: "auto-fixable",
+    effect: "source-change",
+    code: "PPTV-RECONCILE-REVIEWED-CONNECTOR-CLONE",
+    title: "Reviewed connector copy has one exact source inverse",
+    message: `The copied occurrence of "src.${plan.duplicateId}" is explicitly assigned fresh stable ID "${plan.newId}" and maps to one C5 clone-connector operation.`,
+    scope: {
+      kind: "object",
+      objectId: plan.duplicateId,
+      field: "connector-copy",
+    },
+    evidence: [
+      {
+        kind: "identity-occurrence",
+        baseline: {
+          occurrenceFingerprintSha256: plan.baselineOccurrenceFingerprintSha256,
+          parentId: plan.baselineOccurrence.parentId,
+          order: plan.baselineOccurrence.order,
+        },
+        edited: {
+          newId: plan.newId,
+          occurrenceFingerprintSha256: plan.copiedOccurrenceFingerprintSha256,
+          parentId: plan.copiedOccurrence.parentId,
+          order: plan.copiedOccurrence.order,
+          connector: plan.operation.connector,
+        },
+      },
+    ],
+    suggestedResolution: {
+      summary:
+        "Apply only through the complete hash-bound C5 0.3 transaction and retain C9 regeneration equality as the acceptance proof.",
+      options: [
+        {
+          id: "apply-reviewed-connector-clone",
+          description:
+            "Apply the validated clone-connector operation with the reviewed fresh stable ID.",
+          consequence:
+            "Canonical source gains exactly one same-parent connector; neither Office input nor the original source is overwritten.",
+        },
+      ],
+    },
+    candidateOperationId,
+    blocks: [],
+  };
+}
+
+function diagnosticFindingInput(
+  diagnostic: Diagnostic,
+  operationIds: readonly string[] = [],
+): PptvReconciliationFindingInput {
+  const refused =
+    TRUST_DIAGNOSTIC_CODES.has(diagnostic.code) ||
+    diagnostic.code === "PPTV-RECONCILE-INVALID-SOURCE" ||
+    diagnostic.code === "PPTV-RECONCILE-INVALID-BASELINE" ||
+    diagnostic.code === "PPTV-RECONCILE-STALE-SOURCE" ||
+    diagnostic.code === "PPTV-RECONCILE-PATCH";
+  return {
+    disposition: refused ? "refused" : "review-required",
+    effect: refused ? "trust" : "source-change",
+    code: diagnostic.code,
+    title: refused
+      ? "Reconciliation trust check failed"
+      : "Office change requires review",
+    message: diagnostic.message,
+    scope: {
+      kind: diagnostic.objectId === undefined ? "package" : "object",
+      ...(diagnostic.slideId === undefined
+        ? {}
+        : { slideId: diagnostic.slideId }),
+      ...(diagnostic.objectId === undefined
+        ? {}
+        : { objectId: diagnostic.objectId }),
+    },
+    evidence: [
+      {
+        kind: "semantic-delta",
+        edited: {
+          code: diagnostic.code,
+          severity: diagnostic.severity,
+        },
+      },
+    ],
+    suggestedResolution: {
+      summary: refused
+        ? "Restore authenticated lineage and unique stable identity before attempting any source patch."
+        : "Review the exact Office structure and either undo it or represent it explicitly in canonical source.",
+      options: [
+        {
+          id: refused ? "restore-trust-boundary" : "review-office-delta",
+          description: refused
+            ? "Supply the exact authenticated baseline and unique mapped identities."
+            : "Review or undo the unsupported Office delta, then rerun.",
+          consequence: "No patch is emitted while this finding remains.",
+        },
+      ],
+    },
+    blocks: operationIds,
+  };
+}
+
+function findIdentity(
+  inspection: PptxInspection,
+  objectId: string,
+  status: PptxIdentityMatch["status"],
+): PptxIdentityMatch | undefined {
+  return inspection.slides
+    .flatMap((slide) => slide.identities)
+    .find((identity) => identity.id === objectId && identity.status === status);
+}
+
+function matchingOperation(
+  change: PptvOfficeChange,
+  operations: readonly PptvPatchOperation[],
+): PptvPatchOperation | undefined {
+  if (change.kind === "unsupported") return undefined;
+  const objectId = change.objectId;
+  const parentId = "parentId" in change ? change.parentId : undefined;
+  return operations.find((operation) => {
+    if (
+      "id" in operation &&
+      objectId !== undefined &&
+      operation.id === objectId
+    ) {
+      return true;
+    }
+    return (
+      operation.op === "set-child-order" &&
+      parentId !== undefined &&
+      operation.parentId === parentId
+    );
+  });
+}
+
+function normalizationTitle(ruleId: string): string {
+  const titles: Record<string, string> = {
+    "pptv-c10/content-type-set/1": "Content-type declaration order normalized",
+    "pptv-c10/relationship-graph/1": "Relationship IDs and order normalized",
+    "pptv-c10/relationship-reference/1":
+      "Relationship references resolved semantically",
+    "pptv-c10/view-properties-inert/1":
+      "PowerPoint view state excluded from source semantics",
+    "pptv-c10/table-styles-inert/1":
+      "Empty default table styles excluded from current content",
+    "pptv-c10/slide-size-preset-omitted/1":
+      "Optional 16:9 preset label restored semantically",
+    "pptv-c10/root-zero-group-transform/1":
+      "All-zero root transform normalized",
+    "pptv-c10/theme-empty-defaults/1": "Empty theme defaults normalized",
+    "pptv-c10/presentation-property-defaults/1":
+      "Inert image/chart defaults normalized",
+    "pptv-c10/generated-metadata/1":
+      "Generated Office metadata excluded from source authority",
+  };
+  return titles[ruleId] ?? "Proven Office serialization normalization";
+}
+
+function supportedChangeTitle(
+  change: Exclude<PptvOfficeChange, PptvOfficeUnsupportedChange>,
+): string {
+  return change.kind === "text"
+    ? "Direct text change"
+    : `${change.kind.replaceAll("-", " ")} change`;
+}
+
+function supportedChangeMessage(
+  change: Exclude<PptvOfficeChange, PptvOfficeUnsupportedChange>,
+): string {
+  const target =
+    change.objectId ??
+    ("parentId" in change ? change.parentId : undefined) ??
+    "<unknown>";
+  return `Mapped object "${target}" has one exact supported ${change.field} delta.`;
+}
+
 function safeSerializeMap(map: unknown): string | undefined {
   try {
     return serializePptvPptxMap(map as PptvPptxMap);
@@ -1212,6 +2350,8 @@ function patchFailure(
   context: ResultContext,
   changes: readonly PptvOfficeChange[],
   related: readonly Diagnostic[],
+  findingInputs: readonly PptvReconciliationFindingInput[] = [],
+  operations: readonly PptvPatchOperation[] = [],
 ): PptvReconciliationResult {
   return refused(
     context,
@@ -1219,6 +2359,8 @@ function patchFailure(
     "Proposed typed operations did not pass exact current C5 validation, application, and C9 regeneration.",
     related,
     changes,
+    findingInputs,
+    operations,
   );
 }
 
@@ -1226,6 +2368,7 @@ interface ResultContext {
   readonly sourceSha256: string;
   readonly baselineMapSha256: string;
   readonly editedPptxSha256: string;
+  readonly nativeBaselinePptxSha256?: string;
 }
 
 function refused(
@@ -1234,24 +2377,32 @@ function refused(
   message: string,
   related: readonly Diagnostic[] = [],
   changes: readonly PptvOfficeChange[] = [],
+  findingInputs: readonly PptvReconciliationFindingInput[] = [],
+  operations: readonly PptvPatchOperation[] = [],
 ): PptvReconciliationResult {
-  return resultWithDiagnostics("refused", context, changes, [
-    {
-      code,
-      severity: "error",
-      message,
-      ...(related.length === 0
-        ? {}
-        : {
-            related: related.map((diagnostic) => ({
-              message: `${diagnostic.code}: ${diagnostic.message}`,
-              ...(diagnostic.range === undefined
-                ? {}
-                : { range: diagnostic.range }),
-            })),
-          }),
-    },
-  ]);
+  const diagnostic: Diagnostic = {
+    code,
+    severity: "error",
+    message,
+    ...(related.length === 0
+      ? {}
+      : {
+          related: related.map((entry) => ({
+            message: `${entry.code}: ${entry.message}`,
+            ...(entry.range === undefined ? {} : { range: entry.range }),
+          })),
+        }),
+  };
+  return resultWithDiagnostics(
+    "refused",
+    context,
+    changes,
+    [diagnostic],
+    findingInputs.length === 0
+      ? [diagnosticFindingInput(diagnostic)]
+      : findingInputs,
+    operations,
+  );
 }
 
 function resultWithDiagnostics(
@@ -1259,12 +2410,22 @@ function resultWithDiagnostics(
   context: ResultContext,
   changes: readonly PptvOfficeChange[],
   diagnostics: readonly Diagnostic[],
+  findingInputs: readonly PptvReconciliationFindingInput[] = [],
+  operations: readonly PptvPatchOperation[] = [],
 ): PptvReconciliationResult {
+  const presentation = buildReconciliationPresentation(
+    status,
+    findingInputs.length === 0
+      ? diagnostics.map((diagnostic) => diagnosticFindingInput(diagnostic))
+      : findingInputs,
+    operations,
+  );
   return Object.freeze({
-    schema: "pptv-pptx-reconciliation/0.1",
+    schema: "pptv-pptx-reconciliation/0.2",
     status,
     ...context,
     changes: Object.freeze([...changes]),
+    ...presentation,
     diagnostics: Object.freeze([...diagnostics]),
   });
 }

@@ -27,8 +27,8 @@ change:
 
 - the currently accepted source/container identifier `0.1`;
 - current `@office180/pptv@0.1.0-alpha.4` runtime behavior;
-- C4/C6-C8 at revision 1.1, C5 at revision 1.2, or the C9/C10 1.0
-  compiler/reconciliation profiles;
+- C4/C6-C8 at revision 1.1, C5 at revision 1.3, C9 at revision 1.0,
+  C10 at revision 1.2, or C11 at revision 1.1;
 - the `pptv-resolved*/0.1`, `pptv-text-fit*/0.1`, browser, or compiler
   capability identifiers;
 - the current C7 one-line `wrap="none"` canary; or
@@ -109,8 +109,10 @@ fail closed or return an explicit unverified result when it cannot prove the
 required capacity.
 
 This is a layout-reliability policy, not a PDF-equivalence or pixel-fidelity
-claim. Native PowerPoint calibration, quantitative render comparison, and
-save/reopen remain promotion gates.
+claim. C11's 2026-08-02 exact-path no-op Office lifecycle does not exercise this
+future paragraph behavior. Representative native PowerPoint calibration,
+quantitative render comparison, save/reopen, and human review therefore remain
+promotion gates.
 
 ### 3.2 Editable
 
@@ -206,7 +208,9 @@ Required fixtures include start/middle/end anchors, explicit and empty lines,
 spaces at break boundaries, exact-capacity and slightly-overrun lines, all
 grace boundaries, unverified fonts/glyphs, deterministic PPTX bytes, schema
 validation, independent reopen, PowerPoint open/save/reopen, and quantitative
-browser/Office render comparison.
+browser/Office render comparison. The native fixture must perform and verify
+the proposed paragraph behavior; the current C11 no-op bridge result cannot
+substitute for it.
 
 ## 7. Version vocabulary
 

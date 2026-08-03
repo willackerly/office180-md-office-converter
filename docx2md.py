@@ -3,7 +3,7 @@
 """docx2md — styled DOCX -> canonical Markdown (reverse of md2docx.py).
 
 CONTRACT:C2-PROVENANCE.2.0
-CONTRACT:C3-ROUNDTRIP.1.1
+CONTRACT:C3-ROUNDTRIP.1.2
 
 Style-driven-inversion converter: it walks the document body in order and
 inverts the forward converter's construct->style mapping:
@@ -18,10 +18,11 @@ inverts the forward converter's construct->style mapping:
 
 Adjacent runs with identical formatting are merged before emitting so words
 are not fragmented. Output is canonical MD: "-" bullets, "**" bold, one blank
-line between blocks, no trailing whitespace. C3 1.1 adds exact canonical
-equality, explicit lossiness refusals, an embedded C2 2.0 merge base, fidelity
-reporting, and opt-in three-way merge. Recovering link markup demoted by the
-forward tool remains outside this profile.
+line between blocks, no trailing whitespace. C3 1.2 adds exact or explicitly
+normalized canonical equality, explicit lossiness refusals, an embedded C2 2.0
+merge base, semantic controlled-style evidence, fidelity reporting, and opt-in
+three-way merge. Recovering link markup demoted by the forward tool remains
+outside this profile.
 
 Usage:
   docx2md.py file.docx [-o out.md]      # default output next to input
@@ -80,6 +81,32 @@ MAX_EMBEDDED_SOURCE_BYTES = 8 * 1024 * 1024
 MAX_DOCX_PARTS = 10_000
 MAX_DOCX_UNCOMPRESSED_BYTES = 256 * 1024 * 1024
 SHA256_PATTERN = re.compile(r"^[a-f0-9]{64}$")
+VISUAL_STYLE_PROJECTION_SCHEMA = (
+    "office180-docx-visual-style-projection/0.2"
+)
+ROUNDTRIP_REPORT_SCHEMA = "office180-docx-roundtrip-report/0.2"
+VISUAL_STYLE_DRIFT_CODE = "DOCX-ROUNDTRIP-VISUAL-STYLE-DRIFT"
+VISUAL_STYLE_NATIVE_NORMALIZATION_CODE = (
+    "DOCX-ROUNDTRIP-VISUAL-STYLE-NATIVE-NORMALIZATION"
+)
+EXPLICIT_FONT_ATTRIBUTES = ("ascii", "hAnsi", "eastAsia", "cs")
+THEME_FONT_ATTRIBUTES = (
+    "asciiTheme",
+    "hAnsiTheme",
+    "eastAsiaTheme",
+    "cstheme",
+)
+CONTROLLED_STYLE_IDS = (
+    "Normal",
+    "Heading1",
+    "Heading1Char",
+    "Heading2",
+    "Heading2Char",
+    "Heading3",
+    "Heading3Char",
+    "Heading4",
+    "Heading4Char",
+)
 SUPPORTED_BODY_STYLES = {
     "Normal",
     "Heading 1",
@@ -746,6 +773,567 @@ def read_embedded_source(docx_path, required=False):
         _read_safe_docx_parts(docx_path), required=required)
 
 
+# ---------- controlled visual-style projection ----------
+
+def _on_off_projection(r_pr, name):
+    if r_pr is None:
+        return None
+    element = r_pr.find(qn(f"w:{name}"))
+    if element is None:
+        return None
+    return element.get(qn("w:val"), "1").lower() not in (
+        "0", "false", "off")
+
+
+def _style_reference(style, name):
+    element = style.find(qn(f"w:{name}"))
+    return None if element is None else element.get(qn("w:val"))
+
+
+def _project_controlled_style(style):
+    r_pr = style.find(qn("w:rPr"))
+    r_fonts = None if r_pr is None else r_pr.find(qn("w:rFonts"))
+    color = None if r_pr is None else r_pr.find(qn("w:color"))
+    size = None if r_pr is None else r_pr.find(qn("w:sz"))
+    size_cs = None if r_pr is None else r_pr.find(qn("w:szCs"))
+    return {
+        "styleId": style.get(qn("w:styleId")),
+        "styleType": style.get(qn("w:type")),
+        "basedOn": _style_reference(style, "basedOn"),
+        "link": _style_reference(style, "link"),
+        "explicitFonts": {
+            name: (
+                None
+                if r_fonts is None
+                else r_fonts.get(qn(f"w:{name}"))
+            )
+            for name in EXPLICIT_FONT_ATTRIBUTES
+        },
+        "themeFonts": {
+            name: (
+                None
+                if r_fonts is None
+                else r_fonts.get(qn(f"w:{name}"))
+            )
+            for name in THEME_FONT_ATTRIBUTES
+        },
+        "sizeHalfPoints": {
+            "latin": None if size is None else size.get(qn("w:val")),
+            "complex": (
+                None if size_cs is None else size_cs.get(qn("w:val"))
+            ),
+        },
+        "bold": {
+            "latin": _on_off_projection(r_pr, "b"),
+            "complex": _on_off_projection(r_pr, "bCs"),
+        },
+        "italic": {
+            "latin": _on_off_projection(r_pr, "i"),
+            "complex": _on_off_projection(r_pr, "iCs"),
+        },
+        "color": None if color is None else color.get(qn("w:val")),
+    }
+
+
+def _theme_font_context(parts):
+    theme_name = "word/theme/theme1.xml"
+    if theme_name not in parts:
+        return {"majorLatin": None, "minorLatin": None}
+    root = _parse_xml_part(
+        parts, theme_name, code="DOCX-ROUNDTRIP-PACKAGE")
+    drawing_ns = "http://schemas.openxmlformats.org/drawingml/2006/main"
+
+    def latin(kind):
+        element = root.find(
+            f".//{{{drawing_ns}}}{kind}Font/{{{drawing_ns}}}latin")
+        return None if element is None else element.get("typeface")
+
+    return {"majorLatin": latin("major"), "minorLatin": latin("minor")}
+
+
+def _explicit_family(style_projection):
+    values = list(style_projection["explicitFonts"].values())
+    if any(value is None or not value for value in values):
+        return None
+    unique = set(values)
+    return values[0] if len(unique) == 1 else None
+
+
+def _all_none(values):
+    return all(value is None for value in values.values())
+
+
+def _default_character_style_is_neutral(style_projection):
+    if style_projection is None:
+        return False
+    return (
+        style_projection["styleType"] == "character"
+        and style_projection["basedOn"] is None
+        and style_projection["link"] is None
+        and _all_none(style_projection["explicitFonts"])
+        and _all_none(style_projection["themeFonts"])
+        and _all_none(style_projection["sizeHalfPoints"])
+        and _all_none(style_projection["bold"])
+        and _all_none(style_projection["italic"])
+        and style_projection["color"] is None
+    )
+
+
+def _effective_false_toggle(style_projection, document_defaults, name):
+    values = {}
+    for script in ("latin", "complex"):
+        direct = style_projection[name][script]
+        inherited = document_defaults[name][script]
+        values[script] = (
+            direct
+            if direct is not None
+            else inherited
+            if inherited is not None
+            else False
+        )
+    return values == {"latin": False, "complex": False}
+
+
+def _project_visual_styles(parts):
+    styles_root = _parse_xml_part(
+        parts, "word/styles.xml", code="DOCX-ROUNDTRIP-PACKAGE")
+    styles_by_id = {
+        style.get(qn("w:styleId")): style
+        for style in styles_root.findall(qn("w:style"))
+        if style.get(qn("w:styleId"))
+    }
+    projected = []
+    projected_by_id = {}
+    diagnostics = []
+    normalizations = []
+
+    defaults = styles_root.find(
+        f"{qn('w:docDefaults')}/{qn('w:rPrDefault')}/{qn('w:rPr')}"
+    )
+    document_defaults = {
+        "italic": {
+            "latin": _on_off_projection(defaults, "i"),
+            "complex": _on_off_projection(defaults, "iCs"),
+        },
+    }
+    default_character_style = styles_by_id.get("DefaultParagraphFont")
+    default_character_projection = (
+        None
+        if default_character_style is None
+        else _project_controlled_style(default_character_style)
+    )
+    default_character_neutral = _default_character_style_is_neutral(
+        default_character_projection
+    )
+
+    def drift(style_id, property_name, expected, actual):
+        diagnostics.append({
+            "code": VISUAL_STYLE_DRIFT_CODE,
+            "severity": "warning",
+            "styleId": style_id,
+            "property": property_name,
+            "expected": expected,
+            "actual": actual,
+            "message": (
+                f"controlled style {style_id!r} has non-materialized "
+                f"{property_name}"
+            ),
+        })
+
+    def normalized(style_id, property_name, linked_style_id, proof):
+        normalizations.append({
+            "code": VISUAL_STYLE_NATIVE_NORMALIZATION_CODE,
+            "severity": "info",
+            "styleId": style_id,
+            "property": property_name,
+            "effectiveState": "materialized-equivalent",
+            "proof": {
+                "baseStyleId": "Normal",
+                "linkedStyleId": linked_style_id,
+                **proof,
+            },
+            "message": (
+                f"controlled style {style_id!r} has Word-native omitted "
+                f"{property_name} proven equivalent through its exact "
+                "Normal/linked-style cascade"
+            ),
+        })
+
+    for style_id in CONTROLLED_STYLE_IDS:
+        style = styles_by_id.get(style_id)
+        if style is None:
+            drift(style_id, "presence", True, False)
+            continue
+        item = _project_controlled_style(style)
+        projected.append(item)
+        projected_by_id[style_id] = item
+
+    normal = projected_by_id.get("Normal")
+    body_family = _explicit_family(normal) if normal is not None else None
+    if normal is not None:
+        if normal["styleType"] != "paragraph":
+            drift("Normal", "styleType", "paragraph", normal["styleType"])
+        if normal["basedOn"] is not None:
+            drift("Normal", "basedOn", None, normal["basedOn"])
+        if normal["link"] is not None:
+            drift("Normal", "link", None, normal["link"])
+        if body_family is None:
+            drift(
+                "Normal",
+                "explicitFonts",
+                "one non-empty family in all four script slots",
+                normal["explicitFonts"],
+            )
+        if any(normal["themeFonts"].values()):
+            drift("Normal", "themeFonts", {}, normal["themeFonts"])
+        sizes = normal["sizeHalfPoints"]
+        if (
+            sizes["latin"] is None
+            or sizes["latin"] != sizes["complex"]
+        ):
+            drift(
+                "Normal",
+                "sizeHalfPoints",
+                "equal explicit latin and complex sizes",
+                sizes,
+            )
+
+    for level in range(1, 5):
+        paragraph_id = f"Heading{level}"
+        character_id = f"Heading{level}Char"
+        paragraph = projected_by_id.get(paragraph_id)
+        character = projected_by_id.get(character_id)
+        if paragraph is not None:
+            if paragraph["styleType"] != "paragraph":
+                drift(
+                    paragraph_id,
+                    "styleType",
+                    "paragraph",
+                    paragraph["styleType"],
+                )
+            if paragraph["basedOn"] != "Normal":
+                drift(
+                    paragraph_id,
+                    "basedOn",
+                    "Normal",
+                    paragraph["basedOn"],
+                )
+        if character is not None:
+            if character["styleType"] != "character":
+                drift(
+                    character_id,
+                    "styleType",
+                    "character",
+                    character["styleType"],
+                )
+            if character["basedOn"] != "DefaultParagraphFont":
+                drift(
+                    character_id,
+                    "basedOn",
+                    "DefaultParagraphFont",
+                    character["basedOn"],
+                )
+
+        if paragraph is not None and character is not None:
+            links_exact = (
+                paragraph["link"] == character_id
+                and character["link"] == paragraph_id
+            )
+            normal_is_exact_base = (
+                normal is not None
+                and normal["styleType"] == "paragraph"
+                and normal["basedOn"] is None
+                and normal["link"] is None
+                and body_family is not None
+                and not any(normal["themeFonts"].values())
+            )
+            character_is_exact_link = (
+                character["styleType"] == "character"
+                and character["basedOn"] == "DefaultParagraphFont"
+                and _explicit_family(character) == body_family
+                and not any(character["themeFonts"].values())
+                and default_character_neutral
+            )
+            paragraph_is_exact_child = (
+                paragraph["styleType"] == "paragraph"
+                and paragraph["basedOn"] == "Normal"
+                and not any(paragraph["themeFonts"].values())
+            )
+
+            paragraph_family = _explicit_family(paragraph)
+            paragraph_fonts_native = (
+                _all_none(paragraph["explicitFonts"])
+                and paragraph_is_exact_child
+                and normal_is_exact_base
+                and character_is_exact_link
+                and links_exact
+            )
+            if paragraph_fonts_native:
+                normalized(
+                    paragraph_id,
+                    "explicitFonts",
+                    character_id,
+                    {
+                        "omittedDirectValues": paragraph["explicitFonts"],
+                        "baseValues": normal["explicitFonts"],
+                        "linkedValues": character["explicitFonts"],
+                        "effectiveValues": normal["explicitFonts"],
+                    },
+                )
+            elif (
+                paragraph_family is None
+                or (
+                    body_family is not None
+                    and paragraph_family != body_family
+                )
+            ):
+                drift(
+                    paragraph_id,
+                    "explicitFonts",
+                    (
+                        body_family
+                        if body_family is not None
+                        else "one matching explicit family"
+                    ),
+                    paragraph["explicitFonts"],
+                )
+
+            character_family = _explicit_family(character)
+            if character_family is None or (
+                body_family is not None
+                and character_family != body_family
+            ):
+                drift(
+                    character_id,
+                    "explicitFonts",
+                    (
+                        body_family
+                        if body_family is not None
+                        else "one matching explicit family"
+                    ),
+                    character["explicitFonts"],
+                )
+
+            paragraph_italic_native = (
+                _all_none(paragraph["italic"])
+                and paragraph_is_exact_child
+                and normal_is_exact_base
+                and character_is_exact_link
+                and links_exact
+                and character["italic"]
+                == {"latin": False, "complex": False}
+                and _effective_false_toggle(
+                    normal,
+                    document_defaults,
+                    "italic",
+                )
+            )
+            if paragraph_italic_native:
+                normalized(
+                    paragraph_id,
+                    "italic",
+                    character_id,
+                    {
+                        "omittedDirectValues": paragraph["italic"],
+                        "baseValues": normal["italic"],
+                        "documentDefaultValues": (
+                            document_defaults["italic"]
+                        ),
+                        "linkedValues": character["italic"],
+                        "effectiveValues": {
+                            "latin": False,
+                            "complex": False,
+                        },
+                    },
+                )
+            elif paragraph["italic"] != {
+                "latin": False,
+                "complex": False,
+            }:
+                drift(
+                    paragraph_id,
+                    "italic",
+                    {"latin": False, "complex": False},
+                    paragraph["italic"],
+                )
+
+            if character["italic"] != {
+                "latin": False,
+                "complex": False,
+            }:
+                drift(
+                    character_id,
+                    "italic",
+                    {"latin": False, "complex": False},
+                    character["italic"],
+                )
+
+            for style_id, item in (
+                (paragraph_id, paragraph),
+                (character_id, character),
+            ):
+                if any(item["themeFonts"].values()):
+                    drift(
+                        style_id,
+                        "themeFonts",
+                        {},
+                        item["themeFonts"],
+                    )
+                sizes = item["sizeHalfPoints"]
+                if (
+                    sizes["latin"] is None
+                    or sizes["latin"] != sizes["complex"]
+                ):
+                    drift(
+                        style_id,
+                        "sizeHalfPoints",
+                        "equal explicit latin and complex sizes",
+                        sizes,
+                    )
+                bold = item["bold"]
+                if (
+                    bold["latin"] is None
+                    or bold["latin"] != bold["complex"]
+                ):
+                    drift(
+                        style_id,
+                        "bold",
+                        "equal explicit latin and complex values",
+                        bold,
+                    )
+
+            paragraph_for_compare = {
+                **paragraph,
+                "explicitFonts": (
+                    normal["explicitFonts"]
+                    if paragraph_fonts_native
+                    else paragraph["explicitFonts"]
+                ),
+                "italic": (
+                    {"latin": False, "complex": False}
+                    if paragraph_italic_native
+                    else paragraph["italic"]
+                ),
+            }
+            comparable = (
+                "explicitFonts",
+                "themeFonts",
+                "sizeHalfPoints",
+                "bold",
+                "italic",
+                "color",
+            )
+            differences = {
+                name: {
+                    "paragraph": paragraph_for_compare[name],
+                    "character": character[name],
+                }
+                for name in comparable
+                if paragraph_for_compare[name] != character[name]
+            }
+            if differences:
+                drift(
+                    paragraph_id,
+                    "linkedCharacterAgreement",
+                    "matching controlled run properties",
+                    differences,
+                )
+            if paragraph["link"] != character_id:
+                drift(
+                    paragraph_id,
+                    "link",
+                    character_id,
+                    paragraph["link"],
+                )
+            if character["link"] != paragraph_id:
+                drift(
+                    character_id,
+                    "link",
+                    paragraph_id,
+                    character["link"],
+                )
+        else:
+            for style_id, item in (
+                (paragraph_id, paragraph),
+                (character_id, character),
+            ):
+                if item is None:
+                    continue
+                family = _explicit_family(item)
+                if family is None or (
+                    body_family is not None and family != body_family
+                ):
+                    drift(
+                        style_id,
+                        "explicitFonts",
+                        (
+                            body_family
+                            if body_family is not None
+                            else "one matching explicit family"
+                        ),
+                        item["explicitFonts"],
+                    )
+                if item["italic"] != {
+                    "latin": False,
+                    "complex": False,
+                }:
+                    drift(
+                        style_id,
+                        "italic",
+                        {"latin": False, "complex": False},
+                        item["italic"],
+                    )
+                if any(item["themeFonts"].values()):
+                    drift(
+                        style_id,
+                        "themeFonts",
+                        {},
+                        item["themeFonts"],
+                    )
+                sizes = item["sizeHalfPoints"]
+                if (
+                    sizes["latin"] is None
+                    or sizes["latin"] != sizes["complex"]
+                ):
+                    drift(
+                        style_id,
+                        "sizeHalfPoints",
+                        "equal explicit latin and complex sizes",
+                        sizes,
+                    )
+                bold = item["bold"]
+                if (
+                    bold["latin"] is None
+                    or bold["latin"] != bold["complex"]
+                ):
+                    drift(
+                        style_id,
+                        "bold",
+                        "equal explicit latin and complex values",
+                        bold,
+                    )
+
+    return {
+        "schema": VISUAL_STYLE_PROJECTION_SCHEMA,
+        "state": (
+            "drifted"
+            if diagnostics
+            else "native-normalized-materialized-equivalent"
+            if normalizations
+            else "materialized"
+        ),
+        "themeFonts": _theme_font_context(parts),
+        "bodyFont": body_family,
+        "documentDefaults": document_defaults,
+        "cascadeStyles": {
+            "DefaultParagraphFont": default_character_projection,
+        },
+        "styles": projected,
+        "normalizations": normalizations,
+        "diagnostics": diagnostics,
+    }
+
+
 # ---------- main body walk ----------
 
 def heading_level(style_name):
@@ -1078,6 +1666,66 @@ def _document_from_bytes(docx_bytes):
         ) from exc
 
 
+def _normalize_supported_body_paragraph(
+    text,
+    paragraph,
+    paragraph_index,
+):
+    """Apply C3's one diagnosed Word whitespace normalization."""
+    if not text:
+        return text, None
+    if not text.strip():
+        raise RoundtripRefusalError(
+            "DOCX-ROUNDTRIP-NONCANONICAL",
+            "non-code body paragraphs containing only whitespace are "
+            "outside the supported profile",
+        )
+    if text != text.lstrip():
+        raise RoundtripRefusalError(
+            "DOCX-ROUNDTRIP-NONCANONICAL",
+            "supported Word paragraphs must not have leading whitespace",
+        )
+
+    trailing_spaces = len(text) - len(text.rstrip(" "))
+    if trailing_spaces:
+        normalized = text[:-trailing_spaces]
+        if normalized != normalized.rstrip():
+            raise RoundtripRefusalError(
+                "DOCX-ROUNDTRIP-NONCANONICAL",
+                "supported Word paragraphs must not have trailing "
+                "non-U+0020 whitespace",
+            )
+        style = paragraph.style
+        event = {
+            "code": "DOCX-ROUNDTRIP-TRAILING-ASCII-SPACE",
+            "severity": "warning",
+            "story": "word/document.xml",
+            "paragraphIndex": paragraph_index,
+            "styleId": style.style_id if style is not None else "Normal",
+            "styleName": style.name if style is not None else "Normal",
+            "edge": "trailing",
+            "codePoint": "U+0020",
+            "count": trailing_spaces,
+            "inputTextSha256": hashlib.sha256(
+                text.encode("utf8")
+            ).hexdigest(),
+            "message": (
+                f"removed {trailing_spaces} trailing U+0020 "
+                f"character{'s' if trailing_spaces != 1 else ''} from "
+                f"body paragraph {paragraph_index}"
+            ),
+        }
+        return normalized, event
+
+    if text != text.rstrip():
+        raise RoundtripRefusalError(
+            "DOCX-ROUNDTRIP-NONCANONICAL",
+            "supported Word paragraphs must not have trailing "
+            "non-U+0020 whitespace",
+        )
+    return text, None
+
+
 def _convert_docx_bytes_with_report(
     docx_bytes,
     input_name,
@@ -1088,6 +1736,7 @@ def _convert_docx_bytes_with_report(
     snapshot = _read_embedded_source_parts(
         parts, required=require_embedded)
     _preflight_story_parts(parts)
+    visual_style_projection = _project_visual_styles(parts)
     doc = _document_from_bytes(docx_bytes)
     _preflight_supported_docx(doc)
     if report_provenance:
@@ -1095,6 +1744,8 @@ def _convert_docx_bytes_with_report(
 
     blocks = []
     expected_kinds = []
+    normalizations = []
+    body_paragraph_index = -1
 
     # Page-header banner (e.g. a CUI-style marking) -> leading **BANNER** line.
     sec = doc.sections[0]
@@ -1127,6 +1778,7 @@ def _convert_docx_bytes_with_report(
         if tag != "p":
             continue
 
+        body_paragraph_index += 1
         p = Paragraph(child, doc)
 
         # Code-block line: paragraph shading.
@@ -1161,12 +1813,15 @@ def _convert_docx_bytes_with_report(
         text = runs_to_md(p.runs)
 
         # Blank spacer paragraphs the forward tool inserts between blocks.
-        if not text.strip():
+        if not text:
             continue
-        if text != text.strip():
-            raise RoundtripRefusalError(
-                "DOCX-ROUNDTRIP-NONCANONICAL",
-                "supported Word paragraphs must not have outer whitespace")
+        text, normalization = _normalize_supported_body_paragraph(
+            text,
+            p,
+            body_paragraph_index,
+        )
+        if normalization is not None:
+            normalizations.append(normalization)
 
         lvl = heading_level(style)
         if lvl:
@@ -1193,9 +1848,26 @@ def _convert_docx_bytes_with_report(
     md = md.rstrip() + "\n"
     _validate_canonical_inverse(md, expected_kinds)
     input_sha = hashlib.sha256(docx_bytes).hexdigest()
+    diagnostics = []
+    if snapshot is None:
+        diagnostics.append({
+            "code": "DOCX-ROUNDTRIP-NO-MERGE-BASE",
+            "severity": "warning",
+            "message": (
+                "style inversion succeeded, but baseline-aware "
+                "three-way merge is unavailable"
+            ),
+        })
+    diagnostics.extend(normalizations)
+    diagnostics.extend(visual_style_projection["normalizations"])
+    diagnostics.extend(visual_style_projection["diagnostics"])
     report = {
-        "schema": "office180-docx-roundtrip-report/0.1",
-        "state": "exact-supported-profile",
+        "schema": ROUNDTRIP_REPORT_SCHEMA,
+        "state": (
+            "normalized-supported-profile"
+            if normalizations
+            else "exact-supported-profile"
+        ),
         "input": {
             "path": input_name,
             "sha256": input_sha,
@@ -1215,20 +1887,12 @@ def _convert_docx_bytes_with_report(
             if snapshot is not None
             else {"state": "missing"}
         ),
-        "diagnostics": (
-            []
-            if snapshot is not None
-            else [
-                {
-                    "code": "DOCX-ROUNDTRIP-NO-MERGE-BASE",
-                    "severity": "warning",
-                    "message": (
-                        "style inversion succeeded, but baseline-aware "
-                        "three-way merge is unavailable"
-                    ),
-                }
-            ]
-        ),
+        "semanticNormalization": {
+            "state": "normalized" if normalizations else "exact",
+            "events": normalizations,
+        },
+        "visualStyleProjection": visual_style_projection,
+        "diagnostics": diagnostics,
     }
     return md, report, snapshot
 
@@ -1378,6 +2042,24 @@ def _validate_cli_paths(roles):
                 raise RoundtripRefusalError(
                     "DOCX-ROUNDTRIP-PATH-ALIAS",
                     f"{first_role} and {second_role} resolve to the same file")
+
+
+def _print_visual_style_warnings(report):
+    projection = report.get("visualStyleProjection", {})
+    for diagnostic in projection.get("diagnostics", ()):
+        if diagnostic.get("code") != VISUAL_STYLE_DRIFT_CODE:
+            continue
+        actual = json.dumps(
+            diagnostic.get("actual"),
+            sort_keys=True,
+            separators=(",", ":"),
+        )
+        print(
+            f"{VISUAL_STYLE_DRIFT_CODE}: "
+            f"{diagnostic.get('styleId')}.{diagnostic.get('property')} "
+            f"has {actual}",
+            file=sys.stderr,
+        )
 
 
 def _atomic_replace(source, destination):
@@ -1543,6 +2225,7 @@ def main():
                 require_embedded=bool(args.base_out),
             )
             merge = None
+        _print_visual_style_warnings(report)
         outputs = [(out, md.encode("utf8"))]
         if args.base_out:
             outputs.append((

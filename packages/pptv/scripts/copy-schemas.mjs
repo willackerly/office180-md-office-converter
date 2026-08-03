@@ -5,6 +5,9 @@ const schemaNames = [
   "pptv-manifest-0.1.schema.json",
   "pptv-patch-0.1.schema.json",
   "pptv-patch-0.2.schema.json",
+  "pptv-patch-0.3.schema.json",
+  "pptv-pptx-reconciliation-0.2.schema.json",
+  "pptv-reconcile-resolution-0.1.schema.json",
 ];
 const sourceDirectory = new URL("../../../schemas/", import.meta.url);
 const destinationDirectory = new URL("../dist/schemas/", import.meta.url);

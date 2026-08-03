@@ -765,8 +765,73 @@
         },
         "reopen_passed": {
           "type": "boolean"
+        },
+        "evidence_scope": {
+          "const": "native-no-op-save-lifecycle"
+        },
+        "bridge_report_path": {
+          "$ref": "#/$defs/relativePath"
+        },
+        "bridge_report_sha256": {
+          "$ref": "#/$defs/sha256"
+        },
+        "application_bundle_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "application_build_version": {
+          "type": "string",
+          "minLength": 1
+        },
+        "visual_fidelity_checked": {
+          "type": "boolean"
         }
-      }
+      },
+      "allOf": [
+        {
+          "if": {
+            "required": ["evidence_scope"]
+          },
+          "then": {
+            "required": [
+              "bridge_report_path",
+              "bridge_report_sha256",
+              "application_bundle_id",
+              "application_build_version",
+              "open_without_repair",
+              "editability_checked",
+              "visual_fidelity_checked",
+              "save_size",
+              "save_sha256",
+              "zip_valid",
+              "reopen_passed"
+            ],
+            "properties": {
+              "status": {
+                "const": "manual-required"
+              },
+              "method": {
+                "const": "automation"
+              },
+              "open_without_repair": {
+                "const": true
+              },
+              "editability_checked": {
+                "const": false
+              },
+              "visual_fidelity_checked": {
+                "const": false
+              },
+              "zip_valid": {
+                "const": true
+              },
+              "reopen_passed": {
+                "const": true
+              }
+            }
+          }
+        }
+      ]
     },
     "humanReview": {
       "type": "object",

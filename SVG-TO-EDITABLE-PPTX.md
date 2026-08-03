@@ -6,9 +6,10 @@ an editable `.pptx` without losing the source of truth.**
 **Status:** general reconstruction and QA rationale. The repository implements
 one strict PPTV C9/C10 lane for a supported standalone atom, fixed 16:9 output,
 explicit identity or same-aspect uniform placement, and authenticated
-baseline-aware edit recovery. Arbitrary SVG conversion, hybrid asset export,
-alternate slide ratios, new-object identity allocation, and baseline-free PPTX
-import remain roadmap.
+baseline-aware edit recovery, including one strictly reviewed copied straight
+connector. Arbitrary SVG conversion, hybrid asset export, alternate slide
+ratios, general new-object identity allocation, and baseline-free PPTX import
+remain roadmap.
 
 This is a companion method to the repository's Markdown-to-DOCX workflow.
 It is not a claim that arbitrary SVG can be mapped losslessly to PowerPoint
@@ -176,10 +177,12 @@ Rules:
 - The same semantic object keeps the same ID across regenerations.
 - Decorative fragments that must move together may be one embedded SVG with
   one ID.
-- A copied PowerPoint object initially duplicates its source ID. Current C10
-  refuses copied or duplicate identity and emits no partial patch. A future or
-  manual workflow must allocate a new canonical source ID before establishing a
-  new baseline.
+- A copied PowerPoint object initially duplicates its source ID. C10 1.2
+  refuses duplicate identity by default and emits no partial patch. Its only
+  automated exception is one copied mapped straight connector with exactly two
+  occurrences, exactly one baseline-equivalent occurrence, and a strict
+  hash/fingerprint-bound review that allocates a fresh canonical ID and
+  explicitly declares source references, parent/order, endpoints, and style.
 - Deleting an object retires its ID. Do not silently reuse it for a different
   concept.
 
@@ -309,14 +312,38 @@ Open a temporary copy in desktop PowerPoint, not the delivery file.
 This catches package and application behavior that static Open XML inspection
 cannot.
 
+C11 1.1 can automate the narrower no-op structural lifecycle on a new ignored
+output path:
+
+```bash
+.venv/bin/python scripts/native-office-bridge.py lifecycle slide-editable.pptx \
+  --output .office180-native-work/slide.native-save.pptx \
+  --report .office180-native-work/slide.native-save.bridge.json \
+  --root . --trusted --timeout 90
+```
+
+The bridge never clicks or grants file access, targets only its exact work
+copy, and proves ordinary Save, package integrity, close, and reopen without
+touching unrelated documents. Word and PowerPoint 16.111.2 passed this no-op
+lifecycle on 2026-08-02. It is not the representative editability or visual
+review in steps 3–4.
+
 ## 9. Bring human PowerPoint edits back
 
 Treat the delivered PPTX as an editable branch, not a new canonical source.
 Current C10 accepts only an edited descendant authenticated by the exact C9
 source/map baseline. It returns `unchanged`, `patchable`, `review-required`, or
-`refused`; copied/inserted objects, duplicate or missing identity, reparenting,
+`refused` plus deterministic findings, candidate operations, and resolution
+options. Copied/inserted objects, duplicate or missing identity, reparenting,
 group scaling, unsupported runs/effects, and arbitrary PPTX input never produce
-a partial patch.
+a partial patch unless the one strict reviewed connector exception below
+succeeds.
+
+When PowerPoint's exact no-op save immediately precedes later edits, retain
+those bytes and supply them as `--native-baseline`. C10 accepts serializer
+drift only through named structural rules with occurrence counts and
+predicates; an unknown or near-match rewrite remains a finding. The native
+baseline is version-bound evidence, not a global Office allowlist.
 
 1. Preserve the original generated PPTX as the comparison baseline.
 2. Inspect the edited PPTX into a stable object listing.
@@ -330,11 +357,23 @@ a partial patch.
    - incidental Office serialization drift.
 4. Review the intentional differences with the editor.
 5. Port accepted changes into both the canonical SVG and generator.
-6. For a broader future/manual workflow, assign stable IDs to accepted new or
-   copied objects in canonical source before generating a new baseline; current
-   C10 refuses them.
-7. Regenerate into a temporary output and compare it with the edited deck.
-8. Replace the delivery artifact only after the regenerated version preserves
+6. If the sole duplicate is a copied mapped straight connector, first run C10
+   without a resolution. Continue only when exactly one of its two occurrence
+   fingerprints remains baseline-equivalent. Choose a fresh ID and explicit
+   existing from/to references, then bind the exact source/map/edited/
+   comparison hashes, both fingerprints, same parent, complete old/new order,
+   inverse endpoints, and complete style in
+   `pptv-reconcile-resolution/0.1`.
+7. Rerun with `--resolution`. C10 emits one `pptv-patch/0.3`
+   `clone-connector` only if the complete proposal applies and regenerates
+   exactly. Zero matches (both changed/structure drifted), two matches
+   (ambiguous), stale data, another duplicate, or any other finding refuses
+   with rich next actions.
+8. For every other accepted new or copied object, author stable IDs explicitly
+   in canonical source before generating a new baseline; current C10 refuses
+   general insertion and ID allocation.
+9. Regenerate into a temporary output and compare it with the edited deck.
+10. Replace the delivery artifact only after the regenerated version preserves
    the accepted visual and semantic changes.
 
 Never regenerate directly over the only human-edited copy. Office may rewrite
@@ -352,7 +391,7 @@ no corresponding design decision.
 | PowerPoint reports corruption | OPC relationships or metadata are invalid | Validate the ZIP, inspect relationships, and open a temporary copy |
 | Text wraps differently | Font metrics, margins, or auto-fit differ | Fix font substitution and explicit text-box behavior |
 | Stable IDs are missing | Reverse mapping is no longer deterministic | Fail QA and repair object naming |
-| Stable IDs are duplicated | A user copied an object | Treat copies as new objects and allocate new IDs |
+| Stable IDs are duplicated | A user copied an object | Default to refusal; use the strict one-connector review only when exactly one of two occurrences matches baseline, otherwise author new IDs in source |
 | Source hash is stale | PPTX and canonical SVG no longer correspond | Regenerate or reconcile before delivery |
 | Render looks right but edits break it | Geometry depends on browser-only behavior | Replace the affected feature with native Office geometry or a stable asset |
 

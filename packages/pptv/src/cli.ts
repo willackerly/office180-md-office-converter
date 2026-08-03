@@ -3,12 +3,12 @@
  * Reference Node CLI for the PPTV 0.1 source kernel.
  *
  * CONTRACT:C4-PPTV-SOURCE.1.1
- * CONTRACT:C5-PPTV-PATCH.1.2
+ * CONTRACT:C5-PPTV-PATCH.1.3
  * CONTRACT:C6-PPTV-RESOLVED.1.1
  * CONTRACT:C7-PPTX-CANARY.1.1
  * CONTRACT:C8-PPTV-TEXT-FIT.1.1
  * CONTRACT:C9-PPTV-PPTX-BASELINE.1.0
- * CONTRACT:C10-PPTV-PPTX-RECONCILIATION.1.0
+ * CONTRACT:C10-PPTV-PPTX-RECONCILIATION.1.2
  */
 
 import { dirname, resolve } from "node:path";
@@ -50,6 +50,11 @@ import {
   compilePptxCanary,
   PptxCanaryCompileError,
 } from "./node/pptx-canary.js";
+import {
+  parsePptvReconcileResolution,
+  PptvReconcileResolutionError,
+  type PptvReconcileResolution,
+} from "./node/reconcile-resolution.js";
 import { reconcilePptx } from "./node/reconcile.js";
 import { applyPatch } from "./ops/patch.js";
 import {
@@ -150,6 +155,8 @@ async function runReconcile(
     {
       "--source": "value",
       "--baseline": "value",
+      "--native-baseline": "value",
+      "--resolution": "value",
       "--patch": "value",
       "--report": "value",
       "--format": "value",
@@ -160,6 +167,8 @@ async function runReconcile(
   const editedPath = parsedArgs.positionals[0]!;
   const sourcePath = readOption(parsedArgs, "--source");
   const baselinePath = readOption(parsedArgs, "--baseline");
+  const nativeBaselinePath = readOption(parsedArgs, "--native-baseline");
+  const resolutionPath = readOption(parsedArgs, "--resolution");
   const patchOutput = readOption(parsedArgs, "--patch");
   const reportOutput = readOption(parsedArgs, "--report");
   const format = readFormat(parsedArgs, ["text", "json"]);
@@ -178,6 +187,15 @@ async function runReconcile(
       "reconcile --patch and --report destinations must be distinct",
     );
   }
+  if (
+    resolutionPath !== undefined &&
+    (resolve(resolutionPath) === resolve(patchOutput) ||
+      resolve(resolutionPath) === resolve(reportOutput))
+  ) {
+    throw new InvocationError(
+      "reconcile --resolution input must be distinct from --patch and --report destinations",
+    );
+  }
 
   let baselineInput: unknown;
   try {
@@ -188,21 +206,52 @@ async function runReconcile(
     }
     throw error;
   }
-  const [source, editedPptxBytes] = await Promise.all([
+  let resolutionInput: PptvReconcileResolution | undefined;
+  if (resolutionPath !== undefined) {
+    try {
+      resolutionInput = parsePptvReconcileResolution(
+        await readJsonPath(resolutionPath),
+      );
+    } catch (error) {
+      if (error instanceof SyntaxError) {
+        throw new InvocationError(
+          `Invalid reconciliation resolution JSON: ${error.message}`,
+        );
+      }
+      if (error instanceof PptvReconcileResolutionError) {
+        throw new InvocationError(
+          `Invalid reconciliation resolution: ${error.message}`,
+        );
+      }
+      throw error;
+    }
+  }
+  const [source, editedPptxBytes, nativeBaselinePptxBytes] = await Promise.all([
     loadPptvDocument(await readPptvPath(sourcePath)),
     readBytesPath(editedPath),
+    nativeBaselinePath === undefined
+      ? Promise.resolve(undefined)
+      : readBytesPath(nativeBaselinePath),
   ]);
   const result = await reconcilePptx(
     source,
     baselineInput as PptvPptxMap,
     editedPptxBytes,
+    {
+      ...(nativeBaselinePptxBytes === undefined
+        ? {}
+        : { nativeBaselinePptxBytes }),
+      ...(resolutionInput === undefined ? {} : { resolution: resolutionInput }),
+    },
   );
+  const patchPublished =
+    result.status === "patchable" && result.patch !== undefined;
   const entries = [
     {
       path: reportOutput,
       contents: `${JSON.stringify(result, null, 2)}\n`,
     },
-    ...(result.status === "patchable" && result.patch !== undefined
+    ...(patchPublished
       ? [
           {
             path: patchOutput,
@@ -234,23 +283,37 @@ async function runReconcile(
     writeJson(
       {
         schema: "pptv-reconcile-result/0.1",
+        reportSchema: result.schema,
         status: result.status,
         report: reportOutput,
-        ...(result.status === "patchable" ? { patch: patchOutput } : {}),
+        ...(patchPublished ? { patch: patchOutput } : {}),
+        resolutionProvided: resolutionInput !== undefined,
+        resolutionAccepted:
+          resolutionInput !== undefined &&
+          patchPublished &&
+          result.patch?.schema === "pptv-patch/0.3",
         sourceSha256: result.sourceSha256,
         baselineMapSha256: result.baselineMapSha256,
         editedPptxSha256: result.editedPptxSha256,
+        ...(result.nativeBaselinePptxSha256 === undefined
+          ? {}
+          : {
+              nativeBaselinePptxSha256: result.nativeBaselinePptxSha256,
+            }),
         changeCount: result.changes.length,
+        findingCount: result.findings.length,
+        candidateOperationCount: result.candidateOperations.length,
+        summary: result.summary,
         diagnostics: result.diagnostics,
       },
       environment,
     );
   } else {
     environment.stdout(
-      `reconciliation ${result.status}: wrote ${reportOutput}${result.status === "patchable" ? ` and ${patchOutput}` : ""} (${result.changes.length} changes)\n`,
+      `reconciliation ${result.status}: wrote ${reportOutput}${patchPublished ? ` and ${patchOutput}` : ""} (${result.changes.length} changes, ${result.findings.length} findings, ${result.summary.candidateOperationCount} candidates, ${result.summary.blockedOperationCount} blocked)\n`,
     );
   }
-  return result.status === "unchanged" || result.status === "patchable" ? 0 : 1;
+  return result.status === "unchanged" || patchPublished ? 0 : 1;
 }
 
 async function runOutline(
@@ -1314,7 +1377,7 @@ Usage:
   pptv pptx-canary <deck.pptv.html> --output PATH [--format text|json]
   pptv compose <atom.pptv.svg> --placement X,Y,W,H --output PATH [--slide-id ID] [--policy identity|uniform-scale-translate] [--format text|json]
   pptv compile <atom.pptv.svg> --placement X,Y,W,H --output PATH --map PATH [--slide-id ID] [--policy identity|uniform-scale-translate] [--format text|json]
-  pptv reconcile <edited.pptx> --source atom.pptv.svg --baseline atom.pptv.map.json --patch PATH --report PATH [--format text|json]
+  pptv reconcile <edited.pptx> --source atom.pptv.svg --baseline atom.pptv.map.json [--native-baseline native-save.pptx] [--resolution reviewed-copy.json] --patch PATH --report PATH [--format text|json]
   pptv text-fit <file.pptv.html|file.pptv.svg> --font-map PATH [--near-limit N] [--format text|json]
   pptv text <file.pptv.html|file.pptv.svg> [--slide ID] [--include-hidden] [--format text|json|jsonl]
   pptv show <file.pptv.html|file.pptv.svg> <id> [--view semantic|editing] [--format json]

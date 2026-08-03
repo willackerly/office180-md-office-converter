@@ -8,8 +8,8 @@
   "output": "assets/pptv-browser-kernel-0.1.iife.js",
   "globalName": "PptvBrowserKernel",
   "target": "es2022",
-  "sha256": "230628dca67cb9bc8b91b0dead32667688365e3af210fbcf466420cc44813208",
-  "bytes": 700262,
+  "sha256": "ee946661bf592d41ae36e821c6bbb94651628f8ab03c11529516f29ed4e577e5",
+  "bytes": 722018,
   "inputs": [
     "../../node_modules/.pnpm/entities@8.0.0/node_modules/entities/dist/decode-codepoint.js",
     "../../node_modules/.pnpm/entities@8.0.0/node_modules/entities/dist/decode.js",

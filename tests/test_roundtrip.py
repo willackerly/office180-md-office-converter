@@ -2,8 +2,8 @@
 # SPDX-License-Identifier: MIT
 """Tests for md2docx.py / docx2md.py.
 
-Exercises CONTRACT:C1-THEME-SCHEMA.1.0,
-CONTRACT:C2-PROVENANCE.2.0, and CONTRACT:C3-ROUNDTRIP.1.1.
+Exercises CONTRACT:C1-THEME-SCHEMA.1.1,
+CONTRACT:C2-PROVENANCE.2.0, and CONTRACT:C3-ROUNDTRIP.1.2.
 
 No test framework required — this is a plain script:
   python3 tests/test_roundtrip.py
@@ -25,6 +25,7 @@ import warnings
 import zipfile
 from collections import Counter
 from pathlib import Path
+from xml.etree import ElementTree
 
 from docx.enum.text import WD_BREAK
 from docx.oxml import OxmlElement, parse_xml
@@ -81,7 +82,7 @@ def _assert_roundtrip_refusal(path, expected_code):
 
 
 # ---------------------------------------------------------------------------
-# CONTRACT:C1-THEME-SCHEMA.1.0
+# CONTRACT:C1-THEME-SCHEMA.1.1
 # ---------------------------------------------------------------------------
 
 def test_theme_deep_merge():
@@ -155,6 +156,114 @@ def test_shipped_themes_load():
         assert "name" in raw, f"{theme_path.name} should declare a 'name' for provenance stamping"
 
 
+def test_controlled_word_styles_are_fully_materialized():
+    with tempfile.TemporaryDirectory() as td:
+        td = Path(td)
+        source = td / "styles.md"
+        output = td / "styles.docx"
+        source.write_text(
+            "# One\n\n## Two\n\n### Three\n\n#### Four\n\nBody.\n",
+            encoding="utf8",
+        )
+        theme_path = THEMES / "plum.json"
+        cfg = md2docx.deep_merge(
+            md2docx.DEFAULTS,
+            json.loads(theme_path.read_text(encoding="utf8")),
+        )
+        md2docx.Converter(cfg, tpl_path=theme_path).convert(source, output)
+
+        with zipfile.ZipFile(output, "r") as package:
+            styles_root = ElementTree.fromstring(
+                package.read("word/styles.xml"))
+        styles = {
+            style.get(qn("w:styleId")): style
+            for style in styles_root.findall(qn("w:style"))
+        }
+
+        def properties(style_id):
+            r_pr = styles[style_id].find(qn("w:rPr"))
+            assert r_pr is not None, style_id
+            r_fonts = r_pr.find(qn("w:rFonts"))
+            assert r_fonts is not None, style_id
+            return r_pr, r_fonts
+
+        normal_r_pr, normal_fonts = properties("Normal")
+        for name in md2docx.EXPLICIT_FONT_ATTRIBUTES:
+            assert normal_fonts.get(qn(f"w:{name}")) == "Arial"
+        for name in md2docx.THEME_FONT_ATTRIBUTES:
+            assert normal_fonts.get(qn(f"w:{name}")) is None
+        assert normal_r_pr.find(qn("w:sz")).get(qn("w:val")) == "20"
+        assert normal_r_pr.find(qn("w:szCs")).get(qn("w:val")) == "20"
+
+        expected_sizes = {
+            1: "36",
+            2: "28",
+            3: "23",
+            4: "21",
+        }
+        for level, size in expected_sizes.items():
+            paragraph_id = f"Heading{level}"
+            character_id = f"Heading{level}Char"
+            for style_id in (paragraph_id, character_id):
+                r_pr, r_fonts = properties(style_id)
+                for name in md2docx.EXPLICIT_FONT_ATTRIBUTES:
+                    assert r_fonts.get(qn(f"w:{name}")) == "Arial"
+                for name in md2docx.THEME_FONT_ATTRIBUTES:
+                    assert r_fonts.get(qn(f"w:{name}")) is None
+                assert r_pr.find(qn("w:sz")).get(qn("w:val")) == size
+                assert r_pr.find(qn("w:szCs")).get(qn("w:val")) == size
+                assert r_pr.find(qn("w:b")).get(qn("w:val")) == "1"
+                assert r_pr.find(qn("w:bCs")).get(qn("w:val")) == "1"
+                assert r_pr.find(qn("w:i")).get(qn("w:val")) == "0"
+                assert r_pr.find(qn("w:iCs")).get(qn("w:val")) == "0"
+            assert styles[paragraph_id].find(
+                qn("w:link")).get(qn("w:val")) == character_id
+            assert styles[character_id].find(
+                qn("w:link")).get(qn("w:val")) == paragraph_id
+
+        recovered, report = docx2md.convert_with_report(
+            output, report_provenance=False)
+        assert recovered == source.read_text(encoding="utf8")
+        assert report["schema"] == "office180-docx-roundtrip-report/0.2"
+        assert report["state"] == "exact-supported-profile"
+        assert report["semanticNormalization"] == {
+            "state": "exact",
+            "events": [],
+        }
+        projection = report["visualStyleProjection"]
+        assert (
+            projection["schema"]
+            == "office180-docx-visual-style-projection/0.2"
+        )
+        assert projection["state"] == "materialized"
+        assert projection["bodyFont"] == "Arial"
+        assert projection["normalizations"] == []
+        assert projection["diagnostics"] == []
+
+        nonbold_output = td / "styles-nonbold.docx"
+        nonbold_cfg = md2docx.deep_merge(
+            cfg, {"headings": {"bold": False}})
+        md2docx.Converter(nonbold_cfg).convert(
+            source, nonbold_output)
+        with zipfile.ZipFile(nonbold_output, "r") as package:
+            nonbold_root = ElementTree.fromstring(
+                package.read("word/styles.xml"))
+        nonbold_styles = {
+            style.get(qn("w:styleId")): style
+            for style in nonbold_root.findall(qn("w:style"))
+        }
+        for style_id in ("Heading1", "Heading1Char"):
+            r_pr = nonbold_styles[style_id].find(qn("w:rPr"))
+            assert r_pr.find(qn("w:b")).get(qn("w:val")) == "0"
+            assert r_pr.find(qn("w:bCs")).get(qn("w:val")) == "0"
+        _, nonbold_report = docx2md.convert_with_report(
+            nonbold_output, report_provenance=False)
+        assert (
+            nonbold_report["visualStyleProjection"]["state"]
+            == "materialized"
+        )
+
+
 # ---------------------------------------------------------------------------
 # CONTRACT:C2-PROVENANCE.2.0
 # ---------------------------------------------------------------------------
@@ -222,6 +331,13 @@ def test_embedded_source_survives_resave_and_three_way_merge():
         resaved = docx2md.read_embedded_source(
             resaved_docx, required=True)
         assert resaved.canonical_text == base_text
+        resaved_text, resaved_report = docx2md.convert_with_report(
+            resaved_docx, report_provenance=False)
+        assert resaved_text == base_text
+        assert (
+            resaved_report["visualStyleProjection"]["state"]
+            == "materialized"
+        )
 
         edited = docx2md.Document(str(resaved_docx))
         target = next(
@@ -730,7 +846,7 @@ def test_embedded_source_missing_and_package_limits_refuse():
 
 
 # ---------------------------------------------------------------------------
-# CONTRACT:C3-ROUNDTRIP.1.1
+# CONTRACT:C3-ROUNDTRIP.1.2
 # ---------------------------------------------------------------------------
 
 _STRIP_RE = re.compile(r"[`*#>|\[\]()-]")
@@ -761,6 +877,411 @@ def _normalize_source_for_comparison(text):
             continue
         kept.append(line)
     return "\n".join(kept)
+
+
+def test_trailing_ascii_space_normalization_is_ordered_and_merge_safe():
+    base_text = "# Branch\n\nFirst paragraph.\n\nSecond paragraph.\n"
+    with tempfile.TemporaryDirectory() as td:
+        td = Path(td)
+        source = td / "branch.md"
+        edited_docx = td / "branch-edited.docx"
+        current = td / "branch-current.md"
+        source.write_text(base_text, encoding="utf8")
+        md2docx.Converter(md2docx.DEFAULTS).convert(
+            source, edited_docx)
+
+        before = docx2md.read_embedded_source(
+            edited_docx, required=True)
+        document = docx2md.Document(str(edited_docx))
+        paragraph_indexes = {
+            paragraph.text: index
+            for index, paragraph in enumerate(document.paragraphs)
+        }
+        next(
+            paragraph for paragraph in document.paragraphs
+            if paragraph.text == "Branch"
+        ).text = "Branch "
+        next(
+            paragraph for paragraph in document.paragraphs
+            if paragraph.text == "First paragraph."
+        ).text = "First paragraph edited in Word.  "
+        document.save(edited_docx)
+
+        after = docx2md.read_embedded_source(
+            edited_docx, required=True)
+        assert after == before
+        recovered, report = docx2md.convert_with_report(
+            edited_docx, report_provenance=False)
+        assert recovered == (
+            "# Branch\n\nFirst paragraph edited in Word.\n\n"
+            "Second paragraph.\n"
+        )
+        assert report["state"] == "normalized-supported-profile"
+        events = report["semanticNormalization"]["events"]
+        assert [
+            event["paragraphIndex"] for event in events
+        ] == [
+            paragraph_indexes["Branch"],
+            paragraph_indexes["First paragraph."],
+        ]
+        assert [event["styleId"] for event in events] == [
+            "Heading1",
+            "Normal",
+        ]
+        assert [event["count"] for event in events] == [1, 2]
+        assert [event["inputTextSha256"] for event in events] == [
+            hashlib.sha256(b"Branch ").hexdigest(),
+            hashlib.sha256(
+                b"First paragraph edited in Word.  "
+            ).hexdigest(),
+        ]
+
+        current.write_text(
+            (
+                "# Branch\n\nFirst paragraph.\n\n"
+                "Second paragraph edited in Markdown.\n"
+            ),
+            encoding="utf8",
+        )
+        merged = docx2md.merge_with_current(
+            edited_docx, current, report_provenance=False)
+        assert not merged.conflicts
+        assert merged.text == (
+            "# Branch\n\nFirst paragraph edited in Word.\n\n"
+            "Second paragraph edited in Markdown.\n"
+        )
+
+
+def test_visual_style_projection_reports_semantic_drift_only():
+    with tempfile.TemporaryDirectory() as td:
+        td = Path(td)
+        source = td / "styles.md"
+        original = td / "styles.docx"
+        metadata_only = td / "styles-metadata.docx"
+        drifted = td / "styles-drifted.docx"
+        source.write_text("# Title\n\nBody.\n", encoding="utf8")
+        theme_path = THEMES / "plum.json"
+        cfg = md2docx.deep_merge(
+            md2docx.DEFAULTS,
+            json.loads(theme_path.read_text(encoding="utf8")),
+        )
+        md2docx.Converter(cfg, tpl_path=theme_path).convert(
+            source, original)
+
+        def add_unrelated_metadata(parts):
+            root = ElementTree.fromstring(parts["word/styles.xml"])
+            normal = next(
+                style for style in root.findall(qn("w:style"))
+                if style.get(qn("w:styleId")) == "Normal"
+            )
+            normal.set(qn("w:rsid"), "0BADF00D")
+            parts["word/styles.xml"] = ElementTree.tostring(
+                root, encoding="utf8", xml_declaration=True)
+
+        _rewrite_docx(original, metadata_only, add_unrelated_metadata)
+        metadata_text, metadata_report = docx2md.convert_with_report(
+            metadata_only, report_provenance=False)
+        assert metadata_text == source.read_text(encoding="utf8")
+        assert (
+            metadata_report["visualStyleProjection"]["state"]
+            == "materialized"
+        )
+
+        def replace_explicit_heading_fonts(parts):
+            root = ElementTree.fromstring(parts["word/styles.xml"])
+            styles = {
+                style.get(qn("w:styleId")): style
+                for style in root.findall(qn("w:style"))
+            }
+            theme_values = {
+                "asciiTheme": "majorAscii",
+                "hAnsiTheme": "majorHAnsi",
+                "eastAsiaTheme": "majorEastAsia",
+                "cstheme": "majorBidi",
+            }
+            for style_id in ("Heading1", "Heading1Char"):
+                r_pr = styles[style_id].find(qn("w:rPr"))
+                r_fonts = r_pr.find(qn("w:rFonts"))
+                for name in md2docx.EXPLICIT_FONT_ATTRIBUTES:
+                    r_fonts.attrib.pop(qn(f"w:{name}"), None)
+                for name, value in theme_values.items():
+                    r_fonts.set(qn(f"w:{name}"), value)
+            parts["word/styles.xml"] = ElementTree.tostring(
+                root, encoding="utf8", xml_declaration=True)
+
+        _rewrite_docx(
+            metadata_only, drifted, replace_explicit_heading_fonts)
+        recovered, report = docx2md.convert_with_report(
+            drifted, report_provenance=False)
+        assert recovered == source.read_text(encoding="utf8")
+        assert report["state"] == "exact-supported-profile"
+        assert report["semanticNormalization"] == {
+            "state": "exact",
+            "events": [],
+        }
+        projection = report["visualStyleProjection"]
+        assert projection["state"] == "drifted"
+        assert {
+            (diagnostic["styleId"], diagnostic["property"])
+            for diagnostic in projection["diagnostics"]
+        } == {
+            ("Heading1", "explicitFonts"),
+            ("Heading1", "themeFonts"),
+            ("Heading1Char", "explicitFonts"),
+            ("Heading1Char", "themeFonts"),
+        }
+        assert projection["themeFonts"]["majorLatin"] == "Calibri"
+        assert projection["bodyFont"] == "Arial"
+        assert all(
+            diagnostic["code"]
+            == "DOCX-ROUNDTRIP-VISUAL-STYLE-DRIFT"
+            for diagnostic in projection["diagnostics"]
+        )
+        assert projection["diagnostics"] == report["diagnostics"]
+
+        cli_output = td / "recovered.md"
+        cli = subprocess.run(
+            [
+                sys.executable,
+                str(REPO_ROOT / "docx2md.py"),
+                str(drifted),
+                "-o",
+                str(cli_output),
+            ],
+            check=False,
+            capture_output=True,
+            text=True,
+        )
+        assert cli.returncode == 0, cli.stderr
+        assert (
+            "DOCX-ROUNDTRIP-VISUAL-STYLE-DRIFT"
+            in cli.stderr
+        )
+        assert cli_output.read_text(encoding="utf8") == (
+            source.read_text(encoding="utf8")
+        )
+
+
+def test_native_word_heading_cascade_normalization_is_proof_bounded():
+    with tempfile.TemporaryDirectory() as td:
+        td = Path(td)
+        source = td / "native-styles.md"
+        baseline = td / "native-styles.docx"
+        native_normalized = td / "native-styles-resaved.docx"
+        source.write_text(
+            "# One\n\n## Two\n\n### Three\n\n#### Four\n\nBody.\n",
+            encoding="utf8",
+        )
+        theme_path = THEMES / "plum.json"
+        cfg = md2docx.deep_merge(
+            md2docx.DEFAULTS,
+            json.loads(theme_path.read_text(encoding="utf8")),
+        )
+        md2docx.Converter(cfg, tpl_path=theme_path).convert(
+            source,
+            baseline,
+        )
+
+        def rewrite_styles(parts, mutate):
+            root = ElementTree.fromstring(parts["word/styles.xml"])
+            styles = {
+                style.get(qn("w:styleId")): style
+                for style in root.findall(qn("w:style"))
+            }
+            mutate(root, styles)
+            parts["word/styles.xml"] = ElementTree.tostring(
+                root,
+                encoding="utf8",
+                xml_declaration=True,
+            )
+
+        def apply_native_heading_omissions(parts):
+            def mutate(_root, styles):
+                for level in range(1, 5):
+                    r_pr = styles[f"Heading{level}"].find(qn("w:rPr"))
+                    for name in ("rFonts", "i", "iCs"):
+                        element = r_pr.find(qn(f"w:{name}"))
+                        if element is not None:
+                            r_pr.remove(element)
+
+            rewrite_styles(parts, mutate)
+
+        _rewrite_docx(
+            baseline,
+            native_normalized,
+            apply_native_heading_omissions,
+        )
+        baseline_text, baseline_report = docx2md.convert_with_report(
+            baseline,
+            report_provenance=False,
+        )
+        recovered, report = docx2md.convert_with_report(
+            native_normalized,
+            report_provenance=False,
+        )
+        assert baseline_text == recovered == source.read_text(encoding="utf8")
+        assert (
+            baseline_report["visualStyleProjection"]["state"]
+            == "materialized"
+        )
+        assert (
+            baseline_report["visualStyleProjection"]["normalizations"]
+            == []
+        )
+        assert report["state"] == "exact-supported-profile"
+        assert report["semanticNormalization"] == {
+            "state": "exact",
+            "events": [],
+        }
+        projection = report["visualStyleProjection"]
+        assert (
+            projection["state"]
+            == "native-normalized-materialized-equivalent"
+        )
+        assert projection["diagnostics"] == []
+        assert [
+            (event["styleId"], event["property"])
+            for event in projection["normalizations"]
+        ] == [
+            (f"Heading{level}", property_name)
+            for level in range(1, 5)
+            for property_name in ("explicitFonts", "italic")
+        ]
+        assert report["diagnostics"] == projection["normalizations"]
+        assert all(
+            event["code"]
+            == "DOCX-ROUNDTRIP-VISUAL-STYLE-NATIVE-NORMALIZATION"
+            and event["severity"] == "info"
+            and event["effectiveState"] == "materialized-equivalent"
+            and event["proof"]["baseStyleId"] == "Normal"
+            and event["proof"]["linkedStyleId"]
+            == f"{event['styleId']}Char"
+            for event in projection["normalizations"]
+        )
+        assert all(
+            event["proof"]["effectiveValues"]
+            == (
+                {
+                    "ascii": "Arial",
+                    "hAnsi": "Arial",
+                    "eastAsia": "Arial",
+                    "cs": "Arial",
+                }
+                if event["property"] == "explicitFonts"
+                else {"latin": False, "complex": False}
+            )
+            for event in projection["normalizations"]
+        )
+
+        def ensure_r_fonts(style):
+            r_pr = style.find(qn("w:rPr"))
+            r_fonts = r_pr.find(qn("w:rFonts"))
+            if r_fonts is None:
+                r_fonts = ElementTree.Element(qn("w:rFonts"))
+                r_pr.insert(0, r_fonts)
+            return r_fonts
+
+        def theme_reference(_root, styles):
+            r_fonts = ensure_r_fonts(styles["Heading1"])
+            r_fonts.set(qn("w:asciiTheme"), "majorHAnsi")
+
+        def wrong_based_on(_root, styles):
+            styles["Heading1"].find(qn("w:basedOn")).set(
+                qn("w:val"),
+                "Heading2",
+            )
+
+        def inherited_italic(root, _styles):
+            defaults = root.find(
+                f"{qn('w:docDefaults')}/"
+                f"{qn('w:rPrDefault')}/{qn('w:rPr')}"
+            )
+            for name in ("i", "iCs"):
+                defaults.append(ElementTree.Element(qn(f"w:{name}")))
+
+        def wrong_linked_font(_root, styles):
+            r_fonts = ensure_r_fonts(styles["Heading1Char"])
+            for name in md2docx.EXPLICIT_FONT_ATTRIBUTES:
+                r_fonts.set(qn(f"w:{name}"), "Times New Roman")
+
+        def explicit_font_conflict(_root, styles):
+            r_fonts = ensure_r_fonts(styles["Heading1"])
+            for name in md2docx.EXPLICIT_FONT_ATTRIBUTES:
+                r_fonts.set(qn(f"w:{name}"), "Times New Roman")
+
+        def missing_link(_root, styles):
+            link = styles["Heading1"].find(qn("w:link"))
+            styles["Heading1"].remove(link)
+
+        def partial_direct_font(_root, styles):
+            ensure_r_fonts(styles["Heading1"]).set(
+                qn("w:ascii"),
+                "Arial",
+            )
+
+        counterexamples = (
+            ("theme-reference", theme_reference, "Heading1", "themeFonts"),
+            ("wrong-based-on", wrong_based_on, "Heading1", "basedOn"),
+            (
+                "inherited-italic",
+                inherited_italic,
+                "Heading1",
+                "italic",
+            ),
+            (
+                "wrong-linked-font",
+                wrong_linked_font,
+                "Heading1Char",
+                "explicitFonts",
+            ),
+            (
+                "explicit-font-conflict",
+                explicit_font_conflict,
+                "Heading1",
+                "explicitFonts",
+            ),
+            ("missing-link", missing_link, "Heading1", "link"),
+            (
+                "partial-direct-font",
+                partial_direct_font,
+                "Heading1",
+                "explicitFonts",
+            ),
+        )
+        for name, mutation, style_id, property_name in counterexamples:
+            candidate = td / f"{name}.docx"
+
+            def mutate_candidate(parts, mutation=mutation):
+                rewrite_styles(parts, mutation)
+
+            _rewrite_docx(
+                native_normalized,
+                candidate,
+                mutate_candidate,
+            )
+            candidate_text, candidate_report = (
+                docx2md.convert_with_report(
+                    candidate,
+                    report_provenance=False,
+                )
+            )
+            assert candidate_text == source.read_text(encoding="utf8")
+            candidate_projection = (
+                candidate_report["visualStyleProjection"]
+            )
+            assert candidate_projection["state"] == "drifted", name
+            assert (
+                style_id,
+                property_name,
+            ) in {
+                (item["styleId"], item["property"])
+                for item in candidate_projection["diagnostics"]
+            }, name
+            assert all(
+                item["code"]
+                == "DOCX-ROUNDTRIP-VISUAL-STYLE-DRIFT"
+                for item in candidate_projection["diagnostics"]
+            ), name
 
 
 def test_roundtrip_kitchen_sink():
@@ -1341,6 +1862,16 @@ def test_docx_reverse_preflight_covers_lossy_word_constructs():
             "DOCX-ROUNDTRIP-HEADER",
         )
 
+        def add_outer_space_to_banner(document):
+            text = " CUI//TEST "
+            document.sections[0].header.paragraphs[0].text = text
+            document.sections[0].footer.paragraphs[0].text = text
+
+        _assert_roundtrip_refusal(
+            edited("outer-space-banner", add_outer_space_to_banner),
+            "DOCX-ROUNDTRIP-HEADER",
+        )
+
         def add_bold_italic(document):
             paragraph = document.paragraphs[0]
             paragraph.clear()
@@ -1380,8 +1911,54 @@ def test_docx_reverse_preflight_covers_lossy_word_constructs():
         def add_trailing_space(document):
             document.paragraphs[0].text = "trailing "
 
+        trailing_space = edited("trailing-space", add_trailing_space)
+        recovered, report = docx2md.convert_with_report(
+            trailing_space, report_provenance=False)
+        assert recovered == "trailing\n"
+        assert report["state"] == "normalized-supported-profile"
+        assert report["semanticNormalization"]["state"] == "normalized"
+        events = report["semanticNormalization"]["events"]
+        assert len(events) == 1
+        assert events[0] == {
+            "code": "DOCX-ROUNDTRIP-TRAILING-ASCII-SPACE",
+            "severity": "warning",
+            "story": "word/document.xml",
+            "paragraphIndex": 0,
+            "styleId": "Normal",
+            "styleName": "Normal",
+            "edge": "trailing",
+            "codePoint": "U+0020",
+            "count": 1,
+            "inputTextSha256": hashlib.sha256(
+                b"trailing "
+            ).hexdigest(),
+            "message": (
+                "removed 1 trailing U+0020 character from body paragraph 0"
+            ),
+        }
+        assert events[0] in report["diagnostics"]
+
+        def add_leading_space(document):
+            document.paragraphs[0].text = " leading"
+
         _assert_roundtrip_refusal(
-            edited("trailing-space", add_trailing_space),
+            edited("leading-space", add_leading_space),
+            "DOCX-ROUNDTRIP-NONCANONICAL",
+        )
+
+        def add_trailing_nbsp(document):
+            document.paragraphs[0].text = "trailing\u00a0"
+
+        _assert_roundtrip_refusal(
+            edited("trailing-nbsp", add_trailing_nbsp),
+            "DOCX-ROUNDTRIP-NONCANONICAL",
+        )
+
+        def add_whitespace_only(document):
+            document.paragraphs[0].text = " "
+
+        _assert_roundtrip_refusal(
+            edited("whitespace-only", add_whitespace_only),
             "DOCX-ROUNDTRIP-NONCANONICAL",
         )
 
@@ -1434,6 +2011,14 @@ def test_docx_reverse_preflight_covers_lossy_word_constructs():
             "| A | B |\n| --- | --- |\n| x | y |\n",
             encoding="utf8",
         )
+        md2docx.Converter(md2docx.DEFAULTS).convert(
+            table_source, table_path)
+        table_document = docx2md.Document(str(table_path))
+        table_document.tables[0].cell(1, 0).text = " cell "
+        table_document.save(table_path)
+        _assert_roundtrip_refusal(
+            table_path, "DOCX-ROUNDTRIP-NONCANONICAL")
+
         md2docx.Converter(md2docx.DEFAULTS).convert(
             table_source, table_path)
         table_document = docx2md.Document(str(table_path))
@@ -1740,7 +2325,7 @@ def test_multi_output_publication_rolls_back_replacement_failure():
 
 
 def test_link_demotion():
-    """CONTRACT:C3-ROUNDTRIP.1.1 retained link-demotion boundary:
+    """CONTRACT:C3-ROUNDTRIP.1.2 retained link-demotion boundary:
     a relative link's target is dropped (label only survives); an
     absolute link keeps both label and URL."""
     assert md2docx.demote_links("[docs](ROADMAP.md)") == "docs"

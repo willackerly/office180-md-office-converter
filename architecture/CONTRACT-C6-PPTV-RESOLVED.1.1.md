@@ -343,14 +343,14 @@ supplies translation.
 
 ### Explicit text
 
-| Behavior             | Specification                                                                                                                                                                    |
-| -------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Hard lines           | Source line strings and baseline positions are authoritative; no wrapping or line inference exists.                                                                              |
+| Behavior             | Specification                                                                                                                                                                                         |
+| -------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Hard lines           | Source line strings and baseline positions are authoritative; no wrapping or line inference exists.                                                                                                   |
 | Frame                | `data-pptv-frame` is the declared compiler text box; C7 maps it for one-line text today, while broader/multiline compilation remains future. Resizing it cannot alter text, font size, or line count. |
-| No autofit           | The model always means PowerPoint `wrap="none"` plus `a:noAutofit`; it exposes no wrap/shrink/fit switch.                                                                        |
-| Paragraph editing    | An editor may join lines with `\n`, but commit emits direct text or explicit direct `tspan` lines.                                                                               |
-| Unsupported richness | Nested/styled runs, text paths, `dx`/`dy`, `rotate`, `textLength`, bullets, columns, and ambient non-whitespace text are errors.                                                 |
-| Overflow             | `CONTRACT:C8-PPTV-TEXT-FIT.1.1` defines deterministic deck- and diagram-specific warning evidence; it never mutates text or geometry and is not required for pure C6 resolution. |
+| No autofit           | The model always means PowerPoint `wrap="none"` plus `a:noAutofit`; it exposes no wrap/shrink/fit switch.                                                                                             |
+| Paragraph editing    | An editor may join lines with `\n`, but commit emits direct text or explicit direct `tspan` lines.                                                                                                    |
+| Unsupported richness | Nested/styled runs, text paths, `dx`/`dy`, `rotate`, `textLength`, bullets, columns, and ambient non-whitespace text are errors.                                                                      |
+| Overflow             | `CONTRACT:C8-PPTV-TEXT-FIT.1.1` defines deterministic deck- and diagram-specific warning evidence; it never mutates text or geometry and is not required for pure C6 resolution.                      |
 
 ### CSS and theme resolution
 
@@ -494,7 +494,7 @@ PowerPoint fidelity.
 ## Dependencies
 
 - Depends on: `CONTRACT:C4-PPTV-SOURCE.1.1`
-- Consumed after writes governed by: `CONTRACT:C5-PPTV-PATCH.1.2`
+- Consumed after writes governed by: `CONTRACT:C5-PPTV-PATCH.1.3`
 - Configuration: none; deck/diagram canvas and style capabilities are
   versioned constants
 - External: none beyond C4 parsers; no CSS/browser layout engine

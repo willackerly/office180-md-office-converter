@@ -2,7 +2,7 @@
 
 # Kitchen Sink
 
-A fixture exercising every construct `md2docx.py` supports, for `tests/test_roundtrip.py::test_roundtrip_kitchen_sink` (`CONTRACT:C3-ROUNDTRIP.1.1`).
+A fixture exercising every construct `md2docx.py` supports, for `tests/test_roundtrip.py::test_roundtrip_kitchen_sink` (`CONTRACT:C3-ROUNDTRIP.1.2`).
 
 This paragraph soft-wraps across several source lines that should join into one paragraph in the output.
 

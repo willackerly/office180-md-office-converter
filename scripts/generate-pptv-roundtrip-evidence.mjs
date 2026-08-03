@@ -9,11 +9,11 @@
  * evidence. It publishes only after exact semantic, visual, hash, and privacy
  * checks pass.
  *
- * CONTRACT:C5-PPTV-PATCH.1.2
+ * CONTRACT:C5-PPTV-PATCH.1.3
  * CONTRACT:C8-PPTV-TEXT-FIT.1.1
  * CONTRACT:C9-PPTV-PPTX-BASELINE.1.0
- * CONTRACT:C10-PPTV-PPTX-RECONCILIATION.1.0
- * CONTRACT:C11-OFFICE-VISUAL-EVIDENCE.1.0
+ * CONTRACT:C10-PPTV-PPTX-RECONCILIATION.1.2
+ * CONTRACT:C11-OFFICE-VISUAL-EVIDENCE.1.1
  */
 
 import { spawnSync } from "node:child_process";

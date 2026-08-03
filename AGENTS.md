@@ -1,7 +1,7 @@
 # Agent Guidelines
 
 <!-- FRESHNESS: Update this date every time you modify this file -->
-<!-- freshness: 2026-08-01 -->
+<!-- freshness: 2026-08-02 -->
 
 **How AI agents work effectively on the DOCX and PPTV tracks.**
 
@@ -35,15 +35,17 @@ verify the repository pointer, and ask before installing anything.
   writable through the same C5 session and exports only clean source. The
   narrow C7 fresh-PPTX compiler remains deck-only and passes schema,
   OpenDocKit reopen, and native PowerPoint open/render smoke; quantitative
-  comparison and PPTX save/reopen remain gates. C8 exact-font, anchor-aware
-  preflight has checked worked-deck and browser evidence; native PowerPoint
-  text calibration remains. C9 now composes one atom through explicit identity
-  or aspect-preserving uniform placement into a mapped native PPTX; C10
-  authenticates that baseline and proposes supported typed C5 1.2 edits back
-  to the atom. C11 automates browser/Quick Look comparisons, while full native
-  representative edit/save/reopen remains manual. PPTV source/profile 0.1.1
-  text resilience is banked design, not accepted syntax or current package
-  behavior.
+  cross-renderer comparison and a canary-specific save remain gates. C8
+  exact-font, anchor-aware preflight has checked worked-deck and browser
+  evidence; native PowerPoint text calibration remains. C9 composes one atom
+  through explicit identity or aspect-preserving uniform placement into a
+  mapped native PPTX; C10 1.2 authenticates that baseline, proposes supported
+  typed C5 edits, and accepts a strict reviewed resolution for one unambiguous
+  same-parent connector copy. C11 1.1 automates browser/Quick Look comparisons
+  and a bounded exact-path native Word/PowerPoint no-op save/close/reopen
+  lifecycle. Representative edits, native/cross-renderer fidelity, and human
+  review remain manual. PPTV source/profile 0.1.1 text resilience is banked
+  design, not accepted syntax or current package behavior.
 - **Team size:** Solo (Will Ackerly)
 - **Rebar tier:** 3 (Enforced) — the `v3.0.0-beta` SessionStart, generated
   registry, Steward, contract/document gates, ground truth, and compliance
@@ -60,21 +62,22 @@ verify the repository pointer, and ask before installing anything.
 **Don't implement without a contract. Don't modify code without checking its contract.**
 
 Eleven current behavioral contract IDs live in `architecture/CONTRACT-*.md`;
-the superseded C2 1.0 major-version file remains alongside C2 2.0 for history:
+only the superseded C2 1.0 major-version file remains alongside C2 2.0 for
+history:
 
 | Contract | Covers |
 |----------|--------|
-| `CONTRACT:C1-THEME-SCHEMA.1.0` | Theme JSON keys, deep-merge semantics, template resolution order |
+| `CONTRACT:C1-THEME-SCHEMA.1.1` | Theme JSON plus complete Word style materialization and bounded native-equivalence proof |
 | `CONTRACT:C2-PROVENANCE.2.0` | DOCX core stamp plus exact embedded original/canonical merge bases |
-| `CONTRACT:C3-ROUNDTRIP.1.1` | Exact canonical Markdown/DOCX inversion, refusals, reports, and merge |
+| `CONTRACT:C3-ROUNDTRIP.1.2` | Exact/diagnosed canonical Markdown inversion, semantic style projection, refusals, reports, and merge |
 | `CONTRACT:C4-PPTV-SOURCE.1.1` | Exact-source PPTV scan, manifest, identity/order, semantic read model |
-| `CONTRACT:C5-PPTV-PATCH.1.2` | Hash-bound legacy and typed native-object patch transactions |
+| `CONTRACT:C5-PPTV-PATCH.1.3` | Hash-bound typed transactions plus one exact reviewed connector clone |
 | `CONTRACT:C6-PPTV-RESOLVED.1.1` | Fixed-canvas compiler-grade style, geometry, group, and hard-line projection |
 | `CONTRACT:C7-PPTX-CANARY.1.1` | Deterministic primitive-only fresh-PPTX canary and strict OPC graph |
 | `CONTRACT:C8-PPTV-TEXT-FIT.1.1` | Pure anchor-aware text-fit evidence and explicit exact-font adapter |
 | `CONTRACT:C9-PPTV-PPTX-BASELINE.1.0` | Supported editable-PPTX baseline, explicit atom placement, and source map |
-| `CONTRACT:C10-PPTV-PPTX-RECONCILIATION.1.0` | Baseline-aware edited-PPTX inspection and reviewable patch proposal |
-| `CONTRACT:C11-OFFICE-VISUAL-EVIDENCE.1.0` | Cross-lane visual capture, comparison, native lifecycle, and review evidence |
+| `CONTRACT:C10-PPTV-PPTX-RECONCILIATION.1.2` | Proof-carrying native normalization, semantic diff, and reviewed connector-copy resolution |
+| `CONTRACT:C11-OFFICE-VISUAL-EVIDENCE.1.1` | Cross-lane visual evidence plus bounded native Office lifecycle bridge |
 
 ### The Four Contract Principles
 1. **Don't implement without a contract** — new schema-level surfaces,
@@ -93,7 +96,7 @@ the superseded C2 1.0 major-version file remains alongside C2 2.0 for history:
 ```python
 """md2docx — Markdown → styled DOCX, themed by a JSON template.
 
-CONTRACT:C1-THEME-SCHEMA.1.0
+CONTRACT:C1-THEME-SCHEMA.1.1
 CONTRACT:C2-PROVENANCE.2.0
 """
 ```
@@ -137,15 +140,16 @@ hand-edit the count anywhere else.
 ## Testing Cascade
 
 **Fast inner loops, one aggregate gate before committing.** There is no
-deployed service. Native Office/render comparison is the manual highest tier
-for every C7 compiler change.
+deployed service. The bounded exact-path native Office no-op lifecycle is
+automated but host-triggered; representative edits, native-render fidelity,
+and human review remain the manual highest tier for every C7 compiler change.
 
 | Tier | Name | Speed | When to Run |
 |------|------|-------|-------------|
 | **T0** | Format/type | seconds | `pnpm format:check` and `pnpm typecheck` |
 | **T1** | Targeted | seconds | `pnpm test:ts` or `.venv/bin/python tests/test_roundtrip.py`; exercise the affected CLI |
 | **T2** | Full repository | seconds | `pnpm test`, `pnpm build`, `pnpm test:browser`, and all `scripts/check-*.sh` |
-| **T3** | Office/render fidelity | manual/slow | Generated PPTX reopen, render comparison, and native PowerPoint validation |
+| **T3** | Office/render fidelity | manual/slow | Bounded native bridge, representative edits, render comparison, and native validation |
 
 Run `pnpm pack:check` when package metadata, exports, the CLI entry point, or
 published schemas change.
@@ -236,7 +240,7 @@ pnpm build
   Markdown equality**, not DOCX byte symmetry. The forward converter's choice
   of Word style (`Heading 2`, `List Bullet`, a shaded paragraph, a left border)
   is itself the contract; changing which style marks a construct is a contract
-  change to `CONTRACT:C3-ROUNDTRIP.1.1`, not a free-standing bug fix.
+  change to `CONTRACT:C3-ROUNDTRIP.1.2`, not a free-standing bug fix.
 - The marking-style banner feature (a `**CUI...**`-shaped first line) is
   generic and intentionally documented with a placeholder example
   (`**CUI//TEST**` in `tests/fixtures/kitchen-sink.md`). Never introduce a
@@ -248,10 +252,13 @@ pnpm build
 - Manifest order is slide order, SVG DOM sibling order is painter order, and
   stable IDs are identity. Do not add competing array-index, z-index, browser
   node, or PowerPoint numeric-ID authorities.
-- Standalone `.pptv.svg` is the default diagram atom; `.pptv.html` is the deck
-  aggregation and only C7 input. C9 may create a deterministic one-slide deck
-  artifact and mapped native PPTX only from explicit identity or
-  aspect-preserving uniform placement; the atom remains source authority.
+- A fully hydrated standalone `.pptv.svg` is the default source for every
+  independent diagram, figure, reusable visual, or slide-sized canvas; keep a
+  related suite as atoms. `.pptv.html` is explicit deck/report aggregation and
+  the only C7 input. Generated editor/composed HTML is never canonical source.
+  C9 may create a deterministic one-slide deck artifact and mapped native PPTX
+  only from explicit identity or aspect-preserving uniform placement; the atom
+  remains source authority.
   Never infer physical size, stretch/crop/letterbox, or describe external
   manifests, rich-text editing, general PPTX conversion, native text
   calibration, or full native/render fidelity as implemented.
@@ -277,7 +284,10 @@ pnpm build
   bytes plus captured engine/font identity. Never add system discovery,
   downgrade a worse status, or silently substitute.
 - Use source-range replacements for C5 edits and reload the complete candidate
-  before success. Do not silently normalize or rewrite the whole source.
+  before success. `clone-connector` is the only structural insertion and
+  requires a C5 1.3 transaction; C10 may emit it only after a strict reviewed
+  hash/fingerprint resolution. Do not silently normalize or rewrite the whole
+  source.
 - Don't add a third-party dependency without updating `README.md`,
   `METRICS.md`, the lockfile, and the relevant contract dependency section.
 - Theme files (`themes/*.json`) are pure data — no theme should require a
@@ -287,8 +297,8 @@ pnpm build
 
 ### Integration Points
 No services, APIs, or databases. The sibling OpenDocKit checkout is already an
-independent C7 reopen/parse oracle and remains a future optional adapter/upstream
-collaboration target; it is not a runtime dependency.
+independent C7 and native-saved C9 reopen/parse oracle and remains a future
+optional adapter/upstream collaboration target; it is not a runtime dependency.
 
 ---
 
@@ -322,9 +332,10 @@ collaboration target; it is not a runtime dependency.
   0 failing and 0 skipped
 - `scripts/check-compliance.sh` and `scripts/check-ground-truth.sh` pass
 - TypeScript format/type/build gates pass
-- Documentation distinguishes verified C4/C5/C6 behavior; bounded implemented
-  C7–C11 surfaces; automated browser/Quick Look evidence; remaining native
-  Office promotion gates; and the future 0.1.1/general-format roadmap
+- Documentation distinguishes verified C1/C4/C5/C6 behavior; bounded
+  implemented C7–C11 surfaces; automated browser/Quick Look/native no-op
+  lifecycle evidence; remaining representative-edit/native-fidelity gates;
+  and the future 0.1.1/general-format roadmap
 
 ---
 

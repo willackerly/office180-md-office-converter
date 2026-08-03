@@ -15,6 +15,7 @@
     "engineVersion": "151.0.7922.34",
     "platform": "Linux x86_64",
     "devicePixelRatio": 1,
+    "source": "GitHub Actions ubuntu-latest",
     "widths": {
       "kerning-av": 76,
       "spaces": 112,

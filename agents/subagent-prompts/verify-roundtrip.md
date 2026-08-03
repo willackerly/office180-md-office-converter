@@ -1,6 +1,6 @@
 # Template: Verify Roundtrip
 
-> Verify a change against `CONTRACT:C3-ROUNDTRIP.1.1` — run the round-trip
+> Verify a change against `CONTRACT:C3-ROUNDTRIP.1.2` — run the round-trip
 > test suite, and if the change adds a Markdown construct or a Word style
 > mapping not yet covered, extend `tests/fixtures/kitchen-sink.md` and
 > `tests/test_roundtrip.py` to cover it. Use after any change to
@@ -27,7 +27,7 @@
 1. Run `python3 tests/test_roundtrip.py`. If it fails, that's your first
    finding — report the failing test name and the assertion message
    verbatim; don't paraphrase.
-2. Read `architecture/CONTRACT-C3-ROUNDTRIP.1.1.md`'s Behavioral Contracts
+2. Read `architecture/CONTRACT-C3-ROUNDTRIP.1.2.md`'s Behavioral Contracts
    table. If `NEW_CONSTRUCT` isn't a row in that table, the contract needs
    a version bump (minor, if additive) — draft the new row and hand it
    back as a finding rather than editing the contract yourself unless your
@@ -49,7 +49,7 @@
 ## Context Files
 
 Read these before starting:
-- `architecture/CONTRACT-C3-ROUNDTRIP.1.1.md` — the round-trip contract
+- `architecture/CONTRACT-C3-ROUNDTRIP.1.2.md` — the round-trip contract
 - `tests/test_roundtrip.py` — the test suite, especially the `_word_bag`
   and `_normalize_source_for_comparison` docstrings
 - `tests/fixtures/kitchen-sink.md` — the fixture

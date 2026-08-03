@@ -1,6 +1,6 @@
 ---
 name: pptv-authoring
-description: Create, edit, inspect, validate, hydrate, compose, compile, and reconcile strict no-reflow PPTV diagrams and presentations. Use when asked to author or repair a standalone PPTV SVG atom or PPTV HTML deck, turn a brief into editable vector source, choose stable IDs/groups/connectors/text frames, audit text overflow, extract a deck slide into an independent atom, prepare a writable trusted browser editor, compile a supported atom or deck to native PPTX, or recover contracted edits from a mapped PPTX.
+description: Create, read, inspect, semantically compare, edit, validate, hydrate, compile, and reconcile strict no-reflow PPTV visual assets. Default to a fully hydrated standalone PPTV SVG atom for a diagram, figure, or slide-sized canvas; use PPTV HTML only for an actual multi-slide deck/report or deck-only behavior. Use when asked to turn a brief into editable vector source, choose stable IDs/groups/connectors/text frames, audit overflow, extract a deck slide into an independent atom, prepare a writable trusted editor, compile a supported atom or deck to native PPTX, recover contracted edits from a mapped PPTX, review one copied connector, or interpret a reconciliation refusal.
 ---
 
 # PPTV Authoring
@@ -8,23 +8,56 @@ description: Create, edit, inspect, validate, hydrate, compose, compile, and rec
 Create vector source whose explicit geometry and hard text lines remain
 authoritative. Prefer deterministic, diagnosable output over implicit layout.
 
-## Choose the authoring unit
+## Choose the canonical artifact
 
-- Default to one standalone `*.pptv.svg` atom for a diagram, architecture
-  figure, or vector beside documentation. It is the smallest semantic and
-  live-editable unit and may declare any finite `X Y WIDTH HEIGHT` canvas with
-  positive width and height.
-- Use one self-contained `*.pptv.html` envelope for a multi-slide deck, themes,
-  the fixed viewer, or a C7 deck-native PowerPoint deliverable. Deck slides
+- Default to one fully hydrated standalone `*.pptv.svg` atom for every
+  independent diagram, architecture figure, reusable visual, or slide-sized
+  canvas. A suite of related visuals remains a set of atoms unless collection
+  semantics are themselves part of the requested deliverable.
+- "Fully hydrated" means the atom is self-contained: one strict SVG root,
+  stable object IDs, explicit geometry and hard lines, local concrete styling,
+  and no manifest, deck CSS/theme authority, runtime, or external dependency.
+- Use one self-contained `*.pptv.html` envelope only when the canonical
+  deliverable is an actual multi-slide deck/report or needs shared deck themes,
+  manifest order, the fixed viewer, or the deck-only C7 compiler. Deck slides
   remain exactly `viewBox="0 0 1600 900"`.
 - Keep the SVG atom authoritative when the destination is a one-slide
-  PowerPoint deliverable. C9 composes it into a deterministic deck and mapped
-  native PPTX only after the author supplies an explicit placement policy.
+  PowerPoint deliverable. `compile` creates the mapped native PPTX directly
+  from the atom after the author supplies an explicit placement policy.
+- Treat `*.composed.pptv.html` and `*.editable.pptv.html` as generated
+  artifacts. Do not substitute either for the canonical atom.
 
 Never execute unknown embedded content to discover meaning. Validate untrusted
 bytes first. Direct browser open is only for source the user trusts.
 
+## Route the task
+
+| Intent | Minimum agent path |
+| --- | --- |
+| Create one visual | `new_diagram.py` → author atom → gates |
+| Read or summarize | `validate` → `outline` → `text`/`list`/`show` |
+| Compare two sources | validate both → join semantic projections by stable ID → inspect only changed IDs |
+| Edit supported content | hash-bound C5 patch → `--check` → new atom → gates |
+| Edit unsupported structure | narrow source edit → full validation/resolution/text-fit gates |
+| Work visually | generated trusted `editor-pack`; download clean atom bytes |
+| Export one visual to PowerPoint | `compile` the supported native subset directly; retain PPTX and map |
+| Inspect a generated one-slide aggregation | `compose` atom explicitly |
+| Recover PowerPoint edits | `reconcile` exact atom + map → review → apply patch to a new atom |
+| Author a real deck/report | `new_deck.py`; hydrate reusable slides back to atoms when needed |
+
+There is no source-to-source `pptv diff` command in 0.1. A raw text diff shows
+lexical changes only. For a semantic comparison, validate both same-kind
+sources, compare `outline`/`list`/`text` projections by stable ID, and use
+`show` or `resolve` only for changed objects. Use `reconcile`, not a source
+diff, for a mapped PPTX branch.
+
 ## Start quickly
+
+Resolve bundled scripts relative to the directory containing this `SKILL.md`.
+The examples below use the repository mirror
+`.agents/skills/pptv-authoring/`; when only the installed personal skill is
+available, substitute its own directory instead of assuming a repository
+checkout.
 
 From the `office180-md-office-converter` repository root, create a new
 standalone diagram with:
@@ -60,6 +93,11 @@ text.
 Do not hand-copy or modify a deck's fixed viewer runtime. The deck starter
 carries the registered runtime artifact exactly. A standalone diagram has no
 manifest, theme block, or runtime.
+
+Template/style-family identity is not contracted source metadata in 0.1. Do
+not invent root attributes, infer lineage from visual similarity, or treat a
+comment/filename as proof. Preserve existing non-rendering metadata bytes and
+report lineage as unknown until a successor C4/C6 metadata contract lands.
 
 ## Author in this order
 
@@ -129,10 +167,14 @@ or ellipse geometry, connector endpoints, explicit group translation, a
 single-line text frame/anchor, sibling painter order, safe subtree deletion,
 or a complete concrete native presentation style. Every operation carries
 old values, exact source ranges, and both C6 base and candidate snapshots.
-Generic attribute writes, insertion, reparenting, arbitrary transforms,
-rich-text rewriting, and unresolved or overlapping edits remain unsupported.
-Hand-edit source when authoring new structure or when a requested operation is
-outside this surface, then run every gate.
+Use `pptv-patch/0.3` only to clone one existing native straight connector into
+the same source parent. Supply a fresh stable ID, explicit existing
+`fromId`/`toId`, exact endpoints and complete style, plus the complete old/new
+sibling order. Never infer semantic references from geometry or Office numeric
+IDs. Generic attribute writes, general insertion, reparenting, arbitrary
+transforms, rich-text rewriting, and unresolved or overlapping edits remain
+unsupported. Hand-edit source when authoring new structure or when a requested
+operation is outside this surface, then run every gate.
 
 The browser editor currently exposes direct text editing only. The broader 0.2
 surface is available through validated patches and mapped-PPTX reconciliation;
@@ -185,7 +227,7 @@ Geometry, connector, group, structured-line/rich-text, style-rule, insertion,
 and deletion controls remain unsupported. Treat direct-open and file-handle
 features as trusted-source-only.
 
-## Compose and round-trip an atom through PowerPoint
+## Compile and round-trip an atom through PowerPoint
 
 An atom does not need to become canonical HTML before export. C9 treats HTML
 as a deterministic aggregation artifact and keeps the original
@@ -193,13 +235,19 @@ as a deterministic aggregation artifact and keeps the original
 the compiler never guesses, stretches, crops, or letterboxes:
 
 ```bash
-pnpm pptv compose architecture.pptv.svg \
-  --placement 40,50,1200,800 --policy identity \
-  --output architecture.composed.pptv.html --format json
 pnpm pptv compile architecture.pptv.svg \
   --placement 40,50,1200,800 --policy identity \
   --output architecture.pptx --map architecture.pptv.map.json \
   --format json
+```
+
+Run `compose` separately only when the deterministic one-slide HTML aggregation
+is itself requested for inspection, report/deck assembly, or debugging:
+
+```bash
+pnpm pptv compose architecture.pptv.svg \
+  --placement 40,50,1200,800 --policy identity \
+  --output architecture.composed.pptv.html --format json
 ```
 
 Use `identity` when placement width and height exactly equal the atom viewBox
@@ -214,6 +262,7 @@ exact atom and C9 sidecar map:
 pnpm pptv reconcile architecture.edited.pptx \
   --source architecture.pptv.svg \
   --baseline architecture.pptv.map.json \
+  --native-baseline architecture.native-save.pptx \
   --patch architecture.recovered.pptv.patch.json \
   --report architecture.reconcile.json --format json
 pnpm pptv patch architecture.pptv.svg \
@@ -225,10 +274,54 @@ pnpm pptv patch architecture.pptv.svg \
 
 Reconciliation is baseline-aware reverse compilation, not arbitrary PPTX
 import. It authenticates source, map, lineage, package topology, stable shape
-names, and the supported edit delta; ambiguous, copied, inserted, reparented,
-or otherwise unsupported content fails closed. It never overwrites the source.
+names, and the supported edit delta. Use `--native-baseline` only for the exact
+PowerPoint no-op save that immediately precedes later edits; C10 proves its
+supported semantics equivalent before treating its serializer rewrites as
+normalization.
+
+Duplicates refuse by default. For exactly one copied mapped straight connector,
+run once without a resolution and inspect the persistent report. Continue only
+when its `resolutionAssessment` says exactly one of two occurrences remains
+baseline-equivalent. Choose a fresh stable ID and explicit existing
+`fromId`/`toId`, then copy the report's exact source/map/edited/comparison
+hashes, occurrence fingerprints, parent/order, inverse endpoints, and complete
+style into a strict `pptv-reconcile-resolution/0.1` document. Rerun:
+
+```bash
+pnpm pptv reconcile architecture.edited.pptx \
+  --source architecture.pptv.svg \
+  --baseline architecture.pptv.map.json \
+  --native-baseline architecture.native-save.pptx \
+  --resolution architecture.connector-review.json \
+  --patch architecture.recovered.pptv.patch.json \
+  --report architecture.resolved-reconcile.json --format json
+```
+
+Treat `no-baseline-match` as both copies changed or structure drifted; restore
+one baseline occurrence or author both connectors explicitly in source. Treat
+two matches as ambiguous; make one intended copy semantically distinct and
+rerun review. Reject stale hashes/fingerprints, another duplicate, reparenting,
+insertion plus reorder, or any remaining review finding. Never manufacture a
+resolution merely to make the command pass. C10 emits no partial patch.
+
 Recompile the recovered atom with the same placement and compare the edited and
 regenerated PPTX renderings before claiming visual fidelity.
+
+For a trusted structural lifecycle check on macOS, use the repository bridge
+on a new ignored output path:
+
+```bash
+.venv/bin/python scripts/native-office-bridge.py lifecycle \
+  architecture.pptx \
+  --output .office180-native-work/architecture.native-save.pptx \
+  --report .office180-native-work/architecture.native-save.bridge.json \
+  --root . --trusted --timeout 90
+```
+
+The bridge never clicks or grants file access, targets only its exact work-copy
+path, and proves no-op Save/close/reopen package integrity. Do not call that
+representative editing or native visual fidelity; bind its report through C11
+and keep those gates explicit.
 
 ## Run the gates
 

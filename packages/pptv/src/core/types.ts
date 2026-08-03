@@ -2,7 +2,7 @@
  * Public PPTV core types.
  *
  * CONTRACT:C4-PPTV-SOURCE.1.1
- * CONTRACT:C5-PPTV-PATCH.1.2
+ * CONTRACT:C5-PPTV-PATCH.1.3
  */
 
 export type PptvInput =
@@ -538,6 +538,24 @@ export interface SetNativeStyleOperation {
   style: PptvConcreteNativeStyle;
 }
 
+export interface PptvConnectorCloneState {
+  fromId: string;
+  toId: string;
+  endpoints: PptvConnectorEndpoints;
+  style: PptvConcreteNativeStyle;
+}
+
+export interface CloneConnectorOperation {
+  op: "clone-connector";
+  templateId: string;
+  newId: string;
+  parentId: string;
+  oldOrder: string[];
+  order: string[];
+  oldConnector: PptvConnectorCloneState;
+  connector: PptvConnectorCloneState;
+}
+
 export type PptvLegacyOperation =
   SetTextOperation | SetActiveThemeOperation | SetSlideOrderOperation;
 
@@ -550,6 +568,8 @@ export type PptvOperation =
   | SetChildOrderOperation
   | DeleteObjectOperation
   | SetNativeStyleOperation;
+
+export type PptvPatchOperation = PptvOperation | CloneConnectorOperation;
 
 interface PptvPatchMetadata {
   baseSha256: string;
@@ -568,7 +588,12 @@ export interface PptvPatch02 extends PptvPatchMetadata {
   ops: PptvOperation[];
 }
 
-export type PptvPatch = PptvPatch01 | PptvPatch02;
+export interface PptvPatch03 extends PptvPatchMetadata {
+  schema: "pptv-patch/0.3";
+  ops: PptvPatchOperation[];
+}
+
+export type PptvPatch = PptvPatch01 | PptvPatch02 | PptvPatch03;
 
 export interface AppliedSourceEdit {
   range: SourceRange;

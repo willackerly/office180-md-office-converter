@@ -1,6 +1,9 @@
 # Architecture Directory
 
-Contracts and the registry for the DOCX and PPTV implementations.
+Contracts and the registry for the DOCX and current PPTV implementations.
+For the visual lane, a fully hydrated standalone SVG atom is the canonical
+default; HTML contracts apply only to an explicit deck/report aggregation.
+The destination-neutral public name remains a pre-production decision.
 
 See the [root README](../README.md) for how contracts fit into the overall
 project.
@@ -29,19 +32,23 @@ architecture/
   README.md                         # this file
   CONTRACT-TEMPLATE.md              # annotated template for new contracts
   CONTRACT-REGISTRY.md              # generated contract index
-  CONTRACT-C1-THEME-SCHEMA.1.0.md   # theme JSON keys, deep-merge, resolution order
+  CONTRACT-C1-THEME-SCHEMA.1.1.md   # theme schema plus deterministic Word styles
   CONTRACT-C2-PROVENANCE.1.0.md     # superseded core-props-only provenance
   CONTRACT-C2-PROVENANCE.2.0.md     # embedded original/canonical merge base
-  CONTRACT-C3-ROUNDTRIP.1.1.md      # exact canonical round trip and merge
+  CONTRACT-C3-ROUNDTRIP.1.2.md      # canonical round trip plus native normalization
   CONTRACT-C4-PPTV-SOURCE.1.1.md    # PPTV deck/diagram exact-source read models
-  CONTRACT-C5-PPTV-PATCH.1.2.md     # legacy plus typed native-object patch protocol
+  CONTRACT-C5-PPTV-PATCH.1.3.md     # typed patches plus reviewed connector clone
   CONTRACT-C6-PPTV-RESOLVED.1.1.md  # PPTV deck/diagram resolved profiles
   CONTRACT-C7-PPTX-CANARY.1.1.md    # deterministic primitive-only PPTX canary
   CONTRACT-C8-PPTV-TEXT-FIT.1.1.md  # deck/diagram exact-font text-fit evidence
   CONTRACT-C9-PPTV-PPTX-BASELINE.1.0.md # supported compiler/composition/map
-  CONTRACT-C10-PPTV-PPTX-RECONCILIATION.1.0.md # edited-PPTX semantic diff
-  CONTRACT-C11-OFFICE-VISUAL-EVIDENCE.1.0.md # cross-lane visual/native proof
+  CONTRACT-C10-PPTV-PPTX-RECONCILIATION.1.2.md # edited-PPTX semantic reconciliation
+  CONTRACT-C11-OFFICE-VISUAL-EVIDENCE.1.1.md # visual and native lifecycle proof
 ```
+
+C2 is the deliberate major-version history exception: its superseded 1.0 file
+remains beside current 2.0. Compatible minor predecessors live in Git history;
+only the latest minor file is retained in this directory.
 
 `CONTRACT-REGISTRY.md` is generated from the contract filesystem:
 
@@ -59,9 +66,9 @@ implementation/test links, discoveries, and the Tier 3 enforcement results.
 CONTRACT-{ID}-{NAME}.{MAJOR}.{MINOR}.md
 ```
 
-| Prefix | Meaning | Example |
-|--------|---------|---------|
-| `C` | Component | `C1-THEME-SCHEMA`, `C2-PROVENANCE` |
+| Prefix | Meaning   | Example                            |
+| ------ | --------- | ---------------------------------- |
+| `C`    | Component | `C1-THEME-SCHEMA`, `C2-PROVENANCE` |
 
 Every contract so far is a `C`-prefixed Component. The `S` (Service), `I`
 (Interface), and `P`
@@ -75,13 +82,13 @@ Each contract **declares** its maturity honestly in a `**Status:**` header line.
 The Steward separately computes implementation presence from repository
 evidence; computed lifecycle does not override the declared status.
 
-| Value | Meaning |
-|-------|---------|
-| **stub** | Placeholder; structure exists, content is not real |
-| **draft** | Real attempt, not yet reviewed/applied |
-| **in-progress** | Actively being built; expect churn |
-| **active** | In use; defines current behavior |
-| **verified** | Active + has passing tests/scenarios proving it |
+| Value           | Meaning                                            |
+| --------------- | -------------------------------------------------- |
+| **stub**        | Placeholder; structure exists, content is not real |
+| **draft**       | Real attempt, not yet reviewed/applied             |
+| **in-progress** | Actively being built; expect churn                 |
+| **active**      | In use; defines current behavior                   |
+| **verified**    | Active + has passing tests/scenarios proving it    |
 
 `scripts/check-compliance.sh` reads these `**Status:**` lines and weights
 the README's rebar badge — see `conventions` in the rebar project this repo
@@ -89,20 +96,22 @@ adopted, or `scripts/check-compliance.sh` itself for the exact thresholds.
 
 ## Versioning
 
-| Change | Version Bump |
-|--------|-------------|
-| Doc fix (no behavior change) | None |
-| New optional key/field | Minor (1.0 → 1.1) |
-| Changed schema, removed key | Major (1.1 → 2.0) |
-| New contract | New ID + 1.0 |
+| Change                       | Version Bump      |
+| ---------------------------- | ----------------- |
+| Doc fix (no behavior change) | None              |
+| New optional key/field       | Minor (1.0 → 1.1) |
+| Changed schema, removed key  | Major (1.1 → 2.0) |
+| New contract                 | New ID + 1.0      |
 
 When bumping minor within one compatible major:
+
 1. Rename the current file to the new minor version; Git retains the old text.
 2. Add `SUPERSEDES`, a retirement/migration section, and a Change History row.
 3. Update all `CONTRACT:` implementation references in the same delivery.
 4. Preserve every existing behavior unless the change is reclassified as major.
 
 When bumping major:
+
 1. Create the new version file.
 2. Mark old: `<!-- SUPERSEDED BY: CONTRACT-{ID}.{NEW} -->` and set its
    `**Status:**` to `superseded`.
@@ -117,7 +126,7 @@ comment:
 ```python
 """md2docx — Markdown → styled DOCX, themed by a JSON template.
 
-CONTRACT:C1-THEME-SCHEMA.1.0
+CONTRACT:C1-THEME-SCHEMA.1.1
 CONTRACT:C2-PROVENANCE.2.0
 """
 ```

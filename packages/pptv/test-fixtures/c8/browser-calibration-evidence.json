@@ -1,6 +1,6 @@
 {
   "schema": "pptv-browser-text-calibration-evidence/0.1",
-  "capturedOn": "2026-08-01",
+  "capturedOn": "2026-08-02",
   "overallStatus": "pass-with-explicit-engine-and-platform-variance",
   "fixture": "browser-calibration.json",
   "method": {
@@ -15,11 +15,37 @@
   "toolchain": {
     "playwright": "1.62.0",
     "esbuild": "0.28.1",
-    "browserKernelSha256": "230628dca67cb9bc8b91b0dead32667688365e3af210fbcf466420cc44813208",
-    "browserKernelBytes": 700262,
+    "browserKernelSha256": "ee946661bf592d41ae36e821c6bbb94651628f8ab03c11529516f29ed4e577e5",
+    "browserKernelBytes": 722018,
     "font": {
       "family": "ABeeZee",
       "sha256": "2901c8df256648cc2bb2e3afb381cb8d28e65ed3dbe11de20695ae4d5ffdeda9"
+    }
+  },
+  "captureInputs": {
+    "browserKernel": {
+      "sha256": "ee946661bf592d41ae36e821c6bbb94651628f8ab03c11529516f29ed4e577e5",
+      "bytes": 722018
+    },
+    "calibration": {
+      "sha256": "50c8259f16b75d313d85011c8fb40754357506e6fb3c3cf26d5d7a265a638ce6",
+      "bytes": 1700
+    },
+    "font": {
+      "sha256": "2901c8df256648cc2bb2e3afb381cb8d28e65ed3dbe11de20695ae4d5ffdeda9",
+      "bytes": 46016
+    },
+    "fontManifest": {
+      "sha256": "98514425fbc60d16e67260e190e92e687f336b3f92a20c5d540d8dd786f1d13e",
+      "bytes": 977
+    },
+    "testSource": {
+      "sha256": "a9ab7f149e3c8518feec2f2c0b00fd523b67f0eb8dbfb385d876f2f06a2f9199",
+      "bytes": 18560
+    },
+    "diagramFixture": {
+      "sha256": "084e1ecb812e08eb2449f073f3e2951bc747a00b165fa4b9a801c378bc3ded6f",
+      "bytes": 3602
     }
   },
   "privacy": {

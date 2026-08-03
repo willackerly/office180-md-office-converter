@@ -1,7 +1,7 @@
 /**
  * Hash-bound, all-or-nothing PPTV source patching.
  *
- * CONTRACT:C5-PPTV-PATCH.1.2
+ * CONTRACT:C5-PPTV-PATCH.1.3
  */
 
 import { loadDeck, loadDiagram, PptvLoadError } from "../core/deck.js";
@@ -15,10 +15,12 @@ import {
 import { hasErrors } from "../core/source.js";
 import type {
   AppliedSourceEdit,
+  CloneConnectorOperation,
   DeleteObjectOperation,
   Diagnostic,
   PatchResult,
   PptvConcreteNativeStyle,
+  PptvConnectorCloneState,
   PptvConnectorEndpoints,
   PptvDeck,
   PptvDocument,
@@ -28,6 +30,7 @@ import type {
   PptvObjectGeometry,
   PptvOperation,
   PptvPatch,
+  PptvPatchOperation,
   PptvPatchBounds,
   PptvPatchPoint,
   PptvRectGeometry,
@@ -117,13 +120,27 @@ export async function applyPatch(
       trustedDocument,
       candidateSource,
     );
-    const profileDiagnostics =
-      plan.patch.schema === "pptv-patch/0.2"
-        ? resolvePatchState(candidateDocument).diagnostics
+    const candidateResolution =
+      plan.patch.schema === "pptv-patch/0.1"
+        ? undefined
+        : resolvePatchState(candidateDocument);
+    const profileDiagnostics = candidateResolution?.diagnostics ?? [];
+    const cloneDiagnostics =
+      plan.patch.schema === "pptv-patch/0.3" &&
+      candidateResolution?.state !== undefined
+        ? validateCloneCandidate(
+            candidateDocument,
+            candidateResolution.state,
+            plan.patch.ops.find(
+              (operation): operation is CloneConnectorOperation =>
+                operation.op === "clone-connector",
+            ),
+          )
         : [];
     const resultErrors = [
       ...candidateDocument.diagnostics,
       ...profileDiagnostics,
+      ...cloneDiagnostics,
     ].filter(
       (diagnostic) =>
         diagnostic.severity === "error" || diagnostic.severity === "fatal",
@@ -194,15 +211,14 @@ function planPatch(document: PptvDocument, input: unknown): PatchPlan {
     });
   }
 
-  if (patch.schema === "pptv-patch/0.2") {
+  if (patch.schema !== "pptv-patch/0.1") {
     const resolution = resolvePatchState(document);
     resolvedState = resolution.state;
     if (resolvedState === undefined) {
       diagnostics.push({
         code: "PPTV-PATCH-INVALID-BASE",
         severity: "error",
-        message:
-          "pptv-patch/0.2 requires a source snapshot that resolves completely through C6.",
+        message: `${patch.schema} requires a source snapshot that resolves completely through C6.`,
         related: resolution.diagnostics.map((diagnostic) => ({
           message: `${diagnostic.code}: ${diagnostic.message}`,
           ...(diagnostic.range === undefined
@@ -214,7 +230,7 @@ function planPatch(document: PptvDocument, input: unknown): PatchPlan {
   }
 
   const deletingIds =
-    patch.schema === "pptv-patch/0.2"
+    patch.schema !== "pptv-patch/0.1"
       ? collectDeletionIds(document, patch.ops)
       : new Set<string>();
 
@@ -320,11 +336,22 @@ function planPatch(document: PptvDocument, input: unknown): PatchPlan {
           affectedIds,
           diagnostics,
         );
-      } else {
+      } else if (operation.op === "set-native-style") {
         planSetNativeStyle(
           document,
           resolvedState,
           operation,
+          operationIndex,
+          edits,
+          affectedIds,
+          diagnostics,
+        );
+      } else {
+        planCloneConnector(
+          document,
+          resolvedState,
+          operation,
+          patch.ops,
           operationIndex,
           edits,
           affectedIds,
@@ -807,6 +834,379 @@ function planSetConnectorEndpoints(
     affectedIds,
     diagnostics,
   );
+}
+
+function planCloneConnector(
+  document: PptvDocument,
+  state: ResolvedPatchState,
+  operation: CloneConnectorOperation,
+  operations: readonly PptvPatchOperation[],
+  operationIndex: number,
+  edits: AppliedSourceEdit[],
+  affectedIds: string[],
+  diagnostics: Diagnostic[],
+): void {
+  const object = state.objects.get(operation.templateId);
+  const indexed = document.index.objects.get(operation.templateId);
+  const node = findObject(document, operation.templateId);
+  if (object === undefined || indexed === undefined || node === undefined) {
+    diagnostics.push(
+      targetDiagnostic(
+        operationIndex,
+        `Unknown connector template "${operation.templateId}".`,
+      ),
+    );
+    return;
+  }
+  if (
+    object.kind !== "line" ||
+    node.elementName !== "line" ||
+    node.role !== "connector" ||
+    node.exportMode !== "native" ||
+    node.opaque ||
+    node.children.length !== 0
+  ) {
+    diagnostics.push(
+      targetDiagnostic(
+        operationIndex,
+        `Object "${operation.templateId}" is not a native, non-opaque <line> connector template.`,
+      ),
+    );
+    return;
+  }
+  for (const attribute of [
+    "id",
+    "data-pptv-role",
+    "data-pptv-export",
+    "data-pptv-from",
+    "data-pptv-to",
+    "x1",
+    "y1",
+    "x2",
+    "y2",
+  ]) {
+    if (!indexed.attributeRanges.has(attribute)) {
+      diagnostics.push({
+        code: "PPTV-PATCH-UNSAFE-RANGE",
+        severity: "error",
+        message: `Connector template "${operation.templateId}" has no existing literal "${attribute}" attribute to clone safely.`,
+        objectId: operation.templateId,
+        range: indexed.elementRange,
+      });
+      return;
+    }
+  }
+  if (
+    object.fromId !== operation.oldConnector.fromId ||
+    object.toId !== operation.oldConnector.toId ||
+    !sameEndpoints(
+      {
+        x1: object.x1,
+        y1: object.y1,
+        x2: object.x2,
+        y2: object.y2,
+      },
+      operation.oldConnector.endpoints,
+    ) ||
+    !sameStyle(object.style, operation.oldConnector.style)
+  ) {
+    diagnostics.push(
+      preconditionDiagnostic(
+        operationIndex,
+        operation.templateId,
+        "connector template",
+      ),
+    );
+    return;
+  }
+  if (
+    document.index.objects.has(operation.newId) ||
+    isRootId(document, operation.newId)
+  ) {
+    diagnostics.push({
+      code: "PPTV-PATCH-PRECONDITION",
+      severity: "error",
+      message: `Operation ${operationIndex} new connector ID "${operation.newId}" is already in use.`,
+      objectId: operation.newId,
+    });
+    return;
+  }
+
+  const fromTarget = state.objects.get(operation.connector.fromId);
+  const toTarget = state.objects.get(operation.connector.toId);
+  if (
+    fromTarget === undefined ||
+    toTarget === undefined ||
+    resolvedScopeId(fromTarget) !== resolvedScopeId(object) ||
+    resolvedScopeId(toTarget) !== resolvedScopeId(object)
+  ) {
+    diagnostics.push({
+      code: "PPTV-PATCH-REFERENCE",
+      severity: "error",
+      message: `Operation ${operationIndex} clone-connector requires existing from/to targets in the template connector's slide or diagram.`,
+      objectId: operation.newId,
+    });
+    return;
+  }
+
+  const resolvedChildren =
+    state.roots.get(operation.parentId) ??
+    getResolvedGroupChildren(state, operation.parentId);
+  const sourceChildren = getSourceContainerChildren(
+    document,
+    operation.parentId,
+  );
+  if (resolvedChildren === undefined || sourceChildren === undefined) {
+    diagnostics.push(
+      targetDiagnostic(
+        operationIndex,
+        `Unknown diagram, slide, or native group "${operation.parentId}".`,
+      ),
+    );
+    return;
+  }
+  const resolvedOrder = resolvedChildren.map((child) => child.id);
+  const sourceOrder = sourceChildren.map((child) => child.id);
+  if (!sameArray(sourceOrder, resolvedOrder)) {
+    diagnostics.push({
+      code: "PPTV-PATCH-UNSAFE-RANGE",
+      severity: "error",
+      message: `Container "${operation.parentId}" has ignored or mixed direct children and cannot accept a surgical connector clone.`,
+    });
+    return;
+  }
+  if (
+    !sourceOrder.includes(operation.templateId) ||
+    !sameArray(operation.oldOrder, sourceOrder)
+  ) {
+    diagnostics.push(
+      preconditionDiagnostic(
+        operationIndex,
+        operation.parentId,
+        "direct child order",
+      ),
+    );
+    return;
+  }
+  if (
+    operation.order.length !== operation.oldOrder.length + 1 ||
+    operation.oldOrder.includes(operation.newId) ||
+    operation.order.filter((id) => id === operation.newId).length !== 1 ||
+    !sameArray(
+      operation.order.filter((id) => id !== operation.newId),
+      operation.oldOrder,
+    )
+  ) {
+    diagnostics.push({
+      code: "PPTV-PATCH-PRECONDITION",
+      severity: "error",
+      message: `Operation ${operationIndex} clone-connector order must insert only "${operation.newId}" while preserving every existing sibling's relative order.`,
+      objectId: operation.newId,
+    });
+    return;
+  }
+
+  if (
+    reportCloneConflicts(
+      document,
+      operation,
+      operations,
+      operationIndex,
+      sourceChildren,
+      diagnostics,
+    )
+  ) {
+    return;
+  }
+
+  if (
+    (object.style.fontFamily === undefined) !==
+      (operation.connector.style.fontFamily === undefined) ||
+    (object.style.fontSize === undefined) !==
+      (operation.connector.style.fontSize === undefined)
+  ) {
+    diagnostics.push({
+      code: "PPTV-PATCH-UNSAFE-RANGE",
+      severity: "error",
+      message: `Connector clone ${operationIndex} cannot add or remove optional font properties.`,
+      objectId: operation.templateId,
+    });
+    return;
+  }
+
+  const cloneAttributeEdits: AppliedSourceEdit[] = [];
+  const addCloneAttributeEdit = (
+    attribute: string,
+    value: string | number,
+  ): boolean => {
+    const range = indexed.attributeRanges.get(attribute);
+    if (range === undefined) return false;
+    const edit = replaceAttributeValue(
+      document,
+      range,
+      attribute,
+      typeof value === "number" ? formatNumber(value) : value,
+      operationIndex,
+      operation.templateId,
+      diagnostics,
+    );
+    if (edit === undefined) return false;
+    cloneAttributeEdits.push(edit);
+    return true;
+  };
+  if (!addCloneAttributeEdit("id", operation.newId)) return;
+  const connectorAttributes: ReadonlyArray<
+    readonly [string, string | number, string | number]
+  > = [
+    [
+      "data-pptv-from",
+      operation.oldConnector.fromId,
+      operation.connector.fromId,
+    ],
+    ["data-pptv-to", operation.oldConnector.toId, operation.connector.toId],
+    [
+      "x1",
+      operation.oldConnector.endpoints.x1,
+      operation.connector.endpoints.x1,
+    ],
+    [
+      "y1",
+      operation.oldConnector.endpoints.y1,
+      operation.connector.endpoints.y1,
+    ],
+    [
+      "x2",
+      operation.oldConnector.endpoints.x2,
+      operation.connector.endpoints.x2,
+    ],
+    [
+      "y2",
+      operation.oldConnector.endpoints.y2,
+      operation.connector.endpoints.y2,
+    ],
+  ];
+  for (const [attribute, current, next] of connectorAttributes) {
+    if (current !== next && !addCloneAttributeEdit(attribute, next)) return;
+  }
+
+  const styleProperties: Array<{
+    key: keyof PptvConcreteNativeStyle;
+    attribute: string;
+    current: string | number | undefined;
+    next: string | number | undefined;
+  }> = [
+    {
+      key: "fill",
+      attribute: "fill",
+      current: object.style.fill,
+      next: operation.connector.style.fill,
+    },
+    {
+      key: "stroke",
+      attribute: "stroke",
+      current: object.style.stroke,
+      next: operation.connector.style.stroke,
+    },
+    {
+      key: "strokeWidth",
+      attribute: "stroke-width",
+      current: object.style.strokeWidth,
+      next: operation.connector.style.strokeWidth,
+    },
+    {
+      key: "opacity",
+      attribute: "opacity",
+      current: object.style.opacity,
+      next: operation.connector.style.opacity,
+    },
+    {
+      key: "fontFamily",
+      attribute: "font-family",
+      current: object.style.fontFamily,
+      next: operation.connector.style.fontFamily,
+    },
+    {
+      key: "fontSize",
+      attribute: "font-size",
+      current: object.style.fontSize,
+      next: operation.connector.style.fontSize,
+    },
+    {
+      key: "fontWeight",
+      attribute: "font-weight",
+      current: object.style.fontWeight,
+      next: operation.connector.style.fontWeight,
+    },
+    {
+      key: "fontStyle",
+      attribute: "font-style",
+      current: object.style.fontStyle,
+      next: operation.connector.style.fontStyle,
+    },
+    {
+      key: "textAnchor",
+      attribute: "text-anchor",
+      current: object.style.textAnchor,
+      next: operation.connector.style.textAnchor,
+    },
+  ];
+  for (const property of styleProperties) {
+    if (property.current === property.next) continue;
+    const provenance = object.styleProvenance[property.key];
+    if (
+      property.next === undefined ||
+      provenance === undefined ||
+      provenance.origin !== "presentation-attribute" ||
+      !indexed.attributeRanges.has(property.attribute)
+    ) {
+      diagnostics.push({
+        code: "PPTV-PATCH-UNSAFE-RANGE",
+        severity: "error",
+        message: `Style property "${property.key}" on connector template "${operation.templateId}" cannot be materialized into the clone from one direct presentation attribute.`,
+        objectId: operation.templateId,
+        range: indexed.elementRange,
+      });
+      return;
+    }
+    if (!addCloneAttributeEdit(property.attribute, property.next)) return;
+  }
+
+  const cloneBytes = applySliceEdits(
+    document.source.text,
+    indexed.elementRange,
+    cloneAttributeEdits,
+  );
+  if (cloneBytes === undefined) {
+    diagnostics.push({
+      code: "PPTV-PATCH-UNSAFE-RANGE",
+      severity: "error",
+      message: `Connector template "${operation.templateId}" attribute ranges do not fit its exact element range.`,
+      objectId: operation.templateId,
+      range: indexed.elementRange,
+    });
+    return;
+  }
+  const insertion = planCloneInsertion(
+    document,
+    operation,
+    sourceChildren,
+    cloneBytes,
+    operationIndex,
+    diagnostics,
+  );
+  if (insertion === undefined) return;
+  edits.push(insertion);
+  affectedIds.push(
+    operation.parentId,
+    operation.templateId,
+    operation.newId,
+    operation.connector.fromId,
+    operation.connector.toId,
+  );
+}
+
+function resolvedScopeId(object: ResolvedObject): string {
+  return "slideId" in object ? object.slideId : object.diagramId;
 }
 
 function planSetGroupTranslation(
@@ -1356,9 +1756,274 @@ function getSourceContainerChildren(
     : undefined;
 }
 
+function getContainerOpenTagRange(
+  document: PptvDocument,
+  parentId: string,
+): SourceRange | undefined {
+  if (document.sourceKind === "svg" && document.id === parentId) {
+    return document.index.root.openTagRange;
+  }
+  if (document.sourceKind === "html") {
+    const slide = document.index.slides.get(parentId);
+    if (slide !== undefined) return slide.openTagRange;
+  }
+  const node = findObject(document, parentId);
+  const indexed = document.index.objects.get(parentId);
+  return node?.role === "group" && node.exportMode === "native" && !node.opaque
+    ? indexed?.openTagRange
+    : undefined;
+}
+
+function reportCloneConflicts(
+  document: PptvDocument,
+  clone: CloneConnectorOperation,
+  operations: readonly PptvPatchOperation[],
+  cloneIndex: number,
+  directChildren: readonly PptvNode[],
+  diagnostics: Diagnostic[],
+): boolean {
+  const directChildIds = new Set(directChildren.map((child) => child.id));
+  const protectedIds = new Set([
+    clone.parentId,
+    clone.templateId,
+    clone.connector.fromId,
+    clone.connector.toId,
+  ]);
+  for (const [index, operation] of operations.entries()) {
+    if (index === cloneIndex) continue;
+    if (
+      operation.op === "set-child-order" &&
+      operation.parentId === clone.parentId
+    ) {
+      diagnostics.push({
+        code: "PPTV-PATCH-OVERLAP",
+        severity: "error",
+        message: `Operations ${cloneIndex} and ${index} both claim direct-child order for "${clone.parentId}".`,
+      });
+      return true;
+    }
+    if (operation.op === "delete-object") {
+      const deleted = findObject(document, operation.id);
+      const deletedIds =
+        deleted === undefined
+          ? new Set([operation.id])
+          : new Set(collectNodeIds(deleted));
+      if (
+        directChildIds.has(operation.id) ||
+        [...protectedIds].some((id) => deletedIds.has(id))
+      ) {
+        diagnostics.push({
+          code: protectedIds.has(operation.id)
+            ? "PPTV-PATCH-REFERENCE"
+            : "PPTV-PATCH-OVERLAP",
+          severity: "error",
+          message: `Operation ${index} deletes source structure required by clone-connector operation ${cloneIndex}.`,
+          objectId: operation.id,
+        });
+        return true;
+      }
+    }
+    if (
+      operation.op !== "set-active-theme" &&
+      operation.op !== "set-slide-order" &&
+      operation.op !== "set-child-order" &&
+      operation.op !== "clone-connector" &&
+      operation.id === clone.templateId
+    ) {
+      diagnostics.push({
+        code: "PPTV-PATCH-OVERLAP",
+        severity: "error",
+        message: `Operation ${index} changes connector template "${clone.templateId}" while operation ${cloneIndex} clones its exact base bytes.`,
+        objectId: clone.templateId,
+      });
+      return true;
+    }
+  }
+  return false;
+}
+
+function applySliceEdits(
+  source: string,
+  range: SourceRange,
+  edits: readonly AppliedSourceEdit[],
+): string | undefined {
+  const sorted = [...edits].sort(
+    (left, right) => right.range.charStart - left.range.charStart,
+  );
+  let result = source.slice(range.charStart, range.charEnd);
+  for (const edit of sorted) {
+    if (
+      edit.range.charStart < range.charStart ||
+      edit.range.charEnd > range.charEnd
+    ) {
+      return undefined;
+    }
+    const start = edit.range.charStart - range.charStart;
+    const end = edit.range.charEnd - range.charStart;
+    result = result.slice(0, start) + edit.replacement + result.slice(end);
+  }
+  return result;
+}
+
+function planCloneInsertion(
+  document: PptvDocument,
+  operation: CloneConnectorOperation,
+  children: readonly PptvNode[],
+  cloneBytes: string,
+  operationIndex: number,
+  diagnostics: Diagnostic[],
+): AppliedSourceEdit | undefined {
+  const newIndex = operation.order.indexOf(operation.newId);
+  const containerOpenTag = getContainerOpenTagRange(
+    document,
+    operation.parentId,
+  );
+  if (newIndex < 0 || children.length === 0 || containerOpenTag === undefined) {
+    diagnostics.push({
+      code: "PPTV-PATCH-UNSAFE-RANGE",
+      severity: "error",
+      message: `Cannot locate a nonempty exact source container for clone-connector operation ${operationIndex}.`,
+      objectId: operation.newId,
+    });
+    return undefined;
+  }
+
+  let gapStart: number;
+  let gapEnd: number;
+  let insertionRange: SourceRange;
+  let replacement: string;
+  if (newIndex < children.length) {
+    const next = children[newIndex];
+    const previous = children[newIndex - 1];
+    if (next === undefined) return undefined;
+    gapStart =
+      previous === undefined
+        ? containerOpenTag.charEnd
+        : previous.sourceRange.charEnd;
+    gapEnd = next.sourceRange.charStart;
+    insertionRange = zeroRangeAtStart(next.sourceRange);
+    replacement = cloneBytes;
+  } else {
+    const last = children[children.length - 1];
+    const beforeLast = children[children.length - 2];
+    if (last === undefined) return undefined;
+    gapStart =
+      beforeLast === undefined
+        ? containerOpenTag.charEnd
+        : beforeLast.sourceRange.charEnd;
+    gapEnd = last.sourceRange.charStart;
+    insertionRange = zeroRangeAtEnd(last.sourceRange);
+    replacement = "";
+  }
+  if (gapStart > gapEnd) {
+    diagnostics.push({
+      code: "PPTV-PATCH-UNSAFE-RANGE",
+      severity: "error",
+      message: `Clone insertion slot for "${operation.newId}" has inverted source boundaries.`,
+      objectId: operation.newId,
+    });
+    return undefined;
+  }
+  const whitespace = document.source.text.slice(gapStart, gapEnd);
+  if (!/^[\t\n\r ]*$/u.test(whitespace)) {
+    diagnostics.push({
+      code: "PPTV-PATCH-UNSAFE-RANGE",
+      severity: "error",
+      message: `Clone insertion slot for "${operation.newId}" contains comments, markup, or non-whitespace text.`,
+      objectId: operation.newId,
+      range: insertionRange,
+    });
+    return undefined;
+  }
+  return {
+    range: insertionRange,
+    replacement:
+      newIndex < children.length
+        ? `${replacement}${whitespace}`
+        : `${whitespace}${cloneBytes}`,
+    operationIndex,
+  };
+}
+
+function zeroRangeAtStart(range: SourceRange): SourceRange {
+  return {
+    byteStart: range.byteStart,
+    byteEnd: range.byteStart,
+    charStart: range.charStart,
+    charEnd: range.charStart,
+    lineStart: range.lineStart,
+    columnStart: range.columnStart,
+    lineEnd: range.lineStart,
+    columnEnd: range.columnStart,
+  };
+}
+
+function zeroRangeAtEnd(range: SourceRange): SourceRange {
+  return {
+    byteStart: range.byteEnd,
+    byteEnd: range.byteEnd,
+    charStart: range.charEnd,
+    charEnd: range.charEnd,
+    lineStart: range.lineEnd,
+    columnStart: range.columnEnd,
+    lineEnd: range.lineEnd,
+    columnEnd: range.columnEnd,
+  };
+}
+
+function validateCloneCandidate(
+  document: PptvDocument,
+  state: ResolvedPatchState,
+  operation: CloneConnectorOperation | undefined,
+): Diagnostic[] {
+  if (operation === undefined) {
+    return [
+      {
+        code: "PPTV-PATCH-INVALID-RESULT",
+        severity: "error",
+        message:
+          "A pptv-patch/0.3 candidate is missing its one clone-connector operation.",
+      },
+    ];
+  }
+  const object = state.objects.get(operation.newId);
+  const children = getSourceContainerChildren(document, operation.parentId);
+  if (
+    object === undefined ||
+    object.kind !== "line" ||
+    children === undefined ||
+    !sameArray(
+      children.map((child) => child.id),
+      operation.order,
+    ) ||
+    object.fromId !== operation.connector.fromId ||
+    object.toId !== operation.connector.toId ||
+    !sameEndpoints(
+      {
+        x1: object.x1,
+        y1: object.y1,
+        x2: object.x2,
+        y2: object.y2,
+      },
+      operation.connector.endpoints,
+    ) ||
+    !sameStyle(object.style, operation.connector.style)
+  ) {
+    return [
+      {
+        code: "PPTV-PATCH-INVALID-RESULT",
+        severity: "error",
+        message: `Cloned connector "${operation.newId}" does not resolve to its declared identity, parent order, references, endpoints, and style.`,
+        objectId: operation.newId,
+      },
+    ];
+  }
+  return [];
+}
+
 function collectDeletionIds(
   document: PptvDocument,
-  operations: readonly PptvOperation[],
+  operations: readonly PptvPatchOperation[],
 ): Set<string> {
   const ids = new Set<string>();
   for (const operation of operations) {
@@ -1551,11 +2216,16 @@ function decodePatch(input: unknown): {
       message: `Unknown patch field "${key}".`,
     });
   }
-  if (input.schema !== "pptv-patch/0.1" && input.schema !== "pptv-patch/0.2") {
+  if (
+    input.schema !== "pptv-patch/0.1" &&
+    input.schema !== "pptv-patch/0.2" &&
+    input.schema !== "pptv-patch/0.3"
+  ) {
     diagnostics.push({
       code: "PPTV-PATCH-SCHEMA",
       severity: "error",
-      message: 'Patch schema must equal "pptv-patch/0.1" or "pptv-patch/0.2".',
+      message:
+        'Patch schema must equal "pptv-patch/0.1", "pptv-patch/0.2", or "pptv-patch/0.3".',
     });
   }
   if (
@@ -1594,7 +2264,7 @@ function decodePatch(input: unknown): {
       message: "Patch timestamp must be an RFC 3339 date-time.",
     });
   }
-  const operations: PptvOperation[] = [];
+  const operations: PptvPatchOperation[] = [];
   if (Array.isArray(input.ops)) {
     for (const [index, value] of input.ops.entries()) {
       const operation = decodeOperation(
@@ -1607,9 +2277,22 @@ function decodePatch(input: unknown): {
     }
   }
   if (
+    input.schema === "pptv-patch/0.3" &&
+    operations.filter((operation) => operation.op === "clone-connector")
+      .length !== 1
+  ) {
+    diagnostics.push({
+      code: "PPTV-PATCH-SCHEMA",
+      severity: "error",
+      message: "pptv-patch/0.3 requires exactly one clone-connector operation.",
+    });
+  }
+  if (
     hasErrors(diagnostics) ||
     typeof input.baseSha256 !== "string" ||
-    (input.schema !== "pptv-patch/0.1" && input.schema !== "pptv-patch/0.2")
+    (input.schema !== "pptv-patch/0.1" &&
+      input.schema !== "pptv-patch/0.2" &&
+      input.schema !== "pptv-patch/0.3")
   ) {
     return { diagnostics };
   }
@@ -1631,7 +2314,13 @@ function decodePatch(input: unknown): {
           ...metadata,
           ops: operations as PptvLegacyOperation[],
         }
-      : { schema: "pptv-patch/0.2", ...metadata, ops: operations };
+      : input.schema === "pptv-patch/0.2"
+        ? {
+            schema: "pptv-patch/0.2",
+            ...metadata,
+            ops: operations as PptvOperation[],
+          }
+        : { schema: "pptv-patch/0.3", ...metadata, ops: operations };
   return { patch, diagnostics };
 }
 
@@ -1640,7 +2329,7 @@ function decodeOperation(
   index: number,
   diagnostics: Diagnostic[],
   schema: unknown,
-): PptvOperation | undefined {
+): PptvPatchOperation | undefined {
   if (!isRecord(input) || typeof input.op !== "string") {
     diagnostics.push(
       schemaOperationDiagnostic(
@@ -1810,13 +2499,77 @@ function decodeOperation(
     };
   }
 
-  if (schema !== "pptv-patch/0.2") {
+  if (schema === "pptv-patch/0.1") {
     diagnostics.push({
       code: "PPTV-PATCH-UNSUPPORTED",
       severity: "error",
       message: `Operation ${index} uses unsupported op "${input.op}" for pptv-patch/0.1.`,
     });
     return undefined;
+  }
+
+  if (input.op === "clone-connector") {
+    if (schema !== "pptv-patch/0.3") {
+      diagnostics.push({
+        code: "PPTV-PATCH-UNSUPPORTED",
+        severity: "error",
+        message: `Operation ${index} uses unsupported op "clone-connector" for pptv-patch/0.2.`,
+      });
+      return undefined;
+    }
+    reportUnknownOperationKeys(
+      input,
+      index,
+      [
+        "op",
+        "templateId",
+        "newId",
+        "parentId",
+        "oldOrder",
+        "order",
+        "oldConnector",
+        "connector",
+      ],
+      diagnostics,
+    );
+    if (
+      !validStableId(input.templateId) ||
+      !validStableId(input.newId) ||
+      !validStableId(input.parentId) ||
+      !validStableIdArray(input.oldOrder) ||
+      !validStableIdArray(input.order)
+    ) {
+      diagnostics.push(
+        schemaOperationDiagnostic(
+          index,
+          "clone-connector requires stable templateId/newId/parentId and unique stable-ID oldOrder/order arrays.",
+        ),
+      );
+      return undefined;
+    }
+    const oldConnector = decodeConnectorCloneState(
+      input.oldConnector,
+      index,
+      "oldConnector",
+      diagnostics,
+    );
+    const connector = decodeConnectorCloneState(
+      input.connector,
+      index,
+      "connector",
+      diagnostics,
+    );
+    if (oldConnector === undefined || connector === undefined) return undefined;
+    return {
+      op: "clone-connector",
+      templateId: input.templateId,
+      newId: input.newId,
+      parentId: input.parentId,
+      oldOrder: input.oldOrder,
+      order: input.order,
+      oldConnector,
+      connector,
+    };
   }
 
   if (input.op === "set-object-geometry") {
@@ -2090,6 +2843,59 @@ function decodeOperation(
     message: `Operation ${index} uses unsupported op "${input.op}".`,
   });
   return undefined;
+}
+
+function decodeConnectorCloneState(
+  input: unknown,
+  index: number,
+  label: string,
+  diagnostics: Diagnostic[],
+): PptvConnectorCloneState | undefined {
+  if (!isRecord(input)) {
+    diagnostics.push(
+      schemaOperationDiagnostic(
+        index,
+        `${label} must be a connector state object.`,
+      ),
+    );
+    return undefined;
+  }
+  reportUnknownNestedKeys(
+    input,
+    index,
+    label,
+    ["fromId", "toId", "endpoints", "style"],
+    diagnostics,
+  );
+  if (!validStableId(input.fromId) || !validStableId(input.toId)) {
+    diagnostics.push(
+      schemaOperationDiagnostic(
+        index,
+        `${label} requires stable fromId and toId.`,
+      ),
+    );
+    return undefined;
+  }
+  const endpoints = decodeEndpoints(
+    input.endpoints,
+    index,
+    `${label}.endpoints`,
+    diagnostics,
+    true,
+  );
+  const style = decodeConcreteStyle(
+    input.style,
+    index,
+    `${label}.style`,
+    diagnostics,
+  );
+  if (endpoints === undefined || style === undefined) return undefined;
+  return {
+    fromId: input.fromId,
+    toId: input.toId,
+    endpoints,
+    style,
+  };
 }
 
 function decodeGeometry(

@@ -1,6 +1,6 @@
-// Tests: CONTRACT:C4-PPTV-SOURCE.1.1, CONTRACT:C5-PPTV-PATCH.1.2,
+// Tests: CONTRACT:C4-PPTV-SOURCE.1.1, CONTRACT:C5-PPTV-PATCH.1.3,
 // CONTRACT:C6-PPTV-RESOLVED.1.1, CONTRACT:C9-PPTV-PPTX-BASELINE.1.0,
-// CONTRACT:C10-PPTV-PPTX-RECONCILIATION.1.0
+// CONTRACT:C10-PPTV-PPTX-RECONCILIATION.1.2
 
 import { createHash } from "node:crypto";
 import { mkdtemp, readFile, readdir, rm, writeFile } from "node:fs/promises";
@@ -20,6 +20,7 @@ import {
   type PptvPptxMap,
 } from "../node/pptx-baseline.js";
 import { inspectPptxForReconciliation } from "../node/pptx-inspect.js";
+import { redactPrivateValues } from "../node/reconciliation-report.js";
 import { reconcilePptx } from "../node/reconcile.js";
 import { applyPatch } from "../ops/patch.js";
 
@@ -90,6 +91,110 @@ async function rewritePart(
     compression: "DEFLATE",
     compressionOptions: { level: 9 },
     platform: "DOS",
+  });
+}
+
+async function rewritePackage(
+  bytes: Uint8Array,
+  rewrite: (zip: JSZip) => Promise<void> | void,
+): Promise<Uint8Array> {
+  const zip = await JSZip.loadAsync(bytes, { checkCRC32: true });
+  await rewrite(zip);
+  return zip.generateAsync({
+    type: "uint8array",
+    compression: "DEFLATE",
+    compressionOptions: { level: 9 },
+    platform: "DOS",
+  });
+}
+
+async function replaceZipText(
+  zip: JSZip,
+  partName: string,
+  rewrite: (text: string) => string,
+): Promise<void> {
+  const entry = zip.file(partName);
+  if (entry === null) throw new Error(`Missing test part ${partName}`);
+  const before = await entry.async("string");
+  const after = rewrite(before);
+  if (after === before) {
+    throw new Error(`Test rewrite did not change ${partName}`);
+  }
+  zip.file(partName, after, {
+    date: new Date("1980-01-01T00:00:00.000Z"),
+    createFolders: false,
+  });
+}
+
+async function nativeSaveEnvelope(
+  bytes: Uint8Array,
+  map: PptvPptxMap,
+): Promise<Uint8Array> {
+  return rewritePackage(bytes, async (zip) => {
+    await replaceZipText(zip, "ppt/presentation.xml", (xml) =>
+      xml.replace(' type="screen16x9"', ""),
+    );
+    await replaceZipText(zip, SLIDE_PART, (xml) => {
+      const title = mappedObjectBlock(xml, map, TITLE_ID);
+      const withoutEndMarker = title.text.replace(
+        /[ \t]*<a:endParaRPr\b[\s\S]*?<\/a:endParaRPr>\s*/u,
+        "\n",
+      );
+      if (withoutEndMarker === title.text) {
+        throw new Error("Test title lacks an end-paragraph marker");
+      }
+      return (
+        xml.slice(0, title.start) +
+        withoutEndMarker +
+        xml.slice(title.end)
+      ).replace(
+        "<p:grpSpPr/>",
+        '<p:grpSpPr><a:xfrm><a:off x="0" y="0"/><a:ext cx="0" cy="0"/><a:chOff x="0" y="0"/><a:chExt cx="0" cy="0"/></a:xfrm></p:grpSpPr>',
+      );
+    });
+    await replaceZipText(zip, "ppt/theme/theme1.xml", (xml) =>
+      xml.replace(
+        "</a:theme>",
+        "<a:objectDefaults/><a:extraClrSchemeLst/></a:theme>",
+      ),
+    );
+    await replaceZipText(
+      zip,
+      "ppt/presProps.xml",
+      () => `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<p:presentationPr
+  xmlns:p="http://schemas.openxmlformats.org/presentationml/2006/main"
+  xmlns:p14="http://schemas.microsoft.com/office/powerpoint/2010/main"
+  xmlns:p15="http://schemas.microsoft.com/office/powerpoint/2012/main">
+  <p:extLst>
+    <p:ext uri="{E76CE94A-603C-4142-B9EB-6D1370010A27}"><p14:discardImageEditData val="0"/></p:ext>
+    <p:ext uri="{D31A062A-798A-4329-ABDD-BBA856620510}"><p14:defaultImageDpi val="220"/></p:ext>
+    <p:ext uri="{FD5EFAAD-0ECE-453E-9831-46B23BE46B34}"><p15:chartTrackingRefBased val="0"/></p:ext>
+  </p:extLst>
+</p:presentationPr>`,
+    );
+    await replaceZipText(zip, "[Content_Types].xml", (xml) =>
+      xml.replace(
+        "</Types>",
+        '  <Override PartName="/ppt/viewProps.xml" ContentType="application/vnd.openxmlformats-officedocument.presentationml.viewProps+xml"/>\n  <Override PartName="/ppt/tableStyles.xml" ContentType="application/vnd.openxmlformats-officedocument.presentationml.tableStyles+xml"/>\n</Types>',
+      ),
+    );
+    await replaceZipText(zip, "ppt/_rels/presentation.xml.rels", (xml) =>
+      xml.replace(
+        "</Relationships>",
+        '  <Relationship Id="rId5" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/viewProps" Target="viewProps.xml"/>\n  <Relationship Id="rId6" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/tableStyles" Target="tableStyles.xml"/>\n</Relationships>',
+      ),
+    );
+    zip.file(
+      "ppt/tableStyles.xml",
+      '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><a:tblStyleLst xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" def="{5C22544A-7EE6-4342-B048-85BDC9FD1C3A}"/>',
+      { createFolders: false },
+    );
+    zip.file(
+      "ppt/viewProps.xml",
+      '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><p:viewPr xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" xmlns:p="http://schemas.openxmlformats.org/presentationml/2006/main"><p:normalViewPr><p:restoredLeft sz="15987"/><p:restoredTop sz="94660"/></p:normalViewPr><p:slideViewPr><p:cSldViewPr snapToGrid="1"><p:cViewPr varScale="1"><p:scale><a:sx n="100" d="100"/><a:sy n="100" d="100"/></p:scale><p:origin x="0" y="0"/></p:cViewPr><p:guideLst/></p:cSldViewPr></p:slideViewPr><p:notesTextViewPr><p:cViewPr><p:scale><a:sx n="100" d="100"/><a:sy n="100" d="100"/></p:scale><p:origin x="0" y="0"/></p:cViewPr></p:notesTextViewPr><p:gridSpacing cx="72008" cy="72008"/></p:viewPr>',
+      { createFolders: false },
+    );
   });
 }
 
@@ -396,12 +501,22 @@ describe("C10 bounded PPTX reconciliation", () => {
       artifact.pptxBytes,
     );
     expect(exact).toMatchObject({
-      schema: "pptv-pptx-reconciliation/0.1",
+      schema: "pptv-pptx-reconciliation/0.2",
       status: "unchanged",
       sourceSha256: diagram.source.sha256,
       baselineMapSha256: artifact.mapSha256,
       editedPptxSha256: artifact.pptxSha256,
       changes: [],
+      summary: {
+        highestDisposition: "auto-fixable",
+        findingCounts: {
+          autoFixable: 0,
+          reviewRequired: 0,
+          refused: 0,
+        },
+      },
+      findings: [],
+      candidateOperations: [],
       diagnostics: [],
     });
     expect(exact.patch).toBeUndefined();
@@ -413,6 +528,187 @@ describe("C10 bounded PPTX reconciliation", () => {
     expect(normalized.changes).toEqual([]);
     expect(normalized.patch).toBeUndefined();
     expect(normalized.editedPptxSha256).toBe(sha256(recompressed));
+  });
+
+  it("proves the exact native-save envelope and emits a deterministic agent-grade report", async () => {
+    const { diagram, artifact } = await baselineFixture();
+    const native = await nativeSaveEnvelope(artifact.pptxBytes, artifact.map);
+    const inspection = await inspectPptxForReconciliation(native, artifact.map);
+    expect(inspection.diagnostics).toEqual([]);
+    expect(inspection.inspection).toBeDefined();
+
+    const first = await reconcilePptx(diagram, artifact.map, native);
+    const second = await reconcilePptx(diagram, artifact.map, native);
+
+    expect(first.status).toBe("unchanged");
+    expect(first.changes).toEqual([]);
+    expect(first.patch).toBeUndefined();
+    expect(first.findings).toEqual(second.findings);
+    expect(first.candidateOperations).toEqual(second.candidateOperations);
+    expect(first.summary.occurrenceCounts.normalizations).toBeGreaterThan(8);
+    const rules = new Set(
+      first.findings
+        .map((finding) => finding.normalizationRule?.id)
+        .filter((id): id is string => id !== undefined),
+    );
+    expect([...rules]).toEqual(
+      expect.arrayContaining([
+        "pptv-c10/content-type-set/1",
+        "pptv-c10/relationship-graph/1",
+        "pptv-c10/view-properties-inert/1",
+        "pptv-c10/table-styles-inert/1",
+        "pptv-c10/slide-size-preset-omitted/1",
+        "pptv-c10/root-zero-group-transform/1",
+        "pptv-c10/theme-empty-defaults/1",
+        "pptv-c10/presentation-property-defaults/1",
+        "pptv-c10/end-paragraph-style-marker-omitted/1",
+      ]),
+    );
+  });
+
+  it("authenticates an exact native baseline before comparing a later edit against it", async () => {
+    const { diagram, artifact } = await baselineFixture();
+    const native = await nativeSaveEnvelope(artifact.pptxBytes, artifact.map);
+    const edited = await editTitle(native, "Edited after native save");
+
+    const result = await reconcilePptx(diagram, artifact.map, edited, {
+      nativeBaselinePptxBytes: native,
+    });
+    expect(result).toMatchObject({
+      status: "patchable",
+      nativeBaselinePptxSha256: sha256(native),
+      changes: [
+        {
+          kind: "text",
+          objectId: TITLE_ID,
+          oldText: TITLE,
+          newText: "Edited after native save",
+        },
+      ],
+      patch: {
+        ops: [{ op: "set-text", value: "Edited after native save" }],
+      },
+    });
+    expect(result.summary.occurrenceCounts.normalizations).toBeGreaterThan(8);
+
+    const unauthenticated = await reconcilePptx(diagram, artifact.map, edited, {
+      nativeBaselinePptxBytes: edited,
+    });
+    expect(unauthenticated).toMatchObject({
+      status: "refused",
+      diagnostics: [{ code: "PPTV-RECONCILE-INVALID-BASELINE" }],
+    });
+    expect(unauthenticated.patch).toBeUndefined();
+  });
+
+  it("keeps near-match normalization candidates fail-closed", async () => {
+    const { diagram, artifact } = await baselineFixture();
+    const nonzeroRootTransform = await rewritePart(
+      artifact.pptxBytes,
+      SLIDE_PART,
+      (xml) =>
+        xml.replace(
+          "<p:grpSpPr/>",
+          '<p:grpSpPr><a:xfrm><a:off x="1" y="0"/><a:ext cx="0" cy="0"/><a:chOff x="0" y="0"/><a:chExt cx="0" cy="0"/></a:xfrm></p:grpSpPr>',
+        ),
+    );
+    const transform = await reconcilePptx(
+      diagram,
+      artifact.map,
+      nonzeroRootTransform,
+    );
+    expect(transform.status).toBe("review-required");
+    expect(codes(transform)).toContain("PPTV-RECONCILE-UNSUPPORTED");
+    expect(
+      transform.findings.some(
+        (finding) =>
+          finding.normalizationRule?.id ===
+          "pptv-c10/root-zero-group-transform/1",
+      ),
+    ).toBe(false);
+
+    const conflictingEndMarker = await rewriteMappedObject(
+      artifact.pptxBytes,
+      artifact.map,
+      TITLE_ID,
+      (block) =>
+        block.replace(
+          /(<a:endParaRPr\b[^>]*\sb=")1(")/u,
+          (_match, prefix: string, suffix: string) => `${prefix}0${suffix}`,
+        ),
+    );
+    const marker = await reconcilePptx(
+      diagram,
+      artifact.map,
+      conflictingEndMarker,
+    );
+    expect(marker.status).toBe("review-required");
+    expect(codes(marker)).toContain("PPTV-RECONCILE-UNSUPPORTED");
+    expect(marker.patch).toBeUndefined();
+
+    const exactEnvelope = await nativeSaveEnvelope(
+      artifact.pptxBytes,
+      artifact.map,
+    );
+    const populatedTableStyles = await rewritePart(
+      exactEnvelope,
+      "ppt/tableStyles.xml",
+      (xml) =>
+        xml.replace(
+          '}"/>',
+          '}"><a:tblStyle styleId="{00000000-0000-0000-0000-000000000000}" styleName="Unsafe"/></a:tblStyleLst>',
+        ),
+    );
+    const tableStyles = await reconcilePptx(
+      diagram,
+      artifact.map,
+      populatedTableStyles,
+    );
+    expect(tableStyles.status).toBe("review-required");
+    expect(codes(tableStyles)).toContain("PPTV-RECONCILE-UNSUPPORTED");
+    expect(
+      tableStyles.findings.some(
+        (finding) =>
+          finding.normalizationRule?.id === "pptv-c10/table-styles-inert/1",
+      ),
+    ).toBe(false);
+  });
+
+  it("redacts private producer metadata without changing safe evidence", async () => {
+    expect(
+      redactPrivateValues({
+        lastModifiedBy: "private@example.test",
+        creator: "Private Author",
+        nested: {
+          company: "Private Company",
+          version: "16.99",
+        },
+      }),
+    ).toEqual({
+      lastModifiedBy: "[redacted]",
+      creator: "[redacted]",
+      nested: {
+        company: "[redacted]",
+        version: "16.99",
+      },
+    });
+
+    const privateValue = "private-author@example.test";
+    const { diagram, artifact } = await baselineFixture();
+    const privateMetadata = await rewritePart(
+      artifact.pptxBytes,
+      "docProps/core.xml",
+      (xml) => xml.replaceAll("office180", privateValue),
+    );
+    const report = await reconcilePptx(diagram, artifact.map, privateMetadata);
+    expect(report.status).toBe("unchanged");
+    expect(JSON.stringify(report)).not.toContain(privateValue);
+    expect(
+      report.findings.some(
+        (finding) =>
+          finding.normalizationRule?.id === "pptv-c10/generated-metadata/1",
+      ),
+    ).toBe(true);
   });
 
   it("turns one direct single-line a:t edit into one minimal C5 set-text operation", async () => {
@@ -656,6 +952,41 @@ describe("C10 bounded PPTX reconciliation", () => {
     expect(duplicate.status).toBe("refused");
     expect(codes(duplicate)).toContain("PPTV-RECONCILE-DUPLICATE-ID");
     expect(duplicate.patch).toBeUndefined();
+    expect(
+      duplicate.changes.some(
+        (change) => change.kind === "deletion" && change.objectId === TITLE_ID,
+      ),
+    ).toBe(false);
+    expect(
+      duplicate.candidateOperations.some(
+        (candidate) =>
+          candidate.operation.op === "delete-object" &&
+          candidate.operation.id === TITLE_ID,
+      ),
+    ).toBe(false);
+    const duplicateFinding = duplicate.findings.find(
+      (finding) => finding.code === "PPTV-RECONCILE-DUPLICATE-ID",
+    );
+    expect(duplicateFinding).toMatchObject({
+      disposition: "refused",
+      occurrenceCount: 2,
+      scope: { kind: "object", objectId: TITLE_ID },
+      evidence: [
+        {
+          kind: "identity-occurrence",
+          edited: {
+            occurrenceCount: 2,
+            numericIdsAreAuthority: false,
+          },
+        },
+      ],
+    });
+    expect(
+      (
+        duplicateFinding?.evidence[0]?.edited as
+          { occurrences?: readonly unknown[] } | undefined
+      )?.occurrences,
+    ).toHaveLength(2);
   });
 
   it("refuses colliding and centrally aliased raw ZIP entry names", async () => {

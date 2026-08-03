@@ -1,18 +1,34 @@
 # @office180/pptv
 
-Source-preserving TypeScript tools for first-class PPTV HTML decks and
-standalone SVG diagram atoms. The package runs in Node.js 20+ and keeps its
+Source-preserving TypeScript tools for fully hydrated standalone SVG atoms and
+explicit PPTV HTML deck/report aggregations. The package runs in Node.js 20+
+and keeps its
 portable scanner, semantic snapshots, projections, patch/resolved/text-fit
 engines, and browser-session state separate from the explicit Node
 filesystem/wrapper/PPTX boundary.
 
+## Canonical source default
+
+Use one self-contained `*.pptv.svg` atom for every independent diagram, figure,
+reusable visual, or slide-sized canvas. An atom is hydration-complete when all
+supported geometry, styling, text, and references needed to interpret it are
+local; it has no manifest, deck theme/CSS authority, runtime, or external
+dependency. A related asset suite remains a set of atoms.
+
+Use `*.pptv.html` only when the canonical deliverable is an actual ordered
+multi-slide deck/report or needs shared themes, manifest order, the fixed
+viewer, or the deck-only C7 compiler. `*.editable.pptv.html` and
+`*.composed.pptv.html` are generated artifacts, never replacements for the
+atom. A one-slide PowerPoint export compiles directly from the atom; `compose`
+is optional when the generated HTML aggregation is itself useful.
+
 ## Implemented in 0.1
 
-- non-executing `.pptv.html` scanning and strict physical-section validation;
 - namespace-aware XML 1.0 well-formedness gating for standalone `.pptv.svg`
   before structural scanning, including fail-closed duplicate-attribute,
   mismatched-tag, undeclared-prefix, invalid-character, multi-root, and
   DOCTYPE/DTD/custom-entity handling;
+- non-executing `.pptv.html` scanning and strict physical-section validation;
 - strict deck manifest JSON parsing with duplicate-key and source-range
   diagnostics;
 - immutable `PptvDeck` and `PptvDiagram` semantic snapshots, with
@@ -27,7 +43,8 @@ filesystem/wrapper/PPTX boundary.
 - atomic, hash-bound `pptv-patch/0.1` text/theme/order transactions plus
   `pptv-patch/0.2` exact-range native geometry, connector, explicit group
   translation, direct text-frame, sibling-order, safe-deletion, and complete
-  concrete-style operations;
+  concrete-style operations, and `pptv-patch/0.3` exact-template,
+  same-parent native connector cloning with an explicit new stable ID;
 - deterministic `extractPptvDiagram()` hydration of one deck slide into an
   independently reloaded/resolved standalone SVG atom;
 - exact-source browser sessions for decks and diagrams with bounded undo/redo
@@ -50,11 +67,15 @@ filesystem/wrapper/PPTX boundary.
   scale concrete geometry/text/style values, and return deterministic
   hash-bound deck/PPTX/map artifacts;
 - a bounded C10 inspector/reconciler for that C9 baseline: it authenticates
-  exact source, canonical map, embedded lineage, raw ZIP/package structure, and
-  unique stable names; ignores only contracted ZIP/XML trivia and Office
-  numeric object-ID renumbering; and returns minimal C5 1.2 patches for
-  supported direct text, geometry, connector, explicit group translation,
-  direct text-frame, sibling-order, safe-deletion, and concrete-style edits;
+  exact source, canonical map, embedded lineage, raw ZIP/package structure,
+  unique stable names, and an optional exact native-save comparison baseline;
+  proves only contracted Office-save normalizations; emits a deterministic,
+  privacy-redacted 0.2 report with ranked findings and blocked candidates; and
+  returns minimal C5 0.2 patches for supported direct text, geometry,
+  connector, explicit group translation, direct text-frame, sibling-order,
+  safe-deletion, and concrete-style edits. An optional strict
+  `pptv-reconcile-resolution/0.1` can recover one unambiguous reviewed
+  connector copy as a C5 0.3 transaction;
 - artifact-specific pure C8 anchor-aware text-fit preflight plus an exact-font,
   hash-evidenced Fontkit adapter that never discovers or substitutes a system
   face; and
@@ -76,23 +97,13 @@ remain independently versioned.
 From the repository root:
 
 ```bash
-pnpm pptv outline examples/minimal-deck.pptv.html
-pnpm pptv validate examples/minimal-deck.pptv.html
-pnpm pptv resolve examples/minimal-deck.pptv.html
 pnpm pptv validate examples/minimal-diagram.pptv.svg
+pnpm pptv outline examples/minimal-diagram.pptv.svg
 pnpm pptv resolve examples/minimal-diagram.pptv.svg
-pnpm pptv extract examples/minimal-deck.pptv.html \
-  --slide architecture --output architecture.pptv.svg
-pnpm pptv editor-pack examples/minimal-deck.pptv.html \
-  --output minimal-deck.editable.pptv.html
+pnpm pptv text examples/minimal-diagram.pptv.svg --format jsonl
+pnpm pptv list examples/minimal-diagram.pptv.svg --role connector
 pnpm pptv editor-pack examples/minimal-diagram.pptv.svg \
   --output minimal-diagram.editable.pptv.html
-pnpm pptv pptx-canary examples/minimal-deck.pptv.html \
-  --output minimal-deck.pptx
-pnpm pptv compose examples/minimal-diagram.pptv.svg \
-  --placement 50,60,600,400 \
-  --policy uniform-scale-translate \
-  --output minimal-diagram.pptv.html
 pnpm pptv compile examples/minimal-diagram.pptv.svg \
   --placement 50,60,600,400 \
   --policy uniform-scale-translate \
@@ -101,8 +112,24 @@ pnpm pptv compile examples/minimal-diagram.pptv.svg \
 pnpm pptv reconcile minimal-diagram.edited.pptx \
   --source examples/minimal-diagram.pptv.svg \
   --baseline minimal-diagram.pptv.map.json \
+  --native-baseline minimal-diagram.native-save.pptx \
+  --resolution reviewed-connector-copy.json \
   --patch proposed.pptv.patch.json \
   --report reconciliation.json
+pnpm pptv compose examples/minimal-diagram.pptv.svg \
+  --placement 50,60,600,400 \
+  --policy uniform-scale-translate \
+  --output minimal-diagram.composed.pptv.html
+
+pnpm pptv outline examples/minimal-deck.pptv.html
+pnpm pptv validate examples/minimal-deck.pptv.html
+pnpm pptv resolve examples/minimal-deck.pptv.html
+pnpm pptv extract examples/minimal-deck.pptv.html \
+  --slide architecture --output architecture.pptv.svg
+pnpm pptv editor-pack examples/minimal-deck.pptv.html \
+  --output minimal-deck.editable.pptv.html
+pnpm pptv pptx-canary examples/minimal-deck.pptv.html \
+  --output minimal-deck.pptx
 pnpm pptv text-fit examples/minimal-deck.pptv.html \
   --font-map fonts.json
 pnpm pptv text examples/minimal-deck.pptv.html --slide cover --format json
@@ -127,7 +154,10 @@ group translations, connector endpoints, text frames/baselines/line steps,
 font sizes, and stroke widths with one finite positive scale. It never
 stretches, crops, letterboxes, or inserts a synthetic wrapper object.
 
-`compose` writes a deterministic self-contained one-slide deck, embeds the
+`compile` is the normal atom-to-PowerPoint command and does not require the
+caller to publish an HTML intermediate. `compose` is optional: use it only when
+the deterministic self-contained one-slide aggregation is itself requested for
+inspection, debugging, or later deck/report work. It embeds the
 digest-locked packaged `pptv-browser/0.1` runtime, records the atom hash,
 placement, and transform in the inert `office180.c9Composition` manifest
 extension, and independently reloads/resolves the candidate before its
@@ -141,20 +171,42 @@ remains the independent deck-only C7 path.
 
 `reconcile` is read-only with respect to the source, map, and edited PPTX. It
 requires the exact C9 atom and sidecar that produced the PowerPoint branch,
-writes an explicit no-overwrite report for every inspected result, and writes
-an explicit no-overwrite `pptv-patch/0.2` only when every difference has one
-exact supported inverse. Supported changes cover direct one-line text,
-rect/true-ellipse geometry, connector endpoints, explicit group translation,
-direct one-line text frames, complete direct native style, pure same-parent
-order, and safe subtree deletion. Identity and uniform composition are inverted
-exactly, and the proposal must apply through C5 and regenerate equivalent C9
-DrawingML semantics before it is returned. Unchanged semantic XML, including a
+writes an explicit no-overwrite 0.2 report for every inspected result, and
+writes an explicit no-overwrite `pptv-patch/0.2` or `pptv-patch/0.3` only when
+every difference has one exact supported inverse. `--native-baseline` may name the exact
+PowerPoint-open/save artifact that precedes later edits; it must independently
+authenticate and remain semantically equivalent to deterministic C9 output
+before it becomes the comparison point. The report retains normalization
+proofs, ranked findings, and supported candidate operations even when one
+review or trust failure blocks the complete transaction; CLI stdout exposes
+only privacy-safe hashes and numeric summary counts.
+
+Duplicates refuse by default. `--resolution` may name one strict,
+hash/fingerprint-bound `pptv-reconcile-resolution/0.1` review document for
+exactly two occurrences of one mapped straight connector. Exactly one edited
+occurrence must remain baseline-equivalent; the other must be a fully parsed
+same-parent copy. The reviewer chooses a fresh stable ID and explicit existing
+`fromId`/`toId`, and repeats the exact current hashes, fingerprints,
+parent/order, inverse endpoints, and complete style. C10 never allocates or
+infers those values and never uses Office numeric IDs as authority. A stale
+document, zero/two baseline matches, another duplicate/review finding, changed
+parent, or insertion plus reorder blocks every candidate and emits no patch.
+Duplicate findings carry a deterministic `resolutionAssessment` and concrete
+recovery options so an agent need not rediscover the failure boundary.
+
+Supported changes cover direct one-line text, rect/true-ellipse geometry,
+connector endpoints, explicit group translation, direct one-line text frames,
+complete direct native style, pure same-parent order, and safe subtree
+deletion. Identity and uniform composition are inverted exactly, and the
+proposal must apply through C5 and regenerate equivalent C9 DrawingML
+semantics before it is returned. Unchanged semantic XML, including a
 recompressed/native save with different ZIP bytes, yields `unchanged`.
-Insertion/copying, circle representation changes, reparenting, group scaling,
-implicit transforms, inline/inherited style rewrites, multiple runs/lines,
-unsupported package parts/effects, and tampered identity/lineage never produce
-a partial patch; they return `review-required` or `refused`. Applying a proposed
-patch remains a separate `pptv patch` action.
+General insertion/copying, circle representation changes, reparenting, group
+scaling, implicit transforms, inline/inherited style rewrites, multiple runs/
+lines, unsupported package parts/effects, and tampered identity/lineage never
+produce an automatic partial patch; they return `review-required` or
+`refused`. The reviewed connector copy above is the only insertion exception.
+Applying a proposed patch remains a separate `pptv patch` action.
 
 `text-fit` requires exact font files rather than system discovery:
 
@@ -216,7 +268,11 @@ Safe direct `set-text` works for either artifact. `set-active-theme` and
 `set-slide-order` are rejected for standalone diagrams. New native-object
 operations require a `pptv-patch/0.2` envelope, mandatory complete old values,
 an unambiguous existing source representation, and successful C4/C6 reload;
-there is no generic attribute writer.
+there is no generic attribute writer. A reviewed connector copy may instead
+use `pptv-patch/0.3` with exactly one `clone-connector` operation: the caller
+must supply the existing template connector, unused new stable ID, explicit
+from/to references and endpoints, complete style, and same-parent insertion
+order. C10 duplicate evidence does not infer or emit that operation.
 
 ## Library
 
@@ -290,17 +346,12 @@ import {
 
 import { dirname, resolve } from "node:path";
 
-const deck = await loadDeck({ kind: "text", text: html });
-const resolved = resolvePptvDeck(deck);
-if (resolved.model === undefined) throw new Error("Deck is outside C6");
-
 const fontMapPath = "/absolute/path/to/fonts.json";
 const fontMap = parseFontMap(
   JSON.parse(fontMapJson),
   dirname(resolve(fontMapPath)),
 );
 const measurer = await createFontkitTextMeasurer(fontMap.faces);
-const fit = preflightTextFit(resolved.model, measurer, { nearLimit: 0.95 });
 
 const diagram = await loadDiagram({ kind: "text", text: svg });
 const diagramResolved = resolvePptvDiagram(diagram);
@@ -319,13 +370,24 @@ console.log(composition.sourceSha256, composition.scale);
 const diagramFit = preflightDiagramTextFit(diagramResolved.model, measurer, {
   nearLimit: 0.95,
 });
+
+// Load a deck only when collection-level behavior is the task.
+const deck = await loadDeck({ kind: "text", text: html });
+const resolved = resolvePptvDeck(deck);
+if (resolved.model === undefined) throw new Error("Deck is outside C6");
+const fit = preflightTextFit(resolved.model, measurer, { nearLimit: 0.95 });
 ```
 
 The standalone identity/uniform compiler and bounded reconciler are exported
 from the Node boundary:
 
 ```ts
-import { compilePptxBaseline, reconcilePptx } from "@office180/pptv/node";
+import { readFile } from "node:fs/promises";
+import {
+  compilePptxBaseline,
+  parsePptvReconcileResolution,
+  reconcilePptx,
+} from "@office180/pptv/node";
 
 const artifact = await compilePptxBaseline(diagram, {
   placement: {
@@ -348,6 +410,12 @@ const reconciliation = await reconcilePptx(
   diagram,
   artifact.map,
   editedPptxBytes,
+  {
+    nativeBaselinePptxBytes,
+    resolution: parsePptvReconcileResolution(
+      JSON.parse(await readFile("reviewed-copy.json", "utf8")),
+    ),
+  },
 );
 if (reconciliation.status === "patchable") {
   console.log(reconciliation.patch);
@@ -366,8 +434,8 @@ projection functions rather than serializing either snapshot directly.
 ```text
 exact declarative source bytes (persistent authority)
   -> scan + source index
-       -> PptvDeck (.pptv.html)
        -> PptvDiagram (.pptv.svg)
+       -> PptvDeck (.pptv.html, explicit collection)
   -> hash-bound PptvDocument semantic interpretation
   -> artifact-specific projections / C5 operations / C6 resolution / C8 fit
        -> Node CLI and deterministic writable editor-pack
@@ -375,7 +443,7 @@ exact declarative source bytes (persistent authority)
        -> deck slide --hydrate/dereference--> standalone diagram atom
        -> deck only --C7 strict canary--> deterministic PPTX
        -> standalone atom --C9 identity/uniform placement--> deck + PPTX + map
-       -> edited C9 PPTX --C10 authenticated typed diff--> review + C5 patch
+       -> edited C9 PPTX --C10 authenticated typed diff/review--> C5 patch
 ```
 
 The package has no OpenDocKit dependency. C7 writes a small fresh package
@@ -400,8 +468,11 @@ The Node subpath exports `createEditorPack()`, `compilePptxCanary()`,
 The versioned manifest and patch schemas ship at
 `@office180/pptv/schemas/manifest`, the legacy
 `@office180/pptv/schemas/patch`, and
-`@office180/pptv/schemas/patch-0.2`. The exact fixed viewer snippet accepted by
-the scanner ships as
+`@office180/pptv/schemas/patch-0.2`,
+`@office180/pptv/schemas/patch-0.3`, and
+`@office180/pptv/schemas/reconciliation-0.2`, and
+`@office180/pptv/schemas/reconcile-resolution-0.1`. The exact fixed viewer snippet
+accepted by the scanner ships as
 `@office180/pptv/assets/pptv-browser-0.1.script.html`; the example deck embeds
 that artifact byte-for-byte. `prepack` performs a clean build so published
 exports cannot point at stale local output.
@@ -423,13 +494,14 @@ Not implemented yet:
   scaffolding;
 - canonical serialization or multi-resource dependency hashing;
 - general drag/resize/alignment interaction components;
-- PPTX compilation beyond the strict native C7/C9 primitive subset, native
-  representative edit/save/reopen, or arbitrary/baseline-free reconciliation;
+- PPTX compilation beyond the strict native C7/C9 primitive subset,
+  representative automated native edits, or arbitrary/baseline-free
+  reconciliation;
 - PowerPoint-native C8 calibration beyond the checked Node/browser evidence;
 - and OpenDocKit adapters.
 
 See `architecture/CONTRACT-C4-PPTV-SOURCE.1.1.md` and
-`architecture/CONTRACT-C5-PPTV-PATCH.1.2.md` for verified executable behavior,
+`architecture/CONTRACT-C5-PPTV-PATCH.1.3.md` for verified executable behavior,
 and `architecture/CONTRACT-C6-PPTV-RESOLVED.1.1.md` for the verified
 compiler-grade deck/diagram projection. See
 `architecture/CONTRACT-C7-PPTX-CANARY.1.1.md` for the implemented canary,
@@ -439,7 +511,7 @@ implemented exact-font non-mutating preflight and its remaining calibration
 gates. `architecture/CONTRACT-C9-PPTV-PPTX-BASELINE.1.0.md` defines the
 in-progress broader baseline; this package implements its bounded
 identity/uniform standalone-atom composition and compilation slice.
-`architecture/CONTRACT-C10-PPTV-PPTX-RECONCILIATION.1.0.md` defines the
+`architecture/CONTRACT-C10-PPTV-PPTX-RECONCILIATION.1.2.md` defines the
 implemented fail-closed typed reconciliation slice and its remaining C11/native
 promotion gates.
 
@@ -448,7 +520,27 @@ promotion gates.
 ```bash
 pnpm typecheck
 pnpm test:ts
+pnpm browser-calibration:check
 pnpm build
 pnpm pack:check
 pnpm format:check
 ```
+
+To recapture the checked C8 browser aggregate, first run only its exact
+three-project Playwright test with the JSON reporter, then provide that file
+and its UTC start date explicitly:
+
+```bash
+pnpm --filter @office180/pptv exec playwright test \
+  e2e/browser-conformance.spec.ts \
+  --grep "C8 loads exact bytes, labels the environment, and fails closed on missing glyphs" \
+  --reporter=json > /private/tmp/pptv-c8-playwright.json
+pnpm --filter @office180/pptv browser-calibration:update \
+  --reporter-json /private/tmp/pptv-c8-playwright.json \
+  --captured-on YYYY-MM-DD
+```
+
+The updater accepts only the exact passed Chromium/Firefox/WebKit result on
+that UTC date. It binds the current kernel, fixtures, font, manifest, and test
+source, recomputes all non-browser measurements locally with Fontkit, and
+publishes nothing on any refusal.

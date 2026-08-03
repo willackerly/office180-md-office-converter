@@ -214,11 +214,11 @@ An unmapped face, unchecked codepoint, known missing glyph, unavailable private
 alias, or invalid browser width is `unverified`; fallback glyphs never become
 exact evidence.
 
-Checked evidence in
+Checked evidence recaptured on 2026-08-02 in
 `packages/pptv/test-fixtures/c8/browser-calibration-evidence.json` uses exact
 `@playwright/test@1.62.0`, exact `esbuild@0.28.1`, Fontkit 2.0.4, and the
-700,262-byte browser-kernel SHA-256
-`230628dca67cb9bc8b91b0dead32667688365e3af210fbcf466420cc44813208`,
+722,018-byte browser-kernel SHA-256
+`ee946661bf592d41ae36e821c6bbb94651628f8ab03c11529516f29ed4e577e5`,
 and the OFL ABeeZee Regular fixture SHA-256
 `2901c8df256648cc2bb2e3afb381cb8d28e65ed3dbe11de20695ae4d5ffdeda9`.
 Six samples cover kerning, spaces, mixed text, near-limit, exact-boundary, and
@@ -253,6 +253,24 @@ integration produces four ordered, verified lines under
 The browser evidence file is privacy-safe and shape/inventory locked by
 Vitest. It records browser identities, actual platform, and DPR but no local
 path, username, hostname, private source text, or private font bytes.
+
+Its deterministic updater accepts only the exact passed C8 Playwright JSON
+result for one zero-retry Chromium, Firefox, and WebKit project on the declared
+UTC capture date. Each post-assertion attachment contains only the browser
+environment and ordered raw browser widths plus exact input identities. The
+updater independently recomputes every Fontkit width, glyph count, pixel
+envelope, available width, delta, band, maximum, and engine/grid status from
+the checked local bytes. The durable aggregate binds the browser kernel,
+calibration fixture, font bytes and manifest, C8 test source, and diagram
+fixture by SHA-256 and byte length; `browser-calibration:check` refuses any
+stale identity. A failed, skipped, flaky, wrong-project, wrong-spec, private,
+stale, algebra-bearing, or otherwise malformed synthetic attachment publishes
+no evidence. This is strict integrity validation for an explicit
+maintainer-supplied local report, not cryptographic runner attestation.
+Inputs are read through bounded non-symlink descriptors; update mode holds an
+exclusive adjacent lock, rechecks the destination bytes before publication,
+syncs a same-directory temporary file, and renames only the complete canonical
+aggregate.
 
 ## Checked worked-deck inventory
 
@@ -338,8 +356,10 @@ No gate may be promoted by automatically changing an authored line.
 - `packages/pptv/src/browser/text-measurer.ts`
 - `packages/pptv/src/cli.ts`
 - `packages/pptv/e2e/browser-conformance.spec.ts`
+- `packages/pptv/scripts/update-browser-calibration-evidence.mjs`
 - `packages/pptv/test-fixtures/c8/browser-calibration-evidence.json`
 - `packages/pptv/test-fixtures/c8/tdflite-text-fit-inventory.json`
+- `packages/pptv/src/__tests__/browser-calibration-updater.test.ts`
 - `packages/pptv/src/__tests__/browser-calibration-evidence.test.ts`
 - `packages/pptv/src/__tests__/c8-regression-inventory.test.ts`
 
@@ -357,6 +377,9 @@ No gate may be promoted by automatically changing an authored line.
       classification and exit semantics
 - [x] TDFLite worked-deck regression inventory
 - [x] Browser exact-font calibration evidence in Chromium, Firefox, and WebKit
+- [x] Strict Playwright-result ingestion, local Fontkit/grid derivation,
+      input-identity freshness, refusal atomicity, and deterministic evidence
+      publication
 - [ ] Native PowerPoint calibration evidence
 
 ## Retirement / supersession plan

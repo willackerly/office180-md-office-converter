@@ -2,9 +2,9 @@
 # SPDX-License-Identifier: MIT
 """md2docx — Markdown → styled DOCX, themed by a JSON template.
 
-CONTRACT:C1-THEME-SCHEMA.1.0
+CONTRACT:C1-THEME-SCHEMA.1.1
 CONTRACT:C2-PROVENANCE.2.0
-CONTRACT:C3-ROUNDTRIP.1.1
+CONTRACT:C3-ROUNDTRIP.1.2
 
 Usage:
   md2docx.py file.md [more.md ...]            # writes <name>.docx next to each source
@@ -13,7 +13,7 @@ Usage:
   md2docx.py -o out.docx file.md              # single input, explicit output path
   md2docx.py --no-footer file.md              # suppress footer text
 
-Template resolution (see architecture/CONTRACT-C1-THEME-SCHEMA.1.0.md): the
+Template resolution (see architecture/CONTRACT-C1-THEME-SCHEMA.1.1.md): the
 --template flag wins; otherwise `md2docx-template.json` next to this script;
 otherwise `themes/neutral.json` next to this script; otherwise the built-in
 neutral defaults below. Any template key may be omitted — it deep-merges
@@ -114,6 +114,53 @@ def deep_merge(base, over):
 
 def rgb(hexstr):
     return RGBColor(*(int(hexstr[i:i + 2], 16) for i in (0, 2, 4)))
+
+
+EXPLICIT_FONT_ATTRIBUTES = ("ascii", "hAnsi", "eastAsia", "cs")
+THEME_FONT_ATTRIBUTES = (
+    "asciiTheme",
+    "hAnsiTheme",
+    "eastAsiaTheme",
+    "cstheme",
+)
+
+
+def _materialize_on_off(r_pr, name, value):
+    element = getattr(r_pr, f"get_or_add_{name}")()
+    element.set(qn("w:val"), "1" if value else "0")
+
+
+def materialize_word_style_font(
+    style,
+    family,
+    size_pt,
+    *,
+    bold=None,
+    italic=None,
+):
+    """Materialize one C1-controlled style without theme-font ambiguity."""
+    r_pr = style.element.get_or_add_rPr()
+    r_fonts = r_pr.get_or_add_rFonts()
+    for name in THEME_FONT_ATTRIBUTES:
+        r_fonts.attrib.pop(qn(f"w:{name}"), None)
+    for name in EXPLICIT_FONT_ATTRIBUTES:
+        r_fonts.set(qn(f"w:{name}"), family)
+
+    half_points = str(int(round(float(size_pt) * 2)))
+    size = r_pr.get_or_add_sz()
+    size.set(qn("w:val"), half_points)
+    size_cs = r_pr.find(qn("w:szCs"))
+    if size_cs is None:
+        size_cs = OxmlElement("w:szCs")
+        r_pr.insert(list(r_pr).index(size) + 1, size_cs)
+    size_cs.set(qn("w:val"), half_points)
+
+    if bold is not None:
+        _materialize_on_off(r_pr, "b", bool(bold))
+        _materialize_on_off(r_pr, "bCs", bool(bold))
+    if italic is not None:
+        _materialize_on_off(r_pr, "i", bool(italic))
+        _materialize_on_off(r_pr, "iCs", bool(italic))
 
 
 def _shd(el_get, fill):
@@ -847,17 +894,26 @@ class Converter:
         doc = Document()
 
         n = doc.styles["Normal"]
-        n.font.name = cfg["fonts"]["body"]
-        n.font.size = Pt(cfg["base"]["size_pt"])
+        materialize_word_style_font(
+            n,
+            cfg["fonts"]["body"],
+            cfg["base"]["size_pt"],
+        )
         n.font.color.rgb = rgb(cfg["base"]["color"])
         n.paragraph_format.space_after = Pt(cfg["base"]["space_after_pt"])
         for lvl in (1, 2, 3, 4):
             h = cfg["headings"][f"h{lvl}"]
             s = doc.styles[f"Heading {lvl}"]
-            s.font.name = cfg["fonts"]["body"]
-            s.font.size = Pt(h["size_pt"])
-            s.font.color.rgb = rgb(h["color"])
-            s.font.bold = cfg["headings"]["bold"]
+            char_style = doc.styles[f"Heading {lvl} Char"]
+            for controlled_style in (s, char_style):
+                materialize_word_style_font(
+                    controlled_style,
+                    cfg["fonts"]["body"],
+                    h["size_pt"],
+                    bold=cfg["headings"]["bold"],
+                    italic=False,
+                )
+                controlled_style.font.color.rgb = rgb(h["color"])
             s.paragraph_format.space_before = Pt(cfg["headings"]["space_before_pt"])
             s.paragraph_format.space_after = Pt(cfg["headings"]["space_after_pt"])
 
@@ -1005,7 +1061,7 @@ class Converter:
 
 
 def resolve_template(explicit, base_dir=None):
-    """Template resolution order — CONTRACT:C1-THEME-SCHEMA.1.0.
+    """Template resolution order — CONTRACT:C1-THEME-SCHEMA.1.1.
 
     1. --template flag, if given.
     2. `md2docx-template.json` next to this script (a local override; not

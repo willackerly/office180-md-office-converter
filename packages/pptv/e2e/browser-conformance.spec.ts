@@ -2,6 +2,7 @@
 // Verification: CONTRACT:C6-PPTV-RESOLVED.1.1
 // Verification: CONTRACT:C8-PPTV-TEXT-FIT.1.1
 
+import { createHash } from "node:crypto";
 import { readFile } from "node:fs/promises";
 import { fileURLToPath } from "node:url";
 
@@ -70,6 +71,10 @@ const CALIBRATION_URL = new URL(
   "../test-fixtures/c8/browser-calibration.json",
   import.meta.url,
 );
+const BROWSER_KERNEL_URL = new URL(
+  "../assets/pptv-browser-kernel-0.1.iife.js",
+  import.meta.url,
+);
 
 const fixtures = [
   {
@@ -118,7 +123,22 @@ for (const fixture of fixtures) {
 test("C8 loads exact bytes, labels the environment, and fails closed on missing glyphs", async ({
   page,
 }, testInfo) => {
-  const manifest = JSON.parse(await readFile(FONT_MANIFEST_URL, "utf8")) as {
+  const [
+    manifestBytes,
+    calibrationBytes,
+    fontBytes,
+    diagramBytes,
+    browserKernelBytes,
+    testSourceBytes,
+  ] = await Promise.all([
+    readFile(FONT_MANIFEST_URL),
+    readFile(CALIBRATION_URL),
+    readFile(FONT_URL),
+    readFile(KITCHEN_SINK_URL),
+    readFile(BROWSER_KERNEL_URL),
+    readFile(fileURLToPath(import.meta.url)),
+  ]);
+  const manifest = JSON.parse(manifestBytes.toString("utf8")) as {
     font: {
       family: string;
       weight: 400;
@@ -135,7 +155,7 @@ test("C8 loads exact bytes, labels the environment, and fails closed on missing 
       missing: string;
     };
   };
-  const calibration = JSON.parse(await readFile(CALIBRATION_URL, "utf8")) as {
+  const calibration = JSON.parse(calibrationBytes.toString("utf8")) as {
     fontSize: number;
     nearLimit: number;
     tolerance: {
@@ -169,8 +189,15 @@ test("C8 loads exact bytes, labels the environment, and fails closed on missing 
       postscriptName: "ABeeZee-Regular",
     },
   ]);
-  const fontBytes = await readFile(FONT_URL);
-  const diagramSource = await readFile(KITCHEN_SINK_URL, "utf8");
+  const diagramSource = diagramBytes.toString("utf8");
+  const inputIdentity = {
+    browserKernel: fileIdentity(browserKernelBytes),
+    calibration: fileIdentity(calibrationBytes),
+    font: fileIdentity(fontBytes),
+    fontManifest: fileIdentity(manifestBytes),
+    testSource: fileIdentity(testSourceBytes),
+    diagramFixture: fileIdentity(diagramBytes),
+  };
   const calibrationFont = createFont(fontBytes);
   if ("fonts" in calibrationFont) {
     throw new Error("Calibration fixture must remain one static font face.");
@@ -454,10 +481,6 @@ test("C8 loads exact bytes, labels the environment, and fails closed on missing 
     ),
     rows: evidenceRows,
   };
-  await testInfo.attach("c8-browser-calibration.json", {
-    body: Buffer.from(`${JSON.stringify(evidence, null, 2)}\n`),
-    contentType: "application/json",
-  });
   if (evidence.status === "pass-with-platform-grid-fitting-variance") {
     console.info(
       `PPTV_C8_PLATFORM_CAPTURE ${JSON.stringify({
@@ -515,6 +538,28 @@ test("C8 loads exact bytes, labels the environment, and fails closed on missing 
     },
   });
   expect(JSON.stringify(result.diagramFit)).not.toContain("slideId");
+
+  const capture = {
+    schema: "pptv-browser-text-calibration-capture/0.1",
+    inputIdentity,
+    environment: {
+      engine: result.environment.engine,
+      engineVersion: result.environment.engineVersion,
+      userAgent: result.environment.userAgent,
+      platform: result.environment.platform,
+      devicePixelRatio: result.environment.devicePixelRatio,
+    },
+    rows: evidence.rows.map(({ id, browserWidth, method, fontIdentity }) => ({
+      id,
+      browserWidth,
+      method,
+      fontIdentity,
+    })),
+  };
+  await testInfo.attach("c8-browser-calibration.json", {
+    body: Buffer.from(`${JSON.stringify(capture, null, 2)}\n`),
+    contentType: "application/json",
+  });
 });
 
 function classify(
@@ -525,4 +570,11 @@ function classify(
   if (width > availableWidth) return "overflow";
   if (width / availableWidth >= nearLimit) return "near-limit";
   return "clear";
+}
+
+function fileIdentity(bytes: Buffer): { sha256: string; bytes: number } {
+  return {
+    sha256: createHash("sha256").update(bytes).digest("hex"),
+    bytes: bytes.byteLength,
+  };
 }

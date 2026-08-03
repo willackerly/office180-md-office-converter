@@ -3,8 +3,8 @@
 """Generate privacy-safe, content-bound DOCX round-trip evidence.
 
 CONTRACT:C2-PROVENANCE.2.0
-CONTRACT:C3-ROUNDTRIP.1.1
-CONTRACT:C11-OFFICE-VISUAL-EVIDENCE.1.0
+CONTRACT:C3-ROUNDTRIP.1.2
+CONTRACT:C11-OFFICE-VISUAL-EVIDENCE.1.1
 
 The generator refuses every existing destination, builds under a sibling
 staging directory, and publishes only after structural checks, Quick Look

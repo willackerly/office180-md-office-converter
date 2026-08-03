@@ -21,8 +21,9 @@ canary into a claim about arbitrary SVG or PowerPoint.
 
 ## Who needs this
 
-- **PPTV authors** — need a deterministic supported path from an independent
-  `.pptv.svg` atom or self-contained `.pptv.html` deck to editable PowerPoint.
+- **PPTV authors** — need the implemented deterministic path from an
+  independent `.pptv.svg` atom to editable PowerPoint; HTML-deck input remains
+  an explicitly unimplemented later C9 slice.
 - **C10 reconciliation** — needs stable identities, source hashes, composition
   transforms, and baseline object values rather than a visual guess.
 - **C11 visual evidence** — needs exact source, PPTX, map, renderer, and
@@ -120,6 +121,10 @@ function compilePptxBaseline(
 ): Promise<PptvPptxBaselineArtifact>;
 ```
 
+The interface sketch reserves the complete contract's later deck shape. The
+executable accepted-source row below is authoritative for the current slice:
+callers may pass only a standalone atom.
+
 Each `PptvPptxMapSlide` records manifest order and every emitted object in
 within-parent painter order. Each object entry records:
 
@@ -198,7 +203,7 @@ Every failure returns no partial composed source, map, or PPTX artifact.
 - Depends on: `CONTRACT:C6-PPTV-RESOLVED.1.1`
 - Depends on: `CONTRACT:C7-PPTX-CANARY.1.1` for the minimum package graph
 - Depends on: `CONTRACT:C8-PPTV-TEXT-FIT.1.1` when exact text evidence is required
-- Depends on: `CONTRACT:C11-OFFICE-VISUAL-EVIDENCE.1.0` for promotion evidence
+- Depends on: `CONTRACT:C11-OFFICE-VISUAL-EVIDENCE.1.1` for promotion evidence
 - External: exact `jszip@3.10.1` and the packaged digest-locked
   `pptv-browser/0.1` runtime artifact; no OpenDocKit runtime dependency
 

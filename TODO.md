@@ -1,21 +1,39 @@
 # TODO
 
 <!-- FRESHNESS: Update this date every time you modify this file -->
-<!-- freshness: 2026-08-01 -->
-<!-- last-synced: 2026-08-01 — verified against the current workspace -->
+<!-- freshness: 2026-08-02 -->
+<!-- last-synced: 2026-08-02 — verified against the current workspace -->
 
 Active tasks plus nearby completion checkpoints. Priority ordering lives in
 `QUICKCONTEXT.md`; older history is collapsed at the end.
 
 ## PPTV next slice
 
+- [x] Make the fully hydrated standalone SVG atom the default in cold-start,
+  package, agent-guide, and authoring-skill workflows. Keep HTML explicit for a
+  real deck/report or deck-only behavior, and label editor/composed HTML as
+  generated rather than canonical source.
+- [ ] Decide the destination-neutral public format name before production.
+  `Vector180` is the current leading candidate; record the canonical atom,
+  deck/report, package, CLI, skill, and wire names plus one bounded legacy-read
+  policy in a contract/ADR before any mechanical rename. Do not ship a partial
+  docs-only alias.
+- [ ] Add a C4/C6 successor for optional inert atom lineage metadata. Separate
+  exact verifiable origin/template hashes from asserted template family and
+  non-authoritative design-family identity; expose it in `outline`, preserve it
+  through extraction/patch/editor/compile/reconcile, prohibit paths/hosts/user
+  identity, and never make metadata styling or instruction authority.
+- [ ] Add a source-to-source semantic `diff` command/report that validates two
+  same-kind sources, joins by stable ID, classifies add/remove/change/order/
+  relationship/text/geometry/style/frame deltas, and keeps raw lexical changes
+  separate. C10 remains the mapped-PPTX comparison path.
 - [ ] Complete a representative native PowerPoint
   open/edit/save/reopen/reconcile cycle for the checked C9 artifact. Require a
   non-empty valid ZIP, exact baseline authentication, a reviewable C10 patch,
   regenerated supported-semantic equality, and explicit native-render evidence.
-  PowerPoint 16.111.2 can open/read the current package, but its AppleScript
-  shape setters and Save As path are not a reliable unattended edit surface.
-- [ ] Expose the C5 1.2 typed native-object operations as bounded trusted-editor
+  The C11 1.1 exact-path no-op save/close/reopen lifecycle is closed; AppleScript
+  shape setters and Save As remain outside the bounded unattended edit surface.
+- [ ] Expose the C5 1.3 typed native-object operations as bounded trusted-editor
   controls. Pointer-up should create one exact-source transaction; Escape must
   remain byte-neutral; every commit must independently reload/resolve.
 - [ ] Add C11 checked human review and a calibrated cross-renderer comparison
@@ -62,6 +80,11 @@ Active tasks plus nearby completion checkpoints. Priority ordering lives in
   C8 itself remains read-only and never wraps or repairs; future 0.1.1
   export/import layers may consume its exact evidence only through their own
   contracts. Retain both Node and browser identities when kerning differs.
+- [ ] Before accepting C8 calibration reports from remote or multi-user
+  submitters, add runner attestation and fully redacted allowlist-based
+  diagnostics. The current updater intentionally trusts an explicit local
+  maintainer-supplied report while strictly checking its structure, semantics,
+  identities, privacy, and publication atomicity.
 - [ ] Remove first-declaration entries for duplicate object IDs from the raw C4
   index; public queries suppress ambiguous IDs and C6/C7 reject ambiguous
   decks, so this is internal representation cleanup rather than a compiler
@@ -86,11 +109,12 @@ Active tasks plus nearby completion checkpoints. Priority ordering lives in
 - [x] Validate the minimal canary artifact against applicable ISO/ECMA XSDs,
   reopen/parse it through OpenDocKit, and native-open/render it in PowerPoint
   16.111.2 without repair or hard-line reflow.
-- [ ] Add quantitative source-SVG versus native PowerPoint/PDF render
-  comparison and native PPTX save/reopen. PowerPoint 16.111.2 AppleScript Save
-  As previously returned a zero-byte file for both the canary and a known-good
-  control; future evidence must require non-empty output, `unzip -t`, and
-  reopen.
+- [ ] Add quantitative source-SVG versus native PowerPoint/PDF
+  cross-renderer comparison. The checked Quick Look comparisons remain
+  same-renderer regression evidence, not native fidelity.
+- [x] Add a bounded exact-path native PowerPoint no-op
+  save/close/reopen lifecycle that requires a successful Save state, non-empty
+  quiescent CRC-valid OOXML, exact reopen, and immutable delivery input.
 - [ ] Expand the native fixture across ellipse, translated/nested groups, all
   connector flip quadrants, near-edge/space-sensitive text, and schema-range
   boundaries before promoting C7 from `in-progress`.
@@ -98,6 +122,10 @@ Active tasks plus nearby completion checkpoints. Priority ordering lives in
   `set-connector-endpoints`, `set-group-translation`, `set-text-frame`,
   `set-child-order`, `delete-object`, and `set-native-style` transactions with
   complete old values and no generic attribute writer.
+- [x] Add C5 1.3 exact lexical `clone-connector` plus C10 1.2 strict
+  hash/fingerprint-bound review input for one same-parent copy. Keep duplicate
+  discovery fail-closed by default and block the complete transaction when
+  zero/two baseline matches or any other review finding remains.
 - [ ] Add multiline `set-text-lines` only with the matching source/resolved/
   compiler contract successor; it must preserve explicit line authority and
   must not smuggle in wrapping or autofit.
@@ -161,9 +189,13 @@ Active tasks plus nearby completion checkpoints. Priority ordering lives in
 - [x] Add the C11 DOCX generated/edited/regenerated Quick Look evidence bundle,
   bounded deliberate-edit comparison, exact edited/regenerated comparison,
   checked hashes/privacy, and explicit native Word manual-required state.
-- [ ] Complete a representative native Word open/edit/save/reopen cycle and
-  bind its exact artifact/application identities into C11 evidence. Word
-  16.111.2 automation is not yet a bounded non-hanging path on this host.
+- [x] Complete a bounded native Word no-op save/close/reopen lifecycle and bind
+  its exact artifact/application identities into C11 evidence. The saved
+  package recovered byte-identical Markdown and its strict style projection
+  diagnosed eight proven native-normalization events with zero drift.
+- [ ] Complete representative supported native Word edit/save/reopen acceptance
+  and human/native visual review; the structural no-op lifecycle does not claim
+  editability or native fidelity.
 - [ ] Package as `pyproject.toml` with `pipx` entry points — `ROADMAP.md` §0/§8.
 - [ ] Replace the regex line parser with `markdown-it-py` — `ROADMAP.md` §0.
 - [ ] Emit real `w:hyperlink` runs — `ROADMAP.md` §5.1.
@@ -184,15 +216,19 @@ Active tasks plus nearby completion checkpoints. Priority ordering lives in
 - PPTV `pptv-patch/0.1` preserves direct text for either artifact kind and an
   existing active-theme value plus slide-order permutations for decks.
   `pptv-patch/0.2` adds the bounded typed native-object operations listed
-  above. The trusted browser UI does not yet expose those new controls; rich
-  text, CSS-rule rewriting, insertion, reparenting, and group scaling fail
-  explicitly.
+  above. `pptv-patch/0.3` adds only one exact reviewed same-parent connector
+  clone; duplicate discovery remains a refusal without a strict C10 1.2
+  resolution. The trusted browser UI does not yet expose those new controls;
+  rich text, CSS-rule rewriting, general insertion, reparenting, and group
+  scaling fail explicitly.
 - Group hierarchy/order, translated world bounds, explicit text frames, and
   opaque SVG asset bounds resolve today. The strict C7 subset emits native
   groups/connectors and passes schema, independent reopen, and PowerPoint
   open/render smoke validation. C9 adds mapped atom compilation and C10 adds
   bounded reverse proposals. Browser geometry gestures, raster resources,
-  cross-renderer/native fidelity, and PPTX save/reopen remain open.
+  representative native edits, and cross-renderer/native fidelity remain open;
+  the exact C11 1.1 no-op PPTX save/reopen lifecycle is closed for the checked
+  artifact and Office build.
 - C8 exact-font shaped advance catches horizontal hard-line overrun without
   changing source. Node/browser evidence is environment-labeled and checked;
   WebKit's unkerned SVG variance is conservatively retained. Native PowerPoint
@@ -224,6 +260,10 @@ scans both Python and TypeScript and rejects untracked `TODO:` comments.
 <details>
 <summary><strong>Recently completed</strong></summary>
 
+- [x] C1 1.1/C3 1.2 Word style materialization and native-equivalence proof;
+  C5 1.3/C10 1.2 reviewed connector-copy recovery and agent-grade failure
+  reports; C11 1.1 bounded Word/PowerPoint lifecycle bridge/evidence binding;
+  and clean native challenge baselines — 2026-08-02
 - [x] Exact supported-profile Markdown/DOCX canonical round trip, embedded
   merge bases, strict refusals/reports/merge, and checked generated/edited/
   regenerated visual evidence — 2026-08-01

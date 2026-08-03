@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # SPDX-License-Identifier: MIT
-"""Focused tests for CONTRACT:C11-OFFICE-VISUAL-EVIDENCE.1.0."""
+"""Focused tests for CONTRACT:C11-OFFICE-VISUAL-EVIDENCE.1.1."""
 
 from __future__ import annotations
 
@@ -46,6 +46,7 @@ def capture_manifest(
     image_name: str,
     image_fixture: str,
     checkpoint: str,
+    lane: str = "markdown-docx",
 ) -> dict:
     artifact = root / artifact_name
     artifact.parent.mkdir(parents=True, exist_ok=True)
@@ -56,7 +57,7 @@ def capture_manifest(
         {
             "schema": visual.SCHEMA_ID,
             "subject": {
-                "lane": "markdown-docx",
+                "lane": lane,
                 "checkpoint": checkpoint,
                 "artifact_path": artifact.relative_to(root).as_posix(),
                 "artifact_sha256": visual.sha256_file(artifact),
@@ -106,6 +107,107 @@ def capture_manifest(
     )
 
 
+def native_bridge_report(
+    root: Path,
+    output: Path,
+    *,
+    media_kind: str,
+) -> dict:
+    profile = visual.BRIDGE_PROFILES[media_kind]
+    input_path = root / f"bridge-input{profile['suffix']}"
+    input_path.write_bytes(b"trusted bridge input")
+    output_hash = visual.sha256_file(output)
+    output_size = output.stat().st_size
+    app = {
+        "name": profile["application"],
+        "bundle_id": profile["bundle_id"],
+        "short_version": "16.111.2",
+        "build_version": "26073101",
+        "renderer_class": profile["renderer_class"],
+    }
+    return {
+        "schema": visual.BRIDGE_SCHEMA_ID,
+        "status": "passed",
+        "phase": "complete",
+        "input": {
+            "path": input_path.relative_to(root).as_posix(),
+            "sha256": visual.sha256_file(input_path),
+            "bytes": input_path.stat().st_size,
+            "media_kind": media_kind,
+            "copy_verified": True,
+        },
+        "application": app,
+        "environment": {
+            "operating_system": "macOS",
+            "version": "15.6",
+            "architecture": "arm64",
+        },
+        "lifecycle": {
+            "method": "non-interactive-nsworkspace+applescript",
+            "timeout_seconds": 90,
+            "evidence_scope": visual.BRIDGE_EVIDENCE_SCOPE,
+            "representative_editability": "not-tested",
+            "visual_fidelity": "not-tested",
+            "handoff_attempts": 2,
+            "handoff_accepted": 2,
+            "exact_path_attachment": True,
+            "read_only": False,
+            "forced_dirty_save": True,
+            "save_event_returned_saved": True,
+            "post_save_saved": True,
+            "save_quiescent": True,
+            "closed_after_save": True,
+            "zip_valid": True,
+            "reopen_saved": True,
+            "reopen_passed": True,
+            "open_without_repair": True,
+            "save_size": output_size,
+            "save_sha256": output_hash,
+            "quiescence_observations": 3,
+            "quiescence_polls": 3,
+            "bytes_changed": True,
+            "part_count": 4,
+            "uncompressed_bytes": 128,
+            "reopen_sha256": output_hash,
+        },
+        "commands": [
+            {
+                "argv": [
+                    "/usr/bin/osascript",
+                    "<probe-script>",
+                    "<work-copy>",
+                ],
+                "timeout_seconds": 3,
+                "duration_ms": 1,
+                "exit_code": 0,
+                "timed_out": False,
+                "stdout_sha256": visual.EMPTY_SHA256,
+                "stderr_sha256": visual.EMPTY_SHA256,
+                "script_sha256": "a" * 64,
+                "phase": "post-save",
+                "operation": "exact-path-probe",
+            }
+        ],
+        "output": {
+            "path": output.relative_to(root).as_posix(),
+            "published": True,
+            "sha256": output_hash,
+            "bytes": output_size,
+            "media_kind": media_kind,
+        },
+        "cleanup": {
+            "exact_absence_proven": True,
+            "work_directory_disposition": "removed",
+        },
+        "publication": {
+            "commit_marker": "report",
+            "pair_committed": True,
+            "residual_limit": "The report was published last as the pair marker.",
+        },
+        "diagnostics": [],
+    }
+
+
 class VisualEvidenceTests(unittest.TestCase):
     def test_schema_and_manifest_sha_binding(self):
         schema = json.loads(
@@ -151,6 +253,229 @@ class VisualEvidenceTests(unittest.TestCase):
                 unknown, root, check_files=False
             )
             self.assertIn("capture: unknown property native_office", errors)
+
+    def test_bind_native_bridge_stays_manual_required_for_both_lanes(self):
+        schema = json.loads(
+            (REPO_ROOT / "schemas" / "office180-visual-evidence-0.1.schema.json")
+            .read_text(encoding="utf-8")
+        )
+        native_schema = schema["$defs"]["nativeLifecycle"]
+        self.assertEqual(
+            native_schema["properties"]["evidence_scope"]["const"],
+            visual.BRIDGE_EVIDENCE_SCOPE,
+        )
+        bridge_then = native_schema["allOf"][0]["then"]
+        self.assertEqual(
+            bridge_then["properties"]["status"]["const"],
+            "manual-required",
+        )
+        self.assertFalse(
+            bridge_then["properties"]["editability_checked"]["const"]
+        )
+        self.assertFalse(
+            bridge_then["properties"]["visual_fidelity_checked"]["const"]
+        )
+
+        for media_kind, lane in (
+            ("docx", "markdown-docx"),
+            ("pptx", "pptv-pptx"),
+        ):
+            with self.subTest(media_kind=media_kind), tempfile.TemporaryDirectory() as temporary:
+                root = Path(temporary)
+                capture = capture_manifest(
+                    root,
+                    artifact_name=f"native.{media_kind}",
+                    image_name=f"native-{media_kind}.ppm",
+                    image_fixture="baseline.ppm",
+                    checkpoint="native-quicklook",
+                    lane=lane,
+                )
+                artifact = root / f"native.{media_kind}"
+                report = native_bridge_report(
+                    root,
+                    artifact,
+                    media_kind=media_kind,
+                )
+                report_path = root / f"native-{media_kind}.bridge.json"
+                report_path.write_text(
+                    json.dumps(report, indent=2, sort_keys=True) + "\n",
+                    encoding="utf-8",
+                )
+
+                bound = visual.bind_native_bridge(
+                    capture,
+                    report_path,
+                    root=root,
+                )
+                native = bound["native_lifecycle"]
+                self.assertEqual(native["status"], "manual-required")
+                self.assertEqual(native["method"], "automation")
+                self.assertEqual(
+                    native["evidence_scope"],
+                    "native-no-op-save-lifecycle",
+                )
+                self.assertFalse(native["editability_checked"])
+                self.assertFalse(native["visual_fidelity_checked"])
+                self.assertTrue(native["open_without_repair"])
+                self.assertTrue(native["zip_valid"])
+                self.assertTrue(native["reopen_passed"])
+                self.assertEqual(native["diagnostic"], visual.BRIDGE_DIAGNOSTIC)
+                self.assertIn("structural lifecycle evidence only", native["diagnostic"])
+                self.assertIn("human-reviewed visual fidelity", native["diagnostic"])
+                self.assertEqual(
+                    native["bridge_report_sha256"],
+                    visual.sha256_file(report_path),
+                )
+                self.assertEqual(
+                    visual.validate_manifest_data(
+                        bound,
+                        root,
+                        check_files=True,
+                    ),
+                    [],
+                )
+
+    def test_native_bridge_binding_rejects_mismatch_failure_and_private_data(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            capture = capture_manifest(
+                root,
+                artifact_name="native.docx",
+                image_name="native.ppm",
+                image_fixture="baseline.ppm",
+                checkpoint="native-quicklook",
+            )
+            artifact = root / "native.docx"
+            base = native_bridge_report(root, artifact, media_kind="docx")
+            cases = []
+
+            failed = copy.deepcopy(base)
+            failed["status"] = "failed"
+            cases.append(("failed", failed))
+
+            wrong_path = copy.deepcopy(base)
+            wrong_path["output"]["path"] = "different.docx"
+            cases.append(("wrong-path", wrong_path))
+
+            wrong_app = copy.deepcopy(base)
+            wrong_app["application"]["renderer_class"] = "native-powerpoint"
+            cases.append(("wrong-app", wrong_app))
+
+            private = copy.deepcopy(base)
+            private["commands"][0]["argv"][-1] = "/Users/alice/private.docx"
+            cases.append(("private", private))
+
+            raw_output = copy.deepcopy(base)
+            raw_output["commands"][0]["stdout"] = "document text"
+            cases.append(("raw-output", raw_output))
+
+            for name, report in cases:
+                with self.subTest(name=name):
+                    report_path = root / f"{name}.bridge.json"
+                    report_path.write_text(
+                        json.dumps(report, sort_keys=True) + "\n",
+                        encoding="utf-8",
+                    )
+                    with self.assertRaises(visual.VisualEvidenceError) as context:
+                        visual.bind_native_bridge(
+                            capture,
+                            report_path,
+                            root=root,
+                        )
+                    self.assertEqual(
+                        context.exception.code,
+                        "OFFICE-VISUAL-EVIDENCE-INVALID",
+                    )
+
+    def test_native_bridge_report_digest_is_revalidated_after_binding(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            capture = capture_manifest(
+                root,
+                artifact_name="native.docx",
+                image_name="native.ppm",
+                image_fixture="baseline.ppm",
+                checkpoint="native-quicklook",
+            )
+            artifact = root / "native.docx"
+            report_path = root / "native.bridge.json"
+            report_path.write_text(
+                json.dumps(
+                    native_bridge_report(root, artifact, media_kind="docx"),
+                    sort_keys=True,
+                )
+                + "\n",
+                encoding="utf-8",
+            )
+            bound = visual.bind_native_bridge(capture, report_path, root=root)
+            self.assertEqual(
+                visual.validate_manifest_data(bound, root, check_files=True),
+                [],
+            )
+
+            report_path.write_text(
+                report_path.read_text(encoding="utf-8") + "\n",
+                encoding="utf-8",
+            )
+            errors = visual.validate_manifest_data(
+                bound,
+                root,
+                check_files=True,
+            )
+            self.assertIn(
+                "native_lifecycle.bridge_report: sha256 mismatch",
+                errors,
+            )
+
+    def test_bind_native_bridge_cli_publishes_manual_required_envelope(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            capture = capture_manifest(
+                root,
+                artifact_name="native.pptx",
+                image_name="native.ppm",
+                image_fixture="baseline.ppm",
+                checkpoint="native-quicklook",
+                lane="pptv-pptx",
+            )
+            capture_path = root / "native.quicklook.evidence.json"
+            visual.write_manifest(capture_path, capture)
+            artifact = root / "native.pptx"
+            bridge_path = root / "native.bridge.json"
+            bridge_path.write_text(
+                json.dumps(
+                    native_bridge_report(root, artifact, media_kind="pptx"),
+                    sort_keys=True,
+                )
+                + "\n",
+                encoding="utf-8",
+            )
+            output_path = root / "native.bound.evidence.json"
+            result = subprocess.run(
+                [
+                    sys.executable,
+                    str(SCRIPT),
+                    "bind-native-bridge",
+                    str(capture_path),
+                    str(bridge_path),
+                    "--manifest",
+                    str(output_path),
+                    "--root",
+                    str(root),
+                ],
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                check=False,
+            )
+            self.assertEqual(result.returncode, 2, result.stderr.decode())
+            summary = json.loads(result.stdout)
+            self.assertEqual(summary["status"], "manual-required")
+            self.assertEqual(summary["renderer_class"], "native-powerpoint")
+            bound = visual.load_manifest(output_path)
+            self.assertEqual(
+                visual.validate_manifest_data(bound, root, check_files=True),
+                [],
+            )
 
     def test_mocked_browser_svg_capture_binds_fixed_profile_and_hashes(self):
         calls = []

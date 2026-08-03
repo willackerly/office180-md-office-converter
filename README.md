@@ -6,9 +6,20 @@
 
 | Track | Canonical source | Office artifact | Status |
 |---|---|---|---|
-| Markdown / Word | `.md` | `.docx` | Exact supported-profile canonical round trip, embedded merge base, reports, three-way merge, and Quick Look evidence implemented |
-| PPTV diagrams | standalone `.pptv.svg` atom | `.pptx` branch | First-class source/editing plus explicit composition, mapped native PPTX, typed edit recovery, and browser/Quick Look evidence implemented |
-| PPTV decks | `.pptv.html` aggregation | `.pptx` | Writable trusted deck editor, slide-to-atom hydration, and strict native-shape C7 canary implemented |
+| Markdown / Word | `.md` | `.docx` | Exact supported-profile round trip, merge base, native-save normalization proof, three-way merge, and visual/lifecycle evidence implemented |
+| PPTV visual atoms | standalone `.pptv.svg` | optional `.pptx` branch | Default source for diagrams, figures, reusable visuals, and slide-sized canvases; first-class editing, mapped native PPTX, reviewed connector-copy recovery, and visual/lifecycle evidence implemented |
+| PPTV decks/reports | explicit `.pptv.html` aggregation | `.pptx` | Used when order, shared themes, or deck behavior are the deliverable; writable trusted editor, slide-to-atom hydration, and strict native-shape C7 canary implemented |
+
+The default visual source is a fully hydrated SVG atom: one self-contained
+strict SVG with stable IDs, explicit geometry and hard lines, concrete local
+styles, and no deck/runtime dependency. Keep a suite of diagrams as a suite of
+atoms. Use HTML only for an actual deck/report or deck-only behavior; generated
+`*.editable.pptv.html` and `*.composed.pptv.html` files are build artifacts.
+
+`PPTV` remains the current implementation and wire name, not a settled
+production brand. The pre-production naming gate is intentionally open because
+the atom is useful beyond PowerPoint; `Vector180` is the current leading
+replacement, but no mixed or cosmetic rename has been implemented.
 
 ## What ships
 
@@ -22,7 +33,9 @@ one TypeScript package/CLI—with no server:
   inverting the same style choices. The supported profile has one canonical
   spelling, embeds exact original/canonical merge-base bytes, refuses unsafe
   Word constructs, emits a hash-bound fidelity report, and can three-way merge
-  supported Word edits into independently changed canonical Markdown.
+  supported Word edits into independently changed canonical Markdown. It
+  distinguishes bounded, proof-carrying Word whitespace/style normalization
+  from actual controlled-style drift.
 - **`@office180/pptv`** — a TypeScript source kernel and CLI whose default
   visual atom is a strict, standalone `.pptv.svg` diagram. It also loads
   `.pptv.html` as a whole-deck aggregation, preserves stable IDs and exact
@@ -33,7 +46,9 @@ one TypeScript package/CLI—with no server:
   writable trusted editor. Its Node boundary emits the C7 deck canary and the
   C9 standalone-atom path: explicit identity/uniform composition, native PPTX,
   complete sidecar map, and baseline-aware C10 patch proposal after supported
-  PowerPoint edits.
+  PowerPoint edits. C5 1.3/C10 1.2 can additionally recover one explicitly
+  reviewed same-parent connector copy through a hash/fingerprint-bound
+  resolution document.
 
 ## PowerPoint design track
 
@@ -80,18 +95,29 @@ and can hydrate/download one current deck slide as a standalone atom.
 C7 remains intentionally deck-only and compiles its strict primitive subset
 into a fresh deterministic PPTX; the minimal artifact passes ISO/ECMA schema
 validation, independent OpenDocKit reopen, and native PowerPoint open/render
-without repair. C8 provides exact-font, anchor-aware, no-reflow overrun
-evidence in Node and the editor. Checked browser calibration records an
-engine-specific WebKit kerning variance instead of hiding it.
+without repair. OpenDocKit also independently reopened the exact native-saved
+C9 validation artifact. C8 provides exact-font, anchor-aware, no-reflow
+overrun evidence in Node and the editor. Checked browser calibration records
+an engine-specific WebKit kerning variance instead of hiding it.
 
 C9 implements explicit identity or aspect-preserving uniform atom placement,
 deterministic one-slide composition, a supported editable native PPTX, and a
 hash-bound object map. C10 authenticates that exact branch and translates the
-supported DrawingML edit subset into reviewable `pptv-patch/0.2` operations;
-it is not arbitrary PPTX import. C11 provides checked browser/Quick Look
-capture and quantitative comparison for both Office lanes. Full native
-representative edit/save/reopen, native text calibration, and human-reviewed
-cross-renderer fidelity remain explicit promotion gates.
+supported DrawingML edit subset into reviewable `pptv-patch/0.2` operations.
+One exact reviewed connector copy may produce a `pptv-patch/0.3`
+`clone-connector`; duplicates still refuse by default, and ambiguous or
+multiply changed copies produce rich recovery options with no partial patch.
+This is not arbitrary PPTX import.
+
+C11 provides checked browser/Quick Look capture and quantitative comparison
+for both Office lanes plus a bounded macOS native bridge. On 2026-08-02 the
+bridge passed exact-path no-op save, close, reopen, and close lifecycles for
+Word and PowerPoint 16.111.2; both saved packages reopened without repair,
+retained their post-save hashes, and rendered with zero same-renderer pixel
+change against the checked baselines. That closes structural lifecycle
+evidence only. Representative user edits, native text calibration,
+native/cross-renderer fidelity, and human review remain explicit promotion
+gates.
 
 The reproducible checked bundles are
 [`tests/fixtures/roundtrip-evidence/docx/`](tests/fixtures/roundtrip-evidence/docx/)
@@ -107,10 +133,11 @@ Codex discovers the versioned
 `.agents/skills/` in this repository. It defaults to a standalone diagram for
 one figure and to HTML only when authoring a multi-slide deck. Use it to
 choose stable groups/IDs/text frames, run exact-font overflow preflight, edit
-or extract atoms, compose/compile a mapped atom PPTX, reconcile supported edits,
-and compile the deck canary. Its diagram and deck starters are validation-locked
-fixtures. The skill is an operational workflow over the versioned contracts
-and CLI, not a separate specification.
+or extract atoms, compose/compile a mapped atom PPTX, reconcile supported
+edits, review one connector-copy resolution, and compile the deck canary. Its
+diagram and deck starters are validation-locked fixtures. The skill is an
+operational workflow over the versioned contracts and CLI, not a separate
+specification.
 
 Every canonical standalone atom written by the starter or extractor carries a
 non-rendering discovery comment that points unfamiliar agents to that skill and
@@ -154,13 +181,13 @@ pnpm pptv validate examples/minimal-diagram.pptv.svg
 pnpm pptv outline examples/minimal-diagram.pptv.svg
 pnpm pptv resolve examples/minimal-diagram.pptv.svg
 pnpm pptv editor-pack examples/minimal-diagram.pptv.svg \
-  --output minimal-diagram.editable.html
-pnpm pptv compose examples/minimal-diagram.pptv.svg \
-  --placement 0,0,1200,800 --policy identity \
-  --output minimal-diagram.composed.pptv.html
+  --output minimal-diagram.editable.pptv.html
 pnpm pptv compile examples/minimal-diagram.pptv.svg \
   --placement 0,0,1200,800 --policy identity \
   --output minimal-diagram.pptx --map minimal-diagram.pptv.map.json
+pnpm pptv compose examples/minimal-diagram.pptv.svg \
+  --placement 0,0,1200,800 --policy identity \
+  --output minimal-diagram.composed.pptv.html
 pnpm pptv reconcile minimal-diagram.edited.pptx \
   --source examples/minimal-diagram.pptv.svg \
   --baseline minimal-diagram.pptv.map.json \
@@ -184,6 +211,10 @@ pnpm pptv show examples/minimal-deck.pptv.html cover.title --view editing
 pnpm pptv list examples/minimal-deck.pptv.html --role connector
 ```
 
+`compile` is the normal one-atom PowerPoint path. Run `compose` only when the
+generated one-slide HTML aggregation is itself useful; it is not a prerequisite
+for compilation and does not replace the atom.
+
 Patches are bound to the source SHA-256 and are all-or-nothing. The CLI never
 overwrites implicitly:
 
@@ -197,6 +228,9 @@ pnpm pptv patch deck.pptv.html change.pptv.patch.json \
 active-theme/slide-order transactions for decks. `pptv-patch/0.2` adds exact,
 old-value-preconditioned geometry, connector, group-translation, direct text
 frame, sibling-order, safe-deletion, and complete native-style operations.
+`pptv-patch/0.3` adds only one structural operation: clone an existing native
+straight connector into the same parent with a fresh stable ID, explicit
+from/to references, exact geometry/style, and complete sibling order.
 `editor-pack`
 embeds inert exact bytes under strict CSP, verifies the source hash, reconstructs
 only from literal C6 data, and commits through the same C5 session for exact
@@ -210,12 +244,12 @@ An embedded HTML-deck slide may depend on deck CSS/theme context. `extract`
 therefore does not byte-slice blindly: it resolves that context, writes
 concrete local presentation values, removes deck-only authority, reloads and
 resolves the candidate as a standalone diagram, and emits nothing on failure.
-External manifests, CSS token editing, rich-text/insertion/reparenting,
-general SVG/PPTX conversion, baseline-free PPTX import, and full native
-edit/save/reopen remain outside the supported surface. C9 composition requires
-an explicit transform/scaling policy and fails on aspect mismatch—never a
-silent stretch. C10 refuses ambiguous or unsupported edits and never overwrites
-source or PPTX. See
+External manifests, CSS token editing, rich-text/general insertion/reparenting,
+general SVG/PPTX conversion, and baseline-free PPTX import remain outside the
+supported surface. The exact reviewed connector clone above is the only
+insertion exception. C9 composition requires an explicit transform/scaling
+policy and fails on aspect mismatch—never a silent stretch. C10 refuses
+ambiguous or unsupported edits and never overwrites source or PPTX. See
 [`packages/pptv/README.md`](packages/pptv/README.md).
 
 ### Markdown → DOCX
@@ -287,7 +321,7 @@ Example — overriding just the H1 color and the table header fill:
 ```
 
 Full key reference, deep-merge semantics, and resolution-order edge cases
-are the subject of `architecture/CONTRACT-C1-THEME-SCHEMA.1.0.md`. JSONC
+are the subject of `architecture/CONTRACT-C1-THEME-SCHEMA.1.1.md`. JSONC
 (`//` comments in theme files) and an `extends` chain between named themes
 are planned — see `ROADMAP.md` §4 — but not implemented yet; today's theme
 files are plain JSON with an informal `_comment` string key.
@@ -358,9 +392,13 @@ Pending tracked changes, images, text boxes, unknown styles, nested lists,
 native numbering, and unsupported Markdown constructs refuse with stable codes
 instead of being flattened. Google Docs may strip the merge-base part, and
 links retain the documented print-oriented demotion rather than becoming real
-hyperlinks. Native Word automation is still an explicit unavailable gate on
-this host; independent package reopen/save and Quick Look are separate
-evidence, not substitutes. See `architecture/CONTRACT-C3-ROUNDTRIP.1.1.md`.
+hyperlinks. The bounded native bridge has passed an exact Word 16.111.2 no-op
+save/reopen lifecycle on this host. That save recovered byte-identical
+Markdown and proved Word's omitted Heading 1–4 font/italic declarations
+equivalent through the exact style cascade; nearby theme, base, link, and
+inheritance counterexamples still report drift. Representative supported Word
+edits and human/native visual review remain separate gates. See
+`architecture/CONTRACT-C3-ROUNDTRIP.1.2.md`.
 
 **DOCX roadmap:** `ROADMAP.md` is the remaining hand-off plan — a pinned
 CommonMark AST, wide-table strategies, image support, JSONC themes with an
@@ -373,9 +411,11 @@ broader SVG/HTML source model, processing API, native editor, PowerPoint
 adapter, reverse-patch semantics, and conformance path. C4–C6 define the
 verified source/typed-patch/resolution surface; C7–C10 implement the strict deck
 canary and mapped standalone-atom round trip; C11 supplies automated evidence.
-Remaining work is native representative edit/save/reopen, browser controls for
-the typed operation surface, richer assets/text, and separately versioned
-profile expansion—not arbitrary best-effort PPTX conversion.
+The exact no-op native Word/PowerPoint lifecycle is closed for the checked
+artifacts and Office build. Remaining work is representative user-edit
+acceptance, native text/cross-renderer calibration, browser controls for the
+typed operation surface, richer assets/text, and separately versioned profile
+expansion—not arbitrary best-effort PPTX conversion.
 
 ---
 

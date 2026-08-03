@@ -1,7 +1,7 @@
 # Template: Build Theme
 
 > Design and ship a new `themes/*.json` theme file for md2docx, conforming
-> to `CONTRACT:C1-THEME-SCHEMA.1.0`. Use when adding a new prebaked visual
+> to `CONTRACT:C1-THEME-SCHEMA.1.1`. Use when adding a new prebaked visual
 > style (e.g. `compact-print`, `brief` — see `ROADMAP.md` §4 for the
 > planned set).
 
@@ -24,9 +24,9 @@
 
 ## Task
 
-Create `themes/<THEME_NAME>.json` per `CONTRACT:C1-THEME-SCHEMA.1.0`.
+Create `themes/<THEME_NAME>.json` per `CONTRACT:C1-THEME-SCHEMA.1.1`.
 
-1. Read `architecture/CONTRACT-C1-THEME-SCHEMA.1.0.md` — every key you can
+1. Read `architecture/CONTRACT-C1-THEME-SCHEMA.1.1.md` — every key you can
    set, what deep-merge means for it, and what happens if you omit a key
    (it inherits from `md2docx.py`'s `DEFAULTS`, not from `BASE` — `themes/`
    files are independent JSON files, not a real `extends` chain yet; see
@@ -51,7 +51,7 @@ Create `themes/<THEME_NAME>.json` per `CONTRACT:C1-THEME-SCHEMA.1.0`.
 ## Context Files
 
 Read these before starting:
-- `architecture/CONTRACT-C1-THEME-SCHEMA.1.0.md` — the schema contract
+- `architecture/CONTRACT-C1-THEME-SCHEMA.1.1.md` — the schema contract
 - `themes/neutral.json`, `themes/plum.json`, `themes/marked-docs.json` — existing themes
 - `ROADMAP.md` §4 — planned theme registry
 

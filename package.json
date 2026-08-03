@@ -6,6 +6,8 @@
     "build": "pnpm --filter @office180/pptv build",
     "browser:build": "pnpm --filter @office180/pptv browser:build",
     "browser:check": "pnpm --filter @office180/pptv browser:check",
+    "browser-calibration:check": "pnpm --filter @office180/pptv browser-calibration:check",
+    "browser-calibration:update": "pnpm --filter @office180/pptv browser-calibration:update",
     "editor:build": "pnpm --filter @office180/pptv editor:build",
     "editor:check": "pnpm --filter @office180/pptv editor:check",
     "pack:check": "pnpm --filter @office180/pptv pack:check",
@@ -16,7 +18,7 @@
     "test:browser": "pnpm browser:check && pnpm --filter @office180/pptv test:browser",
     "test:browser:all": "pnpm browser:check && pnpm --filter @office180/pptv test:browser:all",
     "test:ts": "pnpm --filter @office180/pptv test",
-    "test:python": ".venv/bin/python tests/test_roundtrip.py && .venv/bin/python tests/test_visual_evidence.py",
+    "test:python": ".venv/bin/python tests/test_roundtrip.py && .venv/bin/python tests/test_visual_evidence.py && .venv/bin/python tests/test_native_office_bridge.py",
     "pptv": "tsx packages/pptv/src/bin.ts"
   },
   "devDependencies": {

@@ -1,15 +1,17 @@
 #!/usr/bin/env python3
 # SPDX-License-Identifier: MIT
-"""Bounded capture and comparison harness for Office visual evidence.
+"""Bounded capture, comparison, and native-lifecycle evidence harness.
 
-CONTRACT:C11-OFFICE-VISUAL-EVIDENCE.1.0
+CONTRACT:C11-OFFICE-VISUAL-EVIDENCE.1.1
 
 This slice captures trusted DOCX/PPTX previews with macOS Quick Look and
 trusted validated standalone PPTV SVG atoms through loopback Playwright
 Chromium. It compares already-captured images with deterministic thresholds
-and optional masks and validates content-bound evidence manifests. Quick Look
-and browser captures remain preview evidence; neither is reported as native
-Word or PowerPoint open, edit, save, or reopen evidence.
+and optional masks, binds passed no-op native Office bridge reports, and
+validates content-bound evidence manifests. Quick Look and browser captures
+remain preview evidence. A bound bridge report proves only the named native
+open/save/reopen lifecycle, not representative editability or human-reviewed
+visual fidelity.
 """
 
 from __future__ import annotations
@@ -33,8 +35,36 @@ from typing import Any, Iterable
 
 
 SCHEMA_ID = "office180-visual-evidence/0.1"
-CONTRACT_ID = "CONTRACT:C11-OFFICE-VISUAL-EVIDENCE.1.0"
+CONTRACT_ID = "CONTRACT:C11-OFFICE-VISUAL-EVIDENCE.1.1"
+BRIDGE_SCHEMA_ID = "office180-native-office-bridge/0.1"
+BRIDGE_EVIDENCE_SCOPE = "native-no-op-save-lifecycle"
+BRIDGE_REPORT_MAX_BYTES = 2 * 1024 * 1024
+BRIDGE_DIAGNOSTIC = (
+    "The exact native Office no-op open/save/reopen lifecycle passed. "
+    "This is structural lifecycle evidence only; representative editability "
+    "and human-reviewed visual fidelity remain manual-required."
+)
+BRIDGE_PROFILES = {
+    "docx": {
+        "lane": "markdown-docx",
+        "renderer_class": "native-word",
+        "application": "Microsoft Word",
+        "bundle_id": "com.microsoft.Word",
+        "suffix": ".docx",
+    },
+    "pptx": {
+        "lane": "pptv-pptx",
+        "renderer_class": "native-powerpoint",
+        "application": "Microsoft PowerPoint",
+        "bundle_id": "com.microsoft.Powerpoint",
+        "suffix": ".pptx",
+    },
+}
 SHA256_RE = re.compile(r"^[0-9a-f]{64}$")
+PRIVATE_PATH_RE = re.compile(
+    r"(?:/Users/|/home/|/private/(?:tmp|var)/|/var/folders/|/tmp/|"
+    r"[A-Za-z]:[\\/](?:Users|Documents and Settings)[\\/])"
+)
 STATUSES = {"passed", "failed", "unavailable", "manual-required"}
 RENDERER_CLASSES = {
     "quick-look",
@@ -208,6 +238,467 @@ def _privacy_errors(manifest: dict[str, Any]) -> list[str]:
             if token and token != "/" and token in value:
                 errors.append("privacy: manifest contains a home path or hostname")
                 break
+    return errors
+
+
+def _bridge_privacy_errors(report: dict[str, Any]) -> list[str]:
+    errors = _privacy_errors(report)
+    for value in _all_strings(report):
+        if PRIVATE_PATH_RE.search(value):
+            errors.append(
+                "native bridge report privacy: private absolute path is forbidden"
+            )
+            break
+    return errors
+
+
+def _check_nonempty_string(value: Any, path: str, errors: list[str]) -> None:
+    if not isinstance(value, str) or not value:
+        errors.append(f"{path}: expected non-empty string")
+
+
+def _check_positive_int(value: Any, path: str, errors: list[str]) -> None:
+    if not isinstance(value, int) or isinstance(value, bool) or value < 1:
+        errors.append(f"{path}: expected positive integer")
+
+
+def _validate_bridge_command_core(
+    command: Any,
+    path: str,
+    *,
+    extra_required: set[str],
+    extra_optional: set[str] = frozenset(),
+    errors: list[str],
+) -> dict[str, Any] | None:
+    obj = _require_keys(
+        command,
+        path,
+        {
+            "argv",
+            "timeout_seconds",
+            "duration_ms",
+            "exit_code",
+            "timed_out",
+            "stdout_sha256",
+            "stderr_sha256",
+            *extra_required,
+        },
+        {"script_sha256", *extra_optional},
+        errors,
+    )
+    if obj is None:
+        return None
+    argv = obj.get("argv")
+    if (
+        not isinstance(argv, list)
+        or not argv
+        or len(argv) > 16
+        or not all(
+            isinstance(item, str) and item and len(item) <= 256 for item in argv
+        )
+    ):
+        errors.append(f"{path}.argv: expected 1..16 bounded redacted strings")
+    timeout = obj.get("timeout_seconds")
+    if (
+        not isinstance(timeout, (int, float))
+        or isinstance(timeout, bool)
+        or not 0 < timeout <= 300
+    ):
+        errors.append(f"{path}.timeout_seconds: expected number in (0, 300]")
+    duration = obj.get("duration_ms")
+    if not isinstance(duration, int) or isinstance(duration, bool) or duration < 0:
+        errors.append(f"{path}.duration_ms: expected non-negative integer")
+    exit_code = obj.get("exit_code")
+    if exit_code is not None and (
+        not isinstance(exit_code, int) or isinstance(exit_code, bool)
+    ):
+        errors.append(f"{path}.exit_code: expected integer or null")
+    if not isinstance(obj.get("timed_out"), bool):
+        errors.append(f"{path}.timed_out: expected boolean")
+    for key in ("stdout_sha256", "stderr_sha256"):
+        _check_digest(obj.get(key), f"{path}.{key}", errors)
+    if "script_sha256" in obj:
+        _check_digest(obj.get("script_sha256"), f"{path}.script_sha256", errors)
+    return obj
+
+
+def _validate_bridge_command(
+    command: Any, index: int, errors: list[str]
+) -> None:
+    path = f"native_bridge.commands[{index}]"
+    if not isinstance(command, dict):
+        errors.append(f"{path}: expected object")
+        return
+    if command.get("operation") == "exact-path-poll":
+        obj = _require_keys(
+            command,
+            path,
+            {
+                "phase",
+                "operation",
+                "expected_count",
+                "attempt_count",
+                "observed_counts",
+                "timed_out_attempts",
+                "sampled_commands",
+                "omitted_attempts",
+                "outcome",
+            },
+            set(),
+            errors,
+        )
+        if obj is None:
+            return
+        _check_nonempty_string(obj.get("phase"), f"{path}.phase", errors)
+        if obj.get("expected_count") not in {0, 1}:
+            errors.append(f"{path}.expected_count: expected 0 or 1")
+        for key in ("attempt_count", "timed_out_attempts", "omitted_attempts"):
+            value = obj.get(key)
+            if (
+                not isinstance(value, int)
+                or isinstance(value, bool)
+                or value < 0
+            ):
+                errors.append(f"{path}.{key}: expected non-negative integer")
+        counts = obj.get("observed_counts")
+        if not isinstance(counts, dict) or any(
+            not isinstance(key, str)
+            or re.fullmatch(r"-?[0-9]+", key) is None
+            or not isinstance(value, int)
+            or isinstance(value, bool)
+            or value < 1
+            for key, value in (counts.items() if isinstance(counts, dict) else [])
+        ):
+            errors.append(
+                f"{path}.observed_counts: expected integer-keyed positive counts"
+            )
+        samples = obj.get("sampled_commands")
+        if not isinstance(samples, list) or len(samples) > 2:
+            errors.append(f"{path}.sampled_commands: expected at most two samples")
+        else:
+            for sample_index, sample in enumerate(samples):
+                _validate_bridge_command_core(
+                    sample,
+                    f"{path}.sampled_commands[{sample_index}]",
+                    extra_required=set(),
+                    errors=errors,
+                )
+        if obj.get("outcome") not in {
+            "matched",
+            "duplicate",
+            "invalid-response",
+            "deadline",
+        }:
+            errors.append(f"{path}.outcome: invalid poll outcome")
+        return
+
+    obj = _validate_bridge_command_core(
+        command,
+        path,
+        extra_required={"phase", "operation"},
+        errors=errors,
+    )
+    if obj is not None:
+        _check_nonempty_string(obj.get("phase"), f"{path}.phase", errors)
+        _check_nonempty_string(obj.get("operation"), f"{path}.operation", errors)
+
+
+def _bridge_report_errors(report: Any) -> list[str]:
+    """Validate the strict, safety-relevant passed bridge report surface."""
+
+    errors: list[str] = []
+    obj = _require_keys(
+        report,
+        "native_bridge",
+        {
+            "schema",
+            "status",
+            "phase",
+            "input",
+            "application",
+            "environment",
+            "lifecycle",
+            "commands",
+            "output",
+            "cleanup",
+            "publication",
+            "diagnostics",
+        },
+        set(),
+        errors,
+    )
+    if obj is None:
+        return errors
+    if obj.get("schema") != BRIDGE_SCHEMA_ID:
+        errors.append(f"native_bridge.schema: expected {BRIDGE_SCHEMA_ID}")
+    if obj.get("status") != "passed":
+        errors.append("native_bridge.status: a bound report must be passed")
+    if obj.get("phase") != "complete":
+        errors.append("native_bridge.phase: a bound report must be complete")
+
+    input_obj = _require_keys(
+        obj.get("input"),
+        "native_bridge.input",
+        {"path", "sha256", "bytes", "media_kind", "copy_verified"},
+        set(),
+        errors,
+    )
+    if input_obj is not None:
+        _check_relative_path(input_obj.get("path"), "native_bridge.input.path", errors)
+        _check_digest(input_obj.get("sha256"), "native_bridge.input.sha256", errors)
+        _check_positive_int(input_obj.get("bytes"), "native_bridge.input.bytes", errors)
+        if input_obj.get("media_kind") not in BRIDGE_PROFILES:
+            errors.append("native_bridge.input.media_kind: expected docx or pptx")
+        if input_obj.get("copy_verified") is not True:
+            errors.append("native_bridge.input.copy_verified: pass requires true")
+
+    app_obj = _require_keys(
+        obj.get("application"),
+        "native_bridge.application",
+        {
+            "name",
+            "bundle_id",
+            "short_version",
+            "build_version",
+            "renderer_class",
+        },
+        set(),
+        errors,
+    )
+    if app_obj is not None:
+        for key in ("name", "bundle_id", "short_version", "build_version"):
+            _check_nonempty_string(
+                app_obj.get(key), f"native_bridge.application.{key}", errors
+            )
+        for key in ("short_version", "build_version"):
+            if app_obj.get(key) == "unknown":
+                errors.append(
+                    f"native_bridge.application.{key}: exact version is required"
+                )
+
+    environment = _require_keys(
+        obj.get("environment"),
+        "native_bridge.environment",
+        {"operating_system", "version", "architecture"},
+        set(),
+        errors,
+    )
+    if environment is not None:
+        if environment.get("operating_system") != "macOS":
+            errors.append("native_bridge.environment.operating_system: expected macOS")
+        for key in ("version", "architecture"):
+            _check_nonempty_string(
+                environment.get(key), f"native_bridge.environment.{key}", errors
+            )
+
+    lifecycle = _require_keys(
+        obj.get("lifecycle"),
+        "native_bridge.lifecycle",
+        {
+            "method",
+            "timeout_seconds",
+            "evidence_scope",
+            "representative_editability",
+            "visual_fidelity",
+            "handoff_attempts",
+            "handoff_accepted",
+            "exact_path_attachment",
+            "read_only",
+            "forced_dirty_save",
+            "save_event_returned_saved",
+            "post_save_saved",
+            "save_quiescent",
+            "closed_after_save",
+            "zip_valid",
+            "reopen_saved",
+            "reopen_passed",
+            "open_without_repair",
+            "save_size",
+            "save_sha256",
+            "quiescence_observations",
+            "quiescence_polls",
+            "bytes_changed",
+            "part_count",
+            "uncompressed_bytes",
+            "reopen_sha256",
+        },
+        set(),
+        errors,
+    )
+    if lifecycle is not None:
+        if lifecycle.get("method") != "non-interactive-nsworkspace+applescript":
+            errors.append("native_bridge.lifecycle.method: unsupported method")
+        timeout = lifecycle.get("timeout_seconds")
+        if (
+            not isinstance(timeout, (int, float))
+            or isinstance(timeout, bool)
+            or not 10 <= timeout <= 300
+        ):
+            errors.append(
+                "native_bridge.lifecycle.timeout_seconds: expected number in [10, 300]"
+            )
+        if lifecycle.get("evidence_scope") != BRIDGE_EVIDENCE_SCOPE:
+            errors.append(
+                f"native_bridge.lifecycle.evidence_scope: expected "
+                f"{BRIDGE_EVIDENCE_SCOPE}"
+            )
+        if lifecycle.get("representative_editability") != "not-tested":
+            errors.append(
+                "native_bridge.lifecycle.representative_editability: "
+                "expected not-tested"
+            )
+        if lifecycle.get("visual_fidelity") != "not-tested":
+            errors.append(
+                "native_bridge.lifecycle.visual_fidelity: expected not-tested"
+            )
+        for key in ("handoff_attempts", "handoff_accepted"):
+            if lifecycle.get(key) != 2:
+                errors.append(f"native_bridge.lifecycle.{key}: pass requires 2")
+        if lifecycle.get("read_only") is not False:
+            errors.append("native_bridge.lifecycle.read_only: pass requires false")
+        for key in (
+            "exact_path_attachment",
+            "forced_dirty_save",
+            "save_event_returned_saved",
+            "post_save_saved",
+            "save_quiescent",
+            "closed_after_save",
+            "zip_valid",
+            "reopen_saved",
+            "reopen_passed",
+            "open_without_repair",
+        ):
+            if lifecycle.get(key) is not True:
+                errors.append(f"native_bridge.lifecycle.{key}: pass requires true")
+        for key in (
+            "save_size",
+            "quiescence_observations",
+            "quiescence_polls",
+            "part_count",
+            "uncompressed_bytes",
+        ):
+            _check_positive_int(
+                lifecycle.get(key), f"native_bridge.lifecycle.{key}", errors
+            )
+        if not isinstance(lifecycle.get("bytes_changed"), bool):
+            errors.append("native_bridge.lifecycle.bytes_changed: expected boolean")
+        for key in ("save_sha256", "reopen_sha256"):
+            _check_digest(
+                lifecycle.get(key), f"native_bridge.lifecycle.{key}", errors
+            )
+        if lifecycle.get("reopen_sha256") != lifecycle.get("save_sha256"):
+            errors.append(
+                "native_bridge.lifecycle.reopen_sha256: must equal save_sha256"
+            )
+
+    commands = obj.get("commands")
+    if not isinstance(commands, list) or not 1 <= len(commands) <= 64:
+        errors.append("native_bridge.commands: expected 1..64 bounded records")
+    else:
+        for index, command in enumerate(commands):
+            _validate_bridge_command(command, index, errors)
+
+    output = _require_keys(
+        obj.get("output"),
+        "native_bridge.output",
+        {"path", "published", "sha256", "bytes", "media_kind"},
+        set(),
+        errors,
+    )
+    if output is not None:
+        _check_relative_path(output.get("path"), "native_bridge.output.path", errors)
+        if output.get("published") is not True:
+            errors.append("native_bridge.output.published: pass requires true")
+        _check_digest(output.get("sha256"), "native_bridge.output.sha256", errors)
+        _check_positive_int(output.get("bytes"), "native_bridge.output.bytes", errors)
+        if output.get("media_kind") not in BRIDGE_PROFILES:
+            errors.append("native_bridge.output.media_kind: expected docx or pptx")
+
+    cleanup = _require_keys(
+        obj.get("cleanup"),
+        "native_bridge.cleanup",
+        {"exact_absence_proven", "work_directory_disposition"},
+        {"work_directory"},
+        errors,
+    )
+    if cleanup is not None:
+        if cleanup.get("exact_absence_proven") is not True:
+            errors.append(
+                "native_bridge.cleanup.exact_absence_proven: pass requires true"
+            )
+        if "work_directory" in cleanup:
+            _check_relative_path(
+                cleanup.get("work_directory"),
+                "native_bridge.cleanup.work_directory",
+                errors,
+            )
+        if cleanup.get("work_directory_disposition") not in {
+            "remove-before-pair-commit",
+            "removed",
+            "preserved-by-request",
+        }:
+            errors.append(
+                "native_bridge.cleanup.work_directory_disposition: "
+                "invalid passed disposition"
+            )
+
+    publication = _require_keys(
+        obj.get("publication"),
+        "native_bridge.publication",
+        {"commit_marker", "pair_committed", "residual_limit"},
+        set(),
+        errors,
+    )
+    if publication is not None:
+        if publication.get("commit_marker") != "report":
+            errors.append("native_bridge.publication.commit_marker: expected report")
+        if publication.get("pair_committed") is not True:
+            errors.append(
+                "native_bridge.publication.pair_committed: pass requires true"
+            )
+        _check_nonempty_string(
+            publication.get("residual_limit"),
+            "native_bridge.publication.residual_limit",
+            errors,
+        )
+
+    diagnostics = obj.get("diagnostics")
+    if diagnostics != []:
+        errors.append("native_bridge.diagnostics: passed report requires empty array")
+
+    if input_obj is not None and output is not None:
+        if input_obj.get("media_kind") != output.get("media_kind"):
+            errors.append("native_bridge: input/output media kind mismatch")
+        if input_obj.get("path") == output.get("path"):
+            errors.append("native_bridge: input/output paths must differ")
+    if lifecycle is not None and output is not None:
+        if lifecycle.get("save_size") != output.get("bytes"):
+            errors.append("native_bridge: save_size/output bytes mismatch")
+        if lifecycle.get("save_sha256") != output.get("sha256"):
+            errors.append("native_bridge: save/output sha256 mismatch")
+    if output is not None and app_obj is not None:
+        profile = BRIDGE_PROFILES.get(output.get("media_kind"))
+        if profile is not None:
+            for key, actual_key in (
+                ("renderer_class", "renderer_class"),
+                ("application", "name"),
+                ("bundle_id", "bundle_id"),
+            ):
+                if app_obj.get(actual_key) != profile[key]:
+                    errors.append(
+                        f"native_bridge.application.{actual_key}: "
+                        f"does not match {output.get('media_kind')}"
+                    )
+            output_path = output.get("path")
+            if (
+                isinstance(output_path, str)
+                and not output_path.lower().endswith(profile["suffix"])
+            ):
+                errors.append(
+                    "native_bridge.output.path: extension does not match media kind"
+                )
+
+    errors.extend(_bridge_privacy_errors(obj))
     return errors
 
 
@@ -729,6 +1220,12 @@ def _validate_native_lifecycle(native: Any, errors: list[str]) -> None:
             "save_sha256",
             "zip_valid",
             "reopen_passed",
+            "evidence_scope",
+            "bridge_report_path",
+            "bridge_report_sha256",
+            "application_bundle_id",
+            "application_build_version",
+            "visual_fidelity_checked",
         },
         errors,
     )
@@ -763,6 +1260,87 @@ def _validate_native_lifecycle(native: Any, errors: list[str]) -> None:
     elif not isinstance(obj.get("diagnostic"), str) or not obj["diagnostic"]:
         errors.append("native_lifecycle.diagnostic: non-pass requires diagnostic")
 
+    bridge_fields = {
+        "bridge_report_path",
+        "bridge_report_sha256",
+        "application_bundle_id",
+        "application_build_version",
+        "visual_fidelity_checked",
+    }
+    if "evidence_scope" not in obj and bridge_fields.intersection(obj):
+        errors.append(
+            "native_lifecycle: bridge fields require a declared evidence_scope"
+        )
+    if "evidence_scope" in obj:
+        if obj.get("evidence_scope") != BRIDGE_EVIDENCE_SCOPE:
+            errors.append(
+                f"native_lifecycle.evidence_scope: expected {BRIDGE_EVIDENCE_SCOPE}"
+            )
+        for key in (
+            "bridge_report_path",
+            "bridge_report_sha256",
+            "application_bundle_id",
+            "application_build_version",
+            "visual_fidelity_checked",
+            "open_without_repair",
+            "editability_checked",
+            "save_size",
+            "save_sha256",
+            "zip_valid",
+            "reopen_passed",
+        ):
+            if key not in obj:
+                errors.append(
+                    f"native_lifecycle.{key}: required for native bridge binding"
+                )
+        _check_relative_path(
+            obj.get("bridge_report_path"),
+            "native_lifecycle.bridge_report_path",
+            errors,
+        )
+        _check_digest(
+            obj.get("bridge_report_sha256"),
+            "native_lifecycle.bridge_report_sha256",
+            errors,
+        )
+        for key in ("application_bundle_id", "application_build_version"):
+            _check_nonempty_string(
+                obj.get(key), f"native_lifecycle.{key}", errors
+            )
+        if status != "manual-required":
+            errors.append(
+                "native_lifecycle.status: no-op bridge binding remains manual-required"
+            )
+        if obj.get("method") != "automation":
+            errors.append(
+                "native_lifecycle.method: no-op bridge binding requires automation"
+            )
+        if obj.get("diagnostic") != BRIDGE_DIAGNOSTIC:
+            errors.append(
+                "native_lifecycle.diagnostic: no-op bridge scope requires the "
+                "standard structural-only diagnostic"
+            )
+        if obj.get("editability_checked") is not False:
+            errors.append(
+                "native_lifecycle.editability_checked: no-op bridge requires false"
+            )
+        if obj.get("visual_fidelity_checked") is not False:
+            errors.append(
+                "native_lifecycle.visual_fidelity_checked: no-op bridge requires false"
+            )
+        for key in ("open_without_repair", "zip_valid", "reopen_passed"):
+            if obj.get(key) is not True:
+                errors.append(
+                    f"native_lifecycle.{key}: passed bridge requires true"
+                )
+        if not isinstance(obj.get("save_size"), int) or obj["save_size"] < 1:
+            errors.append(
+                "native_lifecycle.save_size: passed bridge requires non-empty save"
+            )
+        _check_digest(
+            obj.get("save_sha256"), "native_lifecycle.save_sha256", errors
+        )
+
 
 def _validate_human_review(review: Any, errors: list[str]) -> None:
     obj = _require_keys(
@@ -790,6 +1368,212 @@ def _validate_human_review(review: Any, errors: list[str]) -> None:
     crops = obj.get("crops")
     if not isinstance(crops, list) or not all(isinstance(item, str) for item in crops):
         errors.append("human_review.crops: expected string array")
+
+
+def _load_bridge_report(path: Path) -> dict[str, Any]:
+    try:
+        metadata = path.lstat()
+    except OSError as exc:
+        raise VisualEvidenceError(
+            "OFFICE-VISUAL-EVIDENCE-INVALID",
+            "bound native bridge report is missing or inaccessible",
+        ) from exc
+    if path.is_symlink() or not path.is_file():
+        raise VisualEvidenceError(
+            "OFFICE-VISUAL-EVIDENCE-INVALID",
+            "bound native bridge report must be a regular non-symlink file",
+        )
+    if metadata.st_size < 2 or metadata.st_size > BRIDGE_REPORT_MAX_BYTES:
+        raise VisualEvidenceError(
+            "OFFICE-VISUAL-EVIDENCE-INVALID",
+            "bound native bridge report exceeds the bounded report size",
+        )
+    try:
+        value = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, UnicodeError, json.JSONDecodeError) as exc:
+        raise VisualEvidenceError(
+            "OFFICE-VISUAL-EVIDENCE-INVALID",
+            "bound native bridge report is not valid UTF-8 JSON",
+        ) from exc
+    if not isinstance(value, dict):
+        raise VisualEvidenceError(
+            "OFFICE-VISUAL-EVIDENCE-INVALID",
+            "bound native bridge report root must be an object",
+        )
+    return value
+
+
+def _check_bridge_bound_file(
+    root: Path,
+    value: Any,
+    *,
+    path_key: str,
+    digest_key: str,
+    size_key: str,
+    label: str,
+    errors: list[str],
+) -> None:
+    if not isinstance(value, dict):
+        return
+    relative = value.get(path_key)
+    expected_digest = value.get(digest_key)
+    expected_size = value.get(size_key)
+    if (
+        not _is_relative_path(relative)
+        or not _is_digest(expected_digest)
+        or not isinstance(expected_size, int)
+        or isinstance(expected_size, bool)
+        or expected_size < 1
+    ):
+        return
+    try:
+        lexical_path = root.resolve() / PurePosixPath(relative)
+        if lexical_path.is_symlink():
+            errors.append(f"{label}: bound file must not be a symlink")
+            return
+        path = _resolve_relative(root, relative)
+    except VisualEvidenceError as exc:
+        errors.append(f"{label}: {exc}")
+        return
+    if path.is_symlink() or not path.is_file():
+        errors.append(f"{label}: bound file is missing or not a regular file")
+        return
+    try:
+        actual_size = path.stat().st_size
+        actual_digest = sha256_file(path)
+    except OSError:
+        errors.append(f"{label}: bound file is inaccessible")
+        return
+    if actual_size != expected_size:
+        errors.append(f"{label}: byte-size mismatch")
+    if actual_digest != expected_digest:
+        errors.append(f"{label}: sha256 mismatch")
+
+
+def _validate_native_bridge_binding(
+    manifest: dict[str, Any],
+    root: Path,
+    *,
+    check_files: bool,
+    errors: list[str],
+) -> None:
+    native = manifest.get("native_lifecycle")
+    if (
+        not isinstance(native, dict)
+        or native.get("evidence_scope") != BRIDGE_EVIDENCE_SCOPE
+    ):
+        return
+    capture = manifest.get("capture")
+    if not isinstance(capture, dict) or capture.get("status") != "passed":
+        errors.append(
+            "native_lifecycle: bridge binding requires a passing capture envelope"
+        )
+    comparison = manifest.get("comparison")
+    if isinstance(comparison, dict) and comparison.get("status") != "passed":
+        errors.append(
+            "native_lifecycle: bridge binding cannot mask a failed comparison"
+        )
+    if "human_review" in manifest:
+        errors.append(
+            "native_lifecycle: bridge binding cannot carry a human review while "
+            "visual fidelity is explicitly not tested"
+        )
+    if not check_files:
+        return
+    relative_report = native.get("bridge_report_path")
+    expected_report_hash = native.get("bridge_report_sha256")
+    if not _is_relative_path(relative_report) or not _is_digest(
+        expected_report_hash
+    ):
+        return
+    try:
+        lexical_report = root.resolve() / PurePosixPath(relative_report)
+        if lexical_report.is_symlink():
+            errors.append(
+                "native_lifecycle.bridge_report: bound report must not be a symlink"
+            )
+            return
+        report_path = _resolve_relative(root, relative_report)
+        report = _load_bridge_report(report_path)
+    except VisualEvidenceError as exc:
+        errors.append(f"native_lifecycle.bridge_report: {exc}")
+        return
+    try:
+        actual_report_hash = sha256_file(report_path)
+    except OSError:
+        errors.append("native_lifecycle.bridge_report: bound report is inaccessible")
+        return
+    if actual_report_hash != expected_report_hash:
+        errors.append("native_lifecycle.bridge_report: sha256 mismatch")
+        return
+
+    errors.extend(_bridge_report_errors(report))
+    subject = manifest.get("subject")
+    output = report.get("output")
+    app = report.get("application")
+    lifecycle = report.get("lifecycle")
+    input_obj = report.get("input")
+    if not all(
+        isinstance(value, dict)
+        for value in (subject, output, app, lifecycle, input_obj)
+    ):
+        return
+    if relative_report in {input_obj.get("path"), output.get("path")}:
+        errors.append(
+            "native_lifecycle.bridge_report: report path must differ from "
+            "bridge input and output"
+        )
+
+    _check_bridge_bound_file(
+        root,
+        input_obj,
+        path_key="path",
+        digest_key="sha256",
+        size_key="bytes",
+        label="native_lifecycle.bridge_input",
+        errors=errors,
+    )
+    _check_bridge_bound_file(
+        root,
+        output,
+        path_key="path",
+        digest_key="sha256",
+        size_key="bytes",
+        label="native_lifecycle.bridge_output",
+        errors=errors,
+    )
+    if subject.get("artifact_path") != output.get("path"):
+        errors.append(
+            "native_lifecycle.bridge_output: path does not match evidence subject"
+        )
+    if subject.get("artifact_sha256") != output.get("sha256"):
+        errors.append(
+            "native_lifecycle.bridge_output: sha256 does not match evidence subject"
+        )
+    profile = BRIDGE_PROFILES.get(output.get("media_kind"))
+    if profile is None:
+        return
+    if subject.get("lane") != profile["lane"]:
+        errors.append(
+            "native_lifecycle.bridge_output: media kind does not match subject lane"
+        )
+    expected_native = {
+        "renderer_class": app.get("renderer_class"),
+        "application": app.get("name"),
+        "version": app.get("short_version"),
+        "application_bundle_id": app.get("bundle_id"),
+        "application_build_version": app.get("build_version"),
+        "save_size": output.get("bytes"),
+        "save_sha256": output.get("sha256"),
+        "open_without_repair": lifecycle.get("open_without_repair"),
+        "zip_valid": lifecycle.get("zip_valid"),
+        "reopen_passed": lifecycle.get("reopen_passed"),
+    }
+    for key, expected in expected_native.items():
+        if native.get(key) != expected:
+            errors.append(
+                f"native_lifecycle.{key}: does not match bound bridge report"
+            )
 
 
 def validate_manifest_data(
@@ -842,6 +1626,12 @@ def validate_manifest_data(
         _validate_comparison(obj.get("comparison"), errors)
     if "native_lifecycle" in obj:
         _validate_native_lifecycle(obj.get("native_lifecycle"), errors)
+        _validate_native_bridge_binding(
+            obj,
+            root,
+            check_files=check_files,
+            errors=errors,
+        )
     if "human_review" in obj:
         _validate_human_review(obj.get("human_review"), errors)
 
@@ -1822,6 +2612,94 @@ def record_status(
     return finalize_evidence(evidence)
 
 
+def bind_native_bridge(
+    capture_manifest: dict[str, Any],
+    bridge_report_path: Path,
+    *,
+    root: Path,
+) -> dict[str, Any]:
+    """Bind a passed no-op bridge report without claiming native editability."""
+
+    root = root.resolve()
+    source_errors = validate_manifest_data(
+        capture_manifest,
+        root,
+        check_files=True,
+    )
+    if source_errors:
+        raise VisualEvidenceError(
+            "OFFICE-VISUAL-EVIDENCE-INVALID",
+            "capture manifest is invalid: " + "; ".join(source_errors[:8]),
+        )
+    capture = capture_manifest.get("capture")
+    if not isinstance(capture, dict) or capture.get("status") != "passed":
+        raise VisualEvidenceError(
+            "OFFICE-VISUAL-EVIDENCE-INVALID",
+            "native bridge binding requires a passing capture manifest",
+        )
+    comparison = capture_manifest.get("comparison")
+    if isinstance(comparison, dict) and comparison.get("status") != "passed":
+        raise VisualEvidenceError(
+            "OFFICE-VISUAL-EVIDENCE-INVALID",
+            "native bridge binding cannot mask a failed comparison",
+        )
+    if "native_lifecycle" in capture_manifest:
+        raise VisualEvidenceError(
+            "OFFICE-VISUAL-EVIDENCE-INVALID",
+            "capture manifest already contains native lifecycle evidence",
+        )
+    if "human_review" in capture_manifest:
+        raise VisualEvidenceError(
+            "OFFICE-VISUAL-EVIDENCE-INVALID",
+            "bind native lifecycle before creating a human-review envelope",
+        )
+
+    bridge_report_path = bridge_report_path.absolute()
+    relative_report = _relative_path(root, bridge_report_path)
+    report = _load_bridge_report(bridge_report_path)
+    report_errors = _bridge_report_errors(report)
+    if report_errors:
+        raise VisualEvidenceError(
+            "OFFICE-VISUAL-EVIDENCE-INVALID",
+            "native bridge report is invalid: " + "; ".join(report_errors[:8]),
+        )
+
+    app = report["application"]
+    lifecycle = report["lifecycle"]
+    output = report["output"]
+    result = copy.deepcopy(capture_manifest)
+    result.pop("evidence_sha256", None)
+    result["native_lifecycle"] = {
+        "renderer_class": app["renderer_class"],
+        "status": "manual-required",
+        "application": app["name"],
+        "version": app["short_version"],
+        "application_bundle_id": app["bundle_id"],
+        "application_build_version": app["build_version"],
+        "method": "automation",
+        "diagnostic": BRIDGE_DIAGNOSTIC,
+        "evidence_scope": BRIDGE_EVIDENCE_SCOPE,
+        "bridge_report_path": relative_report,
+        "bridge_report_sha256": sha256_file(bridge_report_path),
+        "open_without_repair": lifecycle["open_without_repair"],
+        "editability_checked": False,
+        "visual_fidelity_checked": False,
+        "save_size": output["bytes"],
+        "save_sha256": output["sha256"],
+        "zip_valid": lifecycle["zip_valid"],
+        "reopen_passed": lifecycle["reopen_passed"],
+    }
+    result = finalize_evidence(result)
+    result_errors = validate_manifest_data(result, root, check_files=True)
+    if result_errors:
+        raise VisualEvidenceError(
+            "OFFICE-VISUAL-EVIDENCE-INVALID",
+            "native bridge binding is inconsistent: "
+            + "; ".join(result_errors[:8]),
+        )
+    return result
+
+
 @dataclass(frozen=True)
 class Raster:
     width: int
@@ -2230,7 +3108,10 @@ def _status_exit(status: str) -> int:
 
 def _build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
-        description="Capture, compare, and validate Office visual evidence."
+        description=(
+            "Capture, compare, bind native lifecycle facts, and validate "
+            "Office visual evidence."
+        )
     )
     subparsers = parser.add_subparsers(dest="command_name", required=True)
 
@@ -2294,6 +3175,12 @@ def _build_parser() -> argparse.ArgumentParser:
     record.add_argument("--version", required=True)
     record.add_argument("--executable-path", default="manual")
     record.add_argument("--root", type=Path, default=DEFAULT_ROOT)
+
+    bind = subparsers.add_parser("bind-native-bridge")
+    bind.add_argument("capture_manifest", type=Path)
+    bind.add_argument("bridge_report", type=Path)
+    bind.add_argument("--manifest", type=Path, required=True)
+    bind.add_argument("--root", type=Path, default=DEFAULT_ROOT)
     return parser
 
 
@@ -2364,7 +3251,7 @@ def main(argv: list[str] | None = None) -> int:
                 max_channel_delta=args.max_channel_delta,
                 max_masked_fraction=args.max_masked_fraction,
             )
-        else:
+        elif args.command_name == "record-status":
             manifest = record_status(
                 args.artifact,
                 root=args.root,
@@ -2377,16 +3264,48 @@ def main(argv: list[str] | None = None) -> int:
                 version=args.version,
                 executable_path=args.executable_path,
             )
+        else:
+            root = args.root.resolve()
+            capture_manifest_path = args.capture_manifest.absolute()
+            bridge_report_path = args.bridge_report.absolute()
+            output_manifest_path = args.manifest.absolute()
+            for path in (
+                capture_manifest_path,
+                bridge_report_path,
+                output_manifest_path,
+            ):
+                _relative_path(root, path)
+            if len(
+                {
+                    capture_manifest_path.resolve(),
+                    bridge_report_path.resolve(),
+                    output_manifest_path.resolve(),
+                }
+            ) != 3:
+                raise VisualEvidenceError(
+                    "OFFICE-VISUAL-EVIDENCE-INVALID",
+                    "capture, bridge report, and output manifest paths must differ",
+                )
+            manifest = bind_native_bridge(
+                load_manifest(capture_manifest_path),
+                bridge_report_path,
+                root=root,
+            )
         write_manifest(args.manifest, manifest)
-        status = (
-            manifest.get("comparison", {}).get("status")
-            or manifest["capture"]["status"]
-        )
+        if args.command_name == "bind-native-bridge":
+            status = manifest["native_lifecycle"]["status"]
+            renderer_class = manifest["native_lifecycle"]["renderer_class"]
+        else:
+            status = (
+                manifest.get("comparison", {}).get("status")
+                or manifest["capture"]["status"]
+            )
+            renderer_class = manifest["capture"]["renderer_class"]
         print(
             json.dumps(
                 {
                     "status": status,
-                    "renderer_class": manifest["capture"]["renderer_class"],
+                    "renderer_class": renderer_class,
                     "manifest": str(args.manifest),
                     "evidence_sha256": manifest["evidence_sha256"],
                 },

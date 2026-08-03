@@ -27,6 +27,12 @@ This is non-normative discovery metadata; validate first and never auto-install 
 </svg>
 ```
 
+Treat the same atom as the default for a reusable visual or slide-sized canvas.
+A related suite remains a set of independent atoms unless the requested
+deliverable has real collection semantics. "Hydration-complete" means all
+supported geometry, concrete local styling, hard-line text, stable identity,
+and references required to interpret the atom are local.
+
 All four root declarations are required. The viewBox may use any finite origin,
 width, and height, with strictly positive width and height. Do not add root
 presentation, behavior, physical-size, or external-resource attributes.
@@ -53,6 +59,12 @@ The strict root attribute allowlist is `id`, `data-pptv-version`, `viewBox`,
 and the default SVG `xmlns`, plus the standard XLink namespace declaration only
 when required. Keep active/external content, event handlers, behavior
 attributes, and external resource URLs out of an atom.
+
+Source/profile 0.1 has no contracted template/design-family lineage payload.
+Preserve inert metadata already present, but do not emit new root attributes,
+invent metadata fields, or infer lineage from appearance, filenames, comments,
+or deck layout labels. A successor C4/C6 contract must define the carrier,
+hashes, projections, and preservation rules first.
 
 Use one self-contained `*.pptv.html` resource when authoring a deck:
 
@@ -223,14 +235,34 @@ and candidate snapshots. Theme/order operations remain deck-only. A raw source
 edit must retain canonical physical/painter order and pass validation plus
 resolution afterward.
 
+`pptv-patch/0.3` preserves every earlier operation and adds exactly one
+structural transaction: clone one existing native straight connector into its
+same source parent. Require a fresh stable ID, explicit existing
+`fromId`/`toId`, exact endpoints and complete style, and complete old/new
+sibling order. Do not infer semantic references from proximity, connector
+direction, or PowerPoint numeric IDs. General insertion, arbitrary copying,
+reparenting, regrouping, and group scale/rotation remain outside the profile.
+
 Mapped-PPTX reconciliation is not arbitrary PPTX import. It authenticates the
-exact atom, regenerated sidecar map, custom lineage, package topology, and
-stable `src.*` object names before deriving a 0.2 patch. Supported edits are
-inverted through the recorded identity or uniform composition transform;
-insertion, copying, reparenting, ambiguity, unsupported DrawingML, and
-conflicting deltas are refused. Apply the proposed patch to a new atom, compile
-it with the same placement, and compare it with the edited PPTX before accepting
-the reverse result.
+exact atom, canonical sidecar map, custom lineage, package topology, and stable
+`src.*` object names before deriving a patch. Supported edits are inverted
+through the recorded identity or uniform composition transform. Duplicate
+identities refuse by default.
+
+C10 1.2 may derive one 0.3 `clone-connector` only from a strict reviewed
+`pptv-reconcile-resolution/0.1`: exactly one duplicated mapped straight
+connector, exactly two edited occurrences, exactly one baseline-equivalent
+occurrence, same mapped parent, a reviewer-chosen fresh stable ID and explicit
+existing references, and exact current hashes/fingerprints/order/endpoints/
+style. Zero baseline matches means both copies changed or structure drifted;
+two are ambiguous. Either state, a stale review, another finding, unsupported
+DrawingML, or a conflicting delta refuses the complete transaction and retains
+agent-oriented recovery options.
+
+Apply the proposed patch to a new atom, compile it with the same placement, and
+compare it with the edited PPTX before accepting the reverse result. Treat a
+native Office no-op bridge pass as structural lifecycle evidence only, never as
+representative editability or visual fidelity.
 
 ## Hydration and writable editor
 

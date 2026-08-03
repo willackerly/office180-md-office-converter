@@ -2,7 +2,7 @@
  * Browser-safe PPTV editor primitives.
  *
  * CONTRACT:C4-PPTV-SOURCE.1.1
- * CONTRACT:C5-PPTV-PATCH.1.2
+ * CONTRACT:C5-PPTV-PATCH.1.3
  */
 
 export {

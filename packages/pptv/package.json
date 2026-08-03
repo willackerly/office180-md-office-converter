@@ -42,7 +42,10 @@
     "./assets/pptv-browser-kernel-0.1.iife.js": "./assets/pptv-browser-kernel-0.1.iife.js",
     "./schemas/manifest": "./dist/schemas/pptv-manifest-0.1.schema.json",
     "./schemas/patch": "./dist/schemas/pptv-patch-0.1.schema.json",
-    "./schemas/patch-0.2": "./dist/schemas/pptv-patch-0.2.schema.json"
+    "./schemas/patch-0.2": "./dist/schemas/pptv-patch-0.2.schema.json",
+    "./schemas/patch-0.3": "./dist/schemas/pptv-patch-0.3.schema.json",
+    "./schemas/reconciliation-0.2": "./dist/schemas/pptv-pptx-reconciliation-0.2.schema.json",
+    "./schemas/reconcile-resolution-0.1": "./dist/schemas/pptv-reconcile-resolution-0.1.schema.json"
   },
   "files": [
     "assets",
@@ -51,7 +54,9 @@
   ],
   "scripts": {
     "browser:build": "node scripts/build-browser-kernel.mjs && pnpm editor:build",
-    "browser:check": "node scripts/build-browser-kernel.mjs --check && pnpm editor:check",
+    "browser:check": "node scripts/build-browser-kernel.mjs --check && pnpm editor:check && pnpm browser-calibration:check",
+    "browser-calibration:check": "node scripts/update-browser-calibration-evidence.mjs --check",
+    "browser-calibration:update": "node scripts/update-browser-calibration-evidence.mjs",
     "build": "node scripts/prepare-dist.mjs && pnpm browser:check && tsc -p tsconfig.build.json && node scripts/copy-schemas.mjs",
     "editor:build": "node scripts/build-editor-app.mjs",
     "editor:check": "node scripts/build-editor-app.mjs --check",

@@ -3,7 +3,7 @@
  *
  * CONTRACT:C7-PPTX-CANARY.1.1
  * CONTRACT:C9-PPTV-PPTX-BASELINE.1.0
- * CONTRACT:C10-PPTV-PPTX-RECONCILIATION.1.0
+ * CONTRACT:C10-PPTV-PPTX-RECONCILIATION.1.2
  */
 
 import { createHash } from "node:crypto";
@@ -18,6 +18,10 @@ import type {
   PptvPptxMapObject,
   PptvPptxMapSlide,
 } from "./pptx-baseline.js";
+import {
+  normalizePptxPackage,
+  type PptxNormalizationEvidence,
+} from "./pptx-normalization.js";
 
 const MAX_PPTX_BYTES = 128 * 1024 * 1024;
 const MAX_PART_BYTES = 8 * 1024 * 1024;
@@ -46,6 +50,7 @@ const XMLNS = "http://www.w3.org/2000/xmlns/";
 const XML = "http://www.w3.org/XML/1998/namespace";
 const SLIDE_RELATIONSHIP_TYPE =
   "http://schemas.openxmlformats.org/officeDocument/2006/relationships/slide";
+const DRAWING_2014 = "http://schemas.microsoft.com/office/drawing/2014/main";
 const VISIBLE_OBJECT_NAMES = new Set([
   expanded(PRESENTATION, "sp"),
   expanded(PRESENTATION, "cxnSp"),
@@ -64,7 +69,7 @@ const SIGNIFICANT_TEXT_NAMES = new Set([
   expanded(VALUE_TYPES, "lpwstr"),
 ]);
 
-type SupportedOfficeElement = "p:sp" | "p:cxnSp" | "p:grpSp";
+export type SupportedOfficeElement = "p:sp" | "p:cxnSp" | "p:grpSp";
 
 interface XmlText {
   readonly kind: "text";
@@ -95,10 +100,53 @@ export interface PptxInspectedObject {
   readonly order: number;
   readonly numericId: number;
   readonly structureSignature: string;
+  /**
+   * Canonical object structure with only the cNvPr stable-name value and
+   * Office numeric-ID value masked. All other XML remains visible.
+   */
+  readonly identityNormalizedStructureSignature: string;
   readonly geometry?: PptxInspectedGeometry;
   readonly style?: PptxInspectedStyle;
   readonly text?: string;
   readonly textNodeCount: number;
+  readonly normalizations: readonly PptxObjectNormalizationEvidence[];
+}
+
+export interface PptxObjectNormalizationEvidence {
+  readonly ruleId: "pptv-c10/end-paragraph-style-marker-omitted/1";
+  readonly partName: string;
+  readonly objectId: string;
+  readonly occurrenceCount: number;
+  readonly semanticScope: "existing-rendered-content";
+  readonly message: string;
+}
+
+export interface PptxIdentityOccurrence {
+  readonly element?: SupportedOfficeElement;
+  readonly numericId?: number;
+  readonly parentId: string | null;
+  readonly order: number;
+  /**
+   * Canonical object structure with only the cNvPr stable-name value and
+   * Office numeric-ID value masked. This is evidence, not identity authority.
+   */
+  readonly identityNormalizedStructureSignature?: string;
+  readonly geometry?: PptxInspectedGeometry;
+  readonly style?: PptxInspectedStyle;
+  readonly connections: readonly {
+    readonly end: "start" | "end";
+    readonly targetNumericId: number;
+    readonly targetObjectId?: string;
+    readonly siteIndex: number;
+  }[];
+  readonly hasCreationId: boolean;
+  readonly semanticError?: string;
+}
+
+export interface PptxIdentityMatch {
+  readonly id: string;
+  readonly status: "unique" | "missing" | "duplicate";
+  readonly occurrences: readonly PptxIdentityOccurrence[];
 }
 
 export type PptxInspectedGeometry =
@@ -146,16 +194,26 @@ export interface PptxInspectedSlide {
   readonly relationshipId: string;
   readonly partName: string;
   readonly skeletonSignature: string;
+  /**
+   * Slide structure with visible object inventory and XML-only whitespace
+   * removed. All non-object elements and attributes remain exact.
+   */
+  readonly inventoryNormalizedSkeletonSignature: string;
   readonly objects: readonly PptxInspectedObject[];
+  readonly identities: readonly PptxIdentityMatch[];
 }
 
 export interface PptxInspection {
-  readonly schema: "pptv-pptx-inspection/0.1";
+  readonly schema: "pptv-pptx-inspection/0.2";
   readonly pptxSha256: string;
   readonly partNames: readonly string[];
+  readonly semanticPartNames: readonly string[];
+  readonly rawPartSignatures: Readonly<Record<string, string>>;
   readonly partSignatures: Readonly<Record<string, string>>;
+  readonly partSha256: Readonly<Record<string, string>>;
   readonly customProperties: Readonly<Record<string, string>>;
   readonly slides: readonly PptxInspectedSlide[];
+  readonly normalizations: readonly PptxNormalizationEvidence[];
 }
 
 export interface PptxInspectionResult {
@@ -246,19 +304,6 @@ export async function inspectPptxForReconciliation(
 
   const partNames = fileEntries.map((entry) => entry.name).sort(compareText);
   const expectedPartNames = [...map.pptx.partNames].sort(compareText);
-  const missingParts = expectedPartNames.filter(
-    (name) => !partNames.includes(name),
-  );
-  const newParts = partNames.filter(
-    (name) => !expectedPartNames.includes(name),
-  );
-  if (missingParts.length > 0 || newParts.length > 0) {
-    diagnostics.push({
-      code: "PPTV-RECONCILE-UNSUPPORTED",
-      severity: "error",
-      message: `PPTX part inventory changed (missing: ${listOrNone(missingParts)}; new: ${listOrNone(newParts)}).`,
-    });
-  }
 
   const requiredParts = [
     "docProps/custom.xml",
@@ -278,6 +323,7 @@ export async function inspectPptxForReconciliation(
   }
 
   const roots = new Map<string, XmlElement>();
+  const partTexts: Record<string, string> = {};
   try {
     for (const name of partNames) {
       if (!xmlPartName(name)) {
@@ -289,6 +335,7 @@ export async function inspectPptxForReconciliation(
         continue;
       }
       const text = await readXmlPart(zip, name);
+      partTexts[name] = text;
       roots.set(name, parseXml(text, name));
     }
   } catch (error) {
@@ -317,6 +364,23 @@ export async function inspectPptxForReconciliation(
   }
 
   try {
+    const packageNormalization = normalizePptxPackage({
+      parts: partTexts,
+      expectedPartNames,
+    });
+    const missingParts = expectedPartNames.filter(
+      (name) => !packageNormalization.semanticPartNames.includes(name),
+    );
+    const newParts = packageNormalization.semanticPartNames.filter(
+      (name) => !expectedPartNames.includes(name),
+    );
+    if (missingParts.length > 0 || newParts.length > 0) {
+      diagnostics.push({
+        code: "PPTV-RECONCILE-UNSUPPORTED",
+        severity: "error",
+        message: `PPTX part inventory changed (missing: ${listOrNone(missingParts)}; new: ${listOrNone(newParts)}).`,
+      });
+    }
     const custom = inspectCustomProperties(customRoot, diagnostics);
     validateLineage(custom, map, diagnostics);
     const bindings = inspectSlideBindings(
@@ -341,19 +405,18 @@ export async function inspectPptxForReconciliation(
       );
     }
 
-    const partSignatures = Object.fromEntries(
-      [...roots.entries()]
-        .sort(([left], [right]) => compareText(left, right))
-        .map(([name, root]) => [name, xmlSignature(root)]),
-    );
     return {
       inspection: Object.freeze({
-        schema: "pptv-pptx-inspection/0.1",
+        schema: "pptv-pptx-inspection/0.2",
         pptxSha256: sha256(bytes),
         partNames: Object.freeze(partNames),
-        partSignatures: Object.freeze(partSignatures),
+        semanticPartNames: packageNormalization.semanticPartNames,
+        rawPartSignatures: packageNormalization.rawPartSignatures,
+        partSignatures: packageNormalization.semanticPartSignatures,
+        partSha256: packageNormalization.partSha256,
         customProperties: Object.freeze(custom),
         slides: Object.freeze(inspectedSlides),
+        normalizations: packageNormalization.normalizations,
       }),
       diagnostics: Object.freeze(diagnostics),
     };
@@ -624,6 +687,41 @@ function inspectSlide(
     }
   }
 
+  const numericOccurrences = new Map<
+    number,
+    Array<(typeof discovered)[number]>
+  >();
+  for (const object of discovered) {
+    if (object.numericId === undefined) continue;
+    const values = numericOccurrences.get(object.numericId) ?? [];
+    values.push(object);
+    numericOccurrences.set(object.numericId, values);
+  }
+  const numericObjectIds = new Map<number, string>();
+  for (const [numericId, objects] of numericOccurrences) {
+    if (objects.length === 1 && objects[0]?.id !== undefined) {
+      numericObjectIds.set(numericId, objects[0].id);
+    }
+  }
+  const identities: PptxIdentityMatch[] = mapSlide.objects.map((expected) => {
+    const matches = occurrences.get(expected.id) ?? [];
+    const status =
+      matches.length === 0
+        ? "missing"
+        : matches.length === 1
+          ? "unique"
+          : "duplicate";
+    return Object.freeze({
+      id: expected.id,
+      status,
+      occurrences: Object.freeze(
+        matches.map((object) =>
+          inspectIdentityOccurrence(object, expected, numericObjectIds),
+        ),
+      ),
+    });
+  });
+
   const rootIdentities = new WeakMap<XmlElement, string>();
   for (const [index, object] of discovered.entries()) {
     rootIdentities.set(
@@ -692,7 +790,10 @@ function inspectSlide(
         rootIdentities,
         semantics.maskedAttributes,
         semantics.maskedElements,
+        semantics.canonicalEndParagraphs,
       ),
+      identityNormalizedStructureSignature:
+        identityNormalizedObjectStructureSignature(object.node),
       ...(semantics.geometry === undefined
         ? {}
         : { geometry: semantics.geometry }),
@@ -701,6 +802,7 @@ function inspectSlide(
         ? { text: elementText(textElements[0]!) }
         : {}),
       textNodeCount: textElements.length,
+      normalizations: semantics.normalizations,
     });
   }
 
@@ -709,7 +811,97 @@ function inspectSlide(
     relationshipId,
     partName: mapSlide.partName,
     skeletonSignature: skeletonSignature(root, rootIdentities),
+    inventoryNormalizedSkeletonSignature: inventoryNormalizedSkeletonSignature(
+      root,
+      rootIdentities,
+    ),
     objects: Object.freeze(inspected),
+    identities: Object.freeze(identities),
+  });
+}
+
+function inspectIdentityOccurrence(
+  object: {
+    readonly numericId?: number;
+    readonly element?: SupportedOfficeElement;
+    readonly parentId: string | null;
+    readonly order: number;
+    readonly node: XmlElement;
+  },
+  expected: PptvPptxMapObject,
+  numericObjectIds: ReadonlyMap<number, string>,
+): PptxIdentityOccurrence {
+  const localDiagnostics: Diagnostic[] = [];
+  const semantics =
+    object.element === expected.emitted.element
+      ? inspectObjectSemantics(object.node, expected, localDiagnostics)
+      : undefined;
+  const connections = [
+    ...connectionEvidence(object.node, "stCxn", "start", numericObjectIds),
+    ...connectionEvidence(object.node, "endCxn", "end", numericObjectIds),
+  ];
+  return Object.freeze({
+    ...(object.element === undefined ? {} : { element: object.element }),
+    ...(object.numericId === undefined ? {} : { numericId: object.numericId }),
+    parentId: object.parentId,
+    order: object.order,
+    ...(object.element === undefined
+      ? {}
+      : {
+          identityNormalizedStructureSignature:
+            identityNormalizedObjectStructureSignature(object.node),
+        }),
+    ...(semantics?.geometry === undefined
+      ? {}
+      : { geometry: semantics.geometry }),
+    ...(semantics?.style === undefined ? {} : { style: semantics.style }),
+    connections: Object.freeze(connections),
+    hasCreationId:
+      descendants(object.node, DRAWING_2014, "creationId").length > 0,
+    ...(localDiagnostics.length === 0
+      ? {}
+      : {
+          semanticError: localDiagnostics
+            .map((diagnostic) => diagnostic.message)
+            .join(" "),
+        }),
+  });
+}
+
+function connectionEvidence(
+  root: XmlElement,
+  localName: "stCxn" | "endCxn",
+  end: "start" | "end",
+  numericObjectIds: ReadonlyMap<number, string>,
+): readonly PptxIdentityOccurrence["connections"][number][] {
+  return descendants(root, DRAWING, localName).flatMap((connection) => {
+    const target = attribute(connection, "", "id");
+    const site = attribute(connection, "", "idx");
+    if (
+      target === undefined ||
+      site === undefined ||
+      !/^[1-9]\d*$/u.test(target) ||
+      !/^(?:0|[1-9]\d*)$/u.test(site)
+    ) {
+      return [];
+    }
+    const targetNumericId = Number(target);
+    const siteIndex = Number(site);
+    if (
+      !Number.isSafeInteger(targetNumericId) ||
+      !Number.isSafeInteger(siteIndex)
+    ) {
+      return [];
+    }
+    const targetObjectId = numericObjectIds.get(targetNumericId);
+    return [
+      Object.freeze({
+        end,
+        targetNumericId,
+        ...(targetObjectId === undefined ? {} : { targetObjectId }),
+        siteIndex,
+      }),
+    ];
   });
 }
 
@@ -751,13 +943,16 @@ function inspectObjectIdentity(
 interface InspectedObjectSemantics {
   readonly geometry?: PptxInspectedGeometry;
   readonly style?: PptxInspectedStyle;
+  readonly normalizations: readonly PptxObjectNormalizationEvidence[];
   readonly maskedAttributes: WeakMap<XmlElement, ReadonlySet<string>>;
   readonly maskedElements: WeakMap<XmlElement, string>;
+  readonly canonicalEndParagraphs: WeakSet<XmlElement>;
 }
 
 interface SemanticMasks {
   readonly attributes: WeakMap<XmlElement, ReadonlySet<string>>;
   readonly elements: WeakMap<XmlElement, string>;
+  readonly canonicalEndParagraphs: WeakSet<XmlElement>;
 }
 
 function inspectObjectSemantics(
@@ -768,6 +963,7 @@ function inspectObjectSemantics(
   const masks: SemanticMasks = {
     attributes: new WeakMap(),
     elements: new WeakMap(),
+    canonicalEndParagraphs: new WeakSet(),
   };
   try {
     const baselineStyle = mapStyle(expected);
@@ -787,8 +983,10 @@ function inspectObjectSemantics(
           childExtCyEmu: transform.childExtCy!,
         },
         style: baselineStyle,
+        normalizations: Object.freeze([]),
         maskedAttributes: masks.attributes,
         maskedElements: masks.elements,
+        canonicalEndParagraphs: masks.canonicalEndParagraphs,
       };
     }
 
@@ -848,8 +1046,10 @@ function inspectObjectSemantics(
           stroke: lineStyle.paint,
           strokeWidthEmu: lineStyle.width,
         },
+        normalizations: Object.freeze([]),
         maskedAttributes: masks.attributes,
         maskedElements: masks.elements,
+        canonicalEndParagraphs: masks.canonicalEndParagraphs,
       };
     }
 
@@ -865,8 +1065,25 @@ function inspectObjectSemantics(
           anchorXEmu: text.anchorX,
         },
         style: text.style,
+        normalizations: Object.freeze(
+          text.endMarkerOmitted
+            ? [
+                {
+                  ruleId:
+                    "pptv-c10/end-paragraph-style-marker-omitted/1" as const,
+                  partName: expected.emitted.partName,
+                  objectId: expected.id,
+                  occurrenceCount: 1,
+                  semanticScope: "existing-rendered-content" as const,
+                  message:
+                    "The omitted end-paragraph style marker affects future insertion defaults, not this complete existing run.",
+                },
+              ]
+            : [],
+        ),
         maskedAttributes: masks.attributes,
         maskedElements: masks.elements,
+        canonicalEndParagraphs: masks.canonicalEndParagraphs,
       };
     }
 
@@ -889,8 +1106,10 @@ function inspectObjectSemantics(
         stroke: line.paint,
         strokeWidthEmu: line.width,
       },
+      normalizations: Object.freeze([]),
       maskedAttributes: masks.attributes,
       maskedElements: masks.elements,
+      canonicalEndParagraphs: masks.canonicalEndParagraphs,
     };
   } catch (error) {
     diagnostics.push({
@@ -900,8 +1119,10 @@ function inspectObjectSemantics(
       objectId: expected.id,
     });
     return {
+      normalizations: Object.freeze([]),
       maskedAttributes: masks.attributes,
       maskedElements: masks.elements,
+      canonicalEndParagraphs: masks.canonicalEndParagraphs,
     };
   }
 }
@@ -977,7 +1198,11 @@ function inspectTextSemantics(
   root: XmlElement,
   transform: ReturnType<typeof inspectTransform>,
   masks: SemanticMasks,
-): { readonly anchorX: number; readonly style: PptxInspectedStyle } {
+): {
+  readonly anchorX: number;
+  readonly style: PptxInspectedStyle;
+  readonly endMarkerOmitted: boolean;
+} {
   const body = requireDirectElement(root, PRESENTATION, "txBody");
   const paragraph = requireDirectElement(body, DRAWING, "p");
   const paragraphProperties = requireDirectElement(paragraph, DRAWING, "pPr");
@@ -1016,18 +1241,28 @@ function inspectTextSemantics(
 
   const run = requireDirectElement(paragraph, DRAWING, "r");
   const runProperties = requireDirectElement(run, DRAWING, "rPr");
-  const endProperties = requireDirectElement(paragraph, DRAWING, "endParaRPr");
   const runStyle = inspectRunStyle(runProperties, textAnchor, masks, "run");
-  const endStyle = inspectRunStyle(
-    endProperties,
-    textAnchor,
-    masks,
-    "end-paragraph",
-  );
-  if (JSON.stringify(runStyle) !== JSON.stringify(endStyle)) {
-    throw new Error("run and end-paragraph styles differ");
+  const endProperties = directElements(paragraph, DRAWING, "endParaRPr");
+  if (endProperties.length > 1) {
+    throw new Error("text paragraph has multiple end-paragraph style markers");
   }
-  return { anchorX, style: runStyle };
+  if (endProperties.length === 1) {
+    const endStyle = inspectRunStyle(
+      endProperties[0]!,
+      textAnchor,
+      masks,
+      "end-paragraph",
+    );
+    if (JSON.stringify(runStyle) !== JSON.stringify(endStyle)) {
+      throw new Error("run and end-paragraph styles differ");
+    }
+  }
+  masks.canonicalEndParagraphs.add(paragraph);
+  return {
+    anchorX,
+    style: runStyle,
+    endMarkerOmitted: endProperties.length === 0,
+  };
 }
 
 function inspectRunStyle(
@@ -1299,6 +1534,7 @@ function objectStructureSignature(
   objectRoots: WeakMap<XmlElement, string>,
   maskedAttributes: WeakMap<XmlElement, ReadonlySet<string>>,
   maskedElements: WeakMap<XmlElement, string>,
+  canonicalEndParagraphs: WeakSet<XmlElement>,
 ): string {
   return JSON.stringify(
     normalizeXml(root, {
@@ -1306,11 +1542,45 @@ function objectStructureSignature(
       objectRoots,
       maskedAttributes,
       maskedElements,
+      canonicalEndParagraphs,
       maskObjectInventory: expected.kind === "group",
       maskDrawingText: expected.kind === "text",
       maskOfficeObjectNumericId: true,
+      maskOfficeObjectIdentity: false,
     }),
   );
+}
+
+function identityNormalizedObjectStructureSignature(root: XmlElement): string {
+  const identityElement = officeObjectIdentityElement(root);
+  return JSON.stringify(
+    normalizeXml(root, {
+      currentObjectRoot: root,
+      ...(identityElement === undefined
+        ? {}
+        : { officeObjectIdentityElement: identityElement }),
+      maskObjectInventory: false,
+      maskDrawingText: false,
+      maskOfficeObjectNumericId: true,
+      maskOfficeObjectIdentity: true,
+    }),
+  );
+}
+
+function officeObjectIdentityElement(root: XmlElement): XmlElement | undefined {
+  const nonVisualName =
+    root.name === expanded(PRESENTATION, "sp")
+      ? "nvSpPr"
+      : root.name === expanded(PRESENTATION, "cxnSp")
+        ? "nvCxnSpPr"
+        : root.name === expanded(PRESENTATION, "grpSp")
+          ? "nvGrpSpPr"
+          : undefined;
+  if (nonVisualName === undefined) return undefined;
+  const nonVisual = directElements(root, PRESENTATION, nonVisualName);
+  if (nonVisual.length !== 1) return undefined;
+  const identities = directElements(nonVisual[0]!, PRESENTATION, "cNvPr");
+  return identities.length === 1 ? identities[0] : undefined;
 }
 
 function skeletonSignature(
@@ -1323,6 +1593,23 @@ function skeletonSignature(
       maskObjectInventory: true,
       maskDrawingText: false,
       maskOfficeObjectNumericId: false,
+      maskOfficeObjectIdentity: false,
+    }),
+  );
+}
+
+function inventoryNormalizedSkeletonSignature(
+  root: XmlElement,
+  objectRoots: WeakMap<XmlElement, string>,
+): string {
+  return JSON.stringify(
+    normalizeXml(root, {
+      objectRoots,
+      maskObjectInventory: true,
+      maskDrawingText: false,
+      maskOfficeObjectNumericId: false,
+      maskOfficeObjectIdentity: false,
+      ignoreXmlWhitespace: true,
     }),
   );
 }
@@ -1331,12 +1618,16 @@ function normalizeXml(
   node: XmlNode,
   options: {
     readonly currentObjectRoot?: XmlElement;
+    readonly officeObjectIdentityElement?: XmlElement;
     readonly objectRoots?: WeakMap<XmlElement, string>;
     readonly maskedAttributes?: WeakMap<XmlElement, ReadonlySet<string>>;
     readonly maskedElements?: WeakMap<XmlElement, string>;
+    readonly canonicalEndParagraphs?: WeakSet<XmlElement>;
     readonly maskObjectInventory?: boolean;
     readonly maskDrawingText: boolean;
     readonly maskOfficeObjectNumericId: boolean;
+    readonly maskOfficeObjectIdentity: boolean;
+    readonly ignoreXmlWhitespace?: boolean;
   },
 ): unknown {
   if (node.kind === "text") return ["text", node.value];
@@ -1352,12 +1643,39 @@ function normalizeXml(
     .filter(
       (child) =>
         !(
+          options.ignoreXmlWhitespace === true &&
+          child.kind === "text" &&
+          /^[\t\n\r ]*$/u.test(child.value)
+        ),
+    )
+    .filter(
+      (child) =>
+        !(
           options.maskObjectInventory === true &&
           child.kind === "element" &&
           options.objectRoots?.has(child) === true
         ),
     )
+    .filter(
+      (child) =>
+        !(
+          options.canonicalEndParagraphs?.has(node) === true &&
+          child.kind === "element" &&
+          child.name === expanded(DRAWING, "endParaRPr")
+        ),
+    )
     .map((child) => normalizeXml(child, options));
+  if (options.canonicalEndParagraphs?.has(node) === true) {
+    normalizedChildren.push([
+      "pptv-semantic",
+      "text-end-paragraph-style-marker",
+    ]);
+  }
+  const structuralChildren =
+    node.name === expanded(PRESENTATION, "grpSpPr") &&
+    exactZeroShapeTreeTransform(node)
+      ? []
+      : normalizedChildren;
   if (options.maskDrawingText && node.name === expanded(DRAWING, "t")) {
     return [
       "element",
@@ -1368,12 +1686,25 @@ function normalizeXml(
   }
   let attributes =
     options.maskOfficeObjectNumericId &&
-    node.name === expanded(PRESENTATION, "cNvPr")
+    node.name === expanded(PRESENTATION, "cNvPr") &&
+    (options.officeObjectIdentityElement === undefined ||
+      node === options.officeObjectIdentityElement)
       ? {
           ...node.attributes,
           [expanded("", "id")]: "<office-numeric-id>",
         }
       : node.attributes;
+  if (
+    options.maskOfficeObjectIdentity &&
+    node.name === expanded(PRESENTATION, "cNvPr") &&
+    node === options.officeObjectIdentityElement &&
+    Object.hasOwn(attributes, expanded("", "name"))
+  ) {
+    attributes = {
+      ...attributes,
+      [expanded("", "name")]: "<office-stable-name>",
+    };
+  }
   const maskedAttributes = options.maskedAttributes?.get(node);
   if (maskedAttributes !== undefined) {
     attributes = {
@@ -1383,7 +1714,44 @@ function normalizeXml(
       ),
     };
   }
-  return ["element", node.name, attributes, normalizedChildren];
+  return ["element", node.name, attributes, structuralChildren];
+}
+
+function exactZeroShapeTreeTransform(element: XmlElement): boolean {
+  const children = element.children.filter(
+    (child): child is XmlElement => child.kind === "element",
+  );
+  if (
+    Object.keys(element.attributes).length !== 0 ||
+    children.length !== 1 ||
+    children[0]?.name !== expanded(DRAWING, "xfrm") ||
+    Object.keys(children[0].attributes).length !== 0
+  ) {
+    return false;
+  }
+  const transformChildren = children[0].children.filter(
+    (child): child is XmlElement => child.kind === "element",
+  );
+  const expected = [
+    ["off", ["x", "y"]],
+    ["ext", ["cx", "cy"]],
+    ["chOff", ["x", "y"]],
+    ["chExt", ["cx", "cy"]],
+  ] as const;
+  return (
+    transformChildren.length === expected.length &&
+    transformChildren.every((child, index) => {
+      const [local, attributes] = expected[index]!;
+      return (
+        child.name === expanded(DRAWING, local) &&
+        Object.keys(child.attributes).length === attributes.length &&
+        attributes.every(
+          (attributeName) => attribute(child, "", attributeName) === "0",
+        ) &&
+        child.children.length === 0
+      );
+    })
+  );
 }
 
 function xmlSignature(root: XmlElement): string {
@@ -1391,6 +1759,7 @@ function xmlSignature(root: XmlElement): string {
     normalizeXml(root, {
       maskDrawingText: false,
       maskOfficeObjectNumericId: false,
+      maskOfficeObjectIdentity: false,
     }),
   );
 }

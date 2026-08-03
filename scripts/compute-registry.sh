@@ -49,14 +49,31 @@ extract_status() {
   echo "${status:-draft}"
 }
 
-# Extract purpose (first non-empty line after the current or legacy heading)
+# Extract the first purpose paragraph after the current or legacy heading.
+# Keep the generated table compact, but mark truncation explicitly instead of
+# silently cutting a sentence at an arbitrary byte boundary.
 extract_purpose() {
   local file="$1"
-  awk '
+  local purpose
+  purpose="$(awk '
     /^## (Why this exists|Purpose)$/ { found=1; next }
     found && /^## / { exit }
-    found && NF { print; exit }
-  ' "$file" 2>/dev/null | head -c 80
+    found && !NF { if (started) exit; next }
+    found && NF {
+      if (started) printf " "
+      printf "%s", $0
+      started=1
+    }
+    END { if (started) print "" }
+  ' "$file" 2>/dev/null)"
+  purpose="$(printf '%s' "$purpose" | sed 's/|/\\|/g')"
+  if [ "${#purpose}" -gt 160 ]; then
+    local shortened="${purpose:0:157}"
+    shortened="${shortened% *}"
+    printf '%s...\n' "$shortened"
+  else
+    printf '%s\n' "$purpose"
+  fi
 }
 
 # Classify by prefix
@@ -88,7 +105,7 @@ count_implementations() {
     grep -rln "CONTRACT:${id}" "$PROJECT_ROOT" \
       --include='*.go' --include='*.ts' --include='*.tsx' --include='*.js' \
       --include='*.py' --include='*.rs' --include='*.java' --include='*.rb' \
-      --include='*.jsx' --include='*.sh' 2>/dev/null
+      --include='*.jsx' --include='*.swift' --include='*.sh' 2>/dev/null
     if [ -d "$PROJECT_ROOT/bin" ]; then
       grep -rln "CONTRACT:${id}" "$PROJECT_ROOT/bin" 2>/dev/null
     fi
@@ -227,7 +244,7 @@ HEADER
     grep -rEhno 'CONTRACT:[A-Za-z0-9_-]+\.[0-9]+\.[0-9]+' "$PROJECT_ROOT" \
       --include='*.go' --include='*.ts' --include='*.tsx' --include='*.js' \
       --include='*.py' --include='*.rs' --include='*.java' --include='*.rb' \
-      --include='*.jsx' --include='*.sh' 2>/dev/null
+      --include='*.jsx' --include='*.swift' --include='*.sh' 2>/dev/null
     if [ -d "$PROJECT_ROOT/bin" ]; then
       grep -rEhno 'CONTRACT:[A-Za-z0-9_-]+\.[0-9]+\.[0-9]+' "$PROJECT_ROOT/bin" 2>/dev/null
     fi

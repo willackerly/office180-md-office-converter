@@ -13,6 +13,7 @@ packages/pptv/playwright-report/
 packages/pptv/test-results/
 *.editable.pptv.html
 *.editable.html
+.office180-native-work/
 
 # OS cruft
 .DS_Store
@@ -20,6 +21,19 @@ packages/pptv/test-results/
 # Test artifacts — generated DOCX files from running the converters
 *.docx
 !tests/fixtures/**/*.docx
+!manual-tests/office-native-roundtrip/baselines/*.docx
+
+# Native Office challenge work products. The reproducible, PII-free authority
+# lives under baselines/; files beside the sources are human edit/save outputs.
+manual-tests/office-native-roundtrip/*.pptx
+manual-tests/office-native-roundtrip/*.pptv.map.json
+manual-tests/office-native-roundtrip/*.reconcile-resolution.json
+manual-tests/office-native-roundtrip/*.composed.pptv.html
+manual-tests/office-native-roundtrip/~$*
+manual-tests/office-native-roundtrip/native-work-test/
+manual-tests/office-native-roundtrip/previews/
+manual-tests/office-native-roundtrip/regenerate-*/
+manual-tests/office-native-roundtrip/runs/
 
 # Editors
 .vscode/

@@ -1,6 +1,6 @@
 {
   "name": "Neutral",
-  "_comment": "The built-in defaults, shipped as a JSON file so they're documented and diffable. Deep-merges over nothing (this IS the base) — every other theme deep-merges over these values, so any key a theme omits falls back to what's here. See architecture/CONTRACT-C1-THEME-SCHEMA.1.0.md for the full key reference and resolution order.",
+  "_comment": "The built-in defaults, shipped as a JSON file so they're documented and diffable. Deep-merges over nothing (this IS the base) — every other theme deep-merges over these values, so any key a theme omits falls back to what's here. See architecture/CONTRACT-C1-THEME-SCHEMA.1.1.md for the full key reference and resolution order.",
   "fonts": { "body": "Calibri", "mono": "Consolas" },
   "base": { "size_pt": 10.5, "color": "1A1A1A", "space_after_pt": 6 },
   "headings": {
