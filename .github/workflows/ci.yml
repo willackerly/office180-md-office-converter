@@ -61,6 +61,9 @@ jobs:
       - name: Build
         run: pnpm build
 
+      - name: Frozen PPTV compatibility build
+        run: pnpm legacy:build
+
       - name: Package dry run
         run: pnpm pack:check
 
@@ -132,5 +135,5 @@ jobs:
 
       - name: Browser conformance and editor flow
         run: >-
-          pnpm --filter @office180/pptv exec playwright test
+          pnpm --filter @office180/vector180 exec playwright test
           --project=${{ matrix.browser }}

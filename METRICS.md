@@ -3,7 +3,8 @@
 <!-- FRESHNESS: Update this date every time you modify this file -->
 <!-- freshness: 2026-08-02 -->
 
-**Ground-truth metrics for the Python DOCX pair and TypeScript PPTV kernel.**
+**Ground-truth metrics for the Python DOCX pair and canonical TypeScript
+Vector180 kernel.**
 
 The fenced block is checked by `scripts/check-ground-truth.sh`. Update it when
 source files, tests, contracts, schemas, or themes change.
@@ -14,84 +15,89 @@ source files, tests, contracts, schemas, or themes change.
 python_source_files = 2
 test_files = 3
 test_functions = 32
-typescript_source_files = 33
-typescript_test_files = 31
-typescript_test_cases = 239
+typescript_source_files = 38
+typescript_test_files = 33
+typescript_test_cases = 257
 contracts = 12
-published_schemas = 8
+published_schemas = 15
 shipped_themes = 3
 ```
 
-| Metric                    | Meaning                                      | Computed as                                |
-| ------------------------- | -------------------------------------------- | ------------------------------------------ |
-| `python_source_files`     | Root Python converter files                  | root `*.py`                                |
-| `test_files`              | Python `test_*.py` files                     | `tests/test_*.py`                          |
-| `test_functions`          | Standalone Python test functions             | `def test_*` in `tests/test_roundtrip.py`  |
-| `typescript_source_files` | Portable core, ops, Node IO, and CLI modules | non-test `*.ts` under `packages/pptv/src`  |
-| `typescript_test_files`   | Vitest files                                 | `packages/pptv/src/__tests__/*.test.ts`    |
-| `typescript_test_cases`   | Vitest `it()`/`test()` cases                 | test declarations in those files           |
-| `contracts`               | Versioned component contracts                | non-template `architecture/CONTRACT-C*.md` |
-| `published_schemas`       | PPTV/Office evidence JSON Schemas            | `schemas/*.json`                           |
-| `shipped_themes`          | DOCX theme JSON files                        | `themes/*.json`                            |
+| Metric                    | Meaning                                      | Computed as                                    |
+| ------------------------- | -------------------------------------------- | ---------------------------------------------- |
+| `python_source_files`     | Root Python converter files                  | root `*.py`                                    |
+| `test_files`              | Python `test_*.py` files                     | `tests/test_*.py`                              |
+| `test_functions`          | Standalone Python test functions             | `def test_*` in `tests/test_roundtrip.py`      |
+| `typescript_source_files` | Portable core, ops, Node IO, and CLI modules | non-test `*.ts` under `packages/vector180/src` |
+| `typescript_test_files`   | Vitest files                                 | `packages/vector180/src/__tests__/*.test.ts`   |
+| `typescript_test_cases`   | Vitest `it()`/`test()` cases                 | test declarations in those files               |
+| `contracts`               | Current component contract IDs               | unique IDs in `architecture/CONTRACT-C*.md`    |
+| `published_schemas`       | Vector180/Office evidence JSON Schemas       | `schemas/*.json`                               |
+| `shipped_themes`          | DOCX theme JSON files                        | `themes/*.json`                                |
 
 ## Codebase Size (informational)
 
 - `md2docx.py` — 1,287 lines.
 - `docx2md.py` — 2,261 lines.
 - `tests/test_roundtrip.py` — 2,385 lines; `tests/test_visual_evidence.py` —
-  1,183 lines; `tests/test_native_office_bridge.py` — 694 lines.
-- `packages/pptv/src/` — 33 non-test TypeScript modules / 28,303 lines across
+  1,269 lines; `tests/test_native_office_bridge.py` — 694 lines.
+- `packages/vector180/src/` — canonical non-test TypeScript modules across
   the portable source/resolved/text-fit kernel, operations, browser session,
   extraction/editor runtime, Node font/compiler/inspection/filesystem boundary,
   and CLI.
-- `packages/pptv/src/__tests__/` — 31 Vitest files / 12,775 lines (excluding the
+- `packages/vector180/src/__tests__/` — canonical Vitest files (excluding the
   shared helper).
-- `packages/pptv/scripts/update-browser-calibration-evidence.mjs` — 1,893 lines
+- `packages/vector180/scripts/update-browser-calibration-evidence.mjs` — strict
   of strict Playwright-evidence parsing, validation, and canonical publication.
 
 ## Testing Status
 
-- **Python:** 62 passing tests: 32 standalone DOCX tests, 13 C11 visual-evidence
+- **Python:** 63 passing tests: 32 standalone DOCX tests, 14 C11 visual-evidence
   cases, and 17 native-bridge cases. They cover theme resolution, exact or
   diagnosed canonical equality, embedded-source integrity, Word/Markdown
   refusals, native Word style normalization/counterexamples, transactional CLI
   publication/rollback, three-way merge, visual capture/comparison/binding,
   bridge containment/locking/handoff/save/reopen/package/privacy behavior, link
   demotion, and `--no-footer`.
-- **TypeScript:** 290 passing runtime Vitest cases from 239 direct
+- **TypeScript:** 314 passing runtime Vitest cases from 257 direct
   `it()`/`test()` declarations (data-driven cases expand at runtime), covering
   exact UTF-8 source handling, BOM/non-BMP coordinates, non-executing security,
   strict HTML/XML/container/manifest validation, diagram/deck distinction,
-  hierarchy/order, JSON-safe projections, atomic preserve-mode operations,
+  hierarchy/order, wire-family-bearing JSON-safe projections, atomic
+  preserve-mode operations,
   deterministic slide hydration, exact-source browser sessions/editor packs,
   C6 style/geometry/text resolution, C7 OPC/ZIP/OOXML mappings and failures, C8
   anchor/measurement/font-map/CLI behavior, deterministic three-engine
   calibration evidence updates, C5 0.2 typed native-object operations plus C5
   0.3 connector cloning, C9 explicit atom composition/mapped PPTX baselines,
-  C10 proof-carrying normalization/reports/reviewed-copy reconciliation, and
-  race-safe CLI atomic writes.
-- **Repo-scoped authoring skill:** structural validation passes; its bundled
-  starter is locked byte-for-byte to the canonical minimal deck by Vitest. A
-  fresh-context forward test against the real unscripted connector-copy edit
-  selected the correct `no-baseline-match` refusal and recovery path without
-  modifying source or inventing a resolution.
-- **Browser conformance:** the checked ES2022 IIFE is 722,018 bytes with
+  C10 proof-carrying normalization/reports/reviewed-copy reconciliation,
+  contained C12 input-level incomparable reports, and race-safe CLI atomic
+  writes.
+- **Repo-scoped authoring skill:** structural validation and its executable
+  self-check pass. The atom/deck starters are byte-locked to their scaffold
+  helpers; the atom carries the safe discovery breadcrumb, exact ABeeZee face,
+  and honest default style-family hint. The one-page atom card is the routine
+  authoring surface, while the gate helper exercises atom/deck routing,
+  atom-only metadata, default exact-font evidence, editor packaging, and
+  explicit-placement PowerPoint paths without inferring geometry.
+- **Browser conformance:** the checked ES2022 IIFE is 788,901 bytes with
   SHA-256
-  `ee946661bf592d41ae36e821c6bbb94651628f8ab03c11529516f29ed4e577e5`.
+  `9c0b85b42b8eadbc6689c24517298f28c445b70e0fb0216eae4e2661d4cb6c3a`.
   Four real-HTTP C4/C6/C8 tests plus three writable-editor tests pass in each
   captured Chromium, Firefox, and WebKit project (21 of 21), including
   normalized Node/browser equality for the minimal deck, arbitrary-viewBox
   standalone kitchen sink, invalid profile, transactional editing, clean
   source/slide downloads, undo/redo, and tamper-safe read-only fallback.
-- **Writable trusted editor:** its current generated IIFE is 732,927 bytes with
+- **Writable trusted editor:** its current generated IIFE is 769,359 bytes with
   SHA-256
-  `003a0fe78df24100978f8e1642f64f49fc2a7e844399cadb18a42ef019c47f73`;
+  `23143c0782fcbe87aa4af6fc8425adb5fd7d5d67f4f2511d565fcb96ce9301e4`;
   `editor:check` exact-regenerates the app and stylesheet before accepting
   them.
-- **Repository enforcement:** Rebar `v3.0.0-beta` Tier 3 reports 14/14 adopter
-  gates passing. The generated Steward tracks eleven current contract IDs plus
-  only the retained superseded C2 1.0 major-version file; C2/C3 and C7–C11 remain honestly
-  `in-progress` where native/external promotion gates are still open.
+- **Repository enforcement:** Rebar `v3.0.0-beta` Tier 3 runs all 14 adopter
+  gates. The generated registry and Steward track twelve current contract IDs
+  plus retained superseded contract versions. C8 2.0 is verified; C2–C7 and
+  C9–C12 remain honestly `in-progress` where their bounded corpus,
+  native/external, or human-review promotion gates are still open.
 - **Skipped tests:** zero.
 
 Manual C7 1.1 evidence on the exact artifact hash recorded in its contract
@@ -100,19 +106,22 @@ reopen/parse, and native PowerPoint 16.111.2 open plus two-page 16:9 PDF-render
 smoke without repair. Native PPTX save/reopen and quantitative render comparison
 remain open for that exact C7 canary.
 
-The checked C11 round-trip bundles contain 19 durable DOCX-lane files and 32
-durable PPTV-lane files. DOCX canonical→edited comparison records 7,270 changed
-pixels confined to `[222,238,790,19]`; edited→regenerated is an exact
-same-renderer match. PPTV source→recovered browser comparison records 175,295
-changed pixels confined to `[302,104,757,529]`; baseline→edited Quick Look
-records 175,008 changed pixels; edited→regenerated Quick Look is exact. The
-PPTV edited/regenerated mapped slide XML is byte-identical, and independent C10
-reinspection returns `unchanged`. Both bundles validate every C11 envelope,
-hash, and privacy scan and record native Office as `manual-required`, not
-passed. Those older generated/edit/regenerated fixture claims are unchanged by
-the separate host-scoped bridge evidence below.
+The checked C11 round-trip bundles contain 19 durable DOCX-lane files, 32
+frozen PPTV-lane files, and 32 canonical Vector180-lane files. DOCX
+canonical→edited comparison records 7,270 changed pixels confined to
+`[222,238,790,19]`; edited→regenerated is an exact same-renderer match. The
+canonical Vector180 bundle's source→recovered browser comparison records
+175,295 changed pixels confined to `[302,104,757,529]`; baseline→edited Quick
+Look records 175,008 changed pixels; edited→regenerated Quick Look is exact.
+Its edited/regenerated mapped slide XML is byte-identical, and independent C10
+reinspection returns `unchanged`. Every bundle validates its C11 envelopes,
+hashes, and privacy record. The canonical bundle also locks its declared
+generator/dependency/font inputs in the normal Python suite. Native
+representative editing remains `manual-required`, not passed. Those
+generated/edit/regenerated fixture claims are separate from the host-scoped
+no-op bridge evidence below.
 
-On 2026-08-02, C11 1.1 passed a bounded exact-path, forced-dirty no-op
+On 2026-08-02, C11 1.2 passed a bounded exact-path, forced-dirty no-op
 save → close → reopen → close lifecycle for Microsoft Word and PowerPoint
 16.111.2 (build 16.111.26072617) on macOS 26.5.2 arm64. Both published work
 copies were non-empty CRC-valid OOXML, reopened without repair, and retained
@@ -127,7 +136,7 @@ native-saved PPTX as one `12192000 × 6858000` EMU slide. Bound evidence remains
 `visual_fidelity_checked=false`; representative edits, native/cross-renderer
 fidelity, and human review remain open.
 
-The checked C8 worked-deck regression inventory at
+The frozen legacy C8 worked-deck regression inventory at
 `packages/pptv/test-fixtures/c8/tdflite-text-fit-inventory.json` binds
 `TDFLite@2f0cba44a0904c8c964123253050ef32f793e7e2` source
 `docs/product-briefing/tdflite-vs-opentdf.pptv.html` at SHA-256
@@ -172,39 +181,38 @@ pnpm test
 
 - `C1-THEME-SCHEMA`, `C2-PROVENANCE`, and `C3-ROUNDTRIP` specify the DOCX
   implementation.
-- `C4-PPTV-SOURCE` and `C5-PPTV-PATCH` specify the implemented PPTV 0.1
-  source/read and transactional write subset.
-- `C6-PPTV-RESOLVED` specifies the verified browser-independent deck/diagram
-  projection; its Node/browser parity and standalone corpus gates are closed,
-  while downstream C7/native fidelity remains outside C6.
-- `C7-PPTX-CANARY` specifies the implemented deterministic strict-subset PPTX
-  writer; expanded native fixtures, quantitative fidelity, and save/reopen
-  remain.
-- `C8-PPTV-TEXT-FIT` specifies the implemented pure non-mutating preflight plus
-  exact-font Node and browser adapters; worked-deck locking and explicit
-  three-engine browser calibration are closed, while native PowerPoint text
-  calibration remains.
-- `C9-PPTV-PPTX-BASELINE` specifies the in-progress supported compiler,
-  explicit atom placement/composition, and hash-bound source-map surface; the
-  bounded standalone-atom slice is implemented and tested.
-- `C10-PPTV-PPTX-RECONCILIATION` specifies the in-progress baseline-aware
-  edited-PPTX inspection and reviewable semantic-patch surface; proof-carrying
-  native normalization, C5 0.2 proposals, strict C5 0.3 reviewed connector-copy
-  resolution, apply, and C9 regeneration are implemented and tested.
+- `C4-PPTV-SOURCE` and `C5-PPTV-PATCH` retain stable historical contract stems
+  while their 2.0 successors specify canonical Vector180 plus bounded frozen
+  PPTV reads and one unified `vector180-patch/0.1` transaction vocabulary.
+- `C6-PPTV-RESOLVED` 2.0 specifies browser-independent canonical atom/deck
+  projections, deterministic metadata evidence, and canonical hydration.
+- `C7-PPTX-CANARY` 2.0 specifies the deterministic canonical strict-subset
+  PPTX writer; expanded native fixtures and quantitative fidelity remain.
+- `C8-PPTV-TEXT-FIT` 2.0 specifies pure non-mutating preflight, the packaged
+  exact ABeeZee default, and exact-font Node/browser evidence; native
+  PowerPoint text calibration remains.
+- `C9-PPTV-PPTX-BASELINE` 2.0 specifies explicit atom placement/composition,
+  mapped native PPTX output, and canonical metadata/source binding.
+- `C10-PPTV-PPTX-RECONCILIATION` 2.0 specifies baseline-aware edited-PPTX
+  inspection, proof-carrying normalization, one unified patch proposal, and
+  strict reviewed connector-copy resolution.
 - `C11-OFFICE-VISUAL-EVIDENCE` specifies the in-progress cross-lane capture,
   quantitative comparison, native lifecycle, and human-review evidence
   envelope; browser/Quick Look/status/checksum/privacy bundles plus the bounded
   native no-op lifecycle bridge and evidence binder are implemented.
+- `C12-VECTOR180-SOURCE-DIFF` specifies deterministic stable-ID semantic
+  comparison for two complete standalone SVG atoms, including a distinct
+  lexical-only result and fail-closed incomparable evidence.
 
-C1 and C4 through C6 are `verified`. C2/C3 and C7 through C11 are implemented
-for their declared bounded profiles but remain `in-progress` because their
-native, Google Docs, controlled-font, cross-renderer, human-review, or broader
-promotion gates remain open.
+C1 remains `verified`. The current destination-neutral C4-C10 2.0, C11 1.2,
+and C12 1.0 successors remain `in-progress` until their new acceptance
+matrices pass; this does not erase the retained verified historical evidence.
+C2/C3 also remain implemented/in-progress for their declared bounded profiles.
 
 ## Dependencies
 
 - **Python runtime:** `python-docx`.
-- **PPTV runtime:** Node.js 20+, `parse5`, `jsonc-parser`, exact `saxes@6.0.0`
+- **Vector180 runtime:** Node.js 20+, `parse5`, `jsonc-parser`, exact `saxes@6.0.0`
   for browser-safe standalone SVG XML scanning, exact `jszip@3.10.1`, and exact
   `fontkit@2.0.4` behind the Node C8 adapter.
 - **TypeScript development/test:** TypeScript, Vitest, tsx, Prettier, Node type
@@ -212,7 +220,9 @@ promotion gates remain open.
   `@playwright/test@1.62.0`.
 - **Browser font fixture:** OFL ABeeZee Regular at exact SHA-256
   `2901c8df256648cc2bb2e3afb381cb8d28e65ed3dbe11de20695ae4d5ffdeda9`;
-  it is test/calibration data, not a runtime or source-font default.
+  the same verified bytes/license are the packaged Vector180 exact-font default
+  and canonical scaffold face. Omitted `--font-map` is exactly `default`; no
+  host-font discovery or substitution occurs.
 - **OpenDocKit:** no runtime dependency. Its sibling checkout is an independent
   C7 and native-saved C9 validation oracle plus optional future
   adapter/upstream-contribution target.

@@ -1,0 +1,81 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://office180.dev/schemas/vector180-atom-metadata-0.1.schema.json",
+  "title": "Vector180 Atom Metadata 0.1",
+  "description": "Strict inert provenance and declared lineage for one Vector180 SVG atom. Duplicate-key, depth-four, and 4096-byte checks occur before schema validation.",
+  "type": "object",
+  "properties": {
+    "hydration": {
+      "type": "object",
+      "required": [
+        "method",
+        "sourceWireFamily",
+        "sourceSha256",
+        "sourceObjectId",
+        "sourceObjectSha256",
+        "activeThemeId"
+      ],
+      "properties": {
+        "method": { "$ref": "#/$defs/profileId" },
+        "sourceWireFamily": {
+          "enum": ["vector180", "pptv-legacy"]
+        },
+        "sourceSha256": { "$ref": "#/$defs/sha256" },
+        "sourceObjectId": { "$ref": "#/$defs/stableId" },
+        "sourceObjectSha256": { "$ref": "#/$defs/sha256" },
+        "activeThemeId": { "$ref": "#/$defs/stableId" }
+      },
+      "additionalProperties": false
+    },
+    "templateLineage": {
+      "type": "object",
+      "required": ["generatorProfile", "templateId", "templateSha256"],
+      "properties": {
+        "generatorProfile": { "$ref": "#/$defs/profileId" },
+        "templateId": { "$ref": "#/$defs/stableId" },
+        "templateSha256": { "$ref": "#/$defs/sha256" }
+      },
+      "additionalProperties": false
+    },
+    "styleFamily": {
+      "type": "object",
+      "required": ["id"],
+      "properties": {
+        "id": { "$ref": "#/$defs/stableId" },
+        "version": { "$ref": "#/$defs/version" },
+        "definitionSha256": { "$ref": "#/$defs/sha256" }
+      },
+      "additionalProperties": false
+    }
+  },
+  "anyOf": [
+    { "required": ["hydration"] },
+    { "required": ["templateLineage"] },
+    { "required": ["styleFamily"] }
+  ],
+  "$defs": {
+    "sha256": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$"
+    },
+    "stableId": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 128,
+      "pattern": "^[A-Za-z][A-Za-z0-9._:-]*$"
+    },
+    "profileId": {
+      "type": "string",
+      "minLength": 3,
+      "maxLength": 128,
+      "pattern": "^[A-Za-z][A-Za-z0-9._-]*/[0-9]+(?:\\.[0-9]+)*$"
+    },
+    "version": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 32,
+      "pattern": "^[0-9]+(?:\\.[0-9]+)*$"
+    }
+  },
+  "additionalProperties": false
+}

@@ -1,0 +1,110 @@
+{
+  "capture": {
+    "command": {
+      "argv": [
+        "/usr/bin/qlmanage",
+        "-t",
+        "-s",
+        "1600",
+        "-o",
+        "$TEMP",
+        "$TEMP/input-65f0478c3fd7b765.pptx"
+      ],
+      "exit_code": 0,
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdout_sha256": "7516fa695c2b8dbc4925170f26cf916d671f7d24e6b672817723cb129216b462",
+      "timeout_seconds": 45.0
+    },
+    "diagnostic": null,
+    "environment": {
+      "architecture": "arm64",
+      "display_scale": 1.0,
+      "locale": "C/C.UTF-8/C/C/C/C",
+      "os": "Darwin",
+      "os_version": "26.5.2"
+    },
+    "fonts": [],
+    "input": {
+      "background": "renderer-default",
+      "index": 1,
+      "pixel_size": 1600,
+      "unit": "slide"
+    },
+    "output": {
+      "colorspace": "png-rgba-8",
+      "height_px": 902,
+      "media_type": "image/png",
+      "page_count": 1,
+      "page_sha256": [
+        "6b6e8c38094fb531e6369adcd93d9bd821cb37fca42534898d03837d4f58af36"
+      ],
+      "path": "supported-edited.quicklook.png",
+      "sha256": "6b6e8c38094fb531e6369adcd93d9bd821cb37fca42534898d03837d4f58af36",
+      "width_px": 1600
+    },
+    "renderer": {
+      "executable_path": "/System/Library/QuickLook/Office.qlgenerator",
+      "identity_sha256": "f9945b5974ea2cdc3a51921f827f6946c9719c107a0326ce68267632c49ec0c9",
+      "product": "macOS Quick Look Office generator",
+      "version": "48"
+    },
+    "renderer_class": "quick-look",
+    "status": "passed"
+  },
+  "comparison": {
+    "baseline": {
+      "evidence_sha256": "afaa8436539c76b9ffe63ef7135d75cd0d8269b258e0831b1c08719d2fe8e8f4",
+      "image_path": "supported-baseline.quicklook.png",
+      "image_sha256": "e85f46c222d5ad7bafcdde855601d5e5671aa4a67849846a7bde1b8182ddb498"
+    },
+    "candidate": {
+      "evidence_sha256": "86835db509e02451cbbdc4e3a415fcf8db4bf7da59f481b553cdc029da614e6c",
+      "image_path": "supported-edited.quicklook.png",
+      "image_sha256": "6b6e8c38094fb531e6369adcd93d9bd821cb37fca42534898d03837d4f58af36"
+    },
+    "changed_bounds": [
+      305,
+      76,
+      752,
+      559
+    ],
+    "crop_regions": [],
+    "diagnostic": null,
+    "dimensions": {
+      "colorspace": "sRGB RGBA8",
+      "height_px": 902,
+      "width_px": 1600
+    },
+    "implementation": {
+      "executable_path": "/opt/homebrew/bin/magick",
+      "name": "ImageMagick RGBA normalization",
+      "version": "Version: ImageMagick 7.1.2-13 Q16-HDRI aarch64 23522 https://imagemagick.org"
+    },
+    "mask": null,
+    "metrics": {
+      "changed_fraction": 0.12126385809312638,
+      "changed_pixels": 175008,
+      "compared_pixels": 1443200,
+      "masked_pixels": 0,
+      "max_channel_delta": 233,
+      "mean_absolute_error": 2.4121175166297117,
+      "total_pixels": 1443200
+    },
+    "status": "passed",
+    "thresholds": {
+      "antialias_tolerance": 0,
+      "max_changed_fraction": 0.2,
+      "max_channel_delta": 255,
+      "max_masked_fraction": 0.0,
+      "max_mean_absolute_error": 32.0
+    }
+  },
+  "evidence_sha256": "c03829dc2a583f57d7686b5ae74be1f38c530241ebb5873ad0bca5eec3b42147",
+  "schema": "office180-visual-evidence/0.1",
+  "subject": {
+    "artifact_path": "supported-edited.pptx",
+    "artifact_sha256": "65f0478c3fd7b76533e4025c2560821b6c9f8a73ad95a4e8e019d3c6d99d869a",
+    "checkpoint": "trusted-drawingml-supported-edit",
+    "lane": "vector180-pptx"
+  }
+}

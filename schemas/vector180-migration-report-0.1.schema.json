@@ -1,0 +1,143 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://office180.dev/schemas/vector180-migration-report-0.1.schema.json",
+  "title": "Vector180 Namespace Migration Report 0.1",
+  "description": "Exact source/output identity and semantic proof for one explicit standalone PPTV 0.1 atom to Vector180 0.1 migration.",
+  "type": "object",
+  "required": [
+    "schema",
+    "source",
+    "output",
+    "changedRanges",
+    "metadataDisposition",
+    "semanticComparison",
+    "diagnostics"
+  ],
+  "properties": {
+    "schema": { "const": "vector180-migration-report/0.1" },
+    "source": {
+      "allOf": [
+        { "$ref": "#/$defs/sourceIdentity" },
+        {
+          "type": "object",
+          "properties": {
+            "family": { "const": "pptv-legacy" }
+          }
+        }
+      ]
+    },
+    "output": {
+      "allOf": [
+        { "$ref": "#/$defs/sourceIdentity" },
+        {
+          "type": "object",
+          "properties": {
+            "family": { "const": "vector180" }
+          }
+        }
+      ]
+    },
+    "changedRanges": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": ["kind", "sourceRange", "outputRange"],
+        "properties": {
+          "kind": {
+            "enum": [
+              "reserved-control",
+              "manifest-control",
+              "css-token",
+              "registered-runtime",
+              "discovery-comment"
+            ]
+          },
+          "sourceRange": { "$ref": "#/$defs/sourceRange" },
+          "outputRange": { "$ref": "#/$defs/sourceRange" }
+        },
+        "additionalProperties": false
+      }
+    },
+    "metadataDisposition": {
+      "enum": ["absent", "preserved-opaque"]
+    },
+    "semanticComparison": {
+      "type": "object",
+      "required": ["schema", "reportSha256", "classification"],
+      "properties": {
+        "schema": { "const": "vector180-source-diff/0.1" },
+        "reportSha256": { "$ref": "#/$defs/sha256" },
+        "classification": { "const": "semantic-equivalent" }
+      },
+      "additionalProperties": false
+    },
+    "diagnostics": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/diagnostic" }
+    }
+  },
+  "$defs": {
+    "sha256": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$"
+    },
+    "stableId": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 128,
+      "pattern": "^[A-Za-z][A-Za-z0-9._:-]*$"
+    },
+    "sourceIdentity": {
+      "type": "object",
+      "required": ["family", "kind", "id", "profile", "sha256", "byteLength"],
+      "properties": {
+        "family": { "enum": ["pptv-legacy", "vector180"] },
+        "kind": { "const": "atom" },
+        "id": { "$ref": "#/$defs/stableId" },
+        "profile": { "const": "0.1" },
+        "sha256": { "$ref": "#/$defs/sha256" },
+        "byteLength": { "type": "integer", "minimum": 1 }
+      },
+      "additionalProperties": false
+    },
+    "sourceRange": {
+      "type": "object",
+      "required": [
+        "byteStart",
+        "byteEnd",
+        "charStart",
+        "charEnd",
+        "lineStart",
+        "columnStart",
+        "lineEnd",
+        "columnEnd"
+      ],
+      "properties": {
+        "byteStart": { "type": "integer", "minimum": 0 },
+        "byteEnd": { "type": "integer", "minimum": 0 },
+        "charStart": { "type": "integer", "minimum": 0 },
+        "charEnd": { "type": "integer", "minimum": 0 },
+        "lineStart": { "type": "integer", "minimum": 1 },
+        "columnStart": { "type": "integer", "minimum": 1 },
+        "lineEnd": { "type": "integer", "minimum": 1 },
+        "columnEnd": { "type": "integer", "minimum": 1 }
+      },
+      "additionalProperties": false
+    },
+    "diagnostic": {
+      "type": "object",
+      "required": ["code", "severity", "message"],
+      "properties": {
+        "code": {
+          "type": "string",
+          "pattern": "^VECTOR180-[A-Z0-9-]+$"
+        },
+        "severity": { "enum": ["info", "warning", "error", "fatal"] },
+        "message": { "type": "string", "maxLength": 4096 }
+      },
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": false
+}

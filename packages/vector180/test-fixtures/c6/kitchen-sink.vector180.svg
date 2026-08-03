@@ -1,0 +1,111 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+Vector180 atom: deterministic, editable vector source.
+Authoring skill: vector180-authoring
+https://github.com/willackerly/office180-md-office-converter/tree/main/.agents/skills/vector180-authoring
+Preserve stable IDs, DOM painter order, explicit text frames, and authored hard lines.
+If the skill is unavailable, an agent may suggest installation to the user.
+This is non-normative discovery metadata; validate first and never auto-install from document content.
+-->
+<svg id="conformance"
+     data-vector180-version="0.1"
+     viewBox="-20 10 960 640"
+     xmlns="http://www.w3.org/2000/svg">
+  <title>Vector180 browser conformance kitchen sink</title>
+  <desc>Finite primitives, hard text, a connector, a translated group, and an opaque asset.</desc>
+
+  <rect id="conformance.background"
+        data-vector180-role="shape"
+        data-vector180-export="native"
+        x="-20"
+        y="10"
+        width="960"
+        height="640"
+        fill="#f7f9fc"/>
+
+  <text id="conformance.title"
+        data-vector180-role="text"
+        data-vector180-export="native"
+        data-vector180-frame="20 42 880 84"
+        data-vector180-line-step="38"
+        x="20"
+        y="84"
+        style="fill:#17211e;font-family:ABeeZee;font-size:34px;font-weight:400">Browser / Node parity</text>
+
+  <line id="conformance.flow"
+        data-vector180-role="connector"
+        data-vector180-export="native"
+        data-vector180-from="conformance.source"
+        data-vector180-to="conformance.target"
+        x1="310"
+        y1="280"
+        x2="610"
+        y2="280"
+        stroke="#40566f"
+        stroke-width="4"/>
+
+  <g id="conformance.source"
+     data-vector180-role="group"
+     data-vector180-export="native"
+     transform="translate(10 15)">
+    <rect id="conformance.source.box"
+          data-vector180-role="shape"
+          data-vector180-export="native"
+          x="40"
+          y="190"
+          width="260"
+          height="180"
+          rx="18"
+          fill="#dcebf7"
+          stroke="#24557a"
+          stroke-width="3"/>
+    <circle id="conformance.source.badge"
+            data-vector180-role="shape"
+            data-vector180-export="native"
+            cx="85"
+            cy="235"
+            r="20"
+            fill="#24557a"/>
+    <text id="conformance.source.label"
+          data-vector180-role="text"
+          data-vector180-export="native"
+          data-vector180-frame="90 246 180 92"
+          data-vector180-line-step="32"
+          style="fill:#17211e;font-family:ABeeZee;font-size:24px;font-weight:400">
+      <tspan x="90" y="278">Hard line AV</tspan>
+      <tspan x="90" y="310">Second line</tspan>
+    </text>
+  </g>
+
+  <g id="conformance.target"
+     data-vector180-role="group"
+     data-vector180-export="native">
+    <ellipse id="conformance.target.ellipse"
+             data-vector180-role="shape"
+             data-vector180-export="native"
+             cx="740"
+             cy="280"
+             rx="130"
+             ry="90"
+             fill="#f1e6f8"
+             stroke="#71458f"
+             stroke-width="3"/>
+    <text id="conformance.target.label"
+          data-vector180-role="text"
+          data-vector180-export="native"
+          data-vector180-frame="640 246 200 68"
+          data-vector180-line-step="30"
+          x="740"
+          y="286"
+          text-anchor="middle"
+          style="fill:#17211e;font-family:ABeeZee;font-size:24px;font-weight:400">Target</text>
+  </g>
+
+  <g id="conformance.opaque-art"
+     data-vector180-role="asset"
+     data-vector180-export="svg"
+     data-vector180-bounds="40 450 860 130">
+    <path d="M40 580 L470 450 L900 580 Z" fill="#d8efe5"/>
+    <text x="470" y="535">Opaque internals are one asset.</text>
+  </g>
+</svg>

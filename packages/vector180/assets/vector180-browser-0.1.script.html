@@ -1,0 +1,56 @@
+<script data-vector180-runtime="vector180-browser/0.1">
+(() => {
+  "use strict";
+
+  const manifestNode = document.querySelector("#vector180-manifest");
+  const output = document.querySelector("[data-vector180-output]");
+  const manifest = JSON.parse(manifestNode.textContent);
+
+  const baseStyleNode = document.querySelector(
+    '[data-vector180-style="base"]'
+  );
+  if (!baseStyleNode) throw new Error("Missing Vector180 base style");
+
+  const themeNode = document.querySelector(
+    `[data-vector180-theme="${CSS.escape(manifest.theme)}"]`
+  );
+  if (!themeNode) {
+    throw new Error(`Unknown Vector180 theme: ${manifest.theme}`);
+  }
+
+  const viewerStyle = document.createElement("style");
+  viewerStyle.dataset.vector180ViewerChrome = "";
+  viewerStyle.textContent = `
+html, body { margin: 0; background: #dfe5e2; }
+[data-vector180-output] { display: grid; gap: 32px; padding: 32px; }
+.vector180-slide {
+  width: min(100%, 1280px);
+  margin: 0 auto;
+  box-shadow: 0 16px 48px rgb(0 0 0 / 24%);
+}
+.vector180-slide > svg { display: block; width: 100%; height: auto; }
+`;
+  document.head.append(viewerStyle);
+
+  const activeStyle = document.createElement("style");
+  activeStyle.dataset.vector180ActiveTheme = manifest.theme;
+  activeStyle.textContent =
+    `${baseStyleNode.textContent}\n${themeNode.textContent}`;
+  document.head.append(activeStyle);
+
+  for (const slideRef of manifest.slides) {
+    if (typeof slideRef === "object" && slideRef.hidden === true) continue;
+    const id = typeof slideRef === "string" ? slideRef : slideRef.id;
+    const source = document.querySelector(
+      `template[data-vector180-slide="${CSS.escape(id)}"]`
+    );
+    if (!source) throw new Error(`Unknown Vector180 slide: ${id}`);
+
+    const section = document.createElement("section");
+    section.className = "vector180-slide";
+    section.dataset.vector180RenderedSlide = id;
+    section.append(source.content.cloneNode(true));
+    output.append(section);
+  }
+})();
+</script>

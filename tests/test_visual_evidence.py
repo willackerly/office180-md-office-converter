@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # SPDX-License-Identifier: MIT
-"""Focused tests for CONTRACT:C11-OFFICE-VISUAL-EVIDENCE.1.1."""
+"""Focused tests for CONTRACT:C11-OFFICE-VISUAL-EVIDENCE.1.2."""
 
 from __future__ import annotations
 
@@ -209,6 +209,81 @@ def native_bridge_report(
 
 
 class VisualEvidenceTests(unittest.TestCase):
+    def test_checked_vector180_roundtrip_evidence_is_self_consistent(self):
+        root = (
+            REPO_ROOT
+            / "tests"
+            / "fixtures"
+            / "roundtrip-evidence"
+            / "vector180"
+        )
+        manifest = json.loads(
+            (root / "generation-manifest.json").read_text(encoding="utf-8")
+        )
+        self.assertEqual(
+            manifest["schema"],
+            "office180-vector180-roundtrip-evidence-generation/0.1",
+        )
+        self.assertEqual(manifest["source"]["profile"], "0.1")
+        self.assertEqual(manifest["c10"]["status"], "patchable")
+        self.assertEqual(manifest["c10"]["changeCount"], 3)
+        self.assertEqual(
+            set(manifest["c10"]["operationKinds"]),
+            {"set-text", "set-object-geometry", "set-native-style"},
+        )
+        self.assertEqual(manifest["c10"]["regeneratedStatus"], "unchanged")
+        self.assertEqual(manifest["nativePowerPoint"]["status"], "manual-required")
+
+        reproducibility_inputs = [
+            manifest["generator"],
+            *manifest["generator"]["dependencies"],
+            {
+                "path": manifest["source"]["font"]["path"],
+                "sha256": manifest["source"]["font"]["sha256"],
+            },
+            {
+                "path": manifest["source"]["font"]["licensePath"],
+                "sha256": manifest["source"]["font"]["licenseSha256"],
+            },
+        ]
+        for dependency in reproducibility_inputs:
+            path = Path(dependency["path"])
+            self.assertFalse(path.is_absolute())
+            self.assertNotIn("..", path.parts)
+            self.assertEqual(
+                visual.sha256_file(REPO_ROOT / path),
+                dependency["sha256"],
+                dependency["path"],
+            )
+
+        evidence_paths = sorted(root.glob("*.evidence.json"))
+        self.assertEqual(len(evidence_paths), manifest["c11ManifestCount"])
+        for evidence_path in evidence_paths:
+            evidence = json.loads(evidence_path.read_text(encoding="utf-8"))
+            self.assertEqual(
+                visual.validate_manifest_data(evidence, root, check_files=True),
+                [],
+                evidence_path.name,
+            )
+
+        expected_files: set[str] = set()
+        for line in (root / "SHA256SUMS").read_text(encoding="utf-8").splitlines():
+            digest, separator, relative = line.partition("  ")
+            self.assertEqual(separator, "  ")
+            path = Path(relative)
+            self.assertFalse(path.is_absolute())
+            self.assertNotIn("..", path.parts)
+            self.assertNotIn(relative, expected_files)
+            expected_files.add(relative)
+            self.assertEqual(visual.sha256_file(root / path), digest, relative)
+
+        actual_files = {
+            path.relative_to(root).as_posix()
+            for path in root.iterdir()
+            if path.is_file() and path.name != "SHA256SUMS"
+        }
+        self.assertEqual(actual_files, expected_files)
+
     def test_schema_and_manifest_sha_binding(self):
         schema = json.loads(
             (REPO_ROOT / "schemas" / "office180-visual-evidence-0.1.schema.json")
@@ -278,6 +353,7 @@ class VisualEvidenceTests(unittest.TestCase):
 
         for media_kind, lane in (
             ("docx", "markdown-docx"),
+            ("pptx", "vector180-pptx"),
             ("pptx", "pptv-pptx"),
         ):
             with self.subTest(media_kind=media_kind), tempfile.TemporaryDirectory() as temporary:
@@ -427,55 +503,63 @@ class VisualEvidenceTests(unittest.TestCase):
                 errors,
             )
 
-    def test_bind_native_bridge_cli_publishes_manual_required_envelope(self):
-        with tempfile.TemporaryDirectory() as temporary:
-            root = Path(temporary)
-            capture = capture_manifest(
-                root,
-                artifact_name="native.pptx",
-                image_name="native.ppm",
-                image_fixture="baseline.ppm",
-                checkpoint="native-quicklook",
-                lane="pptv-pptx",
-            )
-            capture_path = root / "native.quicklook.evidence.json"
-            visual.write_manifest(capture_path, capture)
-            artifact = root / "native.pptx"
-            bridge_path = root / "native.bridge.json"
-            bridge_path.write_text(
-                json.dumps(
-                    native_bridge_report(root, artifact, media_kind="pptx"),
-                    sort_keys=True,
+    def test_bind_native_bridge_cli_publishes_both_powerpoint_lanes(self):
+        for lane in ("vector180-pptx", "pptv-pptx"):
+            with self.subTest(lane=lane), tempfile.TemporaryDirectory() as temporary:
+                root = Path(temporary)
+                capture = capture_manifest(
+                    root,
+                    artifact_name="native.pptx",
+                    image_name="native.ppm",
+                    image_fixture="baseline.ppm",
+                    checkpoint="native-quicklook",
+                    lane=lane,
                 )
-                + "\n",
-                encoding="utf-8",
-            )
-            output_path = root / "native.bound.evidence.json"
-            result = subprocess.run(
-                [
-                    sys.executable,
-                    str(SCRIPT),
-                    "bind-native-bridge",
-                    str(capture_path),
-                    str(bridge_path),
-                    "--manifest",
-                    str(output_path),
-                    "--root",
-                    str(root),
-                ],
-                stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE,
-                check=False,
-            )
-            self.assertEqual(result.returncode, 2, result.stderr.decode())
-            summary = json.loads(result.stdout)
-            self.assertEqual(summary["status"], "manual-required")
-            self.assertEqual(summary["renderer_class"], "native-powerpoint")
-            bound = visual.load_manifest(output_path)
-            self.assertEqual(
-                visual.validate_manifest_data(bound, root, check_files=True),
-                [],
-            )
+                capture_path = root / "native.quicklook.evidence.json"
+                visual.write_manifest(capture_path, capture)
+                artifact = root / "native.pptx"
+                bridge_path = root / "native.bridge.json"
+                bridge_path.write_text(
+                    json.dumps(
+                        native_bridge_report(root, artifact, media_kind="pptx"),
+                        sort_keys=True,
+                    )
+                    + "\n",
+                    encoding="utf-8",
+                )
+                output_path = root / "native.bound.evidence.json"
+                result = subprocess.run(
+                    [
+                        sys.executable,
+                        str(SCRIPT),
+                        "bind-native-bridge",
+                        str(capture_path),
+                        str(bridge_path),
+                        "--manifest",
+                        str(output_path),
+                        "--root",
+                        str(root),
+                    ],
+                    stdout=subprocess.PIPE,
+                    stderr=subprocess.PIPE,
+                    check=False,
+                )
+                self.assertEqual(result.returncode, 2, result.stderr.decode())
+                summary = json.loads(result.stdout)
+                self.assertEqual(summary["status"], "manual-required")
+                self.assertEqual(
+                    summary["renderer_class"],
+                    "native-powerpoint",
+                )
+                bound = visual.load_manifest(output_path)
+                self.assertEqual(
+                    visual.validate_manifest_data(
+                        bound,
+                        root,
+                        check_files=True,
+                    ),
+                    [],
+                )
 
     def test_mocked_browser_svg_capture_binds_fixed_profile_and_hashes(self):
         calls = []
@@ -491,10 +575,10 @@ class VisualEvidenceTests(unittest.TestCase):
             if "validate" in command:
                 artifact = Path(command[command.index("validate") + 1])
                 result = {
-                    "schema": "pptv-diagram-validation/0.1",
+                    "schema": "vector180-atom-validation/0.1",
                     "valid": True,
                     "sourceSha256": visual.sha256_file(artifact),
-                    "diagramId": "trusted",
+                    "atomId": "trusted",
                     "diagnostics": [],
                 }
                 return subprocess.CompletedProcess(
@@ -535,7 +619,7 @@ class VisualEvidenceTests(unittest.TestCase):
 
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
-            artifact = root / "reconciled.pptv.svg"
+            artifact = root / "reconciled.vector180.svg"
             artifact.write_text(
                 '<svg xmlns="http://www.w3.org/2000/svg"></svg>',
                 encoding="utf-8",
@@ -557,6 +641,8 @@ class VisualEvidenceTests(unittest.TestCase):
             self.assertEqual(len(calls), 2)
             self.assertEqual(evidence["capture"]["renderer_class"], "browser")
             self.assertEqual(evidence["capture"]["status"], "passed")
+            self.assertEqual(evidence["subject"]["lane"], "vector180-pptx")
+            self.assertIn("vector180", calls[0][0])
             self.assertEqual(evidence["subject"]["artifact_sha256"], visual.sha256_file(artifact))
             self.assertEqual(evidence["capture"]["output"]["sha256"], visual.sha256_file(output))
             self.assertEqual(
@@ -607,7 +693,7 @@ class VisualEvidenceTests(unittest.TestCase):
     def test_browser_svg_capture_rejects_untrusted_paths_and_unbounded_profile(self):
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
-            artifact = root / "atom.pptv.svg"
+            artifact = root / "atom.vector180.svg"
             artifact.write_text(
                 '<svg xmlns="http://www.w3.org/2000/svg"></svg>',
                 encoding="utf-8",
@@ -639,7 +725,7 @@ class VisualEvidenceTests(unittest.TestCase):
             )
 
             with tempfile.TemporaryDirectory() as outside:
-                outside_artifact = Path(outside) / "outside.pptv.svg"
+                outside_artifact = Path(outside) / "outside.vector180.svg"
                 outside_artifact.write_bytes(artifact.read_bytes())
                 with self.assertRaises(visual.VisualEvidenceError) as context:
                     visual.capture_browser_svg(
@@ -687,7 +773,7 @@ class VisualEvidenceTests(unittest.TestCase):
 
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
-            artifact = root / "atom.pptv.svg"
+            artifact = root / "atom.vector180.svg"
             artifact.write_text(
                 '<svg xmlns="http://www.w3.org/2000/svg"></svg>',
                 encoding="utf-8",
@@ -738,10 +824,10 @@ class VisualEvidenceTests(unittest.TestCase):
             )
 
             validation_result = {
-                "schema": "pptv-diagram-validation/0.1",
+                "schema": "vector180-atom-validation/0.1",
                 "valid": True,
                 "sourceSha256": visual.sha256_file(artifact),
-                "diagramId": "trusted",
+                "atomId": "trusted",
                 "diagnostics": [],
             }
             missing_browser_result = {

@@ -11,7 +11,11 @@ coverage/
 *.tsbuildinfo
 packages/pptv/playwright-report/
 packages/pptv/test-results/
+packages/vector180/playwright-report/
+packages/vector180/test-results/
 *.editable.pptv.html
+*.editable.vector180.html
+*.composed.vector180.html
 *.editable.html
 .office180-native-work/
 
@@ -27,8 +31,10 @@ packages/pptv/test-results/
 # lives under baselines/; files beside the sources are human edit/save outputs.
 manual-tests/office-native-roundtrip/*.pptx
 manual-tests/office-native-roundtrip/*.pptv.map.json
+manual-tests/office-native-roundtrip/*.vector180.map.json
 manual-tests/office-native-roundtrip/*.reconcile-resolution.json
 manual-tests/office-native-roundtrip/*.composed.pptv.html
+manual-tests/office-native-roundtrip/*.composed.vector180.html
 manual-tests/office-native-roundtrip/~$*
 manual-tests/office-native-roundtrip/native-work-test/
 manual-tests/office-native-roundtrip/previews/

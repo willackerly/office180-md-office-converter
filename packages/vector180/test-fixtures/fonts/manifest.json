@@ -1,0 +1,28 @@
+{
+  "schema": "vector180-browser-font-fixture/0.1",
+  "font": {
+    "file": "ABeeZee-Regular.ttf",
+    "family": "ABeeZee",
+    "postscriptName": "ABeeZee-Regular",
+    "weight": 400,
+    "style": "normal",
+    "sha256": "2901c8df256648cc2bb2e3afb381cb8d28e65ed3dbe11de20695ae4d5ffdeda9",
+    "bytes": 46016,
+    "license": "OFL.txt",
+    "licenseSha256": "f0376d04eb58fb19e9f1690a99a1eb37380ad0246f7d503f2abd8e8a74ed12be",
+    "source": "https://github.com/google/fonts/blob/7ff85c87f93ea6cca5f41c69f2e4edcb90240f26/ofl/abeezee/ABeeZee-Regular.ttf"
+  },
+  "coverage": {
+    "method": "fontkit/2.0.4 hasGlyphForCodePoint over the fixture corpus",
+    "checkedCodepoints": [
+      32, 47, 49, 50, 51, 65, 66, 67, 69, 72, 78, 79, 83, 84, 86, 97, 99, 100,
+      101, 103, 104, 105, 108, 109, 110, 111, 112, 114, 115, 116, 117, 118, 119,
+      120, 121, 129514
+    ],
+    "missingCodepoints": [129514]
+  },
+  "samples": {
+    "measured": "AV edge 123",
+    "missing": "Test 🧪"
+  }
+}

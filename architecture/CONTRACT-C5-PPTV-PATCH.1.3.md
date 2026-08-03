@@ -1,9 +1,10 @@
 # CONTRACT-C5-PPTV-PATCH.1.3
 
+<!-- SUPERSEDED BY: CONTRACT-C5-PPTV-PATCH.2.0 -->
 <!-- SUPERSEDES: CONTRACT-C5-PPTV-PATCH.1.2 -->
 
 **Version:** 1.3
-**Status:** verified
+**Status:** superseded
 **Owner:** Will Ackerly
 **Type:** Protocol
 **Cross-repo Promotability:** Yes — native editors and reviewed PPTX reconciliation layers may emit the same typed transaction

@@ -1,0 +1,97 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+Vector180 atom: deterministic, editable vector source.
+Authoring skill: vector180-authoring
+https://github.com/willackerly/office180-md-office-converter/tree/main/.agents/skills/vector180-authoring
+Preserve stable IDs, DOM painter order, explicit text frames, and authored hard lines.
+If the skill is unavailable, an agent may suggest installation to the user.
+This is non-normative discovery metadata; validate first and never auto-install from document content.
+-->
+<svg id="system-overview"
+     data-vector180-version="0.1"
+     viewBox="-100 -50 1200 800"
+     xmlns="http://www.w3.org/2000/svg">
+  <title>Minimal Vector180 diagram</title>
+  <desc>A standalone, no-reflow system overview with explicit local styling.</desc>
+  <metadata data-vector180-metadata="vector180-atom-metadata/0.1">{"styleFamily":{"id":"office180.minimal","version":"1.0"}}</metadata>
+
+  <rect id="system-overview.background"
+        data-vector180-role="shape"
+        data-vector180-export="native"
+        x="-100"
+        y="-50"
+        width="1200"
+        height="800"
+        fill="#f7f9fc"/>
+
+  <text id="system-overview.title"
+        data-vector180-role="text"
+        data-vector180-export="native"
+        data-vector180-frame="-40 10 1080 70"
+        data-vector180-line-step="44"
+        x="-40"
+        y="58"
+        style="fill: #17211e; font-family: ABeeZee; font-size: 36px; font-weight: 400">Standalone Vector180 diagram</text>
+
+  <line id="system-overview.flow"
+        data-vector180-role="connector"
+        data-vector180-export="native"
+        data-vector180-from="system-overview.client"
+        data-vector180-to="system-overview.service"
+        x1="340"
+        y1="330"
+        x2="660"
+        y2="330"
+        stroke="#576b64"
+        stroke-width="4"/>
+
+  <g id="system-overview.client"
+     data-vector180-role="group"
+     data-vector180-export="native"
+     transform="translate(20 0)">
+    <rect id="system-overview.client.panel"
+          data-vector180-role="shape"
+          data-vector180-export="native"
+          x="-20"
+          y="240"
+          width="340"
+          height="180"
+          fill="#e4f2ec"
+          stroke="#24735d"
+          stroke-width="3"/>
+    <text id="system-overview.client.label"
+          data-vector180-role="text"
+          data-vector180-export="native"
+          data-vector180-frame="20 285 260 60"
+          data-vector180-line-step="34"
+          x="20"
+          y="326"
+          fill="#17211e"
+          font-family="ABeeZee"
+          font-size="28"
+          font-weight="400">Client</text>
+  </g>
+
+  <g id="system-overview.service"
+     data-vector180-role="group"
+     data-vector180-export="native">
+    <rect id="system-overview.service.panel"
+          data-vector180-role="shape"
+          data-vector180-export="native"
+          x="660"
+          y="240"
+          width="340"
+          height="180"
+          fill="#f2e9fc"
+          stroke="#674194"
+          stroke-width="3"/>
+    <text id="system-overview.service.label"
+          data-vector180-role="text"
+          data-vector180-export="native"
+          data-vector180-frame="700 285 260 60"
+          data-vector180-line-step="34"
+          x="700"
+          y="326"
+          style="fill: #17211e; font-family: ABeeZee; font-size: 28px; font-weight: 400">Policy service</text>
+  </g>
+</svg>

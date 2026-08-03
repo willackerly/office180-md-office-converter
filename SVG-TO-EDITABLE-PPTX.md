@@ -4,7 +4,7 @@
 an editable `.pptx` without losing the source of truth.**
 
 **Status:** general reconstruction and QA rationale. The repository implements
-one strict PPTV C9/C10 lane for a supported standalone atom, fixed 16:9 output,
+one strict Vector180 C9/C10 lane for a supported standalone atom, fixed 16:9 output,
 explicit identity or same-aspect uniform placement, and authenticated
 baseline-aware edit recovery, including one strictly reviewed copied straight
 connector. Arbitrary SVG conversion, hybrid asset export, alternate slide
@@ -13,7 +13,7 @@ remain roadmap.
 
 This is a companion method to the repository's Markdown-to-DOCX workflow.
 It is not a claim that arbitrary SVG can be mapped losslessly to PowerPoint
-shapes. `@office180/pptv` ships only the bounded profile summarized above; the
+shapes. `@office180/vector180` ships only the bounded profile summarized above; the
 broader reliable result described here comes from a deliberate reconstruction:
 
 - text becomes native PowerPoint text;
@@ -33,9 +33,9 @@ the original visual language intact.
 
 For SVG authored specifically for deterministic conversion, see the
 implemented bounded
-[`PPTV PowerPoint Vector Profile`](PPTV-PROFILE.md) and its versioned
-contracts. PPTV encodes object identity, native-versus-asset intent, and
-DOM-order z-order directly in a conforming `.pptv.svg` source; the current C9
+[`Vector180 PowerPoint Vector Profile`](VECTOR180-PROFILE.md) and its versioned
+contracts. Vector180 encodes object identity, native-versus-asset intent, and
+DOM-order z-order directly in a conforming `.vector180.svg` source; the current C9
 compiler still admits only its explicitly documented primitive subset.
 
 ## How it complements Markdown and DOCX
@@ -177,7 +177,7 @@ Rules:
 - The same semantic object keeps the same ID across regenerations.
 - Decorative fragments that must move together may be one embedded SVG with
   one ID.
-- A copied PowerPoint object initially duplicates its source ID. C10 1.2
+- A copied PowerPoint object initially duplicates its source ID. C10 2.0
   refuses duplicate identity by default and emits no partial patch. Its only
   automated exception is one copied mapped straight connector with exactly two
   occurrences, exactly one baseline-equivalent occurrence, and a strict
@@ -312,7 +312,7 @@ Open a temporary copy in desktop PowerPoint, not the delivery file.
 This catches package and application behavior that static Open XML inspection
 cannot.
 
-C11 1.1 can automate the narrower no-op structural lifecycle on a new ignored
+C11 1.2 can automate the narrower no-op structural lifecycle on a new ignored
 output path:
 
 ```bash
@@ -363,8 +363,8 @@ baseline is version-bound evidence, not a global Office allowlist.
    existing from/to references, then bind the exact source/map/edited/
    comparison hashes, both fingerprints, same parent, complete old/new order,
    inverse endpoints, and complete style in
-   `pptv-reconcile-resolution/0.1`.
-7. Rerun with `--resolution`. C10 emits one `pptv-patch/0.3`
+   `vector180-reconcile-resolution/0.1`.
+7. Rerun with `--resolution`. C10 emits one `vector180-patch/0.1`
    `clone-connector` only if the complete proposal applies and regenerates
    exactly. Zero matches (both changed/structure drifted), two matches
    (ambiguous), stale data, another duplicate, or any other finding refuses

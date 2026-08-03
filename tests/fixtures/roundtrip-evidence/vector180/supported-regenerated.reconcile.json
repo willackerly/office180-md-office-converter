@@ -1,0 +1,26 @@
+{
+  "schema": "vector180-pptx-reconciliation/0.1",
+  "status": "unchanged",
+  "sourceSha256": "e5145ecdaf435d0a04abf92e3bd2e9a20d01396ba013dd6ab26bfa937d59dc8d",
+  "baselineMapSha256": "cd9f8afbba0f56dbb93b38814f7fc43ec2e03a5b44ef3615521c6e0da23609a9",
+  "editedPptxSha256": "b915027a645b239ffd0acf973fe613fce035fa806b43c3669c0c924116e94206",
+  "changes": [],
+  "summary": {
+    "highestDisposition": "auto-fixable",
+    "findingCounts": {
+      "autoFixable": 0,
+      "reviewRequired": 0,
+      "refused": 0
+    },
+    "occurrenceCounts": {
+      "normalizations": 0,
+      "sourceChanges": 0,
+      "identityProblems": 0
+    },
+    "candidateOperationCount": 0,
+    "blockedOperationCount": 0
+  },
+  "findings": [],
+  "candidateOperations": [],
+  "diagnostics": []
+}

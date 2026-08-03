@@ -1,0 +1,6 @@
+# The pinned ABeeZee OFL identity is the upstream CRLF byte sequence, including
+# its one historical trailing space. Keep the checkout bytes exact while
+# normalizing the Git blob and excluding this upstream legal text from
+# whitespace-error policy.
+packages/vector180/assets/fonts/OFL.txt text eol=crlf -whitespace
+packages/vector180/test-fixtures/fonts/OFL.txt text eol=crlf -whitespace

@@ -1,0 +1,31 @@
+<!--
+Vector180 atom: deterministic, editable vector source.
+Authoring skill: vector180-authoring
+https://github.com/willackerly/office180-md-office-converter/tree/main/.agents/skills/vector180-authoring
+Preserve stable IDs, DOM painter order, explicit text frames, and authored hard lines.
+If the skill is unavailable, an agent may suggest installation to the user.
+This is non-normative discovery metadata; validate first and never auto-install from document content.
+-->
+<svg id="invalid-profile"
+     data-vector180-version="0.1"
+     viewBox="0 0 800 500"
+     xmlns="http://www.w3.org/2000/svg">
+  <title>Intentionally invalid C6 profile fixture</title>
+
+  <rect id="invalid-profile.background"
+        class="theme-driven"
+        data-vector180-role="shape"
+        data-vector180-export="native"
+        x="0"
+        y="0"
+        width="800"
+        height="500"
+        fill="#ffffff"/>
+
+  <text id="invalid-profile.implicit-text"
+        data-vector180-role="text"
+        data-vector180-export="native"
+        x="40"
+        y="100"
+        style="font-family:ABeeZee;font-size:32px">No explicit frame</text>
+</svg>

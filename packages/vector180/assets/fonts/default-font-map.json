@@ -1,0 +1,12 @@
+{
+  "schema": "vector180-font-map/0.1",
+  "faces": [
+    {
+      "family": "ABeeZee",
+      "weight": 400,
+      "style": "normal",
+      "path": "./ABeeZee-Regular.ttf",
+      "postscriptName": "ABeeZee-Regular"
+    }
+  ]
+}

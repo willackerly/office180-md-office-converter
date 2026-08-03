@@ -2,7 +2,7 @@
 
 # Kitchen Sink
 
-A fixture exercising every construct `md2docx.py` supports, for `tests/test_roundtrip.py::test_roundtrip_kitchen_sink` (`CONTRACT:C3-ROUNDTRIP.1.2`).
+A fixture exercising every construct `md2docx.py` supports, for `tests/test_roundtrip.py::test_roundtrip_kitchen_sink` (`CONTRACT:C3-ROUNDTRIP.1.1`).
 
 This reviewed paragraph remains one supported plain-text paragraph after the Word-like edit.
 

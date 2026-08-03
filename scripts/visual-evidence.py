@@ -2,10 +2,10 @@
 # SPDX-License-Identifier: MIT
 """Bounded capture, comparison, and native-lifecycle evidence harness.
 
-CONTRACT:C11-OFFICE-VISUAL-EVIDENCE.1.1
+CONTRACT:C11-OFFICE-VISUAL-EVIDENCE.1.2
 
 This slice captures trusted DOCX/PPTX previews with macOS Quick Look and
-trusted validated standalone PPTV SVG atoms through loopback Playwright
+trusted validated standalone Vector180 SVG atoms through loopback Playwright
 Chromium. It compares already-captured images with deterministic thresholds
 and optional masks, binds passed no-op native Office bridge reports, and
 validates content-bound evidence manifests. Quick Look and browser captures
@@ -35,7 +35,7 @@ from typing import Any, Iterable
 
 
 SCHEMA_ID = "office180-visual-evidence/0.1"
-CONTRACT_ID = "CONTRACT:C11-OFFICE-VISUAL-EVIDENCE.1.1"
+CONTRACT_ID = "CONTRACT:C11-OFFICE-VISUAL-EVIDENCE.1.2"
 BRIDGE_SCHEMA_ID = "office180-native-office-bridge/0.1"
 BRIDGE_EVIDENCE_SCOPE = "native-no-op-save-lifecycle"
 BRIDGE_REPORT_MAX_BYTES = 2 * 1024 * 1024
@@ -46,14 +46,14 @@ BRIDGE_DIAGNOSTIC = (
 )
 BRIDGE_PROFILES = {
     "docx": {
-        "lane": "markdown-docx",
+        "lanes": ("markdown-docx",),
         "renderer_class": "native-word",
         "application": "Microsoft Word",
         "bundle_id": "com.microsoft.Word",
         "suffix": ".docx",
     },
     "pptx": {
-        "lane": "pptv-pptx",
+        "lanes": ("vector180-pptx", "pptv-pptx"),
         "renderer_class": "native-powerpoint",
         "application": "Microsoft PowerPoint",
         "bundle_id": "com.microsoft.Powerpoint",
@@ -1553,7 +1553,7 @@ def _validate_native_bridge_binding(
     profile = BRIDGE_PROFILES.get(output.get("media_kind"))
     if profile is None:
         return
-    if subject.get("lane") != profile["lane"]:
+    if subject.get("lane") not in profile["lanes"]:
         errors.append(
             "native_lifecycle.bridge_output: media kind does not match subject lane"
         )
@@ -1606,7 +1606,11 @@ def validate_manifest_data(
         errors,
     )
     if subject is not None:
-        if subject.get("lane") not in {"markdown-docx", "pptv-pptx"}:
+        if subject.get("lane") not in {
+            "markdown-docx",
+            "vector180-pptx",
+            "pptv-pptx",
+        }:
             errors.append("subject.lane: unsupported lane")
         if not isinstance(subject.get("checkpoint"), str) or not subject["checkpoint"]:
             errors.append("subject.checkpoint: expected non-empty string")
@@ -2102,6 +2106,7 @@ def _browser_capture_base(
     checkpoint: str,
     artifact_hash: str,
     *,
+    lane: str,
     node_label: str,
     width_px: int,
     height_px: int,
@@ -2115,7 +2120,7 @@ def _browser_capture_base(
     return {
         "schema": SCHEMA_ID,
         "subject": {
-            "lane": "pptv-pptx",
+            "lane": lane,
             "checkpoint": checkpoint,
             "artifact_path": _relative_path(root, artifact),
             "artifact_sha256": artifact_hash,
@@ -2198,7 +2203,7 @@ def capture_browser_svg(
     background: str = "#ffffff",
     timeout_seconds: float = 30.0,
 ) -> dict[str, Any]:
-    """Capture one trusted, validated standalone PPTV SVG through Chromium."""
+    """Capture one trusted, validated standalone vector atom through Chromium."""
 
     root = root.resolve()
     artifact = artifact.resolve()
@@ -2210,10 +2215,21 @@ def capture_browser_svg(
         )
     _relative_path(root, artifact)
     _relative_path(root, output)
-    if not artifact.name.endswith(".pptv.svg"):
+    if artifact.name.endswith(".vector180.svg"):
+        lane = "vector180-pptx"
+        validator = "vector180"
+        validation_schema = "vector180-atom-validation/0.1"
+        source_label = "Vector180"
+    elif artifact.name.endswith(".pptv.svg"):
+        lane = "pptv-pptx"
+        validator = "pptv"
+        validation_schema = "pptv-diagram-validation/0.1"
+        source_label = "legacy PPTV"
+    else:
         raise VisualEvidenceError(
             "OFFICE-VISUAL-EVIDENCE-INVALID",
-            "browser SVG capture accepts only standalone .pptv.svg artifacts",
+            "browser SVG capture accepts only standalone .vector180.svg "
+            "or legacy .pptv.svg artifacts",
         )
     if not artifact.is_file():
         raise VisualEvidenceError(
@@ -2267,6 +2283,7 @@ def capture_browser_svg(
         root,
         checkpoint,
         artifact_hash,
+        lane=lane,
         node_label=node_label,
         width_px=width_px,
         height_px=height_px,
@@ -2278,7 +2295,7 @@ def capture_browser_svg(
         return _browser_failure(
             evidence,
             "OFFICE-VISUAL-UNAVAILABLE",
-            "the pinned PPTV validator command is unavailable",
+            f"the pinned {source_label} validator command is unavailable",
         )
     if not node or not BROWSER_CAPTURE_HELPER.is_file():
         return _browser_failure(
@@ -2308,7 +2325,7 @@ def capture_browser_svg(
     validation_command = [
         pnpm,
         "--silent",
-        "pptv",
+        validator,
         "validate",
         str(artifact),
         "--format",
@@ -2328,19 +2345,19 @@ def capture_browser_svg(
         return _browser_failure(
             evidence,
             "OFFICE-VISUAL-TIMEOUT",
-            "PPTV validation exceeded its bounded preflight timeout",
+            f"{source_label} validation exceeded its bounded preflight timeout",
         )
     except OSError:
         return _browser_failure(
             evidence,
             "OFFICE-VISUAL-UNAVAILABLE",
-            "the pinned PPTV validator could not execute",
+            f"the pinned {source_label} validator could not execute",
         )
     if validation.returncode != 0:
         return _browser_failure(
             evidence,
             "OFFICE-VISUAL-UNSAFE-INPUT",
-            "artifact did not pass standalone PPTV validation",
+            f"artifact did not pass standalone {source_label} validation",
         )
     try:
         validation_result = json.loads(validation.stdout)
@@ -2348,14 +2365,14 @@ def capture_browser_svg(
         validation_result = None
     if (
         not isinstance(validation_result, dict)
-        or validation_result.get("schema") != "pptv-diagram-validation/0.1"
+        or validation_result.get("schema") != validation_schema
         or validation_result.get("valid") is not True
         or validation_result.get("sourceSha256") != artifact_hash
     ):
         return _browser_failure(
             evidence,
             "OFFICE-VISUAL-UNSAFE-INPUT",
-            "PPTV validation did not bind the exact standalone SVG bytes",
+            f"{source_label} validation did not bind the exact standalone SVG bytes",
         )
 
     helper_timeout_ms = max(1, int(browser_timeout * 1000) - 500)
@@ -3125,7 +3142,9 @@ def _build_parser() -> argparse.ArgumentParser:
     capture.add_argument("--output", type=Path, required=True)
     capture.add_argument("--manifest", type=Path, required=True)
     capture.add_argument(
-        "--lane", choices=["markdown-docx", "pptv-pptx"], required=True
+        "--lane",
+        choices=["markdown-docx", "vector180-pptx", "pptv-pptx"],
+        required=True,
     )
     capture.add_argument("--checkpoint", required=True)
     capture.add_argument("--root", type=Path, default=DEFAULT_ROOT)
@@ -3161,7 +3180,9 @@ def _build_parser() -> argparse.ArgumentParser:
     record.add_argument("artifact", type=Path)
     record.add_argument("--manifest", type=Path, required=True)
     record.add_argument(
-        "--lane", choices=["markdown-docx", "pptv-pptx"], required=True
+        "--lane",
+        choices=["markdown-docx", "vector180-pptx", "pptv-pptx"],
+        required=True,
     )
     record.add_argument("--checkpoint", required=True)
     record.add_argument(

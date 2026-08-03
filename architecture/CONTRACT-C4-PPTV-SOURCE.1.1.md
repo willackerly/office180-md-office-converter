@@ -1,9 +1,10 @@
 # CONTRACT-C4-PPTV-SOURCE.1.1
 
+<!-- SUPERSEDED BY: CONTRACT-C4-PPTV-SOURCE.2.0 -->
 <!-- SUPERSEDES: CONTRACT-C4-PPTV-SOURCE.1.0 -->
 
 **Version:** 1.1
-**Status:** verified
+**Status:** superseded
 **Owner:** Will Ackerly
 **Type:** Data Model
 **Cross-repo Promotability:** Yes — a future optional OpenDocKit adapter may consume PPTV projections without becoming a core dependency

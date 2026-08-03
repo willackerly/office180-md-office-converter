@@ -1,0 +1,4 @@
+interface:
+  display_name: "Vector180 Authoring"
+  short_description: "Author deterministic vector atoms and decks"
+  default_prompt: "Use $vector180-authoring to create, read, compare, edit, migrate one legacy SVG atom, extract one legacy deck slide, or compile a hydration-complete Vector180 SVG atom, using HTML only for a real deck or report."

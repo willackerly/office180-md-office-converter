@@ -1,9 +1,10 @@
 # CONTRACT-C6-PPTV-RESOLVED.1.1
 
+<!-- SUPERSEDED BY: CONTRACT-C6-PPTV-RESOLVED.2.0 -->
 <!-- SUPERSEDES: CONTRACT-C6-PPTV-RESOLVED.1.0 -->
 
 **Version:** 1.1
-**Status:** verified
+**Status:** superseded
 **Owner:** Will Ackerly
 **Type:** Data Model
 **Cross-repo Promotability:** Yes — OpenDocKit may adopt the normalized geometry, style-provenance, and explicit-line text model

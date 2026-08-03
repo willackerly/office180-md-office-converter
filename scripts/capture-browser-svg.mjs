@@ -1,8 +1,8 @@
 #!/usr/bin/env node
 /**
- * Bounded Playwright/Chromium capture for one validated PPTV SVG atom.
+ * Bounded Playwright/Chromium capture for one validated vector SVG atom.
  *
- * CONTRACT:C11-OFFICE-VISUAL-EVIDENCE.1.1
+ * CONTRACT:C11-OFFICE-VISUAL-EVIDENCE.1.2
  */
 
 import { createHash, randomBytes } from "node:crypto";
@@ -119,17 +119,22 @@ function parseArguments(argv) {
       "artifact-sha256 must be a lowercase SHA-256 digest",
     );
   }
+  const artifactPath = values.get("--artifact");
   if (
-    !values.get("--artifact").endsWith(".pptv.svg") ||
+    !(
+      artifactPath.endsWith(".vector180.svg") ||
+      artifactPath.endsWith(".pptv.svg")
+    ) ||
     !values.get("--output").toLowerCase().endsWith(".png")
   ) {
     throw new CaptureError(
       "OFFICE-VISUAL-EVIDENCE-INVALID",
-      "capture helper requires a .pptv.svg artifact and .png output",
+      "capture helper requires a .vector180.svg or legacy .pptv.svg " +
+        "artifact and .png output",
     );
   }
   return {
-    artifactPath: resolve(values.get("--artifact")),
+    artifactPath: resolve(artifactPath),
     outputPath: resolve(values.get("--output")),
     expectedSha256,
     width,
@@ -159,7 +164,7 @@ function htmlWrapper(width, height, background, artifactRoute) {
   <meta name="color-scheme" content="light">
   <meta http-equiv="Content-Security-Policy"
         content="default-src 'none'; img-src 'self'; style-src 'unsafe-inline'; base-uri 'none'; connect-src 'none'; font-src 'none'; frame-src 'none'; media-src 'none'; object-src 'none'; script-src 'none'">
-  <title>PPTV SVG visual capture</title>
+  <title>Vector atom visual capture</title>
   <style>
     html, body, main {
       box-sizing: border-box;
@@ -236,7 +241,7 @@ async function capture(options) {
   if (artifactSha256 !== options.expectedSha256) {
     throw new CaptureError(
       "OFFICE-VISUAL-UNSAFE-INPUT",
-      "artifact changed after PPTV validation",
+      "artifact changed after vector-source validation",
     );
   }
 
@@ -268,7 +273,7 @@ async function capture(options) {
 
   const routeToken = randomBytes(16).toString("hex");
   const wrapperRoute = `/${routeToken}/capture.html`;
-  const artifactRoute = `/${routeToken}/artifact.pptv.svg`;
+  const artifactRoute = `/${routeToken}/artifact.svg`;
   const wrapper = Buffer.from(
     htmlWrapper(
       options.width,

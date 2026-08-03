@@ -1,7 +1,9 @@
 # CONTRACT-C9-PPTV-PPTX-BASELINE.1.0
 
+<!-- SUPERSEDED BY: CONTRACT-C9-PPTV-PPTX-BASELINE.2.0 -->
+
 **Version:** 1.0
-**Status:** in-progress
+**Status:** superseded
 **Owner:** Will Ackerly
 **Type:** Component
 **Cross-repo Promotability:** No

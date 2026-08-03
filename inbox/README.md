@@ -8,6 +8,14 @@ session; never watch a peer's inbox.
 
 ## Dispositions
 
+- [`2026-08-02-rebar-FINDING-pptv-adopted-as-rebar-sop-three-followups-closed-one-outstanding-and-main-is-red.md`](2026-08-02-rebar-FINDING-pptv-adopted-as-rebar-sop-three-followups-closed-one-outstanding-and-main-is-red.md)
+  was reviewed on 2026-08-02. The fresh-consumer text-fit finding is accepted:
+  Vector180 ships one exact OFL default font identity and package-level atom/
+  deck scaffolding without inferring host fonts. Rebar's pinned PPTV alpha.4
+  surface remains intact as the frozen legacy package/dialect. The reported
+  document-gate failure described an uncommitted mid-flight tree and is closed
+  only by the final staged strict gate. The DOCX `--write` suggestion is tracked
+  separately rather than folded into the visual-format migration.
 - [`2026-07-30-rebar-pptv-diagram-atom-review-and-followup.md`](2026-07-30-rebar-pptv-diagram-atom-review-and-followup.md)
   was reviewed on 2026-07-30. The atom-to-deck seam, installed-package font
   ergonomics, generated-wrapper hygiene, and extraction whitespace findings

@@ -1,0 +1,479 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://office180.dev/schemas/vector180-pptx-reconciliation-0.1.schema.json",
+  "title": "Vector180 PPTX Reconciliation Report 0.1",
+  "description": "Deterministic, privacy-bounded C10 reconciliation evidence and candidate operations.",
+  "type": "object",
+  "required": [
+    "schema",
+    "status",
+    "sourceSha256",
+    "baselineMapSha256",
+    "editedPptxSha256",
+    "changes",
+    "summary",
+    "findings",
+    "candidateOperations",
+    "diagnostics"
+  ],
+  "properties": {
+    "schema": { "const": "vector180-pptx-reconciliation/0.1" },
+    "status": {
+      "enum": ["unchanged", "patchable", "review-required", "refused"]
+    },
+    "sourceSha256": { "$ref": "#/$defs/sha256" },
+    "baselineMapSha256": { "$ref": "#/$defs/sha256" },
+    "editedPptxSha256": { "$ref": "#/$defs/sha256" },
+    "nativeBaselinePptxSha256": { "$ref": "#/$defs/sha256" },
+    "changes": {
+      "type": "array",
+      "items": {
+        "oneOf": [
+          { "$ref": "#/$defs/textChange" },
+          { "$ref": "#/$defs/typedChange" },
+          { "$ref": "#/$defs/unsupportedChange" }
+        ]
+      }
+    },
+    "summary": { "$ref": "#/$defs/summary" },
+    "findings": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/finding" }
+    },
+    "candidateOperations": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/candidateOperation" }
+    },
+    "patch": { "$ref": "vector180-patch-0.1.schema.json" },
+    "diagnostics": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/diagnostic" }
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": { "status": { "const": "patchable" } },
+        "required": ["status"]
+      },
+      "then": { "required": ["patch"] },
+      "else": { "not": { "required": ["patch"] } }
+    }
+  ],
+  "additionalProperties": false,
+  "$defs": {
+    "sha256": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$"
+    },
+    "nonNegativeInteger": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "findingId": {
+      "type": "string",
+      "pattern": "^finding\\.[a-f0-9]{16}$"
+    },
+    "operationId": {
+      "type": "string",
+      "pattern": "^operation\\.[a-f0-9]{16}$"
+    },
+    "jsonValue": {
+      "oneOf": [
+        { "type": "null" },
+        { "type": "boolean" },
+        { "type": "number" },
+        { "type": "string" },
+        {
+          "type": "array",
+          "items": { "$ref": "#/$defs/jsonValue" }
+        },
+        {
+          "type": "object",
+          "additionalProperties": { "$ref": "#/$defs/jsonValue" }
+        }
+      ]
+    },
+    "textChange": {
+      "type": "object",
+      "required": [
+        "kind",
+        "objectId",
+        "field",
+        "oldText",
+        "newText",
+        "patchable"
+      ],
+      "properties": {
+        "kind": { "const": "text" },
+        "objectId": { "type": "string", "minLength": 1 },
+        "field": { "const": "text" },
+        "oldText": { "type": "string" },
+        "newText": { "type": "string" },
+        "patchable": { "const": true }
+      },
+      "additionalProperties": false
+    },
+    "typedChange": {
+      "type": "object",
+      "required": ["kind", "field", "oldValue", "newValue", "patchable"],
+      "properties": {
+        "kind": {
+          "enum": [
+            "geometry",
+            "connector-endpoints",
+            "group-translation",
+            "text-frame",
+            "child-order",
+            "deletion",
+            "native-style"
+          ]
+        },
+        "field": {
+          "enum": [
+            "geometry",
+            "endpoints",
+            "translation",
+            "frame",
+            "order",
+            "object",
+            "style"
+          ]
+        },
+        "objectId": { "type": "string", "minLength": 1 },
+        "parentId": { "type": "string", "minLength": 1 },
+        "oldValue": { "$ref": "#/$defs/jsonValue" },
+        "newValue": { "$ref": "#/$defs/jsonValue" },
+        "patchable": { "const": true }
+      },
+      "anyOf": [{ "required": ["objectId"] }, { "required": ["parentId"] }],
+      "additionalProperties": false
+    },
+    "unsupportedChange": {
+      "type": "object",
+      "required": ["kind", "scope", "field", "message", "patchable"],
+      "properties": {
+        "kind": { "const": "unsupported" },
+        "scope": { "enum": ["package", "slide", "object"] },
+        "field": { "type": "string", "minLength": 1 },
+        "objectId": { "type": "string", "minLength": 1 },
+        "message": { "type": "string", "minLength": 1 },
+        "patchable": { "const": false }
+      },
+      "additionalProperties": false
+    },
+    "summary": {
+      "type": "object",
+      "required": [
+        "highestDisposition",
+        "findingCounts",
+        "occurrenceCounts",
+        "candidateOperationCount",
+        "blockedOperationCount"
+      ],
+      "properties": {
+        "highestDisposition": { "$ref": "#/$defs/disposition" },
+        "findingCounts": {
+          "type": "object",
+          "required": ["autoFixable", "reviewRequired", "refused"],
+          "properties": {
+            "autoFixable": { "$ref": "#/$defs/nonNegativeInteger" },
+            "reviewRequired": { "$ref": "#/$defs/nonNegativeInteger" },
+            "refused": { "$ref": "#/$defs/nonNegativeInteger" }
+          },
+          "additionalProperties": false
+        },
+        "occurrenceCounts": {
+          "type": "object",
+          "required": ["normalizations", "sourceChanges", "identityProblems"],
+          "properties": {
+            "normalizations": { "$ref": "#/$defs/nonNegativeInteger" },
+            "sourceChanges": { "$ref": "#/$defs/nonNegativeInteger" },
+            "identityProblems": { "$ref": "#/$defs/nonNegativeInteger" }
+          },
+          "additionalProperties": false
+        },
+        "candidateOperationCount": {
+          "$ref": "#/$defs/nonNegativeInteger"
+        },
+        "blockedOperationCount": {
+          "$ref": "#/$defs/nonNegativeInteger"
+        }
+      },
+      "additionalProperties": false
+    },
+    "disposition": {
+      "enum": ["auto-fixable", "review-required", "refused"]
+    },
+    "scope": {
+      "type": "object",
+      "required": ["kind"],
+      "properties": {
+        "kind": { "enum": ["package", "part", "slide", "object"] },
+        "partName": { "type": "string", "minLength": 1 },
+        "slideId": { "type": "string", "minLength": 1 },
+        "objectId": { "type": "string", "minLength": 1 },
+        "field": { "type": "string", "minLength": 1 }
+      },
+      "additionalProperties": false
+    },
+    "predicate": {
+      "type": "object",
+      "required": ["name", "passed"],
+      "properties": {
+        "name": { "type": "string", "minLength": 1 },
+        "passed": { "type": "boolean" },
+        "expected": { "$ref": "#/$defs/jsonValue" },
+        "actual": { "$ref": "#/$defs/jsonValue" }
+      },
+      "additionalProperties": false
+    },
+    "evidence": {
+      "type": "object",
+      "required": ["kind"],
+      "properties": {
+        "kind": {
+          "enum": [
+            "digest",
+            "semantic-delta",
+            "normalization-proof",
+            "identity-occurrence",
+            "source-location"
+          ]
+        },
+        "baseline": { "$ref": "#/$defs/jsonValue" },
+        "edited": { "$ref": "#/$defs/jsonValue" },
+        "baselineSha256": { "$ref": "#/$defs/sha256" },
+        "editedSha256": { "$ref": "#/$defs/sha256" },
+        "predicates": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/predicate" }
+        }
+      },
+      "additionalProperties": false
+    },
+    "resolutionOption": {
+      "type": "object",
+      "required": ["id", "description", "consequence"],
+      "properties": {
+        "id": { "type": "string", "minLength": 1 },
+        "description": { "type": "string", "minLength": 1 },
+        "consequence": { "type": "string", "minLength": 1 }
+      },
+      "additionalProperties": false
+    },
+    "resolution": {
+      "type": "object",
+      "required": ["summary", "options"],
+      "properties": {
+        "summary": { "type": "string", "minLength": 1 },
+        "options": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "$ref": "#/$defs/resolutionOption" }
+        }
+      },
+      "additionalProperties": false
+    },
+    "normalizationRule": {
+      "type": "object",
+      "required": ["id", "proofStatus", "semanticScope"],
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^vector180-c10/[a-z0-9-]+/[0-9]+$"
+        },
+        "proofStatus": { "const": "proven" },
+        "semanticScope": { "type": "string", "minLength": 1 },
+        "observedProducer": {
+          "type": "object",
+          "required": ["product", "version", "authoritative"],
+          "properties": {
+            "product": { "type": "string", "minLength": 1 },
+            "version": { "type": "string", "minLength": 1 },
+            "authoritative": { "const": false }
+          },
+          "additionalProperties": false
+        }
+      },
+      "additionalProperties": false
+    },
+    "finding": {
+      "type": "object",
+      "required": [
+        "id",
+        "rank",
+        "disposition",
+        "effect",
+        "code",
+        "title",
+        "message",
+        "occurrenceCount",
+        "scope",
+        "evidence",
+        "suggestedResolution",
+        "blocks"
+      ],
+      "properties": {
+        "id": { "$ref": "#/$defs/findingId" },
+        "rank": { "$ref": "#/$defs/nonNegativeInteger" },
+        "disposition": { "$ref": "#/$defs/disposition" },
+        "effect": {
+          "enum": ["normalization", "source-change", "trust"]
+        },
+        "code": { "type": "string", "minLength": 1 },
+        "title": { "type": "string", "minLength": 1 },
+        "message": { "type": "string", "minLength": 1 },
+        "occurrenceCount": { "type": "integer", "minimum": 1 },
+        "scope": { "$ref": "#/$defs/scope" },
+        "evidence": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/evidence" }
+        },
+        "normalizationRule": {
+          "$ref": "#/$defs/normalizationRule"
+        },
+        "suggestedResolution": { "$ref": "#/$defs/resolution" },
+        "candidateOperationId": { "$ref": "#/$defs/operationId" },
+        "blocks": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/operationId" },
+          "uniqueItems": true
+        }
+      },
+      "additionalProperties": false
+    },
+    "candidateOperation": {
+      "type": "object",
+      "required": [
+        "id",
+        "disposition",
+        "applicable",
+        "blockedBy",
+        "operation",
+        "validation"
+      ],
+      "properties": {
+        "id": { "$ref": "#/$defs/operationId" },
+        "disposition": { "const": "auto-fixable" },
+        "applicable": { "type": "boolean" },
+        "blockedBy": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/findingId" },
+          "uniqueItems": true
+        },
+        "operation": { "$ref": "#/$defs/c10Operation" },
+        "validation": {
+          "oneOf": [
+            {
+              "type": "object",
+              "required": ["status", "regeneratedSemanticEquality"],
+              "properties": {
+                "status": { "const": "passed" },
+                "regeneratedSemanticEquality": { "const": true }
+              },
+              "additionalProperties": false
+            },
+            {
+              "type": "object",
+              "required": ["status", "reason"],
+              "properties": {
+                "status": { "const": "blocked" },
+                "reason": { "type": "string", "minLength": 1 }
+              },
+              "additionalProperties": false
+            }
+          ]
+        }
+      },
+      "additionalProperties": false
+    },
+    "c10Operation": {
+      "oneOf": [
+        {
+          "$ref": "vector180-patch-0.1.schema.json#/$defs/setText"
+        },
+        {
+          "$ref": "vector180-patch-0.1.schema.json#/$defs/setRectGeometry"
+        },
+        {
+          "$ref": "vector180-patch-0.1.schema.json#/$defs/setEllipseGeometry"
+        },
+        {
+          "$ref": "vector180-patch-0.1.schema.json#/$defs/setConnectorEndpoints"
+        },
+        {
+          "$ref": "vector180-patch-0.1.schema.json#/$defs/setGroupTranslation"
+        },
+        {
+          "$ref": "vector180-patch-0.1.schema.json#/$defs/setTextFrame"
+        },
+        {
+          "$ref": "vector180-patch-0.1.schema.json#/$defs/setChildOrder"
+        },
+        {
+          "$ref": "vector180-patch-0.1.schema.json#/$defs/deleteObject"
+        },
+        {
+          "$ref": "vector180-patch-0.1.schema.json#/$defs/setNativeStyle"
+        },
+        {
+          "$ref": "vector180-patch-0.1.schema.json#/$defs/cloneConnector"
+        }
+      ]
+    },
+    "sourceRange": {
+      "type": "object",
+      "required": [
+        "byteStart",
+        "byteEnd",
+        "charStart",
+        "charEnd",
+        "lineStart",
+        "columnStart",
+        "lineEnd",
+        "columnEnd"
+      ],
+      "properties": {
+        "byteStart": { "$ref": "#/$defs/nonNegativeInteger" },
+        "byteEnd": { "$ref": "#/$defs/nonNegativeInteger" },
+        "charStart": { "$ref": "#/$defs/nonNegativeInteger" },
+        "charEnd": { "$ref": "#/$defs/nonNegativeInteger" },
+        "lineStart": { "type": "integer", "minimum": 1 },
+        "columnStart": { "type": "integer", "minimum": 1 },
+        "lineEnd": { "type": "integer", "minimum": 1 },
+        "columnEnd": { "type": "integer", "minimum": 1 }
+      },
+      "additionalProperties": false
+    },
+    "diagnosticRelated": {
+      "type": "object",
+      "required": ["message"],
+      "properties": {
+        "message": { "type": "string" },
+        "range": { "$ref": "#/$defs/sourceRange" }
+      },
+      "additionalProperties": false
+    },
+    "diagnostic": {
+      "type": "object",
+      "required": ["code", "severity", "message"],
+      "properties": {
+        "code": { "type": "string", "minLength": 1 },
+        "severity": {
+          "enum": ["info", "warning", "error", "fatal"]
+        },
+        "message": { "type": "string" },
+        "range": { "$ref": "#/$defs/sourceRange" },
+        "slideId": { "type": "string" },
+        "atomId": { "type": "string" },
+        "objectId": { "type": "string" },
+        "related": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/diagnosticRelated" }
+        }
+      },
+      "additionalProperties": false
+    }
+  }
+}

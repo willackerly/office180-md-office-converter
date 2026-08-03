@@ -1,0 +1,130 @@
+<!doctype html>
+<html lang="en" data-vector180-version="0.1">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Vector180 composition: roundtrip</title>
+</head>
+<body>
+
+<script id="vector180-manifest" type="application/vnd.office180.vector180+json">
+{
+  "extensions": {
+    "office180.vector180Composition": {
+      "placement": {
+        "height": 900,
+        "policy": "uniform-scale-translate",
+        "slideId": "supported-roundtrip",
+        "width": 1200,
+        "x": 200,
+        "y": 0
+      },
+      "schema": "vector180-composition/0.1",
+      "source": {
+        "id": "roundtrip",
+        "kind": "atom",
+        "profile": "0.1",
+        "sha256": "3bf18821484c9844da740b31f46ffb4cf72fb52802bb55fb97b8bdcbc58f46fc"
+      },
+      "transform": {
+        "scale": 1.5,
+        "translateX": 200,
+        "translateY": 0
+      }
+    }
+  },
+  "runtime": "vector180-browser/0.1",
+  "slides": [
+    "supported-roundtrip"
+  ],
+  "theme": "diagram-local",
+  "title": "Vector180 composition: roundtrip",
+  "vector180": "0.1"
+}
+</script>
+
+<main data-vector180-output></main>
+
+<template data-vector180-slide="supported-roundtrip">
+  <svg id="supported-roundtrip" viewBox="0 0 1600 900" data-vector180-layout="diagram" xmlns="http://www.w3.org/2000/svg">
+    <rect id="roundtrip.background" data-vector180-role="shape" data-vector180-export="native" x="200" y="0" width="1200" height="900" fill="#f8fafc" stroke="none" stroke-width="0" opacity="1" font-weight="400" font-style="normal" text-anchor="start"/>
+    <text id="roundtrip.title" data-vector180-role="text" data-vector180-export="native" data-vector180-frame="282.5 63 1035 105" data-vector180-line-step="69" x="800" y="139.5" fill="#0f172a" stroke="none" stroke-width="0" opacity="1" font-family="ABeeZee" font-size="51" font-weight="400" font-style="normal" text-anchor="middle">SOURCE ROUND TRIP</text>
+    <text id="roundtrip.subtitle" data-vector180-role="text" data-vector180-export="native" data-vector180-frame="365 174 870 63" data-vector180-line-step="42" x="800" y="219" fill="#475569" stroke="none" stroke-width="0" opacity="1" font-family="ABeeZee" font-size="27" font-weight="400" font-style="normal" text-anchor="middle">One canonical atom, one reviewable semantic patch</text>
+    <rect id="roundtrip.card" data-vector180-role="shape" data-vector180-export="native" x="305" y="285" width="465" height="345" fill="#dbeafe" stroke="#2563eb" stroke-width="4.5" opacity="1" font-weight="400" font-style="normal" text-anchor="start"/>
+    <text id="roundtrip.card.label" data-vector180-role="text" data-vector180-export="native" data-vector180-frame="350 337.5 375 72" data-vector180-line-step="45" x="537.5" y="390" fill="#1e3a8a" stroke="none" stroke-width="0" opacity="1" font-family="ABeeZee" font-size="33" font-weight="400" font-style="normal" text-anchor="middle">Canonical source</text>
+    <text id="roundtrip.card.detail" data-vector180-role="text" data-vector180-export="native" data-vector180-frame="338 453 399 69" data-vector180-line-step="39" x="537.5" y="501" fill="#334155" stroke="none" stroke-width="0" opacity="1" font-family="ABeeZee" font-size="25.5" font-weight="400" font-style="normal" text-anchor="middle">Text + geometry + style</text>
+    <line id="roundtrip.connector" data-vector180-role="connector" data-vector180-export="native" data-vector180-from="roundtrip.card" data-vector180-to="roundtrip.result" x1="770" y1="457.5" x2="972.5" y2="457.5" fill="none" stroke="#64748b" stroke-width="6" opacity="1" font-weight="400" font-style="normal" text-anchor="start"/>
+    <ellipse id="roundtrip.result" data-vector180-role="shape" data-vector180-export="native" cx="1130" cy="457.5" rx="157.5" ry="132" fill="#ede9fe" stroke="#7c3aed" stroke-width="4.5" opacity="1" font-weight="400" font-style="normal" text-anchor="start"/>
+    <text id="roundtrip.result.label" data-vector180-role="text" data-vector180-export="native" data-vector180-frame="1010 405 240 87" data-vector180-line-step="45" x="1130" y="463.5" fill="#4c1d95" stroke="none" stroke-width="0" opacity="1" font-family="ABeeZee" font-size="33" font-weight="400" font-style="normal" text-anchor="middle">Recovered</text>
+    <rect id="roundtrip.footer" data-vector180-role="shape" data-vector180-export="native" x="335" y="750" width="930" height="81" fill="#e2e8f0" stroke="#94a3b8" stroke-width="3" opacity="1" font-weight="400" font-style="normal" text-anchor="start"/>
+    <text id="roundtrip.footer.label" data-vector180-role="text" data-vector180-export="native" data-vector180-frame="380 762 840 57" data-vector180-line-step="37.5" x="800" y="804" fill="#334155" stroke="none" stroke-width="0" opacity="1" font-family="ABeeZee" font-size="24" font-weight="400" font-style="normal" text-anchor="middle">C9 baseline / C10 patch / C9 regenerate</text>
+  </svg>
+</template>
+
+<script type="text/css" data-vector180-style="base">
+</script>
+
+<script type="text/css" data-vector180-theme="diagram-local">
+:root {
+}
+</script>
+
+<script data-vector180-runtime="vector180-browser/0.1">
+(() => {
+  "use strict";
+
+  const manifestNode = document.querySelector("#vector180-manifest");
+  const output = document.querySelector("[data-vector180-output]");
+  const manifest = JSON.parse(manifestNode.textContent);
+
+  const baseStyleNode = document.querySelector(
+    '[data-vector180-style="base"]'
+  );
+  if (!baseStyleNode) throw new Error("Missing Vector180 base style");
+
+  const themeNode = document.querySelector(
+    `[data-vector180-theme="${CSS.escape(manifest.theme)}"]`
+  );
+  if (!themeNode) {
+    throw new Error(`Unknown Vector180 theme: ${manifest.theme}`);
+  }
+
+  const viewerStyle = document.createElement("style");
+  viewerStyle.dataset.vector180ViewerChrome = "";
+  viewerStyle.textContent = `
+html, body { margin: 0; background: #dfe5e2; }
+[data-vector180-output] { display: grid; gap: 32px; padding: 32px; }
+.vector180-slide {
+  width: min(100%, 1280px);
+  margin: 0 auto;
+  box-shadow: 0 16px 48px rgb(0 0 0 / 24%);
+}
+.vector180-slide > svg { display: block; width: 100%; height: auto; }
+`;
+  document.head.append(viewerStyle);
+
+  const activeStyle = document.createElement("style");
+  activeStyle.dataset.vector180ActiveTheme = manifest.theme;
+  activeStyle.textContent =
+    `${baseStyleNode.textContent}\n${themeNode.textContent}`;
+  document.head.append(activeStyle);
+
+  for (const slideRef of manifest.slides) {
+    if (typeof slideRef === "object" && slideRef.hidden === true) continue;
+    const id = typeof slideRef === "string" ? slideRef : slideRef.id;
+    const source = document.querySelector(
+      `template[data-vector180-slide="${CSS.escape(id)}"]`
+    );
+    if (!source) throw new Error(`Unknown Vector180 slide: ${id}`);
+
+    const section = document.createElement("section");
+    section.className = "vector180-slide";
+    section.dataset.vector180RenderedSlide = id;
+    section.append(source.content.cloneNode(true));
+    output.append(section);
+  }
+})();
+</script>
+
+</body>
+</html>

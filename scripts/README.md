@@ -44,14 +44,14 @@ Each script is standalone, runs in a few seconds, and exits 0 (pass) or 1 (fail)
 
 `visual-evidence.py` creates and validates the content-bound C11 evidence
 envelope. Its renderer classes stay separate: a Quick Look or browser pass
-does not imply native Word or PowerPoint evidence. C11 1.1's separate native
+does not imply native Word or PowerPoint evidence. C11 1.2's separate native
 bridge can prove a bounded no-op save/close/reopen lifecycle, but still does
 not claim representative edits or native visual fidelity.
 
 | Command | Purpose |
 |---------|---------|
 | `validate` | Validate the envelope, privacy rules, self-hash, and bound files |
-| `capture-browser-svg` | Capture one trusted, validated standalone `*.pptv.svg` through pinned Playwright Chromium |
+| `capture-browser-svg` | Capture one trusted, validated standalone `*.vector180.svg` through pinned Playwright Chromium |
 | `capture-quicklook` | Capture one trusted DOCX/PPTX macOS Quick Look preview smoke |
 | `compare` | Compare two passing capture images under explicit thresholds and an optional hashed mask |
 | `record-status` | Record an explicit unavailable or manual-required renderer/native gate without fabricating a capture |
@@ -61,16 +61,16 @@ Run a standalone SVG browser smoke into the ignored Playwright result area:
 
 ```bash
 .venv/bin/python scripts/visual-evidence.py capture-browser-svg \
-  examples/minimal-diagram.pptv.svg \
-  --output packages/pptv/test-results/c11-smoke/minimal.png \
-  --manifest packages/pptv/test-results/c11-smoke/minimal.evidence.json \
+  examples/minimal-diagram.vector180.svg \
+  --output packages/vector180/test-results/c11-smoke/minimal.png \
+  --manifest packages/vector180/test-results/c11-smoke/minimal.evidence.json \
   --checkpoint standalone-browser-smoke \
   --root . --trusted \
   --width-px 1600 --height-px 900 \
   --background '#ffffff' --timeout 30
 
 .venv/bin/python scripts/visual-evidence.py validate \
-  packages/pptv/test-results/c11-smoke/minimal.evidence.json \
+  packages/vector180/test-results/c11-smoke/minimal.evidence.json \
   --root .
 ```
 
@@ -94,8 +94,8 @@ Representative editing and human-reviewed visual fidelity remain separate
 gates. The command therefore publishes the envelope and exits `2`, matching
 the existing C11 `manual-required` exit convention.
 
-The browser command accepts only a repository-contained `.pptv.svg` and a new
-`.png` destination after the source passes `pnpm pptv validate`. The internal
+The browser command accepts only a repository-contained `.vector180.svg` and a new
+`.png` destination after the source passes `pnpm vector180 validate`. The internal
 `capture-browser-svg.mjs` helper rechecks the validated hash, serves randomized
 ephemeral `127.0.0.1` routes rather than `file://`, disables page JavaScript
 and service workers, blocks non-capture requests, fixes DPR/locale/timezone and
@@ -155,13 +155,13 @@ and non-claims.
 
 ### Checked round-trip bundles
 
-Two generators exercise the complete supported paths and publish durable C11
-evidence only after structural, semantic, visual, hash, and privacy checks pass:
+The two checked bundles were generated under the names current when their
+exact hashes were recorded. Do not relabel or rewrite the legacy PPTV bundle:
 
 | Generator | Proven lane |
 |-----------|-------------|
 | `generate-docx-roundtrip-evidence.py` | canonical Markdown → DOCX → deliberate supported body edit → recovered Markdown → regenerated DOCX |
-| `generate-pptv-roundtrip-evidence.mjs` | standalone PPTV atom → explicit C9 composition/mapped PPTX → deliberate supported DrawingML edit → C10 patch → recovered atom → regenerated PPTX |
+| `generate-pptv-roundtrip-evidence.mjs` | frozen standalone PPTV atom → explicit C9 composition/mapped PPTX → deliberate supported DrawingML edit → C10 patch → recovered atom → regenerated PPTX |
 
 ```bash
 .venv/bin/python scripts/generate-docx-roundtrip-evidence.py \
@@ -180,6 +180,19 @@ as `manual-required`; the deterministic Python/OOXML edit simulations and
 Quick Look previews never masquerade as native Office lifecycle evidence. The
 new host-scoped bridge result is separately content-bound and does not rewrite
 those older fixture claims.
+
+`generate-vector180-roundtrip-evidence.mjs` is the canonical successor for new
+evidence. It exercises the same bounded path with Vector180 wire IDs and the
+`vector180-pptx` evidence lane, including atom-only metadata binding in the map
+without copying metadata into the generated deck:
+
+```bash
+node scripts/generate-vector180-roundtrip-evidence.mjs \
+  --destination tests/fixtures/roundtrip-evidence/vector180
+```
+
+Publish a durable canonical bundle only after reviewing it as new evidence
+rather than renaming the checked legacy files.
 
 ## Installation
 
@@ -205,7 +218,7 @@ pnpm pack:check
 - **bash** — all scripts are Bash 3.2 compatible
 - **jq, grep, find, date, git** — Steward and enforcement dependencies
 - **Node.js 20+ and pnpm** — TypeScript checks and aggregate test command
-- **Pinned Playwright Chromium** — trusted standalone PPTV SVG browser capture
+- **Pinned Playwright Chromium** — trusted standalone Vector180 SVG browser capture
 - **`.venv/bin/python` with `python-docx`** — Python round-trip tests invoked by
   `pnpm test`
 

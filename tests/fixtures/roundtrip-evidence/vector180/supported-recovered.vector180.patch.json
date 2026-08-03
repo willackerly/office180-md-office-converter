@@ -1,0 +1,52 @@
+{
+  "schema": "vector180-patch/0.1",
+  "baseSha256": "3bf18821484c9844da740b31f46ffb4cf72fb52802bb55fb97b8bdcbc58f46fc",
+  "ops": [
+    {
+      "op": "set-text",
+      "id": "roundtrip.title",
+      "oldText": "SOURCE ROUND TRIP",
+      "value": "EDITED ROUND TRIP"
+    },
+    {
+      "op": "set-object-geometry",
+      "id": "roundtrip.card",
+      "oldGeometry": {
+        "kind": "rect",
+        "x": 70,
+        "y": 190,
+        "width": 310,
+        "height": 230
+      },
+      "geometry": {
+        "kind": "rect",
+        "x": 80,
+        "y": 200,
+        "width": 300,
+        "height": 220
+      }
+    },
+    {
+      "op": "set-native-style",
+      "id": "roundtrip.card",
+      "oldStyle": {
+        "fill": "#dbeafe",
+        "stroke": "#2563eb",
+        "strokeWidth": 3,
+        "opacity": 1,
+        "fontWeight": 400,
+        "fontStyle": "normal",
+        "textAnchor": "start"
+      },
+      "style": {
+        "fill": "#dcfce7",
+        "stroke": "#16a34a",
+        "strokeWidth": 4,
+        "opacity": 1,
+        "fontWeight": 400,
+        "fontStyle": "normal",
+        "textAnchor": "start"
+      }
+    }
+  ]
+}

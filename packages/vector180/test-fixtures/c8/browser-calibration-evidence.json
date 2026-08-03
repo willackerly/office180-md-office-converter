@@ -1,0 +1,148 @@
+{
+  "schema": "vector180-browser-text-calibration-evidence/0.1",
+  "capturedOn": "2026-08-03",
+  "overallStatus": "pass-with-explicit-engine-and-platform-variance",
+  "fixture": "browser-calibration.json",
+  "method": {
+    "node": "fontkit/2.0.4",
+    "browser": "SVG getComputedTextLength after exact FontFace load and document.fonts.ready",
+    "tolerance": {
+      "absoluteSvgUnits": 0.75,
+      "relative": 0.01,
+      "acceptance": "absolute-or-relative"
+    }
+  },
+  "toolchain": {
+    "playwright": "1.62.0",
+    "esbuild": "0.28.1",
+    "browserKernelSha256": "9c0b85b42b8eadbc6689c24517298f28c445b70e0fb0216eae4e2661d4cb6c3a",
+    "browserKernelBytes": 788901,
+    "font": {
+      "family": "ABeeZee",
+      "sha256": "2901c8df256648cc2bb2e3afb381cb8d28e65ed3dbe11de20695ae4d5ffdeda9"
+    }
+  },
+  "captureInputs": {
+    "browserKernel": {
+      "sha256": "9c0b85b42b8eadbc6689c24517298f28c445b70e0fb0216eae4e2661d4cb6c3a",
+      "bytes": 788901
+    },
+    "calibration": {
+      "sha256": "e7ad561d38bb16f3dd62fc348febf3d96a8d27e300491b9edd35aa166cb0c8a7",
+      "bytes": 1705
+    },
+    "font": {
+      "sha256": "2901c8df256648cc2bb2e3afb381cb8d28e65ed3dbe11de20695ae4d5ffdeda9",
+      "bytes": 46016
+    },
+    "fontManifest": {
+      "sha256": "dd4bda6b3d48a18e9ff1e8900d70299ae9f8b8ac611b13ee3b7a0faf2c0e53c1",
+      "bytes": 982
+    },
+    "testSource": {
+      "sha256": "3be02cb43eaafae52b38d532bfee309b6f6a61731f84b01ed5b2aae049a319cd",
+      "bytes": 18700
+    },
+    "diagramFixture": {
+      "sha256": "58d2c336ea0327ec11b2506a9053264a2f74b7053726e89853dbb5b77b27bbb2",
+      "bytes": 3774
+    }
+  },
+  "privacy": {
+    "status": "safe",
+    "note": "User-agent strings are Playwright browser identities only; no local paths, usernames, hostnames, or source text are retained."
+  },
+  "engines": [
+    {
+      "engine": "chromium",
+      "version": "151.0.7922.34",
+      "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/151.0.7922.34 Safari/537.36",
+      "platform": "MacIntel",
+      "devicePixelRatio": 1,
+      "status": "pass-kerned",
+      "kernedOracle": {
+        "maxAbsoluteDelta": 0.01387500000001296,
+        "maxRelativeDelta": 0.00015973513011159903,
+        "withinTolerance": true
+      },
+      "unkernedOracle": {
+        "maxAbsoluteDelta": 6.227625000000003,
+        "maxRelativeDelta": 0.07439345613532114,
+        "withinTolerance": false
+      }
+    },
+    {
+      "engine": "firefox",
+      "version": "153.0",
+      "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:153.0) Gecko/20100101 Firefox/153.0",
+      "platform": "MacIntel",
+      "devicePixelRatio": 1,
+      "status": "pass-kerned",
+      "kernedOracle": {
+        "maxAbsoluteDelta": 0.021332824707030795,
+        "maxRelativeDelta": 0.0001896048839859819,
+        "withinTolerance": true
+      },
+      "unkernedOracle": {
+        "maxAbsoluteDelta": 6.2286702270507845,
+        "maxRelativeDelta": 0.07440594212359977,
+        "withinTolerance": false
+      }
+    },
+    {
+      "engine": "webkit",
+      "version": "26.5",
+      "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.5 Safari/605.1.15",
+      "platform": "MacIntel",
+      "devicePixelRatio": 2,
+      "status": "pass-with-unkerned-browser-variance",
+      "kernedOracle": {
+        "maxAbsoluteDelta": 6.2399979858398495,
+        "maxRelativeDelta": 0.08054520324555775,
+        "withinTolerance": false
+      },
+      "unkernedOracle": {
+        "maxAbsoluteDelta": 0.000007080078120225153,
+        "maxRelativeDelta": 5.858750067063733e-8,
+        "withinTolerance": true
+      }
+    }
+  ],
+  "platformGridFittingCapture": {
+    "engine": "chromium",
+    "version": "151.0.7922.34",
+    "platform": "Linux x86_64",
+    "devicePixelRatio": 1,
+    "status": "pass-with-platform-grid-fitting-variance",
+    "source": "GitHub Actions ubuntu-latest",
+    "maxAbsoluteDelta": 2.4480000000000075,
+    "maxRelativeDelta": 0.019000413052457588,
+    "widths": {
+      "kerning-av": 76,
+      "spaces": 112,
+      "representative": 189,
+      "near-limit": 152,
+      "exact-boundary": 178,
+      "overflow": 121
+    },
+    "behavior": "checked GitHub Actions capture; each integer width must remain inside the nearest-pixel Fontkit advance envelope and preserve every non-boundary fit band"
+  },
+  "coverage": {
+    "samples": 6,
+    "includes": [
+      "AV kerning",
+      "spaces",
+      "representative mixed text",
+      "near-limit",
+      "exact boundary",
+      "overflow"
+    ],
+    "missingGlyphCodepoint": 129514,
+    "missingGlyphStatus": "unverified",
+    "diagramTextFit": {
+      "schema": "vector180-text-fit-atom/0.1",
+      "lines": 4,
+      "unverified": 0
+    }
+  }
+}

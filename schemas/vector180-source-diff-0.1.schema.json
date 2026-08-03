@@ -1,0 +1,410 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://office180.dev/schemas/vector180-source-diff-0.1.schema.json",
+  "title": "Vector180 Source Diff 0.1",
+  "description": "Deterministic stable-ID semantic comparison for two visual inputs, including bounded incomparable diagnostics when a side is not a valid atom.",
+  "type": "object",
+  "required": [
+    "schema",
+    "classification",
+    "left",
+    "right",
+    "lexical",
+    "metadata",
+    "summary",
+    "changes",
+    "diagnostics"
+  ],
+  "properties": {
+    "schema": { "const": "vector180-source-diff/0.1" },
+    "classification": {
+      "enum": ["exact", "semantic-equivalent", "changed", "incomparable"]
+    },
+    "left": { "$ref": "#/$defs/sourceIdentity" },
+    "right": { "$ref": "#/$defs/sourceIdentity" },
+    "lexical": {
+      "type": "object",
+      "required": ["equal"],
+      "properties": {
+        "equal": { "type": "boolean" }
+      },
+      "additionalProperties": false
+    },
+    "metadata": {
+      "type": "object",
+      "required": ["classification", "changedSections"],
+      "properties": {
+        "classification": {
+          "enum": ["absent", "equal", "changed", "unknown"]
+        },
+        "leftSha256": { "$ref": "#/$defs/sha256" },
+        "rightSha256": { "$ref": "#/$defs/sha256" },
+        "changedSections": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "enum": ["hydration", "templateLineage", "styleFamily"]
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    "summary": {
+      "type": "object",
+      "required": [
+        "unchangedObjects",
+        "changedObjects",
+        "added",
+        "removed",
+        "root",
+        "parent",
+        "order",
+        "relationship",
+        "text",
+        "geometry",
+        "transform",
+        "frame",
+        "style",
+        "exportIntent",
+        "metadata",
+        "total"
+      ],
+      "properties": {
+        "unchangedObjects": { "$ref": "#/$defs/count" },
+        "changedObjects": { "$ref": "#/$defs/count" },
+        "added": { "$ref": "#/$defs/count" },
+        "removed": { "$ref": "#/$defs/count" },
+        "root": { "$ref": "#/$defs/count" },
+        "parent": { "$ref": "#/$defs/count" },
+        "order": { "$ref": "#/$defs/count" },
+        "relationship": { "$ref": "#/$defs/count" },
+        "text": { "$ref": "#/$defs/count" },
+        "geometry": { "$ref": "#/$defs/count" },
+        "transform": { "$ref": "#/$defs/count" },
+        "frame": { "$ref": "#/$defs/count" },
+        "style": { "$ref": "#/$defs/count" },
+        "exportIntent": { "$ref": "#/$defs/count" },
+        "metadata": { "$ref": "#/$defs/count" },
+        "total": { "$ref": "#/$defs/count" }
+      },
+      "additionalProperties": false
+    },
+    "changes": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/change" }
+    },
+    "diagnostics": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/diagnostic" }
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": { "classification": { "const": "exact" } },
+        "required": ["classification"]
+      },
+      "then": {
+        "properties": {
+          "lexical": {
+            "properties": { "equal": { "const": true } }
+          },
+          "changes": { "maxItems": 0 }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "classification": {
+            "enum": ["semantic-equivalent", "changed"]
+          }
+        },
+        "required": ["classification"]
+      },
+      "then": {
+        "properties": {
+          "lexical": {
+            "properties": { "equal": { "const": false } }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "classification": {
+            "enum": ["exact", "semantic-equivalent", "changed"]
+          }
+        },
+        "required": ["classification"]
+      },
+      "then": {
+        "properties": {
+          "metadata": {
+            "properties": {
+              "classification": {
+                "enum": ["absent", "equal", "changed"]
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": { "classification": { "const": "changed" } },
+        "required": ["classification"]
+      },
+      "then": {
+        "properties": { "changes": { "minItems": 1 } }
+      }
+    },
+    {
+      "if": {
+        "properties": { "classification": { "const": "incomparable" } },
+        "required": ["classification"]
+      },
+      "then": {
+        "properties": {
+          "changes": { "maxItems": 0 },
+          "diagnostics": { "minItems": 1 },
+          "metadata": {
+            "properties": { "classification": { "const": "unknown" } }
+          },
+          "summary": {
+            "properties": {
+              "unchangedObjects": { "const": 0 },
+              "changedObjects": { "const": 0 },
+              "added": { "const": 0 },
+              "removed": { "const": 0 },
+              "root": { "const": 0 },
+              "parent": { "const": 0 },
+              "order": { "const": 0 },
+              "relationship": { "const": 0 },
+              "text": { "const": 0 },
+              "geometry": { "const": 0 },
+              "transform": { "const": 0 },
+              "frame": { "const": 0 },
+              "style": { "const": 0 },
+              "exportIntent": { "const": 0 },
+              "metadata": { "const": 0 },
+              "total": { "const": 0 }
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "metadata": {
+            "properties": { "classification": { "const": "absent" } },
+            "required": ["classification"]
+          }
+        },
+        "required": ["metadata"]
+      },
+      "then": {
+        "properties": {
+          "metadata": {
+            "properties": { "changedSections": { "maxItems": 0 } },
+            "not": {
+              "anyOf": [
+                { "required": ["leftSha256"] },
+                { "required": ["rightSha256"] }
+              ]
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "metadata": {
+            "properties": { "classification": { "const": "equal" } },
+            "required": ["classification"]
+          }
+        },
+        "required": ["metadata"]
+      },
+      "then": {
+        "properties": {
+          "metadata": {
+            "required": ["leftSha256", "rightSha256"],
+            "properties": { "changedSections": { "maxItems": 0 } }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "metadata": {
+            "properties": { "classification": { "const": "changed" } },
+            "required": ["classification"]
+          }
+        },
+        "required": ["metadata"]
+      },
+      "then": {
+        "properties": {
+          "metadata": {
+            "properties": { "changedSections": { "minItems": 1 } }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "metadata": {
+            "properties": { "classification": { "const": "unknown" } },
+            "required": ["classification"]
+          }
+        },
+        "required": ["metadata"]
+      },
+      "then": {
+        "properties": {
+          "metadata": {
+            "properties": { "changedSections": { "maxItems": 0 } }
+          }
+        }
+      }
+    }
+  ],
+  "$defs": {
+    "sha256": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$"
+    },
+    "count": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "stableId": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 128,
+      "pattern": "^[A-Za-z][A-Za-z0-9._:-]*$"
+    },
+    "sourceIdentity": {
+      "type": "object",
+      "required": ["family", "kind", "sha256", "byteLength"],
+      "properties": {
+        "family": { "enum": ["vector180", "pptv-legacy", "unknown"] },
+        "kind": { "enum": ["atom", "deck", "unknown"] },
+        "profile": { "const": "0.1" },
+        "id": { "$ref": "#/$defs/stableId" },
+        "sha256": { "$ref": "#/$defs/sha256" },
+        "byteLength": { "type": "integer", "minimum": 0 },
+        "metadataSha256": { "$ref": "#/$defs/sha256" }
+      },
+      "additionalProperties": false
+    },
+    "sourceRange": {
+      "type": "object",
+      "required": [
+        "byteStart",
+        "byteEnd",
+        "charStart",
+        "charEnd",
+        "lineStart",
+        "columnStart",
+        "lineEnd",
+        "columnEnd"
+      ],
+      "properties": {
+        "byteStart": { "type": "integer", "minimum": 0 },
+        "byteEnd": { "type": "integer", "minimum": 0 },
+        "charStart": { "type": "integer", "minimum": 0 },
+        "charEnd": { "type": "integer", "minimum": 0 },
+        "lineStart": { "type": "integer", "minimum": 1 },
+        "columnStart": { "type": "integer", "minimum": 1 },
+        "lineEnd": { "type": "integer", "minimum": 1 },
+        "columnEnd": { "type": "integer", "minimum": 1 }
+      },
+      "additionalProperties": false
+    },
+    "side": {
+      "type": "object",
+      "required": ["snapshot"],
+      "properties": {
+        "parentId": {
+          "oneOf": [{ "$ref": "#/$defs/stableId" }, { "type": "null" }]
+        },
+        "order": { "type": "integer", "minimum": 0 },
+        "sourceRange": { "$ref": "#/$defs/sourceRange" },
+        "snapshot": { "$ref": "#/$defs/jsonValue" }
+      },
+      "additionalProperties": false
+    },
+    "change": {
+      "type": "object",
+      "required": ["id", "kind", "fieldPath"],
+      "properties": {
+        "id": { "$ref": "#/$defs/stableId" },
+        "kind": {
+          "enum": [
+            "root",
+            "added",
+            "removed",
+            "parent",
+            "order",
+            "relationship",
+            "text",
+            "geometry",
+            "transform",
+            "frame",
+            "style",
+            "export-intent",
+            "metadata"
+          ]
+        },
+        "fieldPath": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 256,
+          "pattern": "^/[A-Za-z0-9._~/-]+$"
+        },
+        "left": { "$ref": "#/$defs/side" },
+        "right": { "$ref": "#/$defs/side" }
+      },
+      "anyOf": [{ "required": ["left"] }, { "required": ["right"] }],
+      "additionalProperties": false
+    },
+    "diagnostic": {
+      "type": "object",
+      "required": ["code", "severity", "message"],
+      "properties": {
+        "code": {
+          "type": "string",
+          "pattern": "^VECTOR180-[A-Z0-9-]+$"
+        },
+        "severity": { "enum": ["info", "warning", "error", "fatal"] },
+        "message": { "type": "string", "maxLength": 4096 },
+        "range": { "$ref": "#/$defs/sourceRange" }
+      },
+      "additionalProperties": false
+    },
+    "jsonValue": {
+      "oneOf": [
+        { "type": "null" },
+        { "type": "boolean" },
+        { "type": "number" },
+        { "type": "string" },
+        {
+          "type": "array",
+          "items": { "$ref": "#/$defs/jsonValue" }
+        },
+        {
+          "type": "object",
+          "additionalProperties": { "$ref": "#/$defs/jsonValue" }
+        }
+      ]
+    }
+  },
+  "additionalProperties": false
+}

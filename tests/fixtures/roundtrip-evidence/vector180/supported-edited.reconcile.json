@@ -1,0 +1,339 @@
+{
+  "schema": "vector180-pptx-reconciliation/0.1",
+  "status": "patchable",
+  "sourceSha256": "3bf18821484c9844da740b31f46ffb4cf72fb52802bb55fb97b8bdcbc58f46fc",
+  "baselineMapSha256": "cee57ebd1cc59bddc0039d52dcb1ea702edb8f9c7f10bba1b6702cf920688162",
+  "editedPptxSha256": "65f0478c3fd7b76533e4025c2560821b6c9f8a73ad95a4e8e019d3c6d99d869a",
+  "changes": [
+    {
+      "kind": "text",
+      "objectId": "roundtrip.title",
+      "field": "text",
+      "oldText": "SOURCE ROUND TRIP",
+      "newText": "EDITED ROUND TRIP",
+      "patchable": true
+    },
+    {
+      "kind": "geometry",
+      "field": "geometry",
+      "objectId": "roundtrip.card",
+      "oldValue": {
+        "kind": "rect",
+        "x": 70,
+        "y": 190,
+        "width": 310,
+        "height": 230
+      },
+      "newValue": {
+        "kind": "rect",
+        "x": 80,
+        "y": 200,
+        "width": 300,
+        "height": 220
+      },
+      "patchable": true
+    },
+    {
+      "kind": "native-style",
+      "field": "style",
+      "objectId": "roundtrip.card",
+      "oldValue": {
+        "fill": "#dbeafe",
+        "stroke": "#2563eb",
+        "strokeWidth": 3,
+        "opacity": 1,
+        "fontWeight": 400,
+        "fontStyle": "normal",
+        "textAnchor": "start"
+      },
+      "newValue": {
+        "fill": "#dcfce7",
+        "stroke": "#16a34a",
+        "strokeWidth": 4,
+        "opacity": 1,
+        "fontWeight": 400,
+        "fontStyle": "normal",
+        "textAnchor": "start"
+      },
+      "patchable": true
+    }
+  ],
+  "summary": {
+    "highestDisposition": "auto-fixable",
+    "findingCounts": {
+      "autoFixable": 3,
+      "reviewRequired": 0,
+      "refused": 0
+    },
+    "occurrenceCounts": {
+      "normalizations": 0,
+      "sourceChanges": 3,
+      "identityProblems": 0
+    },
+    "candidateOperationCount": 3,
+    "blockedOperationCount": 0
+  },
+  "findings": [
+    {
+      "id": "finding.b4005c82811975c6",
+      "rank": 2130,
+      "disposition": "auto-fixable",
+      "effect": "source-change",
+      "code": "VECTOR180-RECONCILE-SUPPORTED-CHANGE",
+      "title": "native style change",
+      "message": "Mapped object \"roundtrip.card\" has one exact supported style delta.",
+      "occurrenceCount": 1,
+      "scope": {
+        "kind": "object",
+        "objectId": "roundtrip.card",
+        "field": "style"
+      },
+      "evidence": [
+        {
+          "kind": "semantic-delta",
+          "baseline": {
+            "fill": "#dbeafe",
+            "stroke": "#2563eb",
+            "strokeWidth": 3,
+            "opacity": 1,
+            "fontWeight": 400,
+            "fontStyle": "normal",
+            "textAnchor": "start"
+          },
+          "edited": {
+            "fill": "#dcfce7",
+            "stroke": "#16a34a",
+            "strokeWidth": 4,
+            "opacity": 1,
+            "fontWeight": 400,
+            "fontStyle": "normal",
+            "textAnchor": "start"
+          }
+        }
+      ],
+      "suggestedResolution": {
+        "summary": "Apply only as part of the complete old-value-preconditioned C5 transaction after every blocker is resolved.",
+        "options": [
+          {
+            "id": "apply-validated-transaction",
+            "description": "Review the typed operation, run patch validation, and write a new source output.",
+            "consequence": "The edited PPTX and canonical input remain unchanged; regenerated C9 semantics must match."
+          }
+        ]
+      },
+      "candidateOperationId": "operation.d97c059cf80991d2",
+      "blocks": []
+    },
+    {
+      "id": "finding.e0d7b1ad906a26c7",
+      "rank": 2130,
+      "disposition": "auto-fixable",
+      "effect": "source-change",
+      "code": "VECTOR180-RECONCILE-SUPPORTED-CHANGE",
+      "title": "Direct text change",
+      "message": "Mapped object \"roundtrip.title\" has one exact supported text delta.",
+      "occurrenceCount": 1,
+      "scope": {
+        "kind": "object",
+        "objectId": "roundtrip.title",
+        "field": "text"
+      },
+      "evidence": [
+        {
+          "kind": "semantic-delta",
+          "baseline": "SOURCE ROUND TRIP",
+          "edited": "EDITED ROUND TRIP"
+        }
+      ],
+      "suggestedResolution": {
+        "summary": "Apply only as part of the complete old-value-preconditioned C5 transaction after every blocker is resolved.",
+        "options": [
+          {
+            "id": "apply-validated-transaction",
+            "description": "Review the typed operation, run patch validation, and write a new source output.",
+            "consequence": "The edited PPTX and canonical input remain unchanged; regenerated C9 semantics must match."
+          }
+        ]
+      },
+      "candidateOperationId": "operation.edbf7d751c04fdb1",
+      "blocks": []
+    },
+    {
+      "id": "finding.ec06c22e2fb88337",
+      "rank": 2130,
+      "disposition": "auto-fixable",
+      "effect": "source-change",
+      "code": "VECTOR180-RECONCILE-SUPPORTED-CHANGE",
+      "title": "geometry change",
+      "message": "Mapped object \"roundtrip.card\" has one exact supported geometry delta.",
+      "occurrenceCount": 1,
+      "scope": {
+        "kind": "object",
+        "objectId": "roundtrip.card",
+        "field": "geometry"
+      },
+      "evidence": [
+        {
+          "kind": "semantic-delta",
+          "baseline": {
+            "kind": "rect",
+            "x": 70,
+            "y": 190,
+            "width": 310,
+            "height": 230
+          },
+          "edited": {
+            "kind": "rect",
+            "x": 80,
+            "y": 200,
+            "width": 300,
+            "height": 220
+          }
+        }
+      ],
+      "suggestedResolution": {
+        "summary": "Apply only as part of the complete old-value-preconditioned C5 transaction after every blocker is resolved.",
+        "options": [
+          {
+            "id": "apply-validated-transaction",
+            "description": "Review the typed operation, run patch validation, and write a new source output.",
+            "consequence": "The edited PPTX and canonical input remain unchanged; regenerated C9 semantics must match."
+          }
+        ]
+      },
+      "candidateOperationId": "operation.d97c059cf80991d2",
+      "blocks": []
+    }
+  ],
+  "candidateOperations": [
+    {
+      "id": "operation.d97c059cf80991d2",
+      "disposition": "auto-fixable",
+      "applicable": true,
+      "blockedBy": [],
+      "operation": {
+        "op": "set-object-geometry",
+        "id": "roundtrip.card",
+        "oldGeometry": {
+          "kind": "rect",
+          "x": 70,
+          "y": 190,
+          "width": 310,
+          "height": 230
+        },
+        "geometry": {
+          "kind": "rect",
+          "x": 80,
+          "y": 200,
+          "width": 300,
+          "height": 220
+        }
+      },
+      "validation": {
+        "status": "passed",
+        "regeneratedSemanticEquality": true
+      }
+    },
+    {
+      "id": "operation.edbf7d751c04fdb1",
+      "disposition": "auto-fixable",
+      "applicable": true,
+      "blockedBy": [],
+      "operation": {
+        "op": "set-text",
+        "id": "roundtrip.title",
+        "oldText": "SOURCE ROUND TRIP",
+        "value": "EDITED ROUND TRIP"
+      },
+      "validation": {
+        "status": "passed",
+        "regeneratedSemanticEquality": true
+      }
+    },
+    {
+      "id": "operation.f0d1068a4e54dfd5",
+      "disposition": "auto-fixable",
+      "applicable": true,
+      "blockedBy": [],
+      "operation": {
+        "op": "set-native-style",
+        "id": "roundtrip.card",
+        "oldStyle": {
+          "fill": "#dbeafe",
+          "stroke": "#2563eb",
+          "strokeWidth": 3,
+          "opacity": 1,
+          "fontWeight": 400,
+          "fontStyle": "normal",
+          "textAnchor": "start"
+        },
+        "style": {
+          "fill": "#dcfce7",
+          "stroke": "#16a34a",
+          "strokeWidth": 4,
+          "opacity": 1,
+          "fontWeight": 400,
+          "fontStyle": "normal",
+          "textAnchor": "start"
+        }
+      },
+      "validation": {
+        "status": "passed",
+        "regeneratedSemanticEquality": true
+      }
+    }
+  ],
+  "patch": {
+    "schema": "vector180-patch/0.1",
+    "baseSha256": "3bf18821484c9844da740b31f46ffb4cf72fb52802bb55fb97b8bdcbc58f46fc",
+    "ops": [
+      {
+        "op": "set-text",
+        "id": "roundtrip.title",
+        "oldText": "SOURCE ROUND TRIP",
+        "value": "EDITED ROUND TRIP"
+      },
+      {
+        "op": "set-object-geometry",
+        "id": "roundtrip.card",
+        "oldGeometry": {
+          "kind": "rect",
+          "x": 70,
+          "y": 190,
+          "width": 310,
+          "height": 230
+        },
+        "geometry": {
+          "kind": "rect",
+          "x": 80,
+          "y": 200,
+          "width": 300,
+          "height": 220
+        }
+      },
+      {
+        "op": "set-native-style",
+        "id": "roundtrip.card",
+        "oldStyle": {
+          "fill": "#dbeafe",
+          "stroke": "#2563eb",
+          "strokeWidth": 3,
+          "opacity": 1,
+          "fontWeight": 400,
+          "fontStyle": "normal",
+          "textAnchor": "start"
+        },
+        "style": {
+          "fill": "#dcfce7",
+          "stroke": "#16a34a",
+          "strokeWidth": 4,
+          "opacity": 1,
+          "fontWeight": 400,
+          "fontStyle": "normal",
+          "textAnchor": "start"
+        }
+      }
+    ]
+  },
+  "diagnostics": []
+}

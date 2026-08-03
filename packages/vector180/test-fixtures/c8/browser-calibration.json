@@ -1,0 +1,67 @@
+{
+  "schema": "vector180-browser-text-calibration/0.1",
+  "fontManifest": "../fonts/manifest.json",
+  "fontSize": 32,
+  "nearLimit": 0.9,
+  "tolerance": {
+    "absoluteSvgUnits": 0.75,
+    "relative": 0.01,
+    "acceptance": "absolute-or-relative",
+    "primaryOracle": "fontkit/2.0.4 default shaping",
+    "diagnosticAlternate": "fontkit/2.0.4 with kern=false"
+  },
+  "platformGridFittingCapture": {
+    "engine": "chromium",
+    "engineVersion": "151.0.7922.34",
+    "platform": "Linux x86_64",
+    "devicePixelRatio": 1,
+    "source": "GitHub Actions ubuntu-latest",
+    "widths": {
+      "kerning-av": 76,
+      "spaces": 112,
+      "representative": 189,
+      "near-limit": 152,
+      "exact-boundary": 178,
+      "overflow": 121
+    },
+    "behavior": "checked GitHub Actions capture; each integer width must remain inside the nearest-pixel Fontkit advance envelope and preserve every non-boundary fit band"
+  },
+  "samples": [
+    {
+      "id": "kerning-av",
+      "text": "AVAV",
+      "nodeUtilization": 0.8,
+      "expectedBand": "clear"
+    },
+    {
+      "id": "spaces",
+      "text": "A V A V",
+      "nodeUtilization": 0.8,
+      "expectedBand": "clear"
+    },
+    {
+      "id": "representative",
+      "text": "AV edge 123",
+      "nodeUtilization": 0.8,
+      "expectedBand": "clear"
+    },
+    {
+      "id": "near-limit",
+      "text": "Near limit",
+      "nodeUtilization": 0.95,
+      "expectedBand": "near-limit"
+    },
+    {
+      "id": "exact-boundary",
+      "text": "Exact width",
+      "nodeUtilization": 1,
+      "expectedBand": "boundary"
+    },
+    {
+      "id": "overflow",
+      "text": "Overrun",
+      "nodeUtilization": 1.05,
+      "expectedBand": "overflow"
+    }
+  ]
+}

@@ -1,9 +1,10 @@
 # CONTRACT-C10-PPTV-PPTX-RECONCILIATION.1.2
 
+<!-- SUPERSEDED BY: CONTRACT-C10-PPTV-PPTX-RECONCILIATION.2.0 -->
 <!-- SUPERSEDES: CONTRACT-C10-PPTV-PPTX-RECONCILIATION.1.0 -->
 
 **Version:** 1.2
-**Status:** in-progress
+**Status:** superseded
 **Owner:** Will Ackerly
 **Type:** Component
 **Cross-repo Promotability:** No

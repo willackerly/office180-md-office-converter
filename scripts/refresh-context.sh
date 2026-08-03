@@ -112,7 +112,7 @@ fi
 echo ""
 echo "=== Untracked TODOs in Code ==="
 
-# Scan the Python converters and TypeScript PPTV package, excluding generated
+# Scan the Python converters and TypeScript Vector180 package, excluding generated
 # and local-environment directories.
 UNTRACKED=$(grep -rn "TODO:" \
   --exclude-dir=".git" --exclude-dir=".venv" --exclude-dir="node_modules" \

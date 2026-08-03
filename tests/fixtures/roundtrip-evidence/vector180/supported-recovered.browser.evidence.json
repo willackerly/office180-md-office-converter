@@ -1,0 +1,86 @@
+{
+  "capture": {
+    "command": {
+      "argv": [
+        "/opt/homebrew/Cellar/node/25.1.0_1/bin/node",
+        "$TOOL/capture-browser-svg.mjs",
+        "--artifact",
+        "$ROOT/supported-recovered.vector180.svg",
+        "--artifact-sha256",
+        "e5145ecdaf435d0a04abf92e3bd2e9a20d01396ba013dd6ab26bfa937d59dc8d",
+        "--output",
+        "$TEMP/capture.png",
+        "--width",
+        "1600",
+        "--height",
+        "900",
+        "--background",
+        "#ffffff",
+        "--timeout-ms",
+        "34500"
+      ],
+      "exit_code": 0,
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdout_sha256": "034015f6d1b9d879466aaca621f361fd46f4c276e41017a60207ea198e5cf4b6",
+      "timeout_seconds": 35.0
+    },
+    "diagnostic": null,
+    "environment": {
+      "architecture": "arm64",
+      "display_scale": 1.0,
+      "locale": "en-US",
+      "os": "Darwin",
+      "os_version": "26.5.2",
+      "rendering_flags": [
+        "--disable-background-networking",
+        "--disable-component-update",
+        "--disable-default-apps",
+        "--disable-domain-reliability",
+        "--disable-features=MediaRouter",
+        "--disable-sync",
+        "--metrics-recording-only",
+        "--no-first-run",
+        "--host-resolver-rules=MAP * 0.0.0.0, EXCLUDE 127.0.0.1"
+      ]
+    },
+    "fonts": [],
+    "input": {
+      "background": "#ffffff",
+      "device_scale_factor": 1.0,
+      "fit": "contain",
+      "index": 1,
+      "pixel_size": 1600,
+      "unit": "view",
+      "viewport_height_px": 900,
+      "viewport_width_px": 1600
+    },
+    "output": {
+      "colorspace": "png-rgb-8",
+      "height_px": 900,
+      "media_type": "image/png",
+      "page_count": 1,
+      "page_sha256": [
+        "02f8de51d4e09dc7d842c2d75169f390d5b04144fb6290c5ccfbba7a63ef09a6"
+      ],
+      "path": "supported-recovered.browser.png",
+      "sha256": "02f8de51d4e09dc7d842c2d75169f390d5b04144fb6290c5ccfbba7a63ef09a6",
+      "width_px": 1600
+    },
+    "renderer": {
+      "executable_path": "$HOME/Library/Caches/ms-playwright/chromium-1234/chrome-mac-arm64/Google Chrome for Testing.app/Contents/MacOS/Google Chrome for Testing",
+      "identity_sha256": "221ce4915bdfddaa26522c9836771d7bbfbbd026ce90c86d517e2b87a661e51e",
+      "product": "Playwright Chromium",
+      "version": "Playwright 1.62.0; Chromium 151.0.7922.34"
+    },
+    "renderer_class": "browser",
+    "status": "passed"
+  },
+  "evidence_sha256": "b60845950f0e931020c6b44075e9e1f8558aefb27113122ed35bc06c94d66c82",
+  "schema": "office180-visual-evidence/0.1",
+  "subject": {
+    "artifact_path": "supported-recovered.vector180.svg",
+    "artifact_sha256": "e5145ecdaf435d0a04abf92e3bd2e9a20d01396ba013dd6ab26bfa937d59dc8d",
+    "checkpoint": "supported-recovered",
+    "lane": "vector180-pptx"
+  }
+}

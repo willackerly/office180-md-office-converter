@@ -47,7 +47,7 @@
       "required": ["lane", "checkpoint", "artifact_path", "artifact_sha256"],
       "properties": {
         "lane": {
-          "enum": ["markdown-docx", "pptv-pptx"]
+          "enum": ["markdown-docx", "vector180-pptx", "pptv-pptx"]
         },
         "checkpoint": {
           "type": "string",

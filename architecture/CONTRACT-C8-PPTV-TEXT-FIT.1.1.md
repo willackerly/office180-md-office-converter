@@ -1,9 +1,10 @@
 # CONTRACT-C8-PPTV-TEXT-FIT.1.1
 
+<!-- SUPERSEDED BY: CONTRACT-C8-PPTV-TEXT-FIT.2.0 -->
 <!-- SUPERSEDES: CONTRACT-C8-PPTV-TEXT-FIT.1.0 -->
 
 **Version:** 1.1
-**Status:** in-progress
+**Status:** superseded
 **Owner:** Will Ackerly
 **Type:** Verification
 **Cross-repo Promotability:** Yes — the injected measurement boundary and

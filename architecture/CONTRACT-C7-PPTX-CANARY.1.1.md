@@ -1,7 +1,9 @@
 # CONTRACT-C7-PPTX-CANARY.1.1
 
+<!-- SUPERSEDED BY: CONTRACT-C7-PPTX-CANARY.2.0 -->
+
 **Version:** 1.1
-**Status:** in-progress
+**Status:** superseded
 **Owner:** Will Ackerly
 **Type:** Artifact Compiler
 **Cross-repo Promotability:** Yes — the strict OPC graph and deterministic

@@ -1,4 +1,4 @@
 interface:
-  display_name: "PPTV Authoring"
-  short_description: "Author atom-first no-reflow visual source"
-  default_prompt: "Use $pptv-authoring to create, read, compare, edit, or compile a fully hydrated SVG atom, using HTML only for a real deck or report."
+  display_name: "PPTV Legacy Compatibility"
+  short_description: "Inspect or migrate legacy PPTV source"
+  default_prompt: "Use $pptv-authoring only to inspect legacy PPTV, migrate one legacy SVG atom, or extract one legacy deck slide, then follow the canonical $vector180-authoring workflow without silently rewriting source."

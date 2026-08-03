@@ -1,9 +1,10 @@
 # CONTRACT-C11-OFFICE-VISUAL-EVIDENCE.1.1
 
+<!-- SUPERSEDED BY: CONTRACT-C11-OFFICE-VISUAL-EVIDENCE.1.2 -->
 <!-- SUPERSEDES: CONTRACT-C11-OFFICE-VISUAL-EVIDENCE.1.0 -->
 
 **Version:** 1.1
-**Status:** in-progress
+**Status:** superseded
 **Owner:** Will Ackerly
 **Type:** Operational
 **Cross-repo Promotability:** Yes — candidate for OpenDocKit and Rebar adopters
