@@ -37,9 +37,11 @@ md2docx/
   tests/         # golden corpus + visual regression (see §6)
 ```
 
-Package with `pyproject.toml`, entry point `md2docx`, installable via `pipx`.
-Keep `convert()` importable — scripting integrations should call the library,
-not shell out.
+The flat-module baseline is now packaged by `pyproject.toml` with pinned
+`python-docx==1.2.0` and collision-resistant `office180-md2docx` /
+`office180-docx2md` entry points. A later module-layout refactor should keep
+the conversion APIs importable so scripting integrations can call the library
+instead of shelling out.
 
 ---
 
@@ -176,7 +178,7 @@ themes cleaner (restyle = redefine styles).
 | Mechanism | What to store | Survives Word edits | Survives Google Docs | Status |
 | :--- | :--- | :--- | :--- | :--- |
 | **Core properties** (`docProps/core.xml`) | Compact JSON in `comments`: tool/version, template name, template hash (16-hex), source hash, timestamp; full source path in `subject`; `keywords: md2docx`; `category`: template name | Yes — standard OPC part, Word preserves and shows in File → Info | Partially (title/subject/keywords usually survive export) | **SHIPPED in v0.2.0** |
-| **Custom XML part** (`customXml/itemN.xml`) | Exact original and canonical UTF-8 Markdown with full hashes and deterministic item identity | Yes under independent `python-docx` reopen/save; native Word lifecycle remains a gate | **No — expected to be stripped on GDocs import** | **SHIPPED for the C2 2.0 supported profile** |
+| **Custom XML part** (`customXml/itemN.xml`) | Exact original and canonical UTF-8 Markdown with full hashes and deterministic item identity | Yes under independent `python-docx` reopen/save and the bounded native Word no-op lifecycle; representative native edits and fidelity remain gates | **No — expected to be stripped on GDocs import** | **SHIPPED for the C2 2.0 supported profile** |
 | **Table captions** (`w:tblCaption`) + alt text | Per-table: original MD table form + which wide-table strategy was applied (landscape/chunk/cards), so the reverse tool can un-transform | Yes | Mostly no | P1 |
 | **Heading bookmarks** | Stable anchor slugs on each heading (also powers internal links / TOC) | Yes | Weakly | P1 |
 | **Content controls (SDTs)** per block, tagged with source line ranges | Fine-grained block↔line mapping for surgical merge | Yes — SDTs are built for document assembly | No | P2 — invasive; only if per-line merge fidelity proves necessary |

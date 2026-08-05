@@ -2,7 +2,8 @@
 
 **Status:** executable 0.1 source/editor, typed-patch, atom-composition,
 compiler-baseline, and bounded-reconciliation slice; banked 0.1.1
-text-resilience direction; plus broader roadmap
+text-resilience, Markdown deck-manuscript, and branded template-basis
+directions; plus broader roadmap
 **Audience:** implementers, tool authors, presentation-system designers, and agents  
 **Canonical public name:** Vector180
 **Legacy dialect:** PPTV 0.1, readable but read-only until explicit migration
@@ -140,6 +141,8 @@ The deep design packet is not base authoring context.
 | Build or inspect an actual deck/report            | [HTML container](VECTOR180-HTML-CONTAINER.md)                                                                                                           | [tooling/editor](VECTOR180-TOOLING-AND-EDITOR.md)                                                    |
 | Work on the browser editor                        | [tooling/editor](VECTOR180-TOOLING-AND-EDITOR.md)                                                                                                       | [agent guide](VECTOR180-AGENT-GUIDE.md) and C5/C6 contracts                                          |
 | Work on PowerPoint conversion/recovery            | [SVG→PPTX playbook](SVG-TO-EDITABLE-PPTX.md)                                                                                                            | C7/C9/C10/C11 contracts                                                                              |
+| Plan an ordered atom narrative or speaker notes   | [deck-manuscript proposal](VECTOR180-DECK-MANUSCRIPT.md)                                                                                                | C7/C9/C10 only to understand the current no-notes boundary                                            |
+| Derive a reusable branded visual system           | [branded template-basis playbook](VECTOR180-BRANDED-TEMPLATE-BASIS.md)                                                                                   | C8/C9/C12 only when implementing exact-font, compiler, or semantic-diff fixtures                      |
 | Plan the next implementation slice                | [implementation plan](VECTOR180-IMPLEMENTATION-PLAN.md)                                                                                                 | [0.1.1 text design](VECTOR180-TEXT-RESILIENCE-0.1.1.md) when text behavior is involved               |
 
 Use
@@ -163,6 +166,7 @@ every diagram:
 ```text
 diagram.vector180.svg                 implemented default standalone diagram atom
 mydeck.vector180.html                 implemented portable whole-deck source
+mydeck.deck.md                        proposed ordered manuscript and speaker-note shell
 mydeck.vector180-manifest.json        recognition only; external orchestration future
 mydeck.editable.html                  implemented generated writable trusted wrapper
 mydeck.pptx                      current strict deck-only C7 canary

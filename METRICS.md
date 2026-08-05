@@ -1,7 +1,7 @@
 # Project Metrics
 
 <!-- FRESHNESS: Update this date every time you modify this file -->
-<!-- freshness: 2026-08-02 -->
+<!-- freshness: 2026-08-04 -->
 
 **Ground-truth metrics for the Python DOCX pair and canonical TypeScript
 Vector180 kernel.**
@@ -13,11 +13,11 @@ source files, tests, contracts, schemas, or themes change.
 
 ```text
 python_source_files = 2
-test_files = 3
+test_files = 4
 test_functions = 32
 typescript_source_files = 38
 typescript_test_files = 33
-typescript_test_cases = 257
+typescript_test_cases = 258
 contracts = 12
 published_schemas = 15
 shipped_themes = 3
@@ -40,7 +40,8 @@ shipped_themes = 3
 - `md2docx.py` — 1,287 lines.
 - `docx2md.py` — 2,261 lines.
 - `tests/test_roundtrip.py` — 2,385 lines; `tests/test_visual_evidence.py` —
-  1,269 lines; `tests/test_native_office_bridge.py` — 694 lines.
+  1,269 lines; `tests/test_native_office_bridge.py` — 694 lines;
+  `tests/test_python_package.py` — installed-package acceptance.
 - `packages/vector180/src/` — canonical non-test TypeScript modules across
   the portable source/resolved/text-fit kernel, operations, browser session,
   extraction/editor runtime, Node font/compiler/inspection/filesystem boundary,
@@ -52,14 +53,15 @@ shipped_themes = 3
 
 ## Testing Status
 
-- **Python:** 63 passing tests: 32 standalone DOCX tests, 14 C11 visual-evidence
-  cases, and 17 native-bridge cases. They cover theme resolution, exact or
+- **Python:** 66 passing tests: 32 standalone DOCX tests, 14 C11 visual-evidence
+  cases, 17 native-bridge cases, and 3 installed-package cases. They cover
+  theme resolution, exact or
   diagnosed canonical equality, embedded-source integrity, Word/Markdown
   refusals, native Word style normalization/counterexamples, transactional CLI
   publication/rollback, three-way merge, visual capture/comparison/binding,
-  bridge containment/locking/handoff/save/reopen/package/privacy behavior, link
-  demotion, and `--no-footer`.
-- **TypeScript:** 314 passing runtime Vitest cases from 257 direct
+  bridge containment/locking/handoff/save/reopen/package/privacy behavior,
+  installed metadata/entry points, link demotion, and `--no-footer`.
+- **TypeScript:** 315 passing runtime Vitest cases from 258 direct
   `it()`/`test()` declarations (data-driven cases expand at runtime), covering
   exact UTF-8 source handling, BOM/non-BMP coordinates, non-executing security,
   strict HTML/XML/container/manifest validation, diagram/deck distinction,
@@ -73,13 +75,17 @@ shipped_themes = 3
   C10 proof-carrying normalization/reports/reviewed-copy reconciliation,
   contained C12 input-level incomparable reports, and race-safe CLI atomic
   writes.
-- **Repo-scoped authoring skill:** structural validation and its executable
-  self-check pass. The atom/deck starters are byte-locked to their scaffold
-  helpers; the atom carries the safe discovery breadcrumb, exact ABeeZee face,
-  and honest default style-family hint. The one-page atom card is the routine
-  authoring surface, while the gate helper exercises atom/deck routing,
-  atom-only metadata, default exact-font evidence, editor packaging, and
-  explicit-placement PowerPoint paths without inferring geometry.
+- **Focused authoring skills and plugin:** both canonical skills and both
+  plugin mirrors pass structural validation. The Markdown starter passes exact
+  canonical round trip, theme resolution, installed/repository dispatch, and
+  conservative recovery/merge guidance. The atom/deck starters are byte-locked
+  to their scaffold helpers; the atom carries the safe discovery breadcrumb,
+  exact ABeeZee face, and honest default style-family hint. The one-page atom
+  card is the routine visual surface, while the gate helper exercises
+  atom/deck routing, atom-only metadata, default exact-font evidence, editor
+  packaging, and explicit-placement PowerPoint paths without inferring
+  geometry. The official Office180 plugin validator and exact mirror check
+  pass.
 - **Browser conformance:** the checked ES2022 IIFE is 788,901 bytes with
   SHA-256
   `9c0b85b42b8eadbc6689c24517298f28c445b70e0fb0216eae4e2661d4cb6c3a`.
@@ -211,7 +217,8 @@ C2/C3 also remain implemented/in-progress for their declared bounded profiles.
 
 ## Dependencies
 
-- **Python runtime:** `python-docx`.
+- **Python runtime:** exact `python-docx==1.2.0`, packaged for Python 3.9+ with
+  collision-resistant console entry points and preserved direct-script use.
 - **Vector180 runtime:** Node.js 20+, `parse5`, `jsonc-parser`, exact `saxes@6.0.0`
   for browser-safe standalone SVG XML scanning, exact `jszip@3.10.1`, and exact
   `fontkit@2.0.4` behind the Node C8 adapter.
@@ -244,8 +251,9 @@ C2/C3 also remain implemented/in-progress for their declared bounded profiles.
 - `pnpm test:browser:all` — runs the real-HTTP Chromium, Firefox, and WebKit
   conformance/calibration matrix.
 - `pnpm format:check`, `pnpm typecheck`, `pnpm test`, and `pnpm build` validate
-  the TypeScript implementation and both test suites; `pnpm pack:check` verifies
-  the publishable CLI, exports, license, declarations, and copied schemas.
+  canonical and legacy TypeScript plus the four Python test files;
+  `pnpm pack:check` verifies the publishable CLI, exports, license,
+  declarations, and copied schemas.
 
 ---
 

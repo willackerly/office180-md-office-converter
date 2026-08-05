@@ -1,0 +1,41 @@
+{
+  "name": "office180",
+  "version": "0.1.0-alpha.1+codex.20260805060651",
+  "description": "Markdown-first Word authoring and Vector180-first PowerPoint authoring with strict, reviewable Office round trips.",
+  "author": {
+    "name": "Will Ackerly",
+    "url": "https://github.com/willackerly"
+  },
+  "homepage": "https://github.com/willackerly/office180-md-office-converter",
+  "repository": "https://github.com/willackerly/office180-md-office-converter",
+  "license": "MIT",
+  "keywords": [
+    "docx",
+    "markdown",
+    "office",
+    "powerpoint",
+    "pptx",
+    "vector180"
+  ],
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "Office180",
+    "shortDescription": "Author reviewable Word and PowerPoint branches.",
+    "longDescription": "Creates Word documents from canonical Markdown and PowerPoint presentations from deterministic, no-reflow Vector180 SVG atoms, then diagnoses and reconciles supported Office edits.",
+    "developerName": "Will Ackerly",
+    "category": "Productivity",
+    "capabilities": [
+      "Authoring",
+      "Conversion",
+      "Validation",
+      "Reconciliation"
+    ],
+    "websiteURL": "https://github.com/willackerly/office180-md-office-converter",
+    "defaultPrompt": [
+      "Create a polished Word report from canonical Markdown.",
+      "Build an editable PowerPoint from Vector180 SVG atoms.",
+      "Reconcile my supported Word or PowerPoint edits."
+    ],
+    "brandColor": "#9C3D9E"
+  }
+}

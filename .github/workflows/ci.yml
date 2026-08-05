@@ -32,7 +32,7 @@ jobs:
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version-file: .nvmrc
           cache: pnpm
 
       - name: Set up Python
@@ -43,8 +43,13 @@ jobs:
       - name: Install dependencies
         run: |
           python -m venv .venv
-          .venv/bin/python -m pip install --disable-pip-version-check python-docx
+          .venv/bin/python -m pip install --disable-pip-version-check --editable .
           pnpm install --frozen-lockfile
+
+      - name: Test installed Python package
+        run: |
+          .venv/bin/python -m pip check
+          .venv/bin/python tests/test_python_package.py
 
       - name: Rebar Tier 3 gates
         run: scripts/ci-check.sh --strict
@@ -70,6 +75,34 @@ jobs:
       - name: Dependency audit
         run: pnpm audit --audit-level high
 
+  python-package-minimum:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up minimum Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.9"
+
+      - name: Install and test Python package
+        run: |
+          python -m venv .package-venv
+          .package-venv/bin/python -m pip install --disable-pip-version-check --editable .
+          .package-venv/bin/python -m pip check
+          .package-venv/bin/python tests/test_python_package.py
+
+      - name: Build Python wheel
+        run: >-
+          .package-venv/bin/python -m pip wheel
+          --disable-pip-version-check
+          --no-deps
+          --wheel-dir "${RUNNER_TEMP}/office180-python-dist"
+          .
+
   browser-chromium:
     runs-on: ubuntu-latest
     timeout-minutes: 20
@@ -86,7 +119,7 @@ jobs:
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version-file: .nvmrc
           cache: pnpm
 
       - name: Install dependencies
@@ -121,7 +154,7 @@ jobs:
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version-file: .nvmrc
           cache: pnpm
 
       - name: Install dependencies

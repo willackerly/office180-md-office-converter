@@ -27,6 +27,7 @@ Each script is standalone, runs in a few seconds, and exits 0 (pass) or 1 (fail)
 | `check-prefix-uniqueness.sh` | Contract numeric prefixes are unique |
 | `check-ground-truth.sh` | `METRICS.md` matches Python/TypeScript sources, tests, contracts, schemas, and themes |
 | `check-compliance.sh` | `.rebar-version`, `.rebarrc`, the README badge, and `AGENTS.md` all agree, plus contract maturity weighting |
+| `sync-office180-plugin.py --check` | Installable plugin skills, DOCX converters, and themes are exact mirrors of repository authority |
 | `steward.sh` | Contract lifecycle, implementation, testing, and enforcement health |
 
 ## Composite / Setup
@@ -219,8 +220,9 @@ pnpm pack:check
 - **jq, grep, find, date, git** — Steward and enforcement dependencies
 - **Node.js 20+ and pnpm** — TypeScript checks and aggregate test command
 - **Pinned Playwright Chromium** — trusted standalone Vector180 SVG browser capture
-- **`.venv/bin/python` with `python-docx`** — Python round-trip tests invoked by
-  `pnpm test`
+- **Python 3.9+ with exact `python-docx==1.2.0`** — install the package
+  editable into `.venv`; `pnpm test` invokes the round-trip suites and
+  `tests/test_python_package.py` checks installed entry points separately
 
 The adopter-local `ci-check.sh` intentionally omits Rebar's
 source-repository-only bootstrap-template drift gate. Repository-wide scans

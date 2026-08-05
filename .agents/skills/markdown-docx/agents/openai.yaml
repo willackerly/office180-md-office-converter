@@ -1,0 +1,6 @@
+interface:
+  display_name: "Markdown-first Word"
+  short_description: "Word/DOCX reports from canonical Markdown"
+  default_prompt: "Use $markdown-docx for Word, DOCX, report, memo, proposal, and Markdown-to-Word work: keep Markdown authoritative, generate a themed review branch, and recover supported Word edits with provenance and merge evidence."
+policy:
+  allow_implicit_invocation: true

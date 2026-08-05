@@ -10,6 +10,63 @@
 | Vector180 visual atoms  | standalone `.vector180.svg`            | optional `.pptx` branch | `0.1.0-alpha.5` implemented, locally test-accepted release candidate; not npm-published                                                     |
 | Vector180 decks/reports | explicit `.vector180.html` aggregation | `.pptx`                 | Reader/editor deck slice implemented locally; C7 compiler acceptance remains in progress                                                    |
 
+## Five-minute quickstart
+
+This path starts from a clean clone, builds one Word document, builds one
+editable PowerPoint plus its reconciliation map, and scaffolds a three-atom
+visual suite:
+
+```bash
+git clone https://github.com/willackerly/office180-md-office-converter.git
+cd office180-md-office-converter
+
+corepack enable
+pnpm install --frozen-lockfile
+python3 -m venv .venv
+.venv/bin/python -m pip install -e .
+mkdir -p dist/quickstart/suite
+
+.venv/bin/office180-md2docx --check examples/office180-primer.md
+.venv/bin/office180-md2docx examples/office180-primer.md \
+  --template themes/plum.json \
+  --out dist/quickstart/office180-primer.docx
+
+pnpm vector180 validate examples/minimal-diagram.vector180.svg
+pnpm vector180 text-fit examples/minimal-diagram.vector180.svg \
+  --font-map default
+pnpm vector180 compile examples/minimal-diagram.vector180.svg \
+  --placement 200,50,1200,800 --policy identity \
+  --output dist/quickstart/minimal-diagram.pptx \
+  --map dist/quickstart/minimal-diagram.vector180.map.json
+
+pnpm vector180 new atom --output dist/quickstart/suite/overview.vector180.svg \
+  --id overview --title "Overview"
+pnpm vector180 new atom --output dist/quickstart/suite/workflow.vector180.svg \
+  --id workflow --title "Workflow"
+pnpm vector180 new atom --output dist/quickstart/suite/evidence.vector180.svg \
+  --id evidence --title "Evidence"
+pnpm vector180 metadata-compare \
+  dist/quickstart/suite/overview.vector180.svg \
+  dist/quickstart/suite/workflow.vector180.svg --format json
+```
+
+The suite comparison reports the scaffold's shared declared style family. That
+is a useful grouping hint, not proof of an exact common template; verified
+template lineage additionally requires immutable template-basis bytes. Run
+`pnpm vector180 <command> --help` for a concise card for any subcommand.
+
+Codex can also install the repository-owned skill bundle after cloning:
+
+```bash
+codex plugin marketplace add "$PWD"
+codex plugin add office180@office180
+```
+
+Start a new Codex thread after plugin installation. Ask for a Word document,
+DOCX, report, memo, or proposal to route to `$markdown-docx`; ask for a
+PowerPoint, PPTX, presentation, slide deck, diagram, or figure to route to
+`$vector180-authoring`.
+
 The default visual source is a fully hydrated SVG atom: one self-contained
 strict SVG with stable IDs, explicit geometry and hard lines, concrete local
 styles, and no deck/runtime dependency. Keep a suite of diagrams as a suite of
@@ -33,7 +90,7 @@ write exception is `extract`, which hydrates one selected slide into a new
 independently validated canonical atom; neither operation rewrites the legacy
 source. Mixed PPTV/Vector180 namespaces are always an error.
 
-> **Release-candidate status (2026-08-02):**
+> **Release-candidate status (2026-08-04):**
 > `@office180/vector180@0.1.0-alpha.5` is implemented and has passed the
 > current local package, repository, browser, packaging, and installed-style
 > CLI acceptance paths. It is a local release candidate, not an npm-published
@@ -109,6 +166,9 @@ Vector180; the old stem is not a current wire or package name.
 - **[Vector180 Tooling and Editor Architecture](VECTOR180-TOOLING-AND-EDITOR.md)** defines
   a TypeScript-first toolchain, native SVG editor, optional
   `.editable.html` wrapper, and selective OpenDocKit reuse.
+- **[Vector180 Deck Manuscript](VECTOR180-DECK-MANUSCRIPT.md)** banks a strict
+  Markdown shell for ordered atom references, slide intent, and future
+  PowerPoint speaker-note projection without duplicating visible slide text.
 - **[Vector180 Implementation Plan](VECTOR180-IMPLEMENTATION-PLAN.md)** separates
   arbitrary-aspect standalone diagrams from the initial exact-16:9 PowerPoint
   deck profile, records the implemented mapped atom round trip, and sequences
@@ -184,21 +244,36 @@ PowerPoint edit. Native representative edit/save/reopen and a hash-bound human
 fidelity review remain explicitly manual. The PPTV path remains because it is
 immutable legacy evidence, not a canonical authoring example.
 
-### Repo-scoped Vector180 authoring skill
+### Focused Office authoring skills
 
-Codex discovers the versioned
-[`$vector180-authoring` skill](.agents/skills/vector180-authoring/SKILL.md) from
-`.agents/skills/` in this repository. It defaults to a standalone diagram for
-one figure and to HTML only when authoring a multi-slide deck. Use it to
-choose stable groups/IDs/text frames, run exact-font overflow preflight, edit
-or extract atoms, compose/compile a mapped atom PPTX, reconcile supported
-edits, review one connector-copy resolution, and compile the deck canary. Its
-diagram and deck starters are validation-locked fixtures. Its
-[one-page atom card](.agents/skills/vector180-authoring/references/atom-card.md)
-is the ordinary authoring grammar. It reduces the base case to one strict SVG
-root; stable object IDs/roles/export intent; DOM painter order; explicit
-geometry/local style; explicit text frames, baselines, and hard lines; and no
-external dependency.
+Codex discovers two versioned workflows from `.agents/skills/`:
+
+- [`$markdown-docx`](.agents/skills/markdown-docx/SKILL.md) for a Word
+  document, DOCX, report, memo, or proposal. Start from its
+  [canonical Markdown starter](.agents/skills/markdown-docx/assets/starter.md),
+  use the [one-page Word card](.agents/skills/markdown-docx/references/word-card.md)
+  for routine conversion, and follow the
+  [recovery and merge guide](.agents/skills/markdown-docx/references/recovery-and-merge.md)
+  before reconciling Word edits. Markdown remains authority; the DOCX is a
+  reviewable branch.
+- [`$vector180-authoring`](.agents/skills/vector180-authoring/SKILL.md) for a
+  PowerPoint, PPTX, presentation, slide deck, diagram, figure, or
+  reusable visual. It defaults to a standalone atom for one visual and to HTML
+  only for an actual multi-slide deck/report. Use it to choose stable
+  groups/IDs/text frames, run exact-font overflow preflight, edit or extract
+  atoms, compose/compile a mapped atom PPTX, reconcile supported edits, review
+  one connector-copy resolution, and compile the deck canary. Its diagram and
+  deck starters are validation-locked fixtures. Its
+  [one-page atom card](.agents/skills/vector180-authoring/references/atom-card.md)
+  is the ordinary authoring grammar. It reduces the base case to one strict
+  SVG root; stable object IDs/roles/export intent; DOM painter order; explicit
+  geometry/local style; explicit text frames, baselines, and hard lines; and
+  no external dependency.
+
+The installable [`office180` Codex plugin](plugins/office180/README.md) mirrors
+both skills, the three Word themes, the two flat Python converters, and their
+focused starter/reference assets. `pnpm plugin:check` makes repository skill
+and plugin drift a release failure.
 
 The low-context path has three deliberate tiers:
 
@@ -241,23 +316,28 @@ does not verify a template or make `styleFamily` authoritative.
 
 ```bash
 python3 -m venv .venv
-.venv/bin/python -m pip install python-docx
-pnpm install
+.venv/bin/python -m pip install --editable .
+corepack enable
+pnpm install --frozen-lockfile
 ```
 
-`python-docx` is the DOCX runtime dependency. The Vector180 package requires Node.js
-20+ and uses `parse5`, `jsonc-parser`, exact `saxes@6.0.0` for standalone XML
-well-formedness, exactly `jszip@3.10.1`, and exact `fontkit@2.0.4` for the
-explicit-font C8 Node adapter. Deterministic browser/editor bundles use exact
-`esbuild@0.28.1`; conformance uses exact `@playwright/test@1.62.0`. Run the
-Python scripts through the local environment:
+The Python package requires Python 3.9+ and pins `python-docx==1.2.0`. It
+installs collision-resistant `office180-md2docx` and `office180-docx2md`
+commands while preserving direct-script compatibility. The Vector180 package
+requires Node.js 20+ and uses `parse5`, `jsonc-parser`, exact `saxes@6.0.0` for
+standalone XML well-formedness, exactly `jszip@3.10.1`, and exact
+`fontkit@2.0.4` for the explicit-font C8 Node adapter. Deterministic
+browser/editor bundles use exact `esbuild@0.28.1`; conformance uses exact
+`@playwright/test@1.62.0`. Run the installed Python commands through the local
+environment:
 
 ```bash
-.venv/bin/python md2docx.py notes.md
-.venv/bin/python docx2md.py notes.docx
+.venv/bin/office180-md2docx notes.md
+.venv/bin/office180-docx2md notes.docx
 ```
 
-(The Python pair has no packaging or entry point yet; see `ROADMAP.md` §0.)
+Use `python md2docx.py` and `python docx2md.py` only when intentionally testing
+the flat-script compatibility surface.
 
 ---
 
@@ -497,12 +577,14 @@ verified embedded base, while same-region edits return explicit diff3 conflict
 markers.
 
 ```bash
-python md2docx.py --normalize draft.md -o canonical.md
-python md2docx.py --check canonical.md
-python md2docx.py canonical.md -o review.docx
-python docx2md.py review.docx -o edited.md --report fidelity.json
-python docx2md.py review.docx \
-  --merge-current canonical.md --out merged.md --report merge.json
+office180-md2docx --normalize draft.md > canonical.candidate.md
+office180-md2docx --check canonical.candidate.md
+office180-md2docx canonical.candidate.md --out review.docx
+office180-docx2md review.docx \
+  --out edited.md --base-out embedded-base.md --report fidelity.json
+office180-docx2md review.docx \
+  --merge-current canonical.md --out merged.md \
+  --base-out embedded-base.md --report merge.json
 ```
 
 Pending tracked changes, images, text boxes, unknown styles, nested lists,
@@ -535,6 +617,9 @@ conformance matrices, representative native user edits, native
 text/cross-renderer calibration, browser controls for the typed operation
 surface, richer assets/text, and separately versioned profile expansion—not
 arbitrary best-effort PPTX conversion.
+`VECTOR180-DECK-MANUSCRIPT.md` banks the Markdown narrative/speaker-note shell,
+and `VECTOR180-BRANDED-TEMPLATE-BASIS.md` defines the privacy-safe path from a
+reference deck to a small set of exact-lineage, content-free SVG bases.
 
 ---
 
@@ -542,14 +627,16 @@ arbitrary best-effort PPTX conversion.
 
 ```bash
 python3 -m venv .venv
-.venv/bin/python -m pip install python-docx
-pnpm install
+.venv/bin/python -m pip install --editable .
+corepack enable
+pnpm install --frozen-lockfile
 pnpm format:check
 pnpm typecheck
-pnpm test                          # runs Vector180, frozen PPTV, and DOCX suites
+pnpm test                          # Vector180, frozen PPTV, DOCX, and installed-package suites
 pnpm build
 pnpm legacy:build                  # keep the frozen PPTV predecessor buildable
 pnpm pack:check                    # verify the publishable Vector180 package contents
+python3 scripts/sync-office180-plugin.py --check
 scripts/setup.sh                    # installs the pre-commit hook (once)
 scripts/inbox-watch.sh inbox            # session-only watch on this repo's peer inbox
 scripts/check-contract-refs.sh      # CONTRACT: refs resolve to real files

@@ -1,0 +1,20 @@
+{
+  "name": "office180",
+  "interface": {
+    "displayName": "Office180"
+  },
+  "plugins": [
+    {
+      "name": "office180",
+      "source": {
+        "source": "local",
+        "path": "./plugins/office180"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "Productivity"
+    }
+  ]
+}
