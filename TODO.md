@@ -1,8 +1,8 @@
 # TODO
 
 <!-- FRESHNESS: Update this date every time you modify this file -->
-<!-- freshness: 2026-08-02 -->
-<!-- last-synced: 2026-08-02 — verified against the current workspace -->
+<!-- freshness: 2026-08-04 -->
+<!-- last-synced: 2026-08-04 — verified against the current workspace -->
 
 Active tasks plus nearby completion checkpoints. Priority ordering lives in
 `QUICKCONTEXT.md`; older history is collapsed at the end.
@@ -55,6 +55,20 @@ Active tasks plus nearby completion checkpoints. Priority ordering lives in
       separate from metadata and lexical-only differences.
 - [ ] Finish and accept the atom-only `diff` command/report and migration proof.
       Deck/report diff stays out; C10 remains the mapped-PPTX comparison path.
+- [x] Bank a Markdown deck-manuscript direction in which Markdown owns ordered
+      atom IDs, intent, and speaker notes while each standalone atom remains
+      authority for visible content and geometry. Notes compile into PowerPoint
+      speaker notes; comments are not the narrative store.
+- [ ] Promote the deck-manuscript proposal through a successor contract, schema,
+      deterministic notes-part compiler, map evidence, and compile-only
+      acceptance before attempting native note recovery.
+- [x] Complete a privacy-bounded reference-deck audit and define a reusable
+      branded template-basis playbook. Publish no private text, notes, comments,
+      media, filenames, hashes, screenshots, or harvested font bytes.
+- [ ] Author the first approved synthetic branded basis set as four to six
+      content-free standalone atoms. Require exact template-basis lineage,
+      digest-locked approved fonts, native-only compiler fixtures, and explicit
+      refusals for unsupported assets or geometry.
 
 The completed capability checkpoints below combine frozen predecessor evidence
 with locally tested alpha.5 implementation. They are not proof that every
@@ -241,7 +255,10 @@ successor contract has completed its separate promotion matrix.
 - [ ] Complete representative supported native Word edit/save/reopen acceptance
       and human/native visual review; the structural no-op lifecycle does not claim
       editability or native fidelity.
-- [ ] Package as `pyproject.toml` with `pipx` entry points — `ROADMAP.md` §0/§8.
+- [x] Package the flat Python runtime with `pyproject.toml`, exact
+      `python-docx==1.2.0`, collision-resistant
+      `office180-md2docx`/`office180-docx2md` entry points, isolated-wheel
+      acceptance, and direct-script compatibility — `ROADMAP.md` §0/§8.
 - [ ] Add an explicit transactional `md2docx.py --normalize --write` path (or
       equally clear help) so a failed `--check` has an obvious in-place repair
       workflow without changing the current stdout-safe default.
@@ -251,6 +268,23 @@ successor contract has completed its separate promotion matrix.
 - [ ] Add PNG/JPG images — `ROADMAP.md` §3.
 - [ ] Implement the wide-table strategy — `ROADMAP.md` §2.
 - [ ] Add structured warnings and `--strict` — `ROADMAP.md` §6.
+
+## Distribution and agent routing
+
+- [x] Add focused `$markdown-docx` and `$vector180-authoring` skills with
+      Word/DOCX/report/memo/proposal and
+      PowerPoint/PPTX/presentation/slides/diagram routing, concise starter
+      cards, conservative recovery guidance, and validation.
+- [x] Add the repository-owned `office180` Codex marketplace/plugin with exact
+      generated mirrors of both skills, three Word themes, and flat Python
+      converter scripts. Enforce mirror equality in local and CI gates.
+- [x] Add a five-minute clean-clone quickstart, scoped help for every Vector180
+      CLI route, Node 20 pinning, Python 3.9 packaging, exact dependency
+      pinning, collision-resistant console entry points, and installed-package
+      acceptance.
+- [ ] Publish the Vector180 Node runtime before claiming the plugin is
+      checkout-independent for PowerPoint production. Until then the plugin
+      must state that a prepared repository checkout supplies that runtime.
 
 ## Known limitations
 

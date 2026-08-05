@@ -22,6 +22,7 @@
 #   SKIP_DECAY_PATTERNS=1   — skip soft-hardening decay pattern check
 #   SKIP_FIX_COMMIT=1       — skip Gate G (HEAD's fix:/regression: must have Reproduced on:)
 #   SKIP_BYPASS_FLAGS=1     — skip Gate I (HEAD's bypass mentions must have Bypass tickets:)
+#   SKIP_OFFICE180_PLUGIN=1 — skip generated Office180 plugin mirror check
 #
 # Exit code: 0 = all pass, 1 = failures in strict mode
 
@@ -71,6 +72,7 @@ echo "Running contract and documentation checks..."
 run_check "Contract Headers"    SKIP_CONTRACT_HEADERS "$SCRIPT_DIR/check-contract-headers.sh"
 run_check "Contract References" SKIP_CONTRACT_REFS    "$SCRIPT_DIR/check-contract-refs.sh"
 run_check "Doc References"      SKIP_DOC_REFS         "$SCRIPT_DIR/check-doc-refs.sh"
+run_check "Office180 Plugin"    SKIP_OFFICE180_PLUGIN "$SCRIPT_DIR/sync-office180-plugin.py" --check
 run_check "TODO Tracking"       SKIP_TODOS            "$SCRIPT_DIR/check-todos.sh"
 run_check "Doc Freshness"       SKIP_FRESHNESS        "$SCRIPT_DIR/check-freshness.sh"
 run_check "Registry Consistency" SKIP_REGISTRY         "$SCRIPT_DIR/compute-registry.sh" --check

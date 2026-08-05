@@ -1,0 +1,221 @@
+<!doctype html>
+<html lang="en" data-vector180-version="0.1">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="vector180-agent-profile" content="vector180-agent/1">
+  <title>Minimal Vector180 deck</title>
+</head>
+<body>
+
+<!--
+  Vector180 0.1 deck fixture. The exact source, patch, resolved-model,
+  editor-pack, and deterministic PPTX contracts govern its behavior.
+-->
+
+<script id="vector180-manifest" type="application/vnd.office180.vector180+json">
+{
+  "vector180": "0.1",
+  "title": "Minimal Vector180 deck",
+  "runtime": "vector180-browser/0.1",
+  "theme": "light",
+  "slides": [
+    "cover",
+    "architecture"
+  ]
+}
+</script>
+
+<main data-vector180-output></main>
+
+<template data-vector180-slide="architecture">
+  <svg id="architecture" viewBox="0 0 1600 900"
+       data-vector180-layout="architecture"
+       xmlns="http://www.w3.org/2000/svg">
+    <rect id="architecture.background" class="slide-background"
+          data-vector180-role="shape" data-vector180-export="native"
+          x="0" y="0" width="1600" height="900"/>
+
+    <text id="architecture.title" class="slide-title"
+          data-vector180-role="text" data-vector180-export="native"
+          data-vector180-frame="100 40 1400 120"
+          data-vector180-line-step="77"
+          x="100" y="120">System architecture</text>
+
+    <line id="architecture.edge.client-policy" class="diagram-edge"
+          data-vector180-role="connector" data-vector180-export="native"
+          data-vector180-from="architecture.node.client"
+          data-vector180-to="architecture.node.policy"
+          x1="570" y1="450" x2="1030" y2="450"/>
+
+    <g id="architecture.node.client" class="diagram-node"
+       data-vector180-role="group" data-vector180-export="native">
+      <rect id="architecture.node.client.panel" class="diagram-node__panel"
+            data-vector180-role="shape" data-vector180-export="native"
+            x="190" y="320" width="380" height="260"/>
+      <text id="architecture.node.client.title" class="diagram-node__title"
+            data-vector180-role="text" data-vector180-export="native"
+            data-vector180-frame="190 390 380 120"
+            data-vector180-line-step="51"
+            x="380" y="465" text-anchor="middle">Client</text>
+    </g>
+
+    <g id="architecture.node.policy" class="diagram-node"
+       data-vector180-role="group" data-vector180-export="native">
+      <rect id="architecture.node.policy.panel" class="diagram-node__panel"
+            data-vector180-role="shape" data-vector180-export="native"
+            x="1030" y="320" width="380" height="260"/>
+      <text id="architecture.node.policy.title" class="diagram-node__title"
+            data-vector180-role="text" data-vector180-export="native"
+            data-vector180-frame="1030 390 380 120"
+            data-vector180-line-step="51"
+            x="1220" y="465" text-anchor="middle">Policy service</text>
+    </g>
+  </svg>
+</template>
+
+<template data-vector180-slide="cover">
+  <svg id="cover" viewBox="0 0 1600 900"
+       data-vector180-layout="title"
+       xmlns="http://www.w3.org/2000/svg">
+    <rect id="cover.background" class="slide-background"
+          data-vector180-role="shape" data-vector180-export="native"
+          x="0" y="0" width="1600" height="900"/>
+    <text id="cover.title" class="cover-title"
+          data-vector180-role="text" data-vector180-export="native"
+          data-vector180-frame="120 280 1360 160"
+          data-vector180-line-step="116"
+          x="120" y="410">Minimal Vector180 deck</text>
+    <text id="cover.subtitle" class="cover-subtitle"
+          data-vector180-role="text" data-vector180-export="native"
+          data-vector180-frame="125 445 1350 80"
+          data-vector180-line-step="41"
+          x="125" y="490">Manifest first. Slides declarative. Theme last.</text>
+  </svg>
+</template>
+
+<script type="text/css" data-vector180-style="base">
+.slide-background {
+  fill: var(--vector180-background);
+}
+
+.cover-title {
+  fill: var(--vector180-text-primary);
+  font-family: var(--vector180-font-major);
+  font-size: 96px;
+  font-weight: 400;
+}
+
+.cover-subtitle {
+  fill: var(--vector180-text-secondary);
+  font-family: var(--vector180-font-major);
+  font-size: 34px;
+}
+
+.slide-title {
+  fill: var(--vector180-text-primary);
+  font-family: var(--vector180-font-major);
+  font-size: 64px;
+  font-weight: 400;
+}
+
+.diagram-node__panel {
+  fill: var(--vector180-surface-raised);
+  stroke: var(--vector180-accent-1);
+  stroke-width: 4;
+}
+
+.diagram-node__title {
+  fill: var(--vector180-text-primary);
+  font-family: var(--vector180-font-major);
+  font-size: 42px;
+  font-weight: 400;
+}
+
+.diagram-edge {
+  stroke: var(--vector180-accent-1);
+  stroke-width: 6;
+}
+</script>
+
+<script type="text/css" data-vector180-theme="light">
+:root {
+  --vector180-background: #ffffff;
+  --vector180-text-primary: #17211e;
+  --vector180-text-secondary: #51605b;
+  --vector180-surface-raised: #f2f5f4;
+  --vector180-accent-1: #6f5cff;
+  --vector180-font-major: ABeeZee;
+}
+</script>
+
+<script type="text/css" data-vector180-theme="dark">
+:root {
+  --vector180-background: #101714;
+  --vector180-text-primary: #f5f7f6;
+  --vector180-text-secondary: #b7c2bd;
+  --vector180-surface-raised: #1b2521;
+  --vector180-accent-1: #9a8cff;
+  --vector180-font-major: ABeeZee;
+}
+</script>
+
+<script data-vector180-runtime="vector180-browser/0.1">
+(() => {
+  "use strict";
+
+  const manifestNode = document.querySelector("#vector180-manifest");
+  const output = document.querySelector("[data-vector180-output]");
+  const manifest = JSON.parse(manifestNode.textContent);
+
+  const baseStyleNode = document.querySelector(
+    '[data-vector180-style="base"]'
+  );
+  if (!baseStyleNode) throw new Error("Missing Vector180 base style");
+
+  const themeNode = document.querySelector(
+    `[data-vector180-theme="${CSS.escape(manifest.theme)}"]`
+  );
+  if (!themeNode) {
+    throw new Error(`Unknown Vector180 theme: ${manifest.theme}`);
+  }
+
+  const viewerStyle = document.createElement("style");
+  viewerStyle.dataset.vector180ViewerChrome = "";
+  viewerStyle.textContent = `
+html, body { margin: 0; background: #dfe5e2; }
+[data-vector180-output] { display: grid; gap: 32px; padding: 32px; }
+.vector180-slide {
+  width: min(100%, 1280px);
+  margin: 0 auto;
+  box-shadow: 0 16px 48px rgb(0 0 0 / 24%);
+}
+.vector180-slide > svg { display: block; width: 100%; height: auto; }
+`;
+  document.head.append(viewerStyle);
+
+  const activeStyle = document.createElement("style");
+  activeStyle.dataset.vector180ActiveTheme = manifest.theme;
+  activeStyle.textContent =
+    `${baseStyleNode.textContent}\n${themeNode.textContent}`;
+  document.head.append(activeStyle);
+
+  for (const slideRef of manifest.slides) {
+    if (typeof slideRef === "object" && slideRef.hidden === true) continue;
+    const id = typeof slideRef === "string" ? slideRef : slideRef.id;
+    const source = document.querySelector(
+      `template[data-vector180-slide="${CSS.escape(id)}"]`
+    );
+    if (!source) throw new Error(`Unknown Vector180 slide: ${id}`);
+
+    const section = document.createElement("section");
+    section.className = "vector180-slide";
+    section.dataset.vector180RenderedSlide = id;
+    section.append(source.content.cloneNode(true));
+    output.append(section);
+  }
+})();
+</script>
+
+</body>
+</html>

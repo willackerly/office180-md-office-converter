@@ -1,6 +1,9 @@
 {
   "name": "office180-md-office-converter",
   "private": true,
+  "engines": {
+    "node": ">=20"
+  },
   "packageManager": "pnpm@10.20.0",
   "scripts": {
     "build": "pnpm --filter @office180/vector180 build",
@@ -11,16 +14,19 @@
     "editor:build": "pnpm --filter @office180/vector180 editor:build",
     "editor:check": "pnpm --filter @office180/vector180 editor:check",
     "pack:check": "pnpm --filter @office180/vector180 pack:check",
+    "plugin:sync": "python3 scripts/sync-office180-plugin.py",
+    "plugin:check": "python3 scripts/sync-office180-plugin.py --check",
     "legacy:build": "pnpm --filter @office180/pptv build",
     "legacy:test": "pnpm --filter @office180/pptv test",
     "format": "prettier --write \"packages/{vector180,pptv}/src/**/*.ts\" \"packages/{vector180,pptv}/e2e/**/*.ts\" \"packages/{vector180,pptv}/scripts/*.mjs\" \"scripts/*.mjs\" \"packages/{vector180,pptv}/*.ts\" \"packages/{vector180,pptv}/*.json\" \"packages/{vector180,pptv}/test-fixtures/**/*.json\" package.json pnpm-workspace.yaml tsconfig.base.json \"schemas/*.json\"",
     "format:check": "prettier --check \"packages/{vector180,pptv}/src/**/*.ts\" \"packages/{vector180,pptv}/e2e/**/*.ts\" \"packages/{vector180,pptv}/scripts/*.mjs\" \"scripts/*.mjs\" \"packages/{vector180,pptv}/*.ts\" \"packages/{vector180,pptv}/*.json\" \"packages/{vector180,pptv}/test-fixtures/**/*.json\" package.json pnpm-workspace.yaml tsconfig.base.json \"schemas/*.json\"",
     "typecheck": "pnpm --filter @office180/vector180 typecheck",
-    "test": "pnpm test:ts && pnpm test:python",
+    "test": "pnpm test:ts && pnpm test:python && pnpm test:python:package",
     "test:browser": "pnpm browser:check && pnpm --filter @office180/vector180 test:browser",
     "test:browser:all": "pnpm browser:check && pnpm --filter @office180/vector180 test:browser:all",
     "test:ts": "pnpm --filter @office180/vector180 test && pnpm legacy:test",
     "test:python": ".venv/bin/python tests/test_roundtrip.py && .venv/bin/python tests/test_visual_evidence.py && .venv/bin/python tests/test_native_office_bridge.py",
+    "test:python:package": ".venv/bin/python tests/test_python_package.py",
     "vector180": "tsx packages/vector180/src/bin.ts",
     "pptv": "tsx packages/pptv/src/bin.ts"
   },

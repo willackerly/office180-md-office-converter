@@ -1,7 +1,7 @@
 # Agent Guidelines
 
 <!-- FRESHNESS: Update this date every time you modify this file -->
-<!-- freshness: 2026-08-02 -->
+<!-- freshness: 2026-08-04 -->
 
 **How AI agents work effectively on the DOCX and Vector180 tracks.**
 
@@ -18,10 +18,20 @@
 4. **TODO.md** — what needs doing? (open items only, scannable in 10 seconds)
 5. **This file** — how do we work together?
 
-For Vector180 authoring, creation, repair, or compilation, invoke the repo-scoped
-`$vector180-authoring` skill at
-`.agents/skills/vector180-authoring/SKILL.md` after this cold start. It is the
-operational workflow; the applicable contracts remain behavioral authority.
+Route Office requests through the focused repo skills after this cold start:
+
+- Word, DOCX, report, memo, proposal, or Markdown-to-Word work must invoke
+  `$markdown-docx` at `.agents/skills/markdown-docx/SKILL.md`. Keep Markdown
+  authoritative and use its recovery/merge path for supported Word edits.
+- PowerPoint, PPTX, presentation, slides, slide deck, diagram, figure, or
+  Vector180 work must invoke `$vector180-authoring` at
+  `.agents/skills/vector180-authoring/SKILL.md`. Keep a fully hydrated SVG atom
+  authoritative unless the deliverable is an actual multi-slide deck/report.
+- A mixed deliverable may invoke both skills, but it does not merge their
+  authority models. Keep the Markdown and SVG sources independently reviewable.
+
+The skills are operational workflows; the applicable contracts remain
+behavioral authority.
 For ordinary atom work, read its one-page `references/atom-card.md` and let the
 CLI scaffold, inspect, patch, diff, and gate the source. Reading all twelve
 contracts is for implementation, unusual grammar, or a refusal—not the base
@@ -38,8 +48,8 @@ verify the repository pointer, and ask before installing anything.
 
 ### Project Context
 
-- **Project type:** dual-language source-conversion toolkit: two flat Python
-  DOCX CLIs plus one pnpm/TypeScript Vector180 package and CLI
+- **Project type:** dual-language source-conversion toolkit: two packaged flat
+  Python DOCX modules/CLIs plus one pnpm/TypeScript Vector180 package and CLI
 - **Vector180 boundary:** `@office180/vector180@0.1.0-alpha.5` is an
   implemented, locally test-accepted release candidate, not an npm-published release
   or blanket contract promotion. It defaults to one hydration-complete standalone
@@ -180,6 +190,7 @@ scripts/check-todos.sh
 scripts/check-freshness.sh
 scripts/check-ground-truth.sh
 scripts/check-compliance.sh
+pnpm plugin:check
 pnpm format:check
 pnpm typecheck
 pnpm test
@@ -310,7 +321,8 @@ pnpm legacy:build
 
 ### Code Patterns
 
-- The Python scripts remain single-file, stdlib + `python-docx`.
+- The Python converters remain flat modules with direct-script compatibility,
+  packaged entry points, and exact `python-docx==1.2.0`.
 - Vector180 portable code lives in `packages/vector180/src/core`, `ops`, and `browser`;
   filesystem/wrapper behavior belongs in `node`/CLI. Keep core and ops
   independent from OpenDocKit, browser globals, and filesystem APIs.
