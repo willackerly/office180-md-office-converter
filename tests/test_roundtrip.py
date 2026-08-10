@@ -1453,6 +1453,27 @@ def test_canonicalizer_refuses_known_markdown_semantic_aliases():
     ) == "snake_case and `one code span`.\n"
 
 
+def test_inline_code_treats_markdown_delimiters_as_literal():
+    source = (
+        "Literal `virtru_opm_stress_test.py`, "
+        "`![alt](image.png)`, `<img src=\"image.png\">`, "
+        "`[label](https://example.test)`, `***`, `_italic_`, "
+        "and `**bold *nested* text**`.\n"
+    )
+    assert md2docx.canonicalize_markdown(source) == source
+
+    canonical, recovered = md2docx.check_canonical_roundtrip(source)
+    assert canonical == source
+    assert recovered == source
+
+    outside_code = (
+        "[label](https://example.test) and `https://example.test`.\n"
+    )
+    assert md2docx.canonicalize_markdown(outside_code) == (
+        "label (https://example.test) and `https://example.test`.\n"
+    )
+
+
 def test_normalize_and_check_cli():
     with tempfile.TemporaryDirectory() as td:
         src = Path(td) / "sample.md"

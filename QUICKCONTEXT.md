@@ -1,8 +1,8 @@
 # Quick Context
 
 <!-- FRESHNESS: Update this date every time you modify this file -->
-<!-- freshness: 2026-08-02 -->
-<!-- last-synced: 2026-08-02 — verified against the current workspace -->
+<!-- freshness: 2026-08-10 -->
+<!-- last-synced: 2026-08-10 — verified against the current workspace -->
 
 **Current state for an agent starting a new session.**
 
@@ -126,7 +126,8 @@ above:
 - exact supported-profile Markdown canonicalization, byte-exact
   `docx2md(md2docx(x))` equality, embedded original/canonical merge bases,
   strict Word refusals, fidelity reports, transactional CLI output, and
-  baseline-aware three-way merge
+  baseline-aware three-way merge; supported single-backtick code spans shield
+  literal delimiter-looking content from prose image/emphasis/link handling
 - complete direct materialization of controlled Word fonts/sizes/bold/italic,
   diagnosed trailing-U+0020 normalization, and a strict semantic style
   projection that accepts only proven native cascade equivalence
@@ -418,8 +419,8 @@ Dependencies:
    `pnpm legacy:build`, and all `scripts/check-*.sh` before handoff.
 6. Update this file, `TODO.md`, and `METRICS.md` when repository truth changes.
 
-**Last updated by:** the alpha.5 local release-candidate, contract-acceptance,
-durable-evidence, skill, and cold-start consistency pass (2026-08-02)
+**Last updated by:** the literal inline-code preservation fix and alpha.5
+cold-start consistency pass (2026-08-10)
 
 **Next review:** after another successor contract closes; then after
 representative native Word/PowerPoint edits, browser controls for C5 2.0,

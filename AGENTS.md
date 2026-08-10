@@ -1,7 +1,7 @@
 # Agent Guidelines
 
 <!-- FRESHNESS: Update this date every time you modify this file -->
-<!-- freshness: 2026-08-02 -->
+<!-- freshness: 2026-08-10 -->
 
 **How AI agents work effectively on the DOCX and Vector180 tracks.**
 
@@ -262,6 +262,10 @@ pnpm legacy:build
   Issues) that `ROADMAP.md` §0 addresses by swapping to `markdown-it-py`.
   Don't patch around individual parser bugs; they're a known class fixed
   by that rewrite.
+- Within the current contracted profile, single-backtick inline code is a
+  literal island: image, emphasis, and link syntax inside it must not be
+  interpreted as prose. Multi-backtick and otherwise complex code spans still
+  refuse until the AST rewrite.
 - The round-trip contract is **style-driven inversion with byte-exact canonical
   Markdown equality**, not DOCX byte symmetry. The forward converter's choice
   of Word style (`Heading 2`, `List Bullet`, a shaded paragraph, a left border)

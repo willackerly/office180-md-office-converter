@@ -381,10 +381,14 @@ python3 md2docx.py --no-footer file.md              # suppress footer text
 
 **Markdown support:** h1–h4; bullet lists; literal numbered lists;
 N-column pipe tables (first row = shaded header); fenced code blocks;
-inline `` `code` ``, `**bold**`, `*italic*`; links (relative links keep
+inline `` `code` `` (whose contents are literal, including underscores and
+delimiter-looking examples), `**bold**`, `*italic*`; links (relative links keep
 their label, absolute URLs get `(url)` appended — a print-friendly
 demotion, not real hyperlinks yet); blockquotes; horizontal rules and
 HTML comments are skipped; soft-wrapped lines join into one paragraph.
+Use blank lines between memo metadata paragraphs; explicit Markdown hard
+breaks (two trailing spaces or a trailing backslash) remain an intentional
+lossiness refusal.
 
 **Marking-style banner:** if the very first non-blank line of the source
 is exactly `**SOMETHING**` starting with the literal text `CUI` (e.g.

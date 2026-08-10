@@ -1,7 +1,7 @@
 # Project Metrics
 
 <!-- FRESHNESS: Update this date every time you modify this file -->
-<!-- freshness: 2026-08-02 -->
+<!-- freshness: 2026-08-10 -->
 
 **Ground-truth metrics for the Python DOCX pair and canonical TypeScript
 Vector180 kernel.**
@@ -14,7 +14,7 @@ source files, tests, contracts, schemas, or themes change.
 ```text
 python_source_files = 2
 test_files = 3
-test_functions = 32
+test_functions = 33
 typescript_source_files = 38
 typescript_test_files = 33
 typescript_test_cases = 257
@@ -52,7 +52,7 @@ shipped_themes = 3
 
 ## Testing Status
 
-- **Python:** 63 passing tests: 32 standalone DOCX tests, 14 C11 visual-evidence
+- **Python:** 64 passing tests: 33 standalone DOCX tests, 14 C11 visual-evidence
   cases, and 17 native-bridge cases. They cover theme resolution, exact or
   diagnosed canonical equality, embedded-source integrity, Word/Markdown
   refusals, native Word style normalization/counterexamples, transactional CLI
