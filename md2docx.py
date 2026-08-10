@@ -199,6 +199,14 @@ def demote_links(text):
     return LINK_RE.sub(repl, text)
 
 
+def demote_links_outside_code(text):
+    """Apply print-oriented link demotion only to prose segments."""
+    return "".join(
+        part if index % 2 else demote_links(part)
+        for index, part in enumerate(re.split(r"(`[^`]+`)", text))
+    )
+
+
 class MarkdownCanonicalizationError(ValueError):
     """A supported-profile Markdown normalization refusal."""
 
@@ -271,32 +279,48 @@ def _validate_separate_inline_spans(text, line):
 
 
 def _canonical_inline(text, line):
-    if re.search(r"!\[", text) or re.search(
-            r"<\s*img(?:\s|/?>)", text, flags=re.IGNORECASE):
-        raise MarkdownCanonicalizationError(
-            "MD-CANON-UNSUPPORTED-IMAGE", line,
-            "images are outside the supported Markdown/DOCX profile")
-    if "***" in text:
-        raise MarkdownCanonicalizationError(
-            "MD-CANON-UNSUPPORTED-INLINE", line,
-            "combined/nested emphasis is not accepted by the forward parser")
-    canonical = demote_links(text.strip())
-    if "``" in canonical or canonical.count("`") % 2:
+    stripped = text.strip()
+    if "``" in stripped or stripped.count("`") % 2:
         raise MarkdownCanonicalizationError(
             "MD-CANON-UNSUPPORTED-CODE-SPAN",
             line,
             "multi-backtick and unterminated code spans are outside the "
             "supported profile",
         )
-    if (
-        re.search(r"(?<!\w)__(?=\S).*?(?<=\S)__(?!\w)", canonical)
-        or re.search(r"(?<!\w)_(?=\S).*?(?<=\S)_(?!\w)", canonical)
-    ):
-        raise MarkdownCanonicalizationError(
-            "MD-CANON-UNSUPPORTED-INLINE",
-            line,
-            "underscore emphasis is outside the supported profile",
-        )
+
+    # Inline code is literal Markdown content.  Split it before prose-only
+    # image/emphasis/link handling so filenames such as `snake_case.py` and
+    # examples such as `[label](url)` remain unchanged inside code spans.
+    # The final whole-line validation still sees the backticks, so an emphasis
+    # span that tries to cross a code boundary continues to refuse.
+    parts = re.split(r"(`[^`]+`)", stripped)
+    canonical_parts = []
+    for index, part in enumerate(parts):
+        if index % 2:
+            canonical_parts.append(part)
+            continue
+        if re.search(r"!\[", part) or re.search(
+                r"<\s*img(?:\s|/?>)", part, flags=re.IGNORECASE):
+            raise MarkdownCanonicalizationError(
+                "MD-CANON-UNSUPPORTED-IMAGE", line,
+                "images are outside the supported Markdown/DOCX profile")
+        if "***" in part:
+            raise MarkdownCanonicalizationError(
+                "MD-CANON-UNSUPPORTED-INLINE", line,
+                "combined/nested emphasis is not accepted by the forward parser")
+        canonical_part = demote_links(part)
+        if (
+            re.search(r"(?<!\w)__(?=\S).*?(?<=\S)__(?!\w)", canonical_part)
+            or re.search(r"(?<!\w)_(?=\S).*?(?<=\S)_(?!\w)", canonical_part)
+        ):
+            raise MarkdownCanonicalizationError(
+                "MD-CANON-UNSUPPORTED-INLINE",
+                line,
+                "underscore emphasis is outside the supported profile",
+            )
+        canonical_parts.append(canonical_part)
+
+    canonical = "".join(canonical_parts)
     _validate_separate_inline_spans(canonical, line)
     return canonical
 
@@ -359,7 +383,8 @@ def _preflight_markdown_source_lines(lines):
                 "MD-CANON-HARD-BREAK",
                 index + 1,
                 "explicit Markdown hard breaks are outside the supported "
-                "paragraph profile",
+                "paragraph profile; use a blank line between memo metadata "
+                "paragraphs before conversion",
             )
         if (
             index + 1 < len(lines)
@@ -844,7 +869,7 @@ class Converter:
 
     def add_runs(self, p, text, color=None, size=None, base_bold=False):
         cfg = self.cfg
-        text = demote_links(text)
+        text = demote_links_outside_code(text)
         for tok in re.split(r"(`[^`]+`|\*\*.*?\*\*|\*[^*]+\*)", text):
             if not tok:
                 continue

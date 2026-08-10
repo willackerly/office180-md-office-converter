@@ -1,8 +1,8 @@
 # TODO
 
 <!-- FRESHNESS: Update this date every time you modify this file -->
-<!-- freshness: 2026-08-02 -->
-<!-- last-synced: 2026-08-02 — verified against the current workspace -->
+<!-- freshness: 2026-08-10 -->
+<!-- last-synced: 2026-08-10 — verified against the current workspace -->
 
 Active tasks plus nearby completion checkpoints. Priority ordering lives in
 `QUICKCONTEXT.md`; older history is collapsed at the end.
@@ -238,6 +238,9 @@ successor contract has completed its separate promotion matrix.
       its exact artifact/application identities into C11 evidence. The saved
       package recovered byte-identical Markdown and its strict style projection
       diagnosed eight proven native-normalization events with zero drift.
+- [x] Preserve delimiter-looking content inside supported single-backtick code
+      spans during Markdown preflight, link demotion, forward conversion, and
+      exact reverse recovery.
 - [ ] Complete representative supported native Word edit/save/reopen acceptance
       and human/native visual review; the structural no-op lifecycle does not claim
       editability or native fidelity.
@@ -302,10 +305,11 @@ successor contract has completed its separate promotion matrix.
 - Relative link targets are intentionally not recoverable in the current DOCX
   round trip (C3 Scenario 2).
 - The Python regex parser's supported profile excludes nested/underscore emphasis,
-  escaped table pipes, complex code spans, multi-paragraph/nested lists,
-  indented code, setext headings, and hard breaks; canonicalization refuses
-  known lossy forms. A pinned AST rewrite is required before broadening that
-  profile.
+  escaped table pipes, multi-backtick/complex code spans,
+  multi-paragraph/nested lists, indented code, setext headings, and hard
+  breaks; canonicalization refuses known lossy forms. Supported
+  single-backtick code contents are literal. A pinned AST rewrite is required
+  before broadening that profile.
 
 ## Code debt
 
