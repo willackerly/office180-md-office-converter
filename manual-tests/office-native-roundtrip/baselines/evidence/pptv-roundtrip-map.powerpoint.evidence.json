@@ -1,0 +1,62 @@
+{
+  "capture": {
+    "command": {
+      "argv": [
+        "/usr/bin/qlmanage",
+        "-t",
+        "-s",
+        "1600",
+        "-o",
+        "$TEMP",
+        "$TEMP/input-f86bccfe2be199fa.pptx"
+      ],
+      "exit_code": 0,
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdout_sha256": "d96977ae4575b3ecae6687486d7b9c6b71f2f675ee47dc3a277a80f2bff3c45b",
+      "timeout_seconds": 30.0
+    },
+    "diagnostic": null,
+    "environment": {
+      "architecture": "arm64",
+      "display_scale": 1.0,
+      "locale": "C/C.UTF-8/C/C/C/C",
+      "os": "Darwin",
+      "os_version": "26.5.2"
+    },
+    "fonts": [],
+    "input": {
+      "background": "renderer-default",
+      "index": 1,
+      "pixel_size": 1600,
+      "unit": "slide"
+    },
+    "output": {
+      "colorspace": "png-rgba-8",
+      "height_px": 902,
+      "media_type": "image/png",
+      "page_count": 1,
+      "page_sha256": [
+        "11b1f8c65dba373dec262c09bdd456b5a3ba440ce9dac5825805b93b3c9fd869"
+      ],
+      "path": "manual-tests/office-native-roundtrip/baselines/evidence/pptv-roundtrip-map.powerpoint.png",
+      "sha256": "11b1f8c65dba373dec262c09bdd456b5a3ba440ce9dac5825805b93b3c9fd869",
+      "width_px": 1600
+    },
+    "renderer": {
+      "executable_path": "/System/Library/QuickLook/Office.qlgenerator",
+      "identity_sha256": "f9945b5974ea2cdc3a51921f827f6946c9719c107a0326ce68267632c49ec0c9",
+      "product": "macOS Quick Look Office generator",
+      "version": "48"
+    },
+    "renderer_class": "quick-look",
+    "status": "passed"
+  },
+  "evidence_sha256": "db371d573f3b65f0653bee80605449477241e990c7a8c4fabf77f428741a2c8a",
+  "schema": "office180-visual-evidence/0.1",
+  "subject": {
+    "artifact_path": "manual-tests/office-native-roundtrip/baselines/pptv-roundtrip-map.baseline.pptx",
+    "artifact_sha256": "f86bccfe2be199faefeb1705ca48a0be1bee404bffbff6a26d76716dabe71c18",
+    "checkpoint": "clean-generated-baseline",
+    "lane": "pptv-pptx"
+  }
+}

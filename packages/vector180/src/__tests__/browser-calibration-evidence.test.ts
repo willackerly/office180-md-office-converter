@@ -144,7 +144,7 @@ describe("checked browser C8 calibration evidence", () => {
 
     expect(evidence).toMatchObject({
       schema: "vector180-browser-text-calibration-evidence/0.1",
-      capturedOn: "2026-08-03",
+      capturedOn: "2026-08-09",
       overallStatus: "pass-with-explicit-engine-and-platform-variance",
       privacy: { status: "safe" },
       coverage: {

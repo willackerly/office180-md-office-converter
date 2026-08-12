@@ -7,6 +7,7 @@ const schemaNames = [
   "vector180-patch-0.1.schema.json",
   "vector180-migration-report-0.1.schema.json",
   "vector180-source-diff-0.1.schema.json",
+  "vector180-pptx-deck-map-0.1.schema.json",
   "vector180-pptx-reconciliation-0.1.schema.json",
   "vector180-reconcile-resolution-0.1.schema.json",
 ];

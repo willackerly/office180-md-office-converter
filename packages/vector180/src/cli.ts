@@ -9,6 +9,7 @@
  * CONTRACT:C8-PPTV-TEXT-FIT.2.0
  * CONTRACT:C9-PPTV-PPTX-BASELINE.2.0
  * CONTRACT:C10-PPTV-PPTX-RECONCILIATION.2.0
+ * CONTRACT:C13-VECTOR180-DECK-EXPORT.0.1
  */
 
 import { readFile } from "node:fs/promises";
@@ -41,6 +42,7 @@ import {
 import type {
   Diagnostic,
   ProjectionView,
+  Vector180Deck,
   Vector180Role,
 } from "./core/types.js";
 import { createEditorPack } from "./node/editor-pack.js";
@@ -65,6 +67,10 @@ import {
   type Vector180Placement,
   type Vector180PptxMap,
 } from "./node/pptx-baseline.js";
+import {
+  compileVector180PptxDeck,
+  Vector180PptxDeckCompileError,
+} from "./node/pptx-deck.js";
 import {
   compilePptxCanary,
   PptxCanaryCompileError,
@@ -156,6 +162,8 @@ export async function runCli(
       return await runCompose(argv.slice(1), environment);
     if (command === "compile")
       return await runCompile(argv.slice(1), environment);
+    if (command === "compile-deck")
+      return await runCompileDeck(argv.slice(1), environment);
     if (command === "reconcile")
       return await runReconcile(argv.slice(1), environment);
     if (command === "text-fit")
@@ -1140,6 +1148,135 @@ async function runCompile(
   }
 }
 
+async function runCompileDeck(
+  args: readonly string[],
+  environment: CliEnvironment,
+): Promise<number> {
+  const parsedArgs = parseArguments(
+    args,
+    {
+      "--output": "value",
+      "--map": "value",
+      "--format": "value",
+    },
+    1,
+    "compile-deck requires exactly one canonical Vector180 HTML deck path",
+  );
+  const path = parsedArgs.positionals[0]!;
+  const output = readOption(parsedArgs, "--output");
+  const mapOutput = readOption(parsedArgs, "--map");
+  const format = readFormat(parsedArgs, ["text", "json"]);
+  if (output === undefined || mapOutput === undefined) {
+    throw new InvocationError(
+      "compile-deck requires explicit --output PATH and --map PATH",
+    );
+  }
+  if (resolve(output) === resolve(mapOutput)) {
+    writeDiagnostics(
+      [
+        {
+          code: "VECTOR180-DECK-PPTX-EXISTS",
+          severity: "error",
+          message:
+            "compile-deck --output and --map destinations must be distinct.",
+        },
+      ],
+      format,
+      environment,
+    );
+    return 1;
+  }
+
+  let deck: Vector180Deck;
+  try {
+    deck = await loadDeck(await readVector180Path(path));
+  } catch (error) {
+    if (!(error instanceof Vector180LoadError)) throw error;
+    writeDiagnostics(
+      [
+        {
+          code: "VECTOR180-DECK-PPTX-INVALID-SOURCE",
+          severity: "error",
+          message: `compile-deck requires one complete canonical Vector180 HTML deck (${error.diagnostics.map((diagnostic) => diagnostic.code).join(", ") || "source load failed"}).`,
+        },
+        ...error.diagnostics,
+      ],
+      format,
+      environment,
+    );
+    return 1;
+  }
+  try {
+    const artifact = await compileVector180PptxDeck(deck);
+    try {
+      await writeFilesAtomicExclusive([
+        { path: output, contents: artifact.pptxBytes },
+        { path: mapOutput, contents: artifact.mapText },
+      ]);
+    } catch (error) {
+      const exists = isFileExistsError(error);
+      writeDiagnostics(
+        [
+          {
+            code: exists
+              ? "VECTOR180-DECK-PPTX-EXISTS"
+              : "VECTOR180-DECK-PPTX-PUBLISH",
+            severity: "error",
+            message: exists
+              ? "compile-deck refuses to overwrite an existing PPTX or sidecar-map destination."
+              : `compile-deck could not publish the paired PPTX/map transaction: ${error instanceof Error ? error.message : String(error)}`,
+          },
+        ],
+        format,
+        environment,
+      );
+      return 1;
+    }
+
+    const objectCount = artifact.map.slides.reduce(
+      (total, slide) => total + slide.objects.length,
+      0,
+    );
+    if (format === "json") {
+      writeJson(
+        {
+          schema: artifact.schema,
+          output,
+          map: mapOutput,
+          deckSha256: artifact.map.source.sha256,
+          pptxSha256: artifact.pptxSha256,
+          mapSha256: artifact.mapSha256,
+          partCount: artifact.map.pptx.partNames.length,
+          slideCount: artifact.map.slides.length,
+          objectCount,
+          diagnostics: artifact.diagnostics,
+        },
+        environment,
+      );
+    } else {
+      environment.stdout(
+        `wrote ${output} and ${mapOutput} (${artifact.map.slides.length} slides, ${objectCount} editable objects, ${artifact.pptxSha256})\n`,
+      );
+    }
+    return 0;
+  } catch (error) {
+    if (!(error instanceof Vector180PptxDeckCompileError)) throw error;
+    writeDiagnostics(
+      [
+        ...deck.diagnostics,
+        {
+          code: error.code,
+          severity: "error",
+          message: error.message,
+        },
+      ],
+      format,
+      environment,
+    );
+    return 1;
+  }
+}
+
 async function runCompose(
   args: readonly string[],
   environment: CliEnvironment,
@@ -1869,6 +2006,164 @@ function parseArguments(
   return { positionals, options };
 }
 
+interface CommandHelp {
+  readonly summary: string;
+  readonly usage: readonly string[];
+  readonly details?: string;
+}
+
+const COMMAND_HELP: Readonly<Record<string, CommandHelp>> = {
+  new: {
+    summary: "scaffold canonical source",
+    usage: [
+      "vector180 new atom --output PATH --id ID --title TITLE [--width N --height N]",
+      "vector180 new deck --output PATH --title TITLE",
+    ],
+    details:
+      "Use an atom by default. Use a deck only for a real ordered deck/report.",
+  },
+  "new atom": {
+    summary: "scaffold one canonical hydrated SVG atom",
+    usage: [
+      "vector180 new atom --output PATH --id ID --title TITLE [--width N --height N]",
+    ],
+    details: `Defaults:
+  --width 1600 --height 900 (common 16:9 canvas)
+
+The output uses stable IDs, ABeeZee Regular 400, explicit hard-line/no-wrap
+text, local styles, metadata, and the Vector180 authoring-skill discovery
+comment. Existing output is never overwritten.`,
+  },
+  "new deck": {
+    summary: "scaffold one explicit HTML deck/report",
+    usage: ["vector180 new deck --output PATH --title TITLE"],
+    details:
+      "The output starts with one 1600×900 cover slide, the packaged canonical viewer,\nABeeZee Regular 400, and no atom metadata. Existing output is never overwritten.",
+  },
+  metadata: {
+    summary: "inspect standalone-atom metadata and template lineage",
+    usage: ["vector180 metadata <atom.vector180.svg> [--format text|json]"],
+  },
+  "metadata-compare": {
+    summary: "compare atom metadata and optionally verify template basis bytes",
+    usage: [
+      "vector180 metadata-compare <left.vector180.svg> <right.vector180.svg> [--template-basis PATH] [--format text|json]",
+    ],
+  },
+  diff: {
+    summary: "compare two atoms by stable-ID semantics",
+    usage: [
+      "vector180 diff <left.vector180.svg> <right.vector180.svg> [--output PATH] [--format text|json]",
+    ],
+  },
+  migrate: {
+    summary: "migrate one legacy PPTV SVG atom to canonical Vector180",
+    usage: [
+      "vector180 migrate <legacy.pptv.svg> --output PATH [--report PATH] [--format text|json]",
+    ],
+  },
+  outline: {
+    summary: "summarize source identity and object hierarchy",
+    usage: [
+      "vector180 outline <file.vector180.html|file.vector180.svg> [--format text|json]",
+    ],
+  },
+  validate: {
+    summary: "validate source without executing embedded content",
+    usage: [
+      "vector180 validate <file.vector180.html|file.vector180.svg> [--format text|json]",
+    ],
+  },
+  resolve: {
+    summary: "project exact source into the compiler-grade resolved model",
+    usage: [
+      "vector180 resolve <file.vector180.html|file.vector180.svg> [--format text|json]",
+    ],
+  },
+  extract: {
+    summary: "hydrate one deck slide as a standalone SVG atom",
+    usage: [
+      "vector180 extract <deck.vector180.html> --slide ID --output file.vector180.svg [--format text|json]",
+    ],
+  },
+  "editor-pack": {
+    summary: "build a trusted local editor wrapper",
+    usage: [
+      "vector180 editor-pack <file.vector180.html|file.vector180.svg> --output PATH [--font-map default|PATH] [--near-limit N] [--format text|json]",
+    ],
+  },
+  "pptx-canary": {
+    summary: "compile an HTML deck through the bounded PPTX canary",
+    usage: [
+      "vector180 pptx-canary <deck.vector180.html> --output PATH [--format text|json]",
+    ],
+  },
+  compose: {
+    summary:
+      "derive a one-slide HTML aggregation from an explicitly placed atom",
+    usage: [
+      "vector180 compose <atom.vector180.svg> --placement X,Y,W,H --output PATH [--slide-id ID] [--policy identity|uniform-scale-translate] [--format text|json]",
+    ],
+  },
+  compile: {
+    summary: "compile one atom to editable PPTX plus a hash-bound map",
+    usage: [
+      "vector180 compile <atom.vector180.svg> --placement X,Y,W,H --output PATH --map PATH [--slide-id ID] [--policy identity|uniform-scale-translate] [--format text|json]",
+    ],
+  },
+  "compile-deck": {
+    summary:
+      "compile one canonical HTML deck to editable PPTX plus a hash-bound deck map",
+    usage: [
+      "vector180 compile-deck <deck.vector180.html> --output PATH --map PATH [--format text|json]",
+    ],
+    details:
+      "Manifest order is presentation order. The complete strict 1600×900 deck is compiled without inferred placement; existing destinations are never overwritten. This export map is not accepted by reconcile.",
+  },
+  reconcile: {
+    summary: "inspect supported PowerPoint edits and propose a source patch",
+    usage: [
+      "vector180 reconcile <edited.pptx> --source atom.vector180.svg --baseline atom.vector180.map.json [--native-baseline native-save.pptx] [--resolution reviewed-copy.json] --patch PATH --report PATH [--format text|json]",
+    ],
+  },
+  "text-fit": {
+    summary: "audit explicit hard lines with exact-font measurement",
+    usage: [
+      "vector180 text-fit <file.vector180.html|file.vector180.svg> [--font-map default|PATH] [--near-limit N] [--format text|json]",
+    ],
+  },
+  text: {
+    summary: "extract authored text without browser execution",
+    usage: [
+      "vector180 text <file.vector180.html|file.vector180.svg> [--slide ID] [--include-hidden] [--format text|json|jsonl]",
+    ],
+  },
+  show: {
+    summary: "inspect one stable-ID object",
+    usage: [
+      "vector180 show <file.vector180.html|file.vector180.svg> <id> [--view semantic|editing] [--format json]",
+    ],
+  },
+  list: {
+    summary: "query stable-ID objects",
+    usage: [
+      "vector180 list <file.vector180.html|file.vector180.svg> [--slide ID] [--role ROLE] [--class CLASS] [--text TEXT] [--view semantic|editing] [--format text|json|jsonl]",
+    ],
+  },
+  patch: {
+    summary: "validate or apply one hash-bound transaction",
+    usage: [
+      "vector180 patch SOURCE PATCH.json --check [--format text|json]",
+      "vector180 patch SOURCE PATCH.json --output PATH [--format text|json]",
+    ],
+    details: `Canonical set-text patch:
+  {"schema":"vector180-patch/0.1","baseSha256":"<exact 64-hex source hash>","ops":[{"op":"set-text","id":"title","oldText":"Old title","value":"New title"}]}
+
+Every operation requires its complete old value. The command plans exact source
+ranges, reloads the full candidate, and never overwrites SOURCE implicitly.`,
+  },
+};
+
 function helpText(): string {
   return `vector180 — source-preserving Vector180 0.1 tools
 
@@ -1887,6 +2182,7 @@ Usage:
   vector180 pptx-canary <deck.vector180.html> --output PATH [--format text|json]
   vector180 compose <atom.vector180.svg> --placement X,Y,W,H --output PATH [--slide-id ID] [--policy identity|uniform-scale-translate] [--format text|json]
   vector180 compile <atom.vector180.svg> --placement X,Y,W,H --output PATH --map PATH [--slide-id ID] [--policy identity|uniform-scale-translate] [--format text|json]
+  vector180 compile-deck <deck.vector180.html> --output PATH --map PATH [--format text|json]
   vector180 reconcile <edited.pptx> --source atom.vector180.svg --baseline atom.vector180.map.json [--native-baseline native-save.pptx] [--resolution reviewed-copy.json] --patch PATH --report PATH [--format text|json]
   vector180 text-fit <file.vector180.html|file.vector180.svg> [--font-map default|PATH] [--near-limit N] [--format text|json]
   vector180 text <file.vector180.html|file.vector180.svg> [--slide ID] [--include-hidden] [--format text|json|jsonl]
@@ -1902,55 +2198,20 @@ function commandHelpText(argv: readonly string[]): string | undefined {
     .some((value) => value === "--help" || value === "-h");
   if (!asksForHelp) return undefined;
 
-  if (argv[0] === "new" && argv[1] === "atom") {
-    return `vector180 new atom — scaffold one canonical hydrated SVG atom
-
-Usage:
-  vector180 new atom --output PATH --id ID --title TITLE [--width N --height N]
-
-Defaults:
-  --width 1600 --height 900 (common 16:9 canvas)
-
-The output uses stable IDs, ABeeZee Regular 400, explicit hard-line/no-wrap
-text, local styles, metadata, and the Vector180 authoring-skill discovery
-comment. Existing output is never overwritten.
-`;
-  }
-  if (argv[0] === "new" && argv[1] === "deck") {
-    return `vector180 new deck — scaffold one explicit HTML deck/report
-
-Usage:
-  vector180 new deck --output PATH --title TITLE
-
-The output starts with one 1600×900 cover slide, the packaged canonical viewer,
-ABeeZee Regular 400, and no atom metadata. Existing output is never overwritten.
-`;
-  }
-  if (argv[0] === "new") {
-    return `vector180 new — canonical source scaffolds
-
-Usage:
-  vector180 new atom --output PATH --id ID --title TITLE [--width N --height N]
-  vector180 new deck --output PATH --title TITLE
-
-Use an atom by default. Use a deck only for a real ordered deck/report.
-`;
-  }
-  if (argv[0] === "patch") {
-    return `vector180 patch — validate or apply one hash-bound transaction
-
-Usage:
-  vector180 patch SOURCE PATCH.json --check [--format text|json]
-  vector180 patch SOURCE PATCH.json --output PATH [--format text|json]
-
-Canonical set-text patch:
-  {"schema":"vector180-patch/0.1","baseSha256":"<exact 64-hex source hash>","ops":[{"op":"set-text","id":"title","oldText":"Old title","value":"New title"}]}
-
-Every operation requires its complete old value. The command plans exact source
-ranges, reloads the full candidate, and never overwrites SOURCE implicitly.
-`;
-  }
-  return undefined;
+  const rootCommand = argv[0];
+  if (rootCommand === undefined) return undefined;
+  const command =
+    rootCommand === "new" && (argv[1] === "atom" || argv[1] === "deck")
+      ? `new ${argv[1]}`
+      : rootCommand;
+  const help = COMMAND_HELP[command];
+  if (help === undefined) return undefined;
+  const sections = [
+    `vector180 ${command} — ${help.summary}`,
+    `Usage:\n${help.usage.map((usage) => `  ${usage}`).join("\n")}`,
+    ...(help.details === undefined ? [] : [help.details]),
+  ];
+  return `${sections.join("\n\n")}\n`;
 }
 
 class InvocationError extends Error {}

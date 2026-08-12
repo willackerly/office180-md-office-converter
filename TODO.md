@@ -1,15 +1,38 @@
 # TODO
 
 <!-- FRESHNESS: Update this date every time you modify this file -->
-<!-- freshness: 2026-08-02 -->
-<!-- last-synced: 2026-08-02 — verified against the current workspace -->
+<!-- freshness: 2026-08-12 -->
+<!-- last-synced: 2026-08-12 — verified against the current workspace -->
 
 Active tasks plus nearby completion checkpoints. Priority ordering lives in
 `QUICKCONTEXT.md`; older history is collapsed at the end.
 
+## Preservation and release checkpoint
+
+- [ ] Land draft PR #8 only after fresh remote Linux/macOS CI and a clean-clone
+      quickstart. The previous `verify` failure was a Linux `ARG_MAX` problem in
+      Steward aggregation; this checkpoint keeps structured payloads off argv
+      and must prove the fix remotely before merge.
+- [ ] After PR #8 is preserved, deliberately integrate draft PR #9
+      (`agent/preserve-literal-inline-code`). Retain its literal inline-code
+      behavior, resolve overlapping cold-start docs against this newer state,
+      and rerun all gates rather than merging it into a dirty worktree.
+- [ ] Decide whether to publish `@office180/vector180@0.1.0-alpha.5` after the
+      checkpoint passes. Keep the release explicitly alpha/in-progress; npm
+      publication removes the plugin's prepared-checkout dependency but does
+      not promote every successor contract.
+- [ ] Send REBAR a new Vector180 alpha.5 migration receipt and update its
+      frozen PPTV alpha.4 practice. Upstream the watcher safety delta plus
+      self-authored-notification suppression before this repository starts
+      retaining outbound copies locally.
+- [ ] Refresh the GitHub Actions majors whose embedded Node 20 runtimes now
+      produce deprecation warnings on hosted runners. Keep the product's tested
+      Node 20+ floor distinct from the JavaScript runtime bundled inside
+      `actions/checkout`, setup actions, and the pnpm setup action.
+
 ## Vector180 next slice
 
-- [ ] Promote the remaining C4–C7/C9–C12 successor contracts after their own
+- [ ] Promote the remaining C4–C7/C9–C13 successor contracts after their own
       acceptance rows close. The alpha.5 implementation has passed the current
       local repository, browser, packaging, legacy-compatibility, and
       installed-style CLI paths and is a local release candidate, not an
@@ -17,7 +40,8 @@ Active tasks plus nearby completion checkpoints. Priority ordering lives in
       verified; C4/C12 still need complete corpora, C5/C6 their remaining
       family/full-corpus locks, C7 its durable OPC/XSD/independent-validity and
       frozen-artifact gates, C9/C10 their family/counterexample/
-      independent-native gates, and C11 the evidence items below.
+      independent-native gates, C11 the evidence items below, and C13 its
+      independent OPC/XSD, native edit/save/reopen, and human visual gates.
 - [ ] Reconcile the remaining C5/C6 public-name and diagnostic-ID drift before
       promotion: export the contracted `validateVector180Patch`/
       `applyVector180Patch` names, distinguish family from schema refusal, and
@@ -55,6 +79,20 @@ Active tasks plus nearby completion checkpoints. Priority ordering lives in
       separate from metadata and lexical-only differences.
 - [ ] Finish and accept the atom-only `diff` command/report and migration proof.
       Deck/report diff stays out; C10 remains the mapped-PPTX comparison path.
+- [x] Bank a Markdown deck-manuscript direction in which Markdown owns ordered
+      atom IDs, intent, and speaker notes while each standalone atom remains
+      authority for visible content and geometry. Notes compile into PowerPoint
+      speaker notes; comments are not the narrative store.
+- [ ] Promote the deck-manuscript proposal through a successor contract, schema,
+      deterministic notes-part compiler, map evidence, and compile-only
+      acceptance before attempting native note recovery.
+- [x] Complete a privacy-bounded reference-deck audit and define a reusable
+      branded template-basis playbook. Publish no private text, notes, comments,
+      media, filenames, hashes, screenshots, or harvested font bytes.
+- [ ] Author the first approved synthetic branded basis set as four to six
+      content-free standalone atoms. Require exact template-basis lineage,
+      digest-locked approved fonts, supported-object compiler fixtures, and
+      explicit refusals for unsupported assets or geometry.
 
 The completed capability checkpoints below combine frozen predecessor evidence
 with locally tested alpha.5 implementation. They are not proof that every
@@ -66,9 +104,15 @@ successor contract has completed its separate promotion matrix.
       regenerated supported-semantic equality, and explicit native-render evidence.
       The C11 1.2 exact-path no-op save/close/reopen lifecycle is closed; AppleScript
       shape setters and Save As remain outside the bounded unattended edit surface.
-- [ ] Expose the C5 2.0 typed native-object operations as bounded trusted-editor
-      controls. Pointer-up should create one exact-source transaction; Escape must
-      remain byte-neutral; every commit must independently reload/resolve.
+- [ ] Contract and implement C13 whole-deck reconciliation. C13 now emits a
+      complete-deck PPTX/map, while C10 intentionally accepts only atom maps;
+      derive the successor reverse model from representative native edits and
+      keep unsupported deck changes review-required.
+- [x] Expose the C5 2.0 typed native-object operations as bounded trusted-editor
+      numeric controls with safe-default View/Edit state. Failed/no-op gestures
+      are byte-neutral; every commit independently reloads/resolves; raster and
+      non-native objects remain protected. Drag handles remain a separate
+      future layer.
 - [ ] Add C11 checked human review and a calibrated cross-renderer comparison
       between source SVG and native PowerPoint/PDF output. Existing browser and
       Quick Look same-renderer comparisons are host-scoped smoke/regression
@@ -120,6 +164,10 @@ successor contract has completed its separate promotion matrix.
       C8 itself remains read-only and never wraps or repairs; future 0.1.1
       export/import layers may consume its exact evidence only through their own
       contracts. Retain both Node and browser identities when kerning differs.
+- [x] Preserve the current direct one-line SVG baseline in C7/C9 as signed
+      DrawingML `tIns` with zero side/bottom inset, top anchor, no wrap, and no
+      autofit. C10 accepts only the bounded baseline delta; mutations to the
+      remaining text-body policy refuse.
 - [ ] Before accepting C8 calibration reports from remote or multi-user
       submitters, add runner attestation and fully redacted allowlist-based
       diagnostics. The current updater intentionally trusts an explicit local
@@ -173,9 +221,25 @@ successor contract has completed its separate promotion matrix.
 - [ ] Add multiline `set-text-lines` only with the matching source/resolved/
       compiler contract successor; it must preserve explicit line authority and
       must not smuggle in wrapping or autofit.
-- [ ] Extend the same canary with atomic SVG assets as the matching editor
-      operation and static resource-table contract land. Native connectors,
-      translated groups, and explicit lines already have compiler/unit coverage;
+- [x] Add the first strict raster slice: canonical inline static PNG with
+      CRC/chunk/dimension/aspect validation and explicit size/pixel ceilings;
+      descriptor-only semantic projections; C9-authenticated,
+      content-addressed/de-duplicated `p:pic` packaging; and C10 unchanged-picture
+      authentication with every picture mutation refusing without a partial patch.
+- [x] Add C13 complete canonical HTML-deck compilation with manifest order and
+      hidden-state preservation, authenticated cross-slide PNG deduplication,
+      deterministic source/resolved/emitted/OPC map, strict schema validation,
+      paired no-overwrite CLI publication, and byte-identical browser/Node
+      output. C10 intentionally does not accept the deck map.
+- [x] Add trusted-editor derivative exports: hydrated selected-slide SVG,
+      bounded renderer-labelled PNG rebuilt from fresh C6 data, and whole-deck
+      PPTX plus separately downloaded descriptor-only map. Keep source save
+      distinct, recheck source hashes around async work, invalidate maps after
+      edits, and defer PDF.
+- [ ] Extend the same canary with atomic SVG assets and any additional raster
+      types only when their matching editor operations and static resource-table
+      contracts land. Native connectors, translated groups, explicit lines, and
+      the bounded immutable inline-PNG slice already have compiler/unit coverage;
       the expanded native-fixture coverage above remains open.
 - [ ] Split `@office180/vector180-pptx` only when the real OOXML dependency boundary
       exists; keep the source/browser core independent.
@@ -196,12 +260,14 @@ successor contract has completed its separate promotion matrix.
       `.vector180.html`, or generated valid `*.composed.vector180.html` decks.
 - [ ] Upstream the marked office180 inbox-watcher safety delta to REBAR:
       atomic non-symlink locks, duplicate-watch refusal, dated safe-name filtering,
-      and bounded control-sanitized previews. Keep the delta explicit until REBAR
-      ratifies one shared successor to its 2026.07.11 script.
+      bounded control-sanitized previews, and self-authored-notification
+      suppression. Keep this inbox inbound-only until REBAR ratifies one shared
+      successor to its 2026.07.11 script.
 - [ ] Define canonical serialization independently from preserve-mode patching.
 - [ ] Extend the implemented source-byte, element/depth,
-      manifest-complexity, and C10 decompressed-package ceilings with explicit
-      patch-operation and future asset/resource limits.
+      manifest-complexity, inline-PNG byte/pixel, and C10 decompressed-package
+      ceilings with explicit patch-operation and future external/other-asset
+      resource limits.
 - [ ] Add sandboxed/CSP untrusted intake after the trusted generated editor
       lifecycle is proven; validation cannot protect code already executed by
       direct-open.
@@ -241,7 +307,13 @@ successor contract has completed its separate promotion matrix.
 - [ ] Complete representative supported native Word edit/save/reopen acceptance
       and human/native visual review; the structural no-op lifecycle does not claim
       editability or native fidelity.
-- [ ] Package as `pyproject.toml` with `pipx` entry points — `ROADMAP.md` §0/§8.
+- [ ] Add explicit Google Docs round-trip loss evidence or formally defer that
+      interop lane. Google Docs may strip the embedded merge base; do not imply
+      that native Word persistence proves third-party editor persistence.
+- [x] Package the flat Python runtime with `pyproject.toml`, exact
+      `python-docx==1.2.0`, collision-resistant
+      `office180-md2docx`/`office180-docx2md` entry points, isolated-wheel
+      acceptance, and direct-script compatibility — `ROADMAP.md` §0/§8.
 - [ ] Add an explicit transactional `md2docx.py --normalize --write` path (or
       equally clear help) so a failed `--check` has an obvious in-place repair
       workflow without changing the current stdout-safe default.
@@ -252,6 +324,23 @@ successor contract has completed its separate promotion matrix.
 - [ ] Implement the wide-table strategy — `ROADMAP.md` §2.
 - [ ] Add structured warnings and `--strict` — `ROADMAP.md` §6.
 
+## Distribution and agent routing
+
+- [x] Add focused `$markdown-docx` and `$vector180-authoring` skills with
+      Word/DOCX/report/memo/proposal and
+      PowerPoint/PPTX/presentation/slides/diagram routing, concise starter
+      cards, conservative recovery guidance, and validation.
+- [x] Add the repository-owned `office180` Codex marketplace/plugin with exact
+      generated mirrors of both skills, three Word themes, and flat Python
+      converter scripts. Enforce mirror equality in local and CI gates.
+- [x] Add a five-minute clean-clone quickstart, scoped help for every Vector180
+      CLI route, Node 20 pinning, Python 3.9 packaging, exact dependency
+      pinning, collision-resistant console entry points, and installed-package
+      acceptance.
+- [ ] Publish the Vector180 Node runtime before claiming the plugin is
+      checkout-independent for PowerPoint production. Until then the plugin
+      must state that a prepared repository checkout supplies that runtime.
+
 ## Known limitations
 
 - C4 2.0 limits canonical semantic loading to self-contained standalone
@@ -259,25 +348,28 @@ successor contract has completed its separate promotion matrix.
   alpha.5 implementation is locally tested, while C4's complete contract
   corpus remains open. External manifests remain recognition/inventory-only;
   external atom/library composition is not yet implemented.
-- Strict 0.1 resource references are same-document fragments only. Relative,
-  absolute, remote, and embedded-data fetches require a future dependency
-  resolver and hash/capability contract.
+- Strict 0.1 references remain same-document fragments, with one non-fetching
+  exception for the contracted canonical inline static PNG raster asset.
+  Relative, absolute, or remote resources, other data-URI media, JPEG, and
+  fetched dependencies require a future resolver and hash/capability contract.
 - C5 2.0 contracts one `vector180-patch/0.1` vocabulary: direct text for either
   artifact kind; active-theme and slide-order operations for decks; the
   bounded typed native-object operations above; and at most one exact reviewed
   same-parent connector clone. The implementation is in the alpha.5 candidate;
   C5's remaining family/full-corpus acceptance rows are open. Duplicate
   discovery remains a refusal without a strict C10 2.0 resolution. The trusted
-  browser UI does not yet expose those new controls; rich text, CSS-rule
-  rewriting, general insertion, reparenting, and group scaling fail explicitly.
+  browser UI exposes bounded numeric forms for those operations; drag handles,
+  rich text, CSS-rule rewriting, general insertion, reparenting, and group
+  scaling fail explicitly.
 - The alpha.5 candidate resolves group hierarchy/order, translated world
   bounds, explicit text frames, opaque SVG asset bounds, and bounded mapped
   atom compile/reconcile paths. C7 still requires its complete durable
-  OPC/XSD/independent-validity oracle and frozen-artifact gates; C9/C10
+  OPC/XSD/independent-validity oracle and frozen-artifact gates; C9/C10/C13
   retain family, counterexample, and independent/native rows. The frozen
   predecessor's schema, independent reopen, and native PowerPoint smoke remain
   historical evidence rather than proof of those canonical rows. Browser
-  geometry gestures, raster resources,
+  drag geometry gestures, deck reconciliation, raster/picture editing and every resource form beyond the
+  strict immutable inline-PNG slice,
   representative native edits, and cross-renderer/native fidelity remain open;
   the exact C11 1.2 no-op PPTX save/reopen lifecycle is closed for the checked
   predecessor artifact and Office build.
@@ -315,6 +407,12 @@ scans both Python and TypeScript and rejects untracked `TODO:` comments.
 <details>
 <summary><strong>Recently completed</strong></summary>
 
+- [x] Preservation-memory convention, full state/priority scrub, private-study
+      ignore guard, and Linux-safe Steward aggregation — 2026-08-12
+- [x] C13 mapped five-slide HTML-deck PPTX/map compiler, authenticated branded
+      PNG backgrounds, safe numeric trusted-editor controls, and in-page
+      hydrated SVG/browser PNG/PPTX/map export with browser/Node byte parity —
+      2026-08-08
 - [x] C1 1.1/C3 1.2 Word style materialization and native-equivalence proof;
       C5 1.3/C10 1.2 reviewed connector-copy recovery and agent-grade failure
       reports; C11 1.1 bounded Word/PowerPoint lifecycle bridge/evidence binding;

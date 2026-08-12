@@ -59,6 +59,17 @@ export {
   type Vector180PptxMapSlide,
 } from "./pptx-baseline.js";
 export {
+  compileVector180PptxDeck,
+  serializeVector180PptxDeckMap,
+  Vector180PptxDeckCompileError,
+  type Vector180PptxDeckArtifact,
+  type Vector180PptxDeckErrorCode,
+  type Vector180PptxDeckMap,
+  type Vector180PptxDeckMapObject,
+  type Vector180PptxDeckMapObjectSnapshot,
+  type Vector180PptxDeckMapSlide,
+} from "./pptx-deck.js";
+export {
   inspectPptxForReconciliation,
   type PptxIdentityMatch,
   type PptxIdentityOccurrence,
@@ -127,13 +138,16 @@ export {
   compilePptxCanary,
   compileVector180PptxCanary,
   createPptxCanaryGraph,
+  describePptxCanaryBindings,
   PptxCanaryCompileError,
   validatePptxCanaryGraph,
   type PptxCanaryArtifact,
   type PptxCanaryErrorCode,
   type PptxCanaryGraph,
+  type PptxCanaryObjectBinding,
   type PptxCanaryPart,
   type PptxCanaryRelationship,
+  type PptxCanarySlideBinding,
   type Vector180PptxCanaryArtifact,
   type Vector180PptxPart,
 } from "./pptx-canary.js";

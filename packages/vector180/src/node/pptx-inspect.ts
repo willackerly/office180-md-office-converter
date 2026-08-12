@@ -27,6 +27,8 @@ const MAX_PPTX_BYTES = 128 * 1024 * 1024;
 const MAX_PART_BYTES = 8 * 1024 * 1024;
 const MAX_TOTAL_PART_BYTES = 128 * 1024 * 1024;
 const MAX_PARTS = 256;
+const EMU_PER_HUNDREDTH_POINT = 127;
+const MAX_TEXT_INSET_EMU = 51_206_400;
 const ZIP_CENTRAL_DIRECTORY_SIGNATURE = 0x02014b50;
 const ZIP_END_OF_CENTRAL_DIRECTORY_SIGNATURE = 0x06054b50;
 const ZIP_LOCAL_FILE_HEADER_SIGNATURE = 0x04034b50;
@@ -50,6 +52,8 @@ const XMLNS = "http://www.w3.org/2000/xmlns/";
 const XML = "http://www.w3.org/XML/1998/namespace";
 const SLIDE_RELATIONSHIP_TYPE =
   "http://schemas.openxmlformats.org/officeDocument/2006/relationships/slide";
+const IMAGE_RELATIONSHIP_TYPE =
+  "http://schemas.openxmlformats.org/officeDocument/2006/relationships/image";
 const DRAWING_2014 = "http://schemas.microsoft.com/office/drawing/2014/main";
 const VISIBLE_OBJECT_NAMES = new Set([
   expanded(PRESENTATION, "sp"),
@@ -63,13 +67,14 @@ const SUPPORTED_OBJECT_NAMES = new Map([
   [expanded(PRESENTATION, "sp"), "p:sp" as const],
   [expanded(PRESENTATION, "cxnSp"), "p:cxnSp" as const],
   [expanded(PRESENTATION, "grpSp"), "p:grpSp" as const],
+  [expanded(PRESENTATION, "pic"), "p:pic" as const],
 ]);
 const SIGNIFICANT_TEXT_NAMES = new Set([
   expanded(DRAWING, "t"),
   expanded(VALUE_TYPES, "lpwstr"),
 ]);
 
-export type SupportedOfficeElement = "p:sp" | "p:cxnSp" | "p:grpSp";
+export type SupportedOfficeElement = "p:sp" | "p:cxnSp" | "p:grpSp" | "p:pic";
 
 interface XmlText {
   readonly kind: "text";
@@ -157,6 +162,7 @@ export type PptxInspectedGeometry =
       readonly extCxEmu: number;
       readonly extCyEmu: number;
       readonly anchorXEmu?: number;
+      readonly baselineYEmu?: number;
     }
   | {
       readonly kind: "line";
@@ -175,6 +181,13 @@ export type PptxInspectedGeometry =
       readonly childOffYEmu: number;
       readonly childExtCxEmu: number;
       readonly childExtCyEmu: number;
+    }
+  | {
+      readonly kind: "raster-asset";
+      readonly offXEmu: number;
+      readonly offYEmu: number;
+      readonly extCxEmu: number;
+      readonly extCyEmu: number;
     };
 
 export interface PptxInspectedStyle {
@@ -219,6 +232,142 @@ export interface PptxInspection {
 export interface PptxInspectionResult {
   readonly inspection?: PptxInspection;
   readonly diagnostics: readonly Diagnostic[];
+}
+
+interface MappedRasterResource {
+  readonly partName: string;
+  readonly sha256: string;
+  readonly byteLength: number;
+  readonly objectIds: readonly string[];
+  readonly uses: readonly {
+    readonly objectId: string;
+    readonly slidePartName: string;
+    readonly relationshipId: string;
+  }[];
+}
+
+function collectMappedRasterResources(
+  map: Vector180PptxMap,
+): readonly MappedRasterResource[] {
+  const byPart = new Map<
+    string,
+    {
+      sha256: string;
+      byteLength: number;
+      objectIds: string[];
+      uses: Array<{
+        objectId: string;
+        slidePartName: string;
+        relationshipId: string;
+      }>;
+    }
+  >();
+  for (const slide of map.slides) {
+    for (const object of slide.objects) {
+      if (object.kind !== "raster-asset") continue;
+      const descriptor = object.source.resource;
+      const picture = object.emitted.drawingMl["picture"];
+      if (
+        descriptor === undefined ||
+        descriptor.mediaType !== "image/png" ||
+        !/^[0-9a-f]{64}$/u.test(descriptor.sha256) ||
+        !Number.isSafeInteger(descriptor.byteLength) ||
+        descriptor.byteLength <= 0 ||
+        !isRecord(picture) ||
+        typeof picture["relationshipId"] !== "string" ||
+        !/^rId(?:[2-9]|[1-9]\d+)$/u.test(picture["relationshipId"]) ||
+        picture["partName"] !== `ppt/media/${descriptor.sha256}.png` ||
+        picture["sha256"] !== descriptor.sha256 ||
+        picture["byteLength"] !== descriptor.byteLength
+      ) {
+        throw new Error(
+          `mapped raster object "src.${object.id}" lacks one exact picture descriptor`,
+        );
+      }
+      const partName = picture["partName"];
+      const current = byPart.get(partName) ?? {
+        sha256: descriptor.sha256,
+        byteLength: descriptor.byteLength,
+        objectIds: [],
+        uses: [],
+      };
+      if (
+        current.sha256 !== descriptor.sha256 ||
+        current.byteLength !== descriptor.byteLength
+      ) {
+        throw new Error(
+          `mapped raster part "${partName}" has conflicting descriptors`,
+        );
+      }
+      current.objectIds.push(object.id);
+      current.uses.push({
+        objectId: object.id,
+        slidePartName: slide.partName,
+        relationshipId: picture["relationshipId"],
+      });
+      byPart.set(partName, current);
+    }
+  }
+  return Object.freeze(
+    [...byPart.entries()]
+      .sort(([left], [right]) => compareText(left, right))
+      .map(([partName, value]) =>
+        Object.freeze({
+          partName,
+          sha256: value.sha256,
+          byteLength: value.byteLength,
+          objectIds: Object.freeze(value.objectIds),
+          uses: Object.freeze(value.uses),
+        }),
+      ),
+  );
+}
+
+function validateMappedRasterRelationships(
+  roots: ReadonlyMap<string, XmlElement>,
+  resources: readonly MappedRasterResource[],
+  diagnostics: Diagnostic[],
+): void {
+  for (const resource of resources) {
+    for (const use of resource.uses) {
+      const relationshipPart = relationshipPartName(use.slidePartName);
+      const root = roots.get(relationshipPart);
+      const relationships =
+        root?.name === expanded(PACKAGE_RELATIONSHIPS, "Relationships")
+          ? directElements(root, PACKAGE_RELATIONSHIPS, "Relationship")
+          : [];
+      const matches = relationships.filter(
+        (relationship) =>
+          attribute(relationship, "", "Id") === use.relationshipId,
+      );
+      const match = matches[0];
+      const target =
+        match === undefined ? undefined : attribute(match, "", "Target");
+      let resolvedTarget: string | undefined;
+      try {
+        resolvedTarget =
+          target === undefined
+            ? undefined
+            : resolveRelationshipTarget(use.slidePartName, target);
+      } catch {
+        resolvedTarget = undefined;
+      }
+      if (
+        matches.length !== 1 ||
+        match === undefined ||
+        attribute(match, "", "Type") !== IMAGE_RELATIONSHIP_TYPE ||
+        attribute(match, "", "TargetMode") !== undefined ||
+        resolvedTarget !== resource.partName
+      ) {
+        diagnostics.push({
+          code: "VECTOR180-RECONCILE-UNSUPPORTED",
+          severity: "error",
+          message: `Mapped raster object "src.${use.objectId}" changed its internal image relationship or media target.`,
+          objectId: use.objectId,
+        });
+      }
+    }
+  }
 }
 
 export async function inspectPptxForReconciliation(
@@ -304,6 +453,20 @@ export async function inspectPptxForReconciliation(
 
   const partNames = fileEntries.map((entry) => entry.name).sort(compareText);
   const expectedPartNames = [...map.pptx.partNames].sort(compareText);
+  let mappedRasterResources: readonly MappedRasterResource[];
+  try {
+    mappedRasterResources = collectMappedRasterResources(map);
+  } catch (error) {
+    return failedInspection(
+      "VECTOR180-RECONCILE-INVALID-PPTX",
+      `Baseline raster map is invalid: ${errorMessage(error)}`,
+    );
+  }
+  const mappedRasterByPart = new Map(
+    mappedRasterResources.map(
+      (resource) => [resource.partName, resource] as const,
+    ),
+  );
 
   const requiredParts = [
     "docProps/custom.xml",
@@ -324,14 +487,44 @@ export async function inspectPptxForReconciliation(
 
   const roots = new Map<string, XmlElement>();
   const partTexts: Record<string, string> = {};
+  const binaryRawPartSignatures: Record<string, string> = {};
+  const binaryPartSignatures: Record<string, string> = {};
+  const binaryPartSha256: Record<string, string> = {};
   try {
     for (const name of partNames) {
       if (!xmlPartName(name)) {
-        diagnostics.push({
-          code: "VECTOR180-RECONCILE-UNSUPPORTED",
-          severity: "error",
-          message: `Unsupported non-XML package part "${name}" is present.`,
-        });
+        const resource = mappedRasterByPart.get(name);
+        if (resource === undefined) {
+          diagnostics.push({
+            code: "VECTOR180-RECONCILE-UNSUPPORTED",
+            severity: "error",
+            message: `Unsupported non-XML package part "${name}" is present.`,
+          });
+          continue;
+        }
+        const entry = zip.file(name);
+        const mediaBytes =
+          entry === null ? undefined : await entry.async("uint8array");
+        const digest =
+          mediaBytes === undefined ? undefined : sha256(mediaBytes);
+        if (
+          mediaBytes === undefined ||
+          mediaBytes.byteLength !== resource.byteLength ||
+          digest !== resource.sha256
+        ) {
+          diagnostics.push({
+            code: "VECTOR180-RECONCILE-UNSUPPORTED",
+            severity: "error",
+            message: `Mapped raster media "${name}" changed bytes, length, or content digest for ${resource.objectIds.map((id) => `src.${id}`).join(", ")}.`,
+            ...(resource.objectIds.length === 1
+              ? { objectId: resource.objectIds[0] }
+              : {}),
+          });
+        }
+        const signature = `binary-sha256:${digest ?? "<missing>"}`;
+        binaryRawPartSignatures[name] = signature;
+        binaryPartSignatures[name] = signature;
+        if (digest !== undefined) binaryPartSha256[name] = digest;
         continue;
       }
       const text = await readXmlPart(zip, name);
@@ -366,14 +559,18 @@ export async function inspectPptxForReconciliation(
   try {
     const packageNormalization = normalizePptxPackage({
       parts: partTexts,
-      expectedPartNames,
+      expectedPartNames: expectedPartNames.filter(xmlPartName),
     });
-    const missingParts = expectedPartNames.filter(
+    const expectedXmlPartNames = expectedPartNames.filter(xmlPartName);
+    const missingParts = expectedXmlPartNames.filter(
       (name) => !packageNormalization.semanticPartNames.includes(name),
     );
     const newParts = packageNormalization.semanticPartNames.filter(
-      (name) => !expectedPartNames.includes(name),
+      (name) => !expectedXmlPartNames.includes(name),
     );
+    const missingRasterParts = mappedRasterResources
+      .map((resource) => resource.partName)
+      .filter((name) => !partNames.includes(name));
     if (missingParts.length > 0 || newParts.length > 0) {
       diagnostics.push({
         code: "VECTOR180-RECONCILE-UNSUPPORTED",
@@ -381,8 +578,20 @@ export async function inspectPptxForReconciliation(
         message: `PPTX part inventory changed (missing: ${listOrNone(missingParts)}; new: ${listOrNone(newParts)}).`,
       });
     }
+    if (missingRasterParts.length > 0) {
+      diagnostics.push({
+        code: "VECTOR180-RECONCILE-UNSUPPORTED",
+        severity: "error",
+        message: `PPTX raster media inventory changed (missing: ${listOrNone(missingRasterParts)}).`,
+      });
+    }
     const custom = inspectCustomProperties(customRoot, diagnostics);
     validateLineage(custom, map, diagnostics);
+    validateMappedRasterRelationships(
+      roots,
+      mappedRasterResources,
+      diagnostics,
+    );
     const bindings = inspectSlideBindings(
       presentationRoot,
       presentationRelsRoot,
@@ -410,10 +619,24 @@ export async function inspectPptxForReconciliation(
         schema: "vector180-pptx-inspection/0.1",
         pptxSha256: sha256(bytes),
         partNames: Object.freeze(partNames),
-        semanticPartNames: packageNormalization.semanticPartNames,
-        rawPartSignatures: packageNormalization.rawPartSignatures,
-        partSignatures: packageNormalization.semanticPartSignatures,
-        partSha256: packageNormalization.partSha256,
+        semanticPartNames: Object.freeze(
+          [
+            ...packageNormalization.semanticPartNames,
+            ...Object.keys(binaryPartSignatures),
+          ].sort(compareText),
+        ),
+        rawPartSignatures: Object.freeze({
+          ...packageNormalization.rawPartSignatures,
+          ...binaryRawPartSignatures,
+        }),
+        partSignatures: Object.freeze({
+          ...packageNormalization.semanticPartSignatures,
+          ...binaryPartSignatures,
+        }),
+        partSha256: Object.freeze({
+          ...packageNormalization.partSha256,
+          ...binaryPartSha256,
+        }),
         customProperties: Object.freeze(custom),
         slides: Object.freeze(inspectedSlides),
         normalizations: packageNormalization.normalizations,
@@ -915,7 +1138,9 @@ function inspectObjectIdentity(
       ? "nvSpPr"
       : element === "p:cxnSp"
         ? "nvCxnSpPr"
-        : "nvGrpSpPr";
+        : element === "p:grpSp"
+          ? "nvGrpSpPr"
+          : "nvPicPr";
   const nonVisual = directElements(object, PRESENTATION, nonVisualName)[0];
   const cNvPr =
     nonVisual === undefined
@@ -966,6 +1191,16 @@ function inspectObjectSemantics(
     canonicalEndParagraphs: new WeakSet(),
   };
   try {
+    if (expected.kind === "raster-asset") {
+      const geometry = inspectRasterPicture(root, expected);
+      return {
+        geometry,
+        normalizations: Object.freeze([]),
+        maskedAttributes: masks.attributes,
+        maskedElements: masks.elements,
+        canonicalEndParagraphs: masks.canonicalEndParagraphs,
+      };
+    }
     const baselineStyle = mapStyle(expected);
     if (expected.kind === "group") {
       const properties = requireDirectElement(root, PRESENTATION, "grpSpPr");
@@ -1063,6 +1298,7 @@ function inspectObjectSemantics(
           extCxEmu: transform.extCx,
           extCyEmu: transform.extCy,
           anchorXEmu: text.anchorX,
+          baselineYEmu: text.baselineY,
         },
         style: text.style,
         normalizations: Object.freeze(
@@ -1125,6 +1361,126 @@ function inspectObjectSemantics(
       canonicalEndParagraphs: masks.canonicalEndParagraphs,
     };
   }
+}
+
+function inspectRasterPicture(
+  root: XmlElement,
+  expected: Vector180PptxMapObject,
+): Extract<PptxInspectedGeometry, { readonly kind: "raster-asset" }> {
+  requireOnlyAttributes(root, []);
+  requireOnlyDirectElementNames(root, [
+    expanded(PRESENTATION, "nvPicPr"),
+    expanded(PRESENTATION, "blipFill"),
+    expanded(PRESENTATION, "spPr"),
+  ]);
+
+  const nonVisual = requireDirectElement(root, PRESENTATION, "nvPicPr");
+  requireOnlyAttributes(nonVisual, []);
+  requireOnlyDirectElementNames(nonVisual, [
+    expanded(PRESENTATION, "cNvPr"),
+    expanded(PRESENTATION, "cNvPicPr"),
+    expanded(PRESENTATION, "nvPr"),
+  ]);
+  const pictureProperties = requireDirectElement(
+    nonVisual,
+    PRESENTATION,
+    "cNvPicPr",
+  );
+  requireOnlyAttributes(pictureProperties, []);
+  const locks = requireDirectElement(pictureProperties, DRAWING, "picLocks");
+  requireOnlyAttributes(locks, ["noChangeAspect"]);
+  if (
+    attribute(locks, "", "noChangeAspect") !== "1" ||
+    locks.children.length !== 0
+  ) {
+    throw new Error("picture aspect lock is not the exact mapped value");
+  }
+  const nonVisualProperties = requireDirectElement(
+    nonVisual,
+    PRESENTATION,
+    "nvPr",
+  );
+  if (
+    Object.keys(nonVisualProperties.attributes).length !== 0 ||
+    nonVisualProperties.children.length !== 0
+  ) {
+    throw new Error("picture nonvisual properties are not empty");
+  }
+
+  const blipFill = requireDirectElement(root, PRESENTATION, "blipFill");
+  requireOnlyAttributes(blipFill, []);
+  requireOnlyDirectElementNames(blipFill, [
+    expanded(DRAWING, "blip"),
+    expanded(DRAWING, "stretch"),
+  ]);
+  const blip = requireDirectElement(blipFill, DRAWING, "blip");
+  if (
+    Object.keys(blip.attributes).some(
+      (name) => name !== expanded(OFFICE_RELATIONSHIPS, "embed"),
+    )
+  ) {
+    throw new Error("picture blip has unsupported attributes");
+  }
+  const picture = expected.emitted.drawingMl["picture"];
+  if (
+    !isRecord(picture) ||
+    attribute(blip, OFFICE_RELATIONSHIPS, "embed") !==
+      picture["relationshipId"] ||
+    blip.children.length !== 0
+  ) {
+    throw new Error("picture blip does not use its mapped image relationship");
+  }
+  const stretch = requireDirectElement(blipFill, DRAWING, "stretch");
+  requireOnlyAttributes(stretch, []);
+  const fillRect = requireDirectElement(stretch, DRAWING, "fillRect");
+  if (
+    Object.keys(fillRect.attributes).length !== 0 ||
+    fillRect.children.length !== 0 ||
+    stretch.children.filter((child) => child.kind === "element").length !== 1
+  ) {
+    throw new Error("picture stretch is not the exact fillRect form");
+  }
+
+  const properties = requireDirectElement(root, PRESENTATION, "spPr");
+  requireOnlyAttributes(properties, []);
+  requireOnlyDirectElementNames(properties, [
+    expanded(DRAWING, "xfrm"),
+    expanded(DRAWING, "prstGeom"),
+  ]);
+  // Validate geometry with a throwaway mask set. Picture geometry deliberately
+  // remains unmasked so any Office-side move, resize, crop, effect, or repair
+  // is review-required in this immutable first slice.
+  const throwawayMasks: SemanticMasks = {
+    attributes: new WeakMap(),
+    elements: new WeakMap(),
+    canonicalEndParagraphs: new WeakSet(),
+  };
+  const transform = inspectTransform(properties, false, throwawayMasks);
+  if (
+    transform.flipH ||
+    transform.flipV ||
+    transform.extCx <= 0 ||
+    transform.extCy <= 0
+  ) {
+    throw new Error("picture transform is flipped or nonpositive");
+  }
+  const preset = requireDirectElement(properties, DRAWING, "prstGeom");
+  requireOnlyAttributes(preset, ["prst"]);
+  const adjustmentList = requireDirectElement(preset, DRAWING, "avLst");
+  if (
+    attribute(preset, "", "prst") !== "rect" ||
+    Object.keys(adjustmentList.attributes).length !== 0 ||
+    adjustmentList.children.length !== 0
+  ) {
+    throw new Error("picture preset geometry is not an unadjusted rectangle");
+  }
+  return {
+    kind: "raster-asset",
+    offXEmu: transform.offX,
+    offYEmu: transform.offY,
+    extCxEmu: transform.extCx,
+    extCyEmu: transform.extCy,
+  };
 }
 
 function inspectTransform(
@@ -1200,10 +1556,41 @@ function inspectTextSemantics(
   masks: SemanticMasks,
 ): {
   readonly anchorX: number;
+  readonly baselineY: number;
   readonly style: PptxInspectedStyle;
   readonly endMarkerOmitted: boolean;
 } {
   const body = requireDirectElement(root, PRESENTATION, "txBody");
+  const bodyProperties = requireDirectElement(body, DRAWING, "bodyPr");
+  requireOnlyAttributes(bodyProperties, [
+    "wrap",
+    "lIns",
+    "tIns",
+    "rIns",
+    "bIns",
+    "anchor",
+  ]);
+  if (
+    attribute(bodyProperties, "", "wrap") !== "none" ||
+    attribute(bodyProperties, "", "lIns") !== "0" ||
+    attribute(bodyProperties, "", "rIns") !== "0" ||
+    attribute(bodyProperties, "", "bIns") !== "0" ||
+    attribute(bodyProperties, "", "anchor") !== "t"
+  ) {
+    throw new Error(
+      "text body is not the exact no-wrap, zero-side-margin, top-anchored C9 form",
+    );
+  }
+  const topInset = integerAttribute(bodyProperties, "tIns");
+  if (topInset < -MAX_TEXT_INSET_EMU || topInset > MAX_TEXT_INSET_EMU) {
+    throw new Error("text top inset is outside the supported DrawingML range");
+  }
+  const noAutofit = requireDirectElement(bodyProperties, DRAWING, "noAutofit");
+  requireOnlyAttributes(noAutofit, []);
+  if (noAutofit.children.length !== 0 || bodyProperties.children.length !== 1) {
+    throw new Error("text body does not contain exactly one empty noAutofit");
+  }
+  maskAttributes(bodyProperties, ["tIns"], masks);
   const paragraph = requireDirectElement(body, DRAWING, "p");
   const paragraphProperties = requireDirectElement(paragraph, DRAWING, "pPr");
   const alignment = attribute(paragraphProperties, "", "algn");
@@ -1258,8 +1645,15 @@ function inspectTextSemantics(
     }
   }
   masks.canonicalEndParagraphs.add(paragraph);
+  const baselineY = exactInteger(
+    transform.offY +
+      topInset +
+      runStyle.fontSizeHundredthPoints! * EMU_PER_HUNDREDTH_POINT,
+    "text authored baseline",
+  );
   return {
     anchorX,
+    baselineY,
     style: runStyle,
     endMarkerOmitted: endProperties.length === 0,
   };
@@ -1575,7 +1969,9 @@ function officeObjectIdentityElement(root: XmlElement): XmlElement | undefined {
         ? "nvCxnSpPr"
         : root.name === expanded(PRESENTATION, "grpSp")
           ? "nvGrpSpPr"
-          : undefined;
+          : root.name === expanded(PRESENTATION, "pic")
+            ? "nvPicPr"
+            : undefined;
   if (nonVisualName === undefined) return undefined;
   const nonVisual = directElements(root, PRESENTATION, nonVisualName);
   if (nonVisual.length !== 1) return undefined;
@@ -1943,6 +2339,12 @@ function resolveRelationshipTarget(source: string, target: string): string {
   return resolved;
 }
 
+function relationshipPartName(source: string): string {
+  const directory = posix.dirname(source);
+  const basename = posix.basename(source);
+  return `${directory}/_rels/${basename}.rels`;
+}
+
 function internalUncompressedSize(entry: JSZipObject): number | undefined {
   const value = (
     entry as JSZipObject & {
@@ -2169,6 +2571,10 @@ function equalBytes(left: Uint8Array, right: Uint8Array): boolean {
     left.byteLength === right.byteLength &&
     left.every((byte, index) => byte === right[index])
   );
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
 }
 
 function safePartName(name: string): boolean {

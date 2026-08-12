@@ -20,16 +20,17 @@ A canonical atom is one self-contained `*.vector180.svg` file:
 
 Use the smallest roles that state intent:
 
-| Object     | Common element        | Required intent                                  |
-| ---------- | --------------------- | ------------------------------------------------ |
-| Shape      | `rect`, `ellipse`     | `role="shape"`, usually `export="native"`        |
-| Text       | `text`                | `role="text"`, explicit frame and line step      |
-| Connector  | `line`                | `role="connector"`, explicit `from`/`to` IDs     |
-| Group      | `g`                   | `role="group"`, translated only when transformed |
-| Atomic art | supported SVG subtree | `export="asset"` with explicit bounds            |
+| Object        | Common element        | Required intent                                  |
+| ------------- | --------------------- | ------------------------------------------------ |
+| Shape         | `rect`, `ellipse`     | `role="shape"`, usually `export="native"`        |
+| Text          | `text`                | `role="text"`, explicit frame and line step      |
+| Connector     | `line`                | `role="connector"`, explicit `from`/`to` IDs     |
+| Group         | `g`                   | `role="group"`, translated only when transformed |
+| Atomic vector | supported SVG subtree | `role="asset"`, `export="svg"`, explicit bounds  |
+| Inline PNG    | `image`               | `role="asset"`, `export="raster"`, exact bounds  |
 
 Prefer native shapes/text/connectors. Use `asset` only when the artwork should
-remain one atomic vector image in PowerPoint.
+remain one atomic vector or raster image in PowerPoint.
 
 ## One example object
 
@@ -71,6 +72,36 @@ line geometry:
       x1="440" y1="210" x2="680" y2="210"
       stroke="#576b64" stroke-width="4"/>
 ```
+
+## Inline PNG assets stay self-contained
+
+Use a raster asset for a fixed background, logo, texture, or other artwork
+that should remain one image. This is a complete valid 1:1 example:
+
+```xml
+<image id="brand.icon"
+       data-vector180-role="asset"
+       data-vector180-export="raster"
+       data-vector180-bounds="80 80 64 64"
+       x="80" y="80" width="64" height="64"
+       href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII="/>
+```
+
+- Use exactly one `href` or `xlink:href`.
+- Keep the exact lowercase `data:image/png;base64,` prefix and canonical
+  padded base64 on one whitespace-free attribute value.
+- Supply explicit `x`, `y`, `width`, and `height` numerically equal to
+  `data-vector180-bounds`.
+- Keep the authored width/height ratio exactly equal to the PNG's intrinsic
+  pixel ratio. Vector180 does not infer crop, stretch, letterbox, or DPI.
+- Use a static, non-interlaced, CRC-valid PNG no larger than 4 MiB decoded or
+  16,777,216 pixels. APNG, trailing bytes, external URLs, and other raster
+  formats refuse.
+
+`validate` checks the exact data URI. `show`, `resolve`, editing views, and
+browser conformance expose only a SHA-256/size/dimensions descriptor, never the
+base64 payload. The exact SVG source and its hash still retain the payload
+byte-for-byte.
 
 ## Text never reflows
 

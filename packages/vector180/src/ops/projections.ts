@@ -355,17 +355,32 @@ function projectObject(
     export: node.exportMode,
     element: node.elementName,
     ...(node.text === undefined ? {} : { text: node.text }),
+    ...(node.resource === undefined ? {} : { resource: node.resource }),
     children: node.children.map((child) =>
       projectObject(child, view, wireFamily),
     ),
     ...(view === "editing"
       ? {
           classes: [...node.classes],
-          attributes: { ...node.attributes },
+          attributes: projectionAttributes(node),
           sourceRange: { ...node.sourceRange },
         }
       : {}),
   };
+}
+
+function projectionAttributes(node: Vector180Node): Record<string, string> {
+  return Object.fromEntries(
+    Object.entries(node.attributes).filter(([name, value]) => {
+      const normalized = name.toLowerCase();
+      const resourceReference =
+        normalized === "href" || normalized === "xlink:href";
+      return !(
+        resourceReference &&
+        (node.resource !== undefined || /^data:/iu.test(value))
+      );
+    }),
+  );
 }
 
 function inventoryObject(node: Vector180Node): DeckInventoryObject {

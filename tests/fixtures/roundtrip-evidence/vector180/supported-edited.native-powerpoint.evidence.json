@@ -42,7 +42,7 @@
     "renderer_class": "native-powerpoint",
     "status": "manual-required"
   },
-  "evidence_sha256": "24c417530fc9f8da730615442c7aa6d702c5e6c57d0549e020bdba0f07ae0357",
+  "evidence_sha256": "4d6609d04ee8c88983076ce270daf921f6379316244032eda05862d7b8a7d225",
   "native_lifecycle": {
     "application": "Microsoft PowerPoint",
     "diagnostic": "Native Microsoft PowerPoint open, representative edit, save, and reopen were not automated by this generator; manual lifecycle validation remains required.",
@@ -54,7 +54,7 @@
   "schema": "office180-visual-evidence/0.1",
   "subject": {
     "artifact_path": "supported-edited.pptx",
-    "artifact_sha256": "65f0478c3fd7b76533e4025c2560821b6c9f8a73ad95a4e8e019d3c6d99d869a",
+    "artifact_sha256": "560dde4c446adcde5374de196b4ac9cc9d1d1a865c7f1979e6394380d7fd9a7a",
     "checkpoint": "native-powerpoint-lifecycle",
     "lane": "vector180-pptx"
   }

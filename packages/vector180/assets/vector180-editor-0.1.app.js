@@ -7,7 +7,13 @@
   var __getOwnPropNames = Object.getOwnPropertyNames;
   var __getProtoOf = Object.getPrototypeOf;
   var __hasOwnProp = Object.prototype.hasOwnProperty;
-  var __commonJS = (cb, mod) => function __require() {
+  var __require = /* @__PURE__ */ ((x) => typeof require !== "undefined" ? require : typeof Proxy !== "undefined" ? new Proxy(x, {
+    get: (a, b) => (typeof require !== "undefined" ? require : a)[b]
+  }) : x)(function(x) {
+    if (typeof require !== "undefined") return require.apply(this, arguments);
+    throw Error('Dynamic require of "' + x + '" is not supported');
+  });
+  var __commonJS = (cb, mod) => function __require2() {
     try {
       return mod || (0, cb[__getOwnPropNames(cb)[0]])((mod = { exports: {} }).exports, mod), mod.exports;
     } catch (e) {
@@ -1936,6 +1942,2372 @@
         }
       };
       exports.SaxesParser = SaxesParser2;
+    }
+  });
+
+  // ../../node_modules/.pnpm/jszip@3.10.1/node_modules/jszip/dist/jszip.min.js
+  var require_jszip_min = __commonJS({
+    "../../node_modules/.pnpm/jszip@3.10.1/node_modules/jszip/dist/jszip.min.js"(exports, module) {
+      !(function(e) {
+        if ("object" == typeof exports && "undefined" != typeof module) module.exports = e();
+        else if ("function" == typeof define && define.amd) define([], e);
+        else {
+          ("undefined" != typeof window ? window : "undefined" != typeof global ? global : "undefined" != typeof self ? self : this).JSZip = e();
+        }
+      })(function() {
+        return (function s(a, o, h) {
+          function u(r, e2) {
+            if (!o[r]) {
+              if (!a[r]) {
+                var t = "function" == typeof __require && __require;
+                if (!e2 && t) return t(r, true);
+                if (l) return l(r, true);
+                var n = new Error("Cannot find module '" + r + "'");
+                throw n.code = "MODULE_NOT_FOUND", n;
+              }
+              var i = o[r] = { exports: {} };
+              a[r][0].call(i.exports, function(e3) {
+                var t2 = a[r][1][e3];
+                return u(t2 || e3);
+              }, i, i.exports, s, a, o, h);
+            }
+            return o[r].exports;
+          }
+          for (var l = "function" == typeof __require && __require, e = 0; e < h.length; e++) u(h[e]);
+          return u;
+        })({ 1: [function(e, t, r) {
+          "use strict";
+          var d = e("./utils"), c = e("./support"), p = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=";
+          r.encode = function(e2) {
+            for (var t2, r2, n, i, s, a, o, h = [], u = 0, l = e2.length, f = l, c2 = "string" !== d.getTypeOf(e2); u < e2.length; ) f = l - u, n = c2 ? (t2 = e2[u++], r2 = u < l ? e2[u++] : 0, u < l ? e2[u++] : 0) : (t2 = e2.charCodeAt(u++), r2 = u < l ? e2.charCodeAt(u++) : 0, u < l ? e2.charCodeAt(u++) : 0), i = t2 >> 2, s = (3 & t2) << 4 | r2 >> 4, a = 1 < f ? (15 & r2) << 2 | n >> 6 : 64, o = 2 < f ? 63 & n : 64, h.push(p.charAt(i) + p.charAt(s) + p.charAt(a) + p.charAt(o));
+            return h.join("");
+          }, r.decode = function(e2) {
+            var t2, r2, n, i, s, a, o = 0, h = 0, u = "data:";
+            if (e2.substr(0, u.length) === u) throw new Error("Invalid base64 input, it looks like a data url.");
+            var l, f = 3 * (e2 = e2.replace(/[^A-Za-z0-9+/=]/g, "")).length / 4;
+            if (e2.charAt(e2.length - 1) === p.charAt(64) && f--, e2.charAt(e2.length - 2) === p.charAt(64) && f--, f % 1 != 0) throw new Error("Invalid base64 input, bad content length.");
+            for (l = c.uint8array ? new Uint8Array(0 | f) : new Array(0 | f); o < e2.length; ) t2 = p.indexOf(e2.charAt(o++)) << 2 | (i = p.indexOf(e2.charAt(o++))) >> 4, r2 = (15 & i) << 4 | (s = p.indexOf(e2.charAt(o++))) >> 2, n = (3 & s) << 6 | (a = p.indexOf(e2.charAt(o++))), l[h++] = t2, 64 !== s && (l[h++] = r2), 64 !== a && (l[h++] = n);
+            return l;
+          };
+        }, { "./support": 30, "./utils": 32 }], 2: [function(e, t, r) {
+          "use strict";
+          var n = e("./external"), i = e("./stream/DataWorker"), s = e("./stream/Crc32Probe"), a = e("./stream/DataLengthProbe");
+          function o(e2, t2, r2, n2, i2) {
+            this.compressedSize = e2, this.uncompressedSize = t2, this.crc32 = r2, this.compression = n2, this.compressedContent = i2;
+          }
+          o.prototype = { getContentWorker: function() {
+            var e2 = new i(n.Promise.resolve(this.compressedContent)).pipe(this.compression.uncompressWorker()).pipe(new a("data_length")), t2 = this;
+            return e2.on("end", function() {
+              if (this.streamInfo.data_length !== t2.uncompressedSize) throw new Error("Bug : uncompressed data size mismatch");
+            }), e2;
+          }, getCompressedWorker: function() {
+            return new i(n.Promise.resolve(this.compressedContent)).withStreamInfo("compressedSize", this.compressedSize).withStreamInfo("uncompressedSize", this.uncompressedSize).withStreamInfo("crc32", this.crc32).withStreamInfo("compression", this.compression);
+          } }, o.createWorkerFrom = function(e2, t2, r2) {
+            return e2.pipe(new s()).pipe(new a("uncompressedSize")).pipe(t2.compressWorker(r2)).pipe(new a("compressedSize")).withStreamInfo("compression", t2);
+          }, t.exports = o;
+        }, { "./external": 6, "./stream/Crc32Probe": 25, "./stream/DataLengthProbe": 26, "./stream/DataWorker": 27 }], 3: [function(e, t, r) {
+          "use strict";
+          var n = e("./stream/GenericWorker");
+          r.STORE = { magic: "\0\0", compressWorker: function() {
+            return new n("STORE compression");
+          }, uncompressWorker: function() {
+            return new n("STORE decompression");
+          } }, r.DEFLATE = e("./flate");
+        }, { "./flate": 7, "./stream/GenericWorker": 28 }], 4: [function(e, t, r) {
+          "use strict";
+          var n = e("./utils");
+          var o = (function() {
+            for (var e2, t2 = [], r2 = 0; r2 < 256; r2++) {
+              e2 = r2;
+              for (var n2 = 0; n2 < 8; n2++) e2 = 1 & e2 ? 3988292384 ^ e2 >>> 1 : e2 >>> 1;
+              t2[r2] = e2;
+            }
+            return t2;
+          })();
+          t.exports = function(e2, t2) {
+            return void 0 !== e2 && e2.length ? "string" !== n.getTypeOf(e2) ? (function(e3, t3, r2, n2) {
+              var i = o, s = n2 + r2;
+              e3 ^= -1;
+              for (var a = n2; a < s; a++) e3 = e3 >>> 8 ^ i[255 & (e3 ^ t3[a])];
+              return -1 ^ e3;
+            })(0 | t2, e2, e2.length, 0) : (function(e3, t3, r2, n2) {
+              var i = o, s = n2 + r2;
+              e3 ^= -1;
+              for (var a = n2; a < s; a++) e3 = e3 >>> 8 ^ i[255 & (e3 ^ t3.charCodeAt(a))];
+              return -1 ^ e3;
+            })(0 | t2, e2, e2.length, 0) : 0;
+          };
+        }, { "./utils": 32 }], 5: [function(e, t, r) {
+          "use strict";
+          r.base64 = false, r.binary = false, r.dir = false, r.createFolders = true, r.date = null, r.compression = null, r.compressionOptions = null, r.comment = null, r.unixPermissions = null, r.dosPermissions = null;
+        }, {}], 6: [function(e, t, r) {
+          "use strict";
+          var n = null;
+          n = "undefined" != typeof Promise ? Promise : e("lie"), t.exports = { Promise: n };
+        }, { lie: 37 }], 7: [function(e, t, r) {
+          "use strict";
+          var n = "undefined" != typeof Uint8Array && "undefined" != typeof Uint16Array && "undefined" != typeof Uint32Array, i = e("pako"), s = e("./utils"), a = e("./stream/GenericWorker"), o = n ? "uint8array" : "array";
+          function h(e2, t2) {
+            a.call(this, "FlateWorker/" + e2), this._pako = null, this._pakoAction = e2, this._pakoOptions = t2, this.meta = {};
+          }
+          r.magic = "\b\0", s.inherits(h, a), h.prototype.processChunk = function(e2) {
+            this.meta = e2.meta, null === this._pako && this._createPako(), this._pako.push(s.transformTo(o, e2.data), false);
+          }, h.prototype.flush = function() {
+            a.prototype.flush.call(this), null === this._pako && this._createPako(), this._pako.push([], true);
+          }, h.prototype.cleanUp = function() {
+            a.prototype.cleanUp.call(this), this._pako = null;
+          }, h.prototype._createPako = function() {
+            this._pako = new i[this._pakoAction]({ raw: true, level: this._pakoOptions.level || -1 });
+            var t2 = this;
+            this._pako.onData = function(e2) {
+              t2.push({ data: e2, meta: t2.meta });
+            };
+          }, r.compressWorker = function(e2) {
+            return new h("Deflate", e2);
+          }, r.uncompressWorker = function() {
+            return new h("Inflate", {});
+          };
+        }, { "./stream/GenericWorker": 28, "./utils": 32, pako: 38 }], 8: [function(e, t, r) {
+          "use strict";
+          function A(e2, t2) {
+            var r2, n2 = "";
+            for (r2 = 0; r2 < t2; r2++) n2 += String.fromCharCode(255 & e2), e2 >>>= 8;
+            return n2;
+          }
+          function n(e2, t2, r2, n2, i2, s2) {
+            var a, o, h = e2.file, u = e2.compression, l = s2 !== O.utf8encode, f = I.transformTo("string", s2(h.name)), c = I.transformTo("string", O.utf8encode(h.name)), d = h.comment, p = I.transformTo("string", s2(d)), m = I.transformTo("string", O.utf8encode(d)), _ = c.length !== h.name.length, g = m.length !== d.length, b = "", v = "", y = "", w = h.dir, k = h.date, x = { crc32: 0, compressedSize: 0, uncompressedSize: 0 };
+            t2 && !r2 || (x.crc32 = e2.crc32, x.compressedSize = e2.compressedSize, x.uncompressedSize = e2.uncompressedSize);
+            var S = 0;
+            t2 && (S |= 8), l || !_ && !g || (S |= 2048);
+            var z = 0, C = 0;
+            w && (z |= 16), "UNIX" === i2 ? (C = 798, z |= (function(e3, t3) {
+              var r3 = e3;
+              return e3 || (r3 = t3 ? 16893 : 33204), (65535 & r3) << 16;
+            })(h.unixPermissions, w)) : (C = 20, z |= (function(e3) {
+              return 63 & (e3 || 0);
+            })(h.dosPermissions)), a = k.getUTCHours(), a <<= 6, a |= k.getUTCMinutes(), a <<= 5, a |= k.getUTCSeconds() / 2, o = k.getUTCFullYear() - 1980, o <<= 4, o |= k.getUTCMonth() + 1, o <<= 5, o |= k.getUTCDate(), _ && (v = A(1, 1) + A(B(f), 4) + c, b += "up" + A(v.length, 2) + v), g && (y = A(1, 1) + A(B(p), 4) + m, b += "uc" + A(y.length, 2) + y);
+            var E = "";
+            return E += "\n\0", E += A(S, 2), E += u.magic, E += A(a, 2), E += A(o, 2), E += A(x.crc32, 4), E += A(x.compressedSize, 4), E += A(x.uncompressedSize, 4), E += A(f.length, 2), E += A(b.length, 2), { fileRecord: R.LOCAL_FILE_HEADER + E + f + b, dirRecord: R.CENTRAL_FILE_HEADER + A(C, 2) + E + A(p.length, 2) + "\0\0\0\0" + A(z, 4) + A(n2, 4) + f + b + p };
+          }
+          var I = e("../utils"), i = e("../stream/GenericWorker"), O = e("../utf8"), B = e("../crc32"), R = e("../signature");
+          function s(e2, t2, r2, n2) {
+            i.call(this, "ZipFileWorker"), this.bytesWritten = 0, this.zipComment = t2, this.zipPlatform = r2, this.encodeFileName = n2, this.streamFiles = e2, this.accumulate = false, this.contentBuffer = [], this.dirRecords = [], this.currentSourceOffset = 0, this.entriesCount = 0, this.currentFile = null, this._sources = [];
+          }
+          I.inherits(s, i), s.prototype.push = function(e2) {
+            var t2 = e2.meta.percent || 0, r2 = this.entriesCount, n2 = this._sources.length;
+            this.accumulate ? this.contentBuffer.push(e2) : (this.bytesWritten += e2.data.length, i.prototype.push.call(this, { data: e2.data, meta: { currentFile: this.currentFile, percent: r2 ? (t2 + 100 * (r2 - n2 - 1)) / r2 : 100 } }));
+          }, s.prototype.openedSource = function(e2) {
+            this.currentSourceOffset = this.bytesWritten, this.currentFile = e2.file.name;
+            var t2 = this.streamFiles && !e2.file.dir;
+            if (t2) {
+              var r2 = n(e2, t2, false, this.currentSourceOffset, this.zipPlatform, this.encodeFileName);
+              this.push({ data: r2.fileRecord, meta: { percent: 0 } });
+            } else this.accumulate = true;
+          }, s.prototype.closedSource = function(e2) {
+            this.accumulate = false;
+            var t2 = this.streamFiles && !e2.file.dir, r2 = n(e2, t2, true, this.currentSourceOffset, this.zipPlatform, this.encodeFileName);
+            if (this.dirRecords.push(r2.dirRecord), t2) this.push({ data: (function(e3) {
+              return R.DATA_DESCRIPTOR + A(e3.crc32, 4) + A(e3.compressedSize, 4) + A(e3.uncompressedSize, 4);
+            })(e2), meta: { percent: 100 } });
+            else for (this.push({ data: r2.fileRecord, meta: { percent: 0 } }); this.contentBuffer.length; ) this.push(this.contentBuffer.shift());
+            this.currentFile = null;
+          }, s.prototype.flush = function() {
+            for (var e2 = this.bytesWritten, t2 = 0; t2 < this.dirRecords.length; t2++) this.push({ data: this.dirRecords[t2], meta: { percent: 100 } });
+            var r2 = this.bytesWritten - e2, n2 = (function(e3, t3, r3, n3, i2) {
+              var s2 = I.transformTo("string", i2(n3));
+              return R.CENTRAL_DIRECTORY_END + "\0\0\0\0" + A(e3, 2) + A(e3, 2) + A(t3, 4) + A(r3, 4) + A(s2.length, 2) + s2;
+            })(this.dirRecords.length, r2, e2, this.zipComment, this.encodeFileName);
+            this.push({ data: n2, meta: { percent: 100 } });
+          }, s.prototype.prepareNextSource = function() {
+            this.previous = this._sources.shift(), this.openedSource(this.previous.streamInfo), this.isPaused ? this.previous.pause() : this.previous.resume();
+          }, s.prototype.registerPrevious = function(e2) {
+            this._sources.push(e2);
+            var t2 = this;
+            return e2.on("data", function(e3) {
+              t2.processChunk(e3);
+            }), e2.on("end", function() {
+              t2.closedSource(t2.previous.streamInfo), t2._sources.length ? t2.prepareNextSource() : t2.end();
+            }), e2.on("error", function(e3) {
+              t2.error(e3);
+            }), this;
+          }, s.prototype.resume = function() {
+            return !!i.prototype.resume.call(this) && (!this.previous && this._sources.length ? (this.prepareNextSource(), true) : this.previous || this._sources.length || this.generatedError ? void 0 : (this.end(), true));
+          }, s.prototype.error = function(e2) {
+            var t2 = this._sources;
+            if (!i.prototype.error.call(this, e2)) return false;
+            for (var r2 = 0; r2 < t2.length; r2++) try {
+              t2[r2].error(e2);
+            } catch (e3) {
+            }
+            return true;
+          }, s.prototype.lock = function() {
+            i.prototype.lock.call(this);
+            for (var e2 = this._sources, t2 = 0; t2 < e2.length; t2++) e2[t2].lock();
+          }, t.exports = s;
+        }, { "../crc32": 4, "../signature": 23, "../stream/GenericWorker": 28, "../utf8": 31, "../utils": 32 }], 9: [function(e, t, r) {
+          "use strict";
+          var u = e("../compressions"), n = e("./ZipFileWorker");
+          r.generateWorker = function(e2, a, t2) {
+            var o = new n(a.streamFiles, t2, a.platform, a.encodeFileName), h = 0;
+            try {
+              e2.forEach(function(e3, t3) {
+                h++;
+                var r2 = (function(e4, t4) {
+                  var r3 = e4 || t4, n3 = u[r3];
+                  if (!n3) throw new Error(r3 + " is not a valid compression method !");
+                  return n3;
+                })(t3.options.compression, a.compression), n2 = t3.options.compressionOptions || a.compressionOptions || {}, i = t3.dir, s = t3.date;
+                t3._compressWorker(r2, n2).withStreamInfo("file", { name: e3, dir: i, date: s, comment: t3.comment || "", unixPermissions: t3.unixPermissions, dosPermissions: t3.dosPermissions }).pipe(o);
+              }), o.entriesCount = h;
+            } catch (e3) {
+              o.error(e3);
+            }
+            return o;
+          };
+        }, { "../compressions": 3, "./ZipFileWorker": 8 }], 10: [function(e, t, r) {
+          "use strict";
+          function n() {
+            if (!(this instanceof n)) return new n();
+            if (arguments.length) throw new Error("The constructor with parameters has been removed in JSZip 3.0, please check the upgrade guide.");
+            this.files = /* @__PURE__ */ Object.create(null), this.comment = null, this.root = "", this.clone = function() {
+              var e2 = new n();
+              for (var t2 in this) "function" != typeof this[t2] && (e2[t2] = this[t2]);
+              return e2;
+            };
+          }
+          (n.prototype = e("./object")).loadAsync = e("./load"), n.support = e("./support"), n.defaults = e("./defaults"), n.version = "3.10.1", n.loadAsync = function(e2, t2) {
+            return new n().loadAsync(e2, t2);
+          }, n.external = e("./external"), t.exports = n;
+        }, { "./defaults": 5, "./external": 6, "./load": 11, "./object": 15, "./support": 30 }], 11: [function(e, t, r) {
+          "use strict";
+          var u = e("./utils"), i = e("./external"), n = e("./utf8"), s = e("./zipEntries"), a = e("./stream/Crc32Probe"), l = e("./nodejsUtils");
+          function f(n2) {
+            return new i.Promise(function(e2, t2) {
+              var r2 = n2.decompressed.getContentWorker().pipe(new a());
+              r2.on("error", function(e3) {
+                t2(e3);
+              }).on("end", function() {
+                r2.streamInfo.crc32 !== n2.decompressed.crc32 ? t2(new Error("Corrupted zip : CRC32 mismatch")) : e2();
+              }).resume();
+            });
+          }
+          t.exports = function(e2, o) {
+            var h = this;
+            return o = u.extend(o || {}, { base64: false, checkCRC32: false, optimizedBinaryString: false, createFolders: false, decodeFileName: n.utf8decode }), l.isNode && l.isStream(e2) ? i.Promise.reject(new Error("JSZip can't accept a stream when loading a zip file.")) : u.prepareContent("the loaded zip file", e2, true, o.optimizedBinaryString, o.base64).then(function(e3) {
+              var t2 = new s(o);
+              return t2.load(e3), t2;
+            }).then(function(e3) {
+              var t2 = [i.Promise.resolve(e3)], r2 = e3.files;
+              if (o.checkCRC32) for (var n2 = 0; n2 < r2.length; n2++) t2.push(f(r2[n2]));
+              return i.Promise.all(t2);
+            }).then(function(e3) {
+              for (var t2 = e3.shift(), r2 = t2.files, n2 = 0; n2 < r2.length; n2++) {
+                var i2 = r2[n2], s2 = i2.fileNameStr, a2 = u.resolve(i2.fileNameStr);
+                h.file(a2, i2.decompressed, { binary: true, optimizedBinaryString: true, date: i2.date, dir: i2.dir, comment: i2.fileCommentStr.length ? i2.fileCommentStr : null, unixPermissions: i2.unixPermissions, dosPermissions: i2.dosPermissions, createFolders: o.createFolders }), i2.dir || (h.file(a2).unsafeOriginalName = s2);
+              }
+              return t2.zipComment.length && (h.comment = t2.zipComment), h;
+            });
+          };
+        }, { "./external": 6, "./nodejsUtils": 14, "./stream/Crc32Probe": 25, "./utf8": 31, "./utils": 32, "./zipEntries": 33 }], 12: [function(e, t, r) {
+          "use strict";
+          var n = e("../utils"), i = e("../stream/GenericWorker");
+          function s(e2, t2) {
+            i.call(this, "Nodejs stream input adapter for " + e2), this._upstreamEnded = false, this._bindStream(t2);
+          }
+          n.inherits(s, i), s.prototype._bindStream = function(e2) {
+            var t2 = this;
+            (this._stream = e2).pause(), e2.on("data", function(e3) {
+              t2.push({ data: e3, meta: { percent: 0 } });
+            }).on("error", function(e3) {
+              t2.isPaused ? this.generatedError = e3 : t2.error(e3);
+            }).on("end", function() {
+              t2.isPaused ? t2._upstreamEnded = true : t2.end();
+            });
+          }, s.prototype.pause = function() {
+            return !!i.prototype.pause.call(this) && (this._stream.pause(), true);
+          }, s.prototype.resume = function() {
+            return !!i.prototype.resume.call(this) && (this._upstreamEnded ? this.end() : this._stream.resume(), true);
+          }, t.exports = s;
+        }, { "../stream/GenericWorker": 28, "../utils": 32 }], 13: [function(e, t, r) {
+          "use strict";
+          var i = e("readable-stream").Readable;
+          function n(e2, t2, r2) {
+            i.call(this, t2), this._helper = e2;
+            var n2 = this;
+            e2.on("data", function(e3, t3) {
+              n2.push(e3) || n2._helper.pause(), r2 && r2(t3);
+            }).on("error", function(e3) {
+              n2.emit("error", e3);
+            }).on("end", function() {
+              n2.push(null);
+            });
+          }
+          e("../utils").inherits(n, i), n.prototype._read = function() {
+            this._helper.resume();
+          }, t.exports = n;
+        }, { "../utils": 32, "readable-stream": 16 }], 14: [function(e, t, r) {
+          "use strict";
+          t.exports = { isNode: "undefined" != typeof Buffer, newBufferFrom: function(e2, t2) {
+            if (Buffer.from && Buffer.from !== Uint8Array.from) return Buffer.from(e2, t2);
+            if ("number" == typeof e2) throw new Error('The "data" argument must not be a number');
+            return new Buffer(e2, t2);
+          }, allocBuffer: function(e2) {
+            if (Buffer.alloc) return Buffer.alloc(e2);
+            var t2 = new Buffer(e2);
+            return t2.fill(0), t2;
+          }, isBuffer: function(e2) {
+            return Buffer.isBuffer(e2);
+          }, isStream: function(e2) {
+            return e2 && "function" == typeof e2.on && "function" == typeof e2.pause && "function" == typeof e2.resume;
+          } };
+        }, {}], 15: [function(e, t, r) {
+          "use strict";
+          function s(e2, t2, r2) {
+            var n2, i2 = u.getTypeOf(t2), s2 = u.extend(r2 || {}, f);
+            s2.date = s2.date || /* @__PURE__ */ new Date(), null !== s2.compression && (s2.compression = s2.compression.toUpperCase()), "string" == typeof s2.unixPermissions && (s2.unixPermissions = parseInt(s2.unixPermissions, 8)), s2.unixPermissions && 16384 & s2.unixPermissions && (s2.dir = true), s2.dosPermissions && 16 & s2.dosPermissions && (s2.dir = true), s2.dir && (e2 = g(e2)), s2.createFolders && (n2 = _(e2)) && b.call(this, n2, true);
+            var a2 = "string" === i2 && false === s2.binary && false === s2.base64;
+            r2 && void 0 !== r2.binary || (s2.binary = !a2), (t2 instanceof c && 0 === t2.uncompressedSize || s2.dir || !t2 || 0 === t2.length) && (s2.base64 = false, s2.binary = true, t2 = "", s2.compression = "STORE", i2 = "string");
+            var o2 = null;
+            o2 = t2 instanceof c || t2 instanceof l ? t2 : p.isNode && p.isStream(t2) ? new m(e2, t2) : u.prepareContent(e2, t2, s2.binary, s2.optimizedBinaryString, s2.base64);
+            var h2 = new d(e2, o2, s2);
+            this.files[e2] = h2;
+          }
+          var i = e("./utf8"), u = e("./utils"), l = e("./stream/GenericWorker"), a = e("./stream/StreamHelper"), f = e("./defaults"), c = e("./compressedObject"), d = e("./zipObject"), o = e("./generate"), p = e("./nodejsUtils"), m = e("./nodejs/NodejsStreamInputAdapter"), _ = function(e2) {
+            "/" === e2.slice(-1) && (e2 = e2.substring(0, e2.length - 1));
+            var t2 = e2.lastIndexOf("/");
+            return 0 < t2 ? e2.substring(0, t2) : "";
+          }, g = function(e2) {
+            return "/" !== e2.slice(-1) && (e2 += "/"), e2;
+          }, b = function(e2, t2) {
+            return t2 = void 0 !== t2 ? t2 : f.createFolders, e2 = g(e2), this.files[e2] || s.call(this, e2, null, { dir: true, createFolders: t2 }), this.files[e2];
+          };
+          function h(e2) {
+            return "[object RegExp]" === Object.prototype.toString.call(e2);
+          }
+          var n = { load: function() {
+            throw new Error("This method has been removed in JSZip 3.0, please check the upgrade guide.");
+          }, forEach: function(e2) {
+            var t2, r2, n2;
+            for (t2 in this.files) n2 = this.files[t2], (r2 = t2.slice(this.root.length, t2.length)) && t2.slice(0, this.root.length) === this.root && e2(r2, n2);
+          }, filter: function(r2) {
+            var n2 = [];
+            return this.forEach(function(e2, t2) {
+              r2(e2, t2) && n2.push(t2);
+            }), n2;
+          }, file: function(e2, t2, r2) {
+            if (1 !== arguments.length) return e2 = this.root + e2, s.call(this, e2, t2, r2), this;
+            if (h(e2)) {
+              var n2 = e2;
+              return this.filter(function(e3, t3) {
+                return !t3.dir && n2.test(e3);
+              });
+            }
+            var i2 = this.files[this.root + e2];
+            return i2 && !i2.dir ? i2 : null;
+          }, folder: function(r2) {
+            if (!r2) return this;
+            if (h(r2)) return this.filter(function(e3, t3) {
+              return t3.dir && r2.test(e3);
+            });
+            var e2 = this.root + r2, t2 = b.call(this, e2), n2 = this.clone();
+            return n2.root = t2.name, n2;
+          }, remove: function(r2) {
+            r2 = this.root + r2;
+            var e2 = this.files[r2];
+            if (e2 || ("/" !== r2.slice(-1) && (r2 += "/"), e2 = this.files[r2]), e2 && !e2.dir) delete this.files[r2];
+            else for (var t2 = this.filter(function(e3, t3) {
+              return t3.name.slice(0, r2.length) === r2;
+            }), n2 = 0; n2 < t2.length; n2++) delete this.files[t2[n2].name];
+            return this;
+          }, generate: function() {
+            throw new Error("This method has been removed in JSZip 3.0, please check the upgrade guide.");
+          }, generateInternalStream: function(e2) {
+            var t2, r2 = {};
+            try {
+              if ((r2 = u.extend(e2 || {}, { streamFiles: false, compression: "STORE", compressionOptions: null, type: "", platform: "DOS", comment: null, mimeType: "application/zip", encodeFileName: i.utf8encode })).type = r2.type.toLowerCase(), r2.compression = r2.compression.toUpperCase(), "binarystring" === r2.type && (r2.type = "string"), !r2.type) throw new Error("No output type specified.");
+              u.checkSupport(r2.type), "darwin" !== r2.platform && "freebsd" !== r2.platform && "linux" !== r2.platform && "sunos" !== r2.platform || (r2.platform = "UNIX"), "win32" === r2.platform && (r2.platform = "DOS");
+              var n2 = r2.comment || this.comment || "";
+              t2 = o.generateWorker(this, r2, n2);
+            } catch (e3) {
+              (t2 = new l("error")).error(e3);
+            }
+            return new a(t2, r2.type || "string", r2.mimeType);
+          }, generateAsync: function(e2, t2) {
+            return this.generateInternalStream(e2).accumulate(t2);
+          }, generateNodeStream: function(e2, t2) {
+            return (e2 = e2 || {}).type || (e2.type = "nodebuffer"), this.generateInternalStream(e2).toNodejsStream(t2);
+          } };
+          t.exports = n;
+        }, { "./compressedObject": 2, "./defaults": 5, "./generate": 9, "./nodejs/NodejsStreamInputAdapter": 12, "./nodejsUtils": 14, "./stream/GenericWorker": 28, "./stream/StreamHelper": 29, "./utf8": 31, "./utils": 32, "./zipObject": 35 }], 16: [function(e, t, r) {
+          "use strict";
+          t.exports = e("stream");
+        }, { stream: void 0 }], 17: [function(e, t, r) {
+          "use strict";
+          var n = e("./DataReader");
+          function i(e2) {
+            n.call(this, e2);
+            for (var t2 = 0; t2 < this.data.length; t2++) e2[t2] = 255 & e2[t2];
+          }
+          e("../utils").inherits(i, n), i.prototype.byteAt = function(e2) {
+            return this.data[this.zero + e2];
+          }, i.prototype.lastIndexOfSignature = function(e2) {
+            for (var t2 = e2.charCodeAt(0), r2 = e2.charCodeAt(1), n2 = e2.charCodeAt(2), i2 = e2.charCodeAt(3), s = this.length - 4; 0 <= s; --s) if (this.data[s] === t2 && this.data[s + 1] === r2 && this.data[s + 2] === n2 && this.data[s + 3] === i2) return s - this.zero;
+            return -1;
+          }, i.prototype.readAndCheckSignature = function(e2) {
+            var t2 = e2.charCodeAt(0), r2 = e2.charCodeAt(1), n2 = e2.charCodeAt(2), i2 = e2.charCodeAt(3), s = this.readData(4);
+            return t2 === s[0] && r2 === s[1] && n2 === s[2] && i2 === s[3];
+          }, i.prototype.readData = function(e2) {
+            if (this.checkOffset(e2), 0 === e2) return [];
+            var t2 = this.data.slice(this.zero + this.index, this.zero + this.index + e2);
+            return this.index += e2, t2;
+          }, t.exports = i;
+        }, { "../utils": 32, "./DataReader": 18 }], 18: [function(e, t, r) {
+          "use strict";
+          var n = e("../utils");
+          function i(e2) {
+            this.data = e2, this.length = e2.length, this.index = 0, this.zero = 0;
+          }
+          i.prototype = { checkOffset: function(e2) {
+            this.checkIndex(this.index + e2);
+          }, checkIndex: function(e2) {
+            if (this.length < this.zero + e2 || e2 < 0) throw new Error("End of data reached (data length = " + this.length + ", asked index = " + e2 + "). Corrupted zip ?");
+          }, setIndex: function(e2) {
+            this.checkIndex(e2), this.index = e2;
+          }, skip: function(e2) {
+            this.setIndex(this.index + e2);
+          }, byteAt: function() {
+          }, readInt: function(e2) {
+            var t2, r2 = 0;
+            for (this.checkOffset(e2), t2 = this.index + e2 - 1; t2 >= this.index; t2--) r2 = (r2 << 8) + this.byteAt(t2);
+            return this.index += e2, r2;
+          }, readString: function(e2) {
+            return n.transformTo("string", this.readData(e2));
+          }, readData: function() {
+          }, lastIndexOfSignature: function() {
+          }, readAndCheckSignature: function() {
+          }, readDate: function() {
+            var e2 = this.readInt(4);
+            return new Date(Date.UTC(1980 + (e2 >> 25 & 127), (e2 >> 21 & 15) - 1, e2 >> 16 & 31, e2 >> 11 & 31, e2 >> 5 & 63, (31 & e2) << 1));
+          } }, t.exports = i;
+        }, { "../utils": 32 }], 19: [function(e, t, r) {
+          "use strict";
+          var n = e("./Uint8ArrayReader");
+          function i(e2) {
+            n.call(this, e2);
+          }
+          e("../utils").inherits(i, n), i.prototype.readData = function(e2) {
+            this.checkOffset(e2);
+            var t2 = this.data.slice(this.zero + this.index, this.zero + this.index + e2);
+            return this.index += e2, t2;
+          }, t.exports = i;
+        }, { "../utils": 32, "./Uint8ArrayReader": 21 }], 20: [function(e, t, r) {
+          "use strict";
+          var n = e("./DataReader");
+          function i(e2) {
+            n.call(this, e2);
+          }
+          e("../utils").inherits(i, n), i.prototype.byteAt = function(e2) {
+            return this.data.charCodeAt(this.zero + e2);
+          }, i.prototype.lastIndexOfSignature = function(e2) {
+            return this.data.lastIndexOf(e2) - this.zero;
+          }, i.prototype.readAndCheckSignature = function(e2) {
+            return e2 === this.readData(4);
+          }, i.prototype.readData = function(e2) {
+            this.checkOffset(e2);
+            var t2 = this.data.slice(this.zero + this.index, this.zero + this.index + e2);
+            return this.index += e2, t2;
+          }, t.exports = i;
+        }, { "../utils": 32, "./DataReader": 18 }], 21: [function(e, t, r) {
+          "use strict";
+          var n = e("./ArrayReader");
+          function i(e2) {
+            n.call(this, e2);
+          }
+          e("../utils").inherits(i, n), i.prototype.readData = function(e2) {
+            if (this.checkOffset(e2), 0 === e2) return new Uint8Array(0);
+            var t2 = this.data.subarray(this.zero + this.index, this.zero + this.index + e2);
+            return this.index += e2, t2;
+          }, t.exports = i;
+        }, { "../utils": 32, "./ArrayReader": 17 }], 22: [function(e, t, r) {
+          "use strict";
+          var n = e("../utils"), i = e("../support"), s = e("./ArrayReader"), a = e("./StringReader"), o = e("./NodeBufferReader"), h = e("./Uint8ArrayReader");
+          t.exports = function(e2) {
+            var t2 = n.getTypeOf(e2);
+            return n.checkSupport(t2), "string" !== t2 || i.uint8array ? "nodebuffer" === t2 ? new o(e2) : i.uint8array ? new h(n.transformTo("uint8array", e2)) : new s(n.transformTo("array", e2)) : new a(e2);
+          };
+        }, { "../support": 30, "../utils": 32, "./ArrayReader": 17, "./NodeBufferReader": 19, "./StringReader": 20, "./Uint8ArrayReader": 21 }], 23: [function(e, t, r) {
+          "use strict";
+          r.LOCAL_FILE_HEADER = "PK", r.CENTRAL_FILE_HEADER = "PK", r.CENTRAL_DIRECTORY_END = "PK", r.ZIP64_CENTRAL_DIRECTORY_LOCATOR = "PK\x07", r.ZIP64_CENTRAL_DIRECTORY_END = "PK", r.DATA_DESCRIPTOR = "PK\x07\b";
+        }, {}], 24: [function(e, t, r) {
+          "use strict";
+          var n = e("./GenericWorker"), i = e("../utils");
+          function s(e2) {
+            n.call(this, "ConvertWorker to " + e2), this.destType = e2;
+          }
+          i.inherits(s, n), s.prototype.processChunk = function(e2) {
+            this.push({ data: i.transformTo(this.destType, e2.data), meta: e2.meta });
+          }, t.exports = s;
+        }, { "../utils": 32, "./GenericWorker": 28 }], 25: [function(e, t, r) {
+          "use strict";
+          var n = e("./GenericWorker"), i = e("../crc32");
+          function s() {
+            n.call(this, "Crc32Probe"), this.withStreamInfo("crc32", 0);
+          }
+          e("../utils").inherits(s, n), s.prototype.processChunk = function(e2) {
+            this.streamInfo.crc32 = i(e2.data, this.streamInfo.crc32 || 0), this.push(e2);
+          }, t.exports = s;
+        }, { "../crc32": 4, "../utils": 32, "./GenericWorker": 28 }], 26: [function(e, t, r) {
+          "use strict";
+          var n = e("../utils"), i = e("./GenericWorker");
+          function s(e2) {
+            i.call(this, "DataLengthProbe for " + e2), this.propName = e2, this.withStreamInfo(e2, 0);
+          }
+          n.inherits(s, i), s.prototype.processChunk = function(e2) {
+            if (e2) {
+              var t2 = this.streamInfo[this.propName] || 0;
+              this.streamInfo[this.propName] = t2 + e2.data.length;
+            }
+            i.prototype.processChunk.call(this, e2);
+          }, t.exports = s;
+        }, { "../utils": 32, "./GenericWorker": 28 }], 27: [function(e, t, r) {
+          "use strict";
+          var n = e("../utils"), i = e("./GenericWorker");
+          function s(e2) {
+            i.call(this, "DataWorker");
+            var t2 = this;
+            this.dataIsReady = false, this.index = 0, this.max = 0, this.data = null, this.type = "", this._tickScheduled = false, e2.then(function(e3) {
+              t2.dataIsReady = true, t2.data = e3, t2.max = e3 && e3.length || 0, t2.type = n.getTypeOf(e3), t2.isPaused || t2._tickAndRepeat();
+            }, function(e3) {
+              t2.error(e3);
+            });
+          }
+          n.inherits(s, i), s.prototype.cleanUp = function() {
+            i.prototype.cleanUp.call(this), this.data = null;
+          }, s.prototype.resume = function() {
+            return !!i.prototype.resume.call(this) && (!this._tickScheduled && this.dataIsReady && (this._tickScheduled = true, n.delay(this._tickAndRepeat, [], this)), true);
+          }, s.prototype._tickAndRepeat = function() {
+            this._tickScheduled = false, this.isPaused || this.isFinished || (this._tick(), this.isFinished || (n.delay(this._tickAndRepeat, [], this), this._tickScheduled = true));
+          }, s.prototype._tick = function() {
+            if (this.isPaused || this.isFinished) return false;
+            var e2 = null, t2 = Math.min(this.max, this.index + 16384);
+            if (this.index >= this.max) return this.end();
+            switch (this.type) {
+              case "string":
+                e2 = this.data.substring(this.index, t2);
+                break;
+              case "uint8array":
+                e2 = this.data.subarray(this.index, t2);
+                break;
+              case "array":
+              case "nodebuffer":
+                e2 = this.data.slice(this.index, t2);
+            }
+            return this.index = t2, this.push({ data: e2, meta: { percent: this.max ? this.index / this.max * 100 : 0 } });
+          }, t.exports = s;
+        }, { "../utils": 32, "./GenericWorker": 28 }], 28: [function(e, t, r) {
+          "use strict";
+          function n(e2) {
+            this.name = e2 || "default", this.streamInfo = {}, this.generatedError = null, this.extraStreamInfo = {}, this.isPaused = true, this.isFinished = false, this.isLocked = false, this._listeners = { data: [], end: [], error: [] }, this.previous = null;
+          }
+          n.prototype = { push: function(e2) {
+            this.emit("data", e2);
+          }, end: function() {
+            if (this.isFinished) return false;
+            this.flush();
+            try {
+              this.emit("end"), this.cleanUp(), this.isFinished = true;
+            } catch (e2) {
+              this.emit("error", e2);
+            }
+            return true;
+          }, error: function(e2) {
+            return !this.isFinished && (this.isPaused ? this.generatedError = e2 : (this.isFinished = true, this.emit("error", e2), this.previous && this.previous.error(e2), this.cleanUp()), true);
+          }, on: function(e2, t2) {
+            return this._listeners[e2].push(t2), this;
+          }, cleanUp: function() {
+            this.streamInfo = this.generatedError = this.extraStreamInfo = null, this._listeners = [];
+          }, emit: function(e2, t2) {
+            if (this._listeners[e2]) for (var r2 = 0; r2 < this._listeners[e2].length; r2++) this._listeners[e2][r2].call(this, t2);
+          }, pipe: function(e2) {
+            return e2.registerPrevious(this);
+          }, registerPrevious: function(e2) {
+            if (this.isLocked) throw new Error("The stream '" + this + "' has already been used.");
+            this.streamInfo = e2.streamInfo, this.mergeStreamInfo(), this.previous = e2;
+            var t2 = this;
+            return e2.on("data", function(e3) {
+              t2.processChunk(e3);
+            }), e2.on("end", function() {
+              t2.end();
+            }), e2.on("error", function(e3) {
+              t2.error(e3);
+            }), this;
+          }, pause: function() {
+            return !this.isPaused && !this.isFinished && (this.isPaused = true, this.previous && this.previous.pause(), true);
+          }, resume: function() {
+            if (!this.isPaused || this.isFinished) return false;
+            var e2 = this.isPaused = false;
+            return this.generatedError && (this.error(this.generatedError), e2 = true), this.previous && this.previous.resume(), !e2;
+          }, flush: function() {
+          }, processChunk: function(e2) {
+            this.push(e2);
+          }, withStreamInfo: function(e2, t2) {
+            return this.extraStreamInfo[e2] = t2, this.mergeStreamInfo(), this;
+          }, mergeStreamInfo: function() {
+            for (var e2 in this.extraStreamInfo) Object.prototype.hasOwnProperty.call(this.extraStreamInfo, e2) && (this.streamInfo[e2] = this.extraStreamInfo[e2]);
+          }, lock: function() {
+            if (this.isLocked) throw new Error("The stream '" + this + "' has already been used.");
+            this.isLocked = true, this.previous && this.previous.lock();
+          }, toString: function() {
+            var e2 = "Worker " + this.name;
+            return this.previous ? this.previous + " -> " + e2 : e2;
+          } }, t.exports = n;
+        }, {}], 29: [function(e, t, r) {
+          "use strict";
+          var h = e("../utils"), i = e("./ConvertWorker"), s = e("./GenericWorker"), u = e("../base64"), n = e("../support"), a = e("../external"), o = null;
+          if (n.nodestream) try {
+            o = e("../nodejs/NodejsStreamOutputAdapter");
+          } catch (e2) {
+          }
+          function l(e2, o2) {
+            return new a.Promise(function(t2, r2) {
+              var n2 = [], i2 = e2._internalType, s2 = e2._outputType, a2 = e2._mimeType;
+              e2.on("data", function(e3, t3) {
+                n2.push(e3), o2 && o2(t3);
+              }).on("error", function(e3) {
+                n2 = [], r2(e3);
+              }).on("end", function() {
+                try {
+                  var e3 = (function(e4, t3, r3) {
+                    switch (e4) {
+                      case "blob":
+                        return h.newBlob(h.transformTo("arraybuffer", t3), r3);
+                      case "base64":
+                        return u.encode(t3);
+                      default:
+                        return h.transformTo(e4, t3);
+                    }
+                  })(s2, (function(e4, t3) {
+                    var r3, n3 = 0, i3 = null, s3 = 0;
+                    for (r3 = 0; r3 < t3.length; r3++) s3 += t3[r3].length;
+                    switch (e4) {
+                      case "string":
+                        return t3.join("");
+                      case "array":
+                        return Array.prototype.concat.apply([], t3);
+                      case "uint8array":
+                        for (i3 = new Uint8Array(s3), r3 = 0; r3 < t3.length; r3++) i3.set(t3[r3], n3), n3 += t3[r3].length;
+                        return i3;
+                      case "nodebuffer":
+                        return Buffer.concat(t3);
+                      default:
+                        throw new Error("concat : unsupported type '" + e4 + "'");
+                    }
+                  })(i2, n2), a2);
+                  t2(e3);
+                } catch (e4) {
+                  r2(e4);
+                }
+                n2 = [];
+              }).resume();
+            });
+          }
+          function f(e2, t2, r2) {
+            var n2 = t2;
+            switch (t2) {
+              case "blob":
+              case "arraybuffer":
+                n2 = "uint8array";
+                break;
+              case "base64":
+                n2 = "string";
+            }
+            try {
+              this._internalType = n2, this._outputType = t2, this._mimeType = r2, h.checkSupport(n2), this._worker = e2.pipe(new i(n2)), e2.lock();
+            } catch (e3) {
+              this._worker = new s("error"), this._worker.error(e3);
+            }
+          }
+          f.prototype = { accumulate: function(e2) {
+            return l(this, e2);
+          }, on: function(e2, t2) {
+            var r2 = this;
+            return "data" === e2 ? this._worker.on(e2, function(e3) {
+              t2.call(r2, e3.data, e3.meta);
+            }) : this._worker.on(e2, function() {
+              h.delay(t2, arguments, r2);
+            }), this;
+          }, resume: function() {
+            return h.delay(this._worker.resume, [], this._worker), this;
+          }, pause: function() {
+            return this._worker.pause(), this;
+          }, toNodejsStream: function(e2) {
+            if (h.checkSupport("nodestream"), "nodebuffer" !== this._outputType) throw new Error(this._outputType + " is not supported by this method");
+            return new o(this, { objectMode: "nodebuffer" !== this._outputType }, e2);
+          } }, t.exports = f;
+        }, { "../base64": 1, "../external": 6, "../nodejs/NodejsStreamOutputAdapter": 13, "../support": 30, "../utils": 32, "./ConvertWorker": 24, "./GenericWorker": 28 }], 30: [function(e, t, r) {
+          "use strict";
+          if (r.base64 = true, r.array = true, r.string = true, r.arraybuffer = "undefined" != typeof ArrayBuffer && "undefined" != typeof Uint8Array, r.nodebuffer = "undefined" != typeof Buffer, r.uint8array = "undefined" != typeof Uint8Array, "undefined" == typeof ArrayBuffer) r.blob = false;
+          else {
+            var n = new ArrayBuffer(0);
+            try {
+              r.blob = 0 === new Blob([n], { type: "application/zip" }).size;
+            } catch (e2) {
+              try {
+                var i = new (self.BlobBuilder || self.WebKitBlobBuilder || self.MozBlobBuilder || self.MSBlobBuilder)();
+                i.append(n), r.blob = 0 === i.getBlob("application/zip").size;
+              } catch (e3) {
+                r.blob = false;
+              }
+            }
+          }
+          try {
+            r.nodestream = !!e("readable-stream").Readable;
+          } catch (e2) {
+            r.nodestream = false;
+          }
+        }, { "readable-stream": 16 }], 31: [function(e, t, s) {
+          "use strict";
+          for (var o = e("./utils"), h = e("./support"), r = e("./nodejsUtils"), n = e("./stream/GenericWorker"), u = new Array(256), i = 0; i < 256; i++) u[i] = 252 <= i ? 6 : 248 <= i ? 5 : 240 <= i ? 4 : 224 <= i ? 3 : 192 <= i ? 2 : 1;
+          u[254] = u[254] = 1;
+          function a() {
+            n.call(this, "utf-8 decode"), this.leftOver = null;
+          }
+          function l() {
+            n.call(this, "utf-8 encode");
+          }
+          s.utf8encode = function(e2) {
+            return h.nodebuffer ? r.newBufferFrom(e2, "utf-8") : (function(e3) {
+              var t2, r2, n2, i2, s2, a2 = e3.length, o2 = 0;
+              for (i2 = 0; i2 < a2; i2++) 55296 == (64512 & (r2 = e3.charCodeAt(i2))) && i2 + 1 < a2 && 56320 == (64512 & (n2 = e3.charCodeAt(i2 + 1))) && (r2 = 65536 + (r2 - 55296 << 10) + (n2 - 56320), i2++), o2 += r2 < 128 ? 1 : r2 < 2048 ? 2 : r2 < 65536 ? 3 : 4;
+              for (t2 = h.uint8array ? new Uint8Array(o2) : new Array(o2), i2 = s2 = 0; s2 < o2; i2++) 55296 == (64512 & (r2 = e3.charCodeAt(i2))) && i2 + 1 < a2 && 56320 == (64512 & (n2 = e3.charCodeAt(i2 + 1))) && (r2 = 65536 + (r2 - 55296 << 10) + (n2 - 56320), i2++), r2 < 128 ? t2[s2++] = r2 : (r2 < 2048 ? t2[s2++] = 192 | r2 >>> 6 : (r2 < 65536 ? t2[s2++] = 224 | r2 >>> 12 : (t2[s2++] = 240 | r2 >>> 18, t2[s2++] = 128 | r2 >>> 12 & 63), t2[s2++] = 128 | r2 >>> 6 & 63), t2[s2++] = 128 | 63 & r2);
+              return t2;
+            })(e2);
+          }, s.utf8decode = function(e2) {
+            return h.nodebuffer ? o.transformTo("nodebuffer", e2).toString("utf-8") : (function(e3) {
+              var t2, r2, n2, i2, s2 = e3.length, a2 = new Array(2 * s2);
+              for (t2 = r2 = 0; t2 < s2; ) if ((n2 = e3[t2++]) < 128) a2[r2++] = n2;
+              else if (4 < (i2 = u[n2])) a2[r2++] = 65533, t2 += i2 - 1;
+              else {
+                for (n2 &= 2 === i2 ? 31 : 3 === i2 ? 15 : 7; 1 < i2 && t2 < s2; ) n2 = n2 << 6 | 63 & e3[t2++], i2--;
+                1 < i2 ? a2[r2++] = 65533 : n2 < 65536 ? a2[r2++] = n2 : (n2 -= 65536, a2[r2++] = 55296 | n2 >> 10 & 1023, a2[r2++] = 56320 | 1023 & n2);
+              }
+              return a2.length !== r2 && (a2.subarray ? a2 = a2.subarray(0, r2) : a2.length = r2), o.applyFromCharCode(a2);
+            })(e2 = o.transformTo(h.uint8array ? "uint8array" : "array", e2));
+          }, o.inherits(a, n), a.prototype.processChunk = function(e2) {
+            var t2 = o.transformTo(h.uint8array ? "uint8array" : "array", e2.data);
+            if (this.leftOver && this.leftOver.length) {
+              if (h.uint8array) {
+                var r2 = t2;
+                (t2 = new Uint8Array(r2.length + this.leftOver.length)).set(this.leftOver, 0), t2.set(r2, this.leftOver.length);
+              } else t2 = this.leftOver.concat(t2);
+              this.leftOver = null;
+            }
+            var n2 = (function(e3, t3) {
+              var r3;
+              for ((t3 = t3 || e3.length) > e3.length && (t3 = e3.length), r3 = t3 - 1; 0 <= r3 && 128 == (192 & e3[r3]); ) r3--;
+              return r3 < 0 ? t3 : 0 === r3 ? t3 : r3 + u[e3[r3]] > t3 ? r3 : t3;
+            })(t2), i2 = t2;
+            n2 !== t2.length && (h.uint8array ? (i2 = t2.subarray(0, n2), this.leftOver = t2.subarray(n2, t2.length)) : (i2 = t2.slice(0, n2), this.leftOver = t2.slice(n2, t2.length))), this.push({ data: s.utf8decode(i2), meta: e2.meta });
+          }, a.prototype.flush = function() {
+            this.leftOver && this.leftOver.length && (this.push({ data: s.utf8decode(this.leftOver), meta: {} }), this.leftOver = null);
+          }, s.Utf8DecodeWorker = a, o.inherits(l, n), l.prototype.processChunk = function(e2) {
+            this.push({ data: s.utf8encode(e2.data), meta: e2.meta });
+          }, s.Utf8EncodeWorker = l;
+        }, { "./nodejsUtils": 14, "./stream/GenericWorker": 28, "./support": 30, "./utils": 32 }], 32: [function(e, t, a) {
+          "use strict";
+          var o = e("./support"), h = e("./base64"), r = e("./nodejsUtils"), u = e("./external");
+          function n(e2) {
+            return e2;
+          }
+          function l(e2, t2) {
+            for (var r2 = 0; r2 < e2.length; ++r2) t2[r2] = 255 & e2.charCodeAt(r2);
+            return t2;
+          }
+          e("setimmediate"), a.newBlob = function(t2, r2) {
+            a.checkSupport("blob");
+            try {
+              return new Blob([t2], { type: r2 });
+            } catch (e2) {
+              try {
+                var n2 = new (self.BlobBuilder || self.WebKitBlobBuilder || self.MozBlobBuilder || self.MSBlobBuilder)();
+                return n2.append(t2), n2.getBlob(r2);
+              } catch (e3) {
+                throw new Error("Bug : can't construct the Blob.");
+              }
+            }
+          };
+          var i = { stringifyByChunk: function(e2, t2, r2) {
+            var n2 = [], i2 = 0, s2 = e2.length;
+            if (s2 <= r2) return String.fromCharCode.apply(null, e2);
+            for (; i2 < s2; ) "array" === t2 || "nodebuffer" === t2 ? n2.push(String.fromCharCode.apply(null, e2.slice(i2, Math.min(i2 + r2, s2)))) : n2.push(String.fromCharCode.apply(null, e2.subarray(i2, Math.min(i2 + r2, s2)))), i2 += r2;
+            return n2.join("");
+          }, stringifyByChar: function(e2) {
+            for (var t2 = "", r2 = 0; r2 < e2.length; r2++) t2 += String.fromCharCode(e2[r2]);
+            return t2;
+          }, applyCanBeUsed: { uint8array: (function() {
+            try {
+              return o.uint8array && 1 === String.fromCharCode.apply(null, new Uint8Array(1)).length;
+            } catch (e2) {
+              return false;
+            }
+          })(), nodebuffer: (function() {
+            try {
+              return o.nodebuffer && 1 === String.fromCharCode.apply(null, r.allocBuffer(1)).length;
+            } catch (e2) {
+              return false;
+            }
+          })() } };
+          function s(e2) {
+            var t2 = 65536, r2 = a.getTypeOf(e2), n2 = true;
+            if ("uint8array" === r2 ? n2 = i.applyCanBeUsed.uint8array : "nodebuffer" === r2 && (n2 = i.applyCanBeUsed.nodebuffer), n2) for (; 1 < t2; ) try {
+              return i.stringifyByChunk(e2, r2, t2);
+            } catch (e3) {
+              t2 = Math.floor(t2 / 2);
+            }
+            return i.stringifyByChar(e2);
+          }
+          function f(e2, t2) {
+            for (var r2 = 0; r2 < e2.length; r2++) t2[r2] = e2[r2];
+            return t2;
+          }
+          a.applyFromCharCode = s;
+          var c = {};
+          c.string = { string: n, array: function(e2) {
+            return l(e2, new Array(e2.length));
+          }, arraybuffer: function(e2) {
+            return c.string.uint8array(e2).buffer;
+          }, uint8array: function(e2) {
+            return l(e2, new Uint8Array(e2.length));
+          }, nodebuffer: function(e2) {
+            return l(e2, r.allocBuffer(e2.length));
+          } }, c.array = { string: s, array: n, arraybuffer: function(e2) {
+            return new Uint8Array(e2).buffer;
+          }, uint8array: function(e2) {
+            return new Uint8Array(e2);
+          }, nodebuffer: function(e2) {
+            return r.newBufferFrom(e2);
+          } }, c.arraybuffer = { string: function(e2) {
+            return s(new Uint8Array(e2));
+          }, array: function(e2) {
+            return f(new Uint8Array(e2), new Array(e2.byteLength));
+          }, arraybuffer: n, uint8array: function(e2) {
+            return new Uint8Array(e2);
+          }, nodebuffer: function(e2) {
+            return r.newBufferFrom(new Uint8Array(e2));
+          } }, c.uint8array = { string: s, array: function(e2) {
+            return f(e2, new Array(e2.length));
+          }, arraybuffer: function(e2) {
+            return e2.buffer;
+          }, uint8array: n, nodebuffer: function(e2) {
+            return r.newBufferFrom(e2);
+          } }, c.nodebuffer = { string: s, array: function(e2) {
+            return f(e2, new Array(e2.length));
+          }, arraybuffer: function(e2) {
+            return c.nodebuffer.uint8array(e2).buffer;
+          }, uint8array: function(e2) {
+            return f(e2, new Uint8Array(e2.length));
+          }, nodebuffer: n }, a.transformTo = function(e2, t2) {
+            if (t2 = t2 || "", !e2) return t2;
+            a.checkSupport(e2);
+            var r2 = a.getTypeOf(t2);
+            return c[r2][e2](t2);
+          }, a.resolve = function(e2) {
+            for (var t2 = e2.split("/"), r2 = [], n2 = 0; n2 < t2.length; n2++) {
+              var i2 = t2[n2];
+              "." === i2 || "" === i2 && 0 !== n2 && n2 !== t2.length - 1 || (".." === i2 ? r2.pop() : r2.push(i2));
+            }
+            return r2.join("/");
+          }, a.getTypeOf = function(e2) {
+            return "string" == typeof e2 ? "string" : "[object Array]" === Object.prototype.toString.call(e2) ? "array" : o.nodebuffer && r.isBuffer(e2) ? "nodebuffer" : o.uint8array && e2 instanceof Uint8Array ? "uint8array" : o.arraybuffer && e2 instanceof ArrayBuffer ? "arraybuffer" : void 0;
+          }, a.checkSupport = function(e2) {
+            if (!o[e2.toLowerCase()]) throw new Error(e2 + " is not supported by this platform");
+          }, a.MAX_VALUE_16BITS = 65535, a.MAX_VALUE_32BITS = -1, a.pretty = function(e2) {
+            var t2, r2, n2 = "";
+            for (r2 = 0; r2 < (e2 || "").length; r2++) n2 += "\\x" + ((t2 = e2.charCodeAt(r2)) < 16 ? "0" : "") + t2.toString(16).toUpperCase();
+            return n2;
+          }, a.delay = function(e2, t2, r2) {
+            setImmediate(function() {
+              e2.apply(r2 || null, t2 || []);
+            });
+          }, a.inherits = function(e2, t2) {
+            function r2() {
+            }
+            r2.prototype = t2.prototype, e2.prototype = new r2();
+          }, a.extend = function() {
+            var e2, t2, r2 = {};
+            for (e2 = 0; e2 < arguments.length; e2++) for (t2 in arguments[e2]) Object.prototype.hasOwnProperty.call(arguments[e2], t2) && void 0 === r2[t2] && (r2[t2] = arguments[e2][t2]);
+            return r2;
+          }, a.prepareContent = function(r2, e2, n2, i2, s2) {
+            return u.Promise.resolve(e2).then(function(n3) {
+              return o.blob && (n3 instanceof Blob || -1 !== ["[object File]", "[object Blob]"].indexOf(Object.prototype.toString.call(n3))) && "undefined" != typeof FileReader ? new u.Promise(function(t2, r3) {
+                var e3 = new FileReader();
+                e3.onload = function(e4) {
+                  t2(e4.target.result);
+                }, e3.onerror = function(e4) {
+                  r3(e4.target.error);
+                }, e3.readAsArrayBuffer(n3);
+              }) : n3;
+            }).then(function(e3) {
+              var t2 = a.getTypeOf(e3);
+              return t2 ? ("arraybuffer" === t2 ? e3 = a.transformTo("uint8array", e3) : "string" === t2 && (s2 ? e3 = h.decode(e3) : n2 && true !== i2 && (e3 = (function(e4) {
+                return l(e4, o.uint8array ? new Uint8Array(e4.length) : new Array(e4.length));
+              })(e3))), e3) : u.Promise.reject(new Error("Can't read the data of '" + r2 + "'. Is it in a supported JavaScript type (String, Blob, ArrayBuffer, etc) ?"));
+            });
+          };
+        }, { "./base64": 1, "./external": 6, "./nodejsUtils": 14, "./support": 30, setimmediate: 54 }], 33: [function(e, t, r) {
+          "use strict";
+          var n = e("./reader/readerFor"), i = e("./utils"), s = e("./signature"), a = e("./zipEntry"), o = e("./support");
+          function h(e2) {
+            this.files = [], this.loadOptions = e2;
+          }
+          h.prototype = { checkSignature: function(e2) {
+            if (!this.reader.readAndCheckSignature(e2)) {
+              this.reader.index -= 4;
+              var t2 = this.reader.readString(4);
+              throw new Error("Corrupted zip or bug: unexpected signature (" + i.pretty(t2) + ", expected " + i.pretty(e2) + ")");
+            }
+          }, isSignature: function(e2, t2) {
+            var r2 = this.reader.index;
+            this.reader.setIndex(e2);
+            var n2 = this.reader.readString(4) === t2;
+            return this.reader.setIndex(r2), n2;
+          }, readBlockEndOfCentral: function() {
+            this.diskNumber = this.reader.readInt(2), this.diskWithCentralDirStart = this.reader.readInt(2), this.centralDirRecordsOnThisDisk = this.reader.readInt(2), this.centralDirRecords = this.reader.readInt(2), this.centralDirSize = this.reader.readInt(4), this.centralDirOffset = this.reader.readInt(4), this.zipCommentLength = this.reader.readInt(2);
+            var e2 = this.reader.readData(this.zipCommentLength), t2 = o.uint8array ? "uint8array" : "array", r2 = i.transformTo(t2, e2);
+            this.zipComment = this.loadOptions.decodeFileName(r2);
+          }, readBlockZip64EndOfCentral: function() {
+            this.zip64EndOfCentralSize = this.reader.readInt(8), this.reader.skip(4), this.diskNumber = this.reader.readInt(4), this.diskWithCentralDirStart = this.reader.readInt(4), this.centralDirRecordsOnThisDisk = this.reader.readInt(8), this.centralDirRecords = this.reader.readInt(8), this.centralDirSize = this.reader.readInt(8), this.centralDirOffset = this.reader.readInt(8), this.zip64ExtensibleData = {};
+            for (var e2, t2, r2, n2 = this.zip64EndOfCentralSize - 44; 0 < n2; ) e2 = this.reader.readInt(2), t2 = this.reader.readInt(4), r2 = this.reader.readData(t2), this.zip64ExtensibleData[e2] = { id: e2, length: t2, value: r2 };
+          }, readBlockZip64EndOfCentralLocator: function() {
+            if (this.diskWithZip64CentralDirStart = this.reader.readInt(4), this.relativeOffsetEndOfZip64CentralDir = this.reader.readInt(8), this.disksCount = this.reader.readInt(4), 1 < this.disksCount) throw new Error("Multi-volumes zip are not supported");
+          }, readLocalFiles: function() {
+            var e2, t2;
+            for (e2 = 0; e2 < this.files.length; e2++) t2 = this.files[e2], this.reader.setIndex(t2.localHeaderOffset), this.checkSignature(s.LOCAL_FILE_HEADER), t2.readLocalPart(this.reader), t2.handleUTF8(), t2.processAttributes();
+          }, readCentralDir: function() {
+            var e2;
+            for (this.reader.setIndex(this.centralDirOffset); this.reader.readAndCheckSignature(s.CENTRAL_FILE_HEADER); ) (e2 = new a({ zip64: this.zip64 }, this.loadOptions)).readCentralPart(this.reader), this.files.push(e2);
+            if (this.centralDirRecords !== this.files.length && 0 !== this.centralDirRecords && 0 === this.files.length) throw new Error("Corrupted zip or bug: expected " + this.centralDirRecords + " records in central dir, got " + this.files.length);
+          }, readEndOfCentral: function() {
+            var e2 = this.reader.lastIndexOfSignature(s.CENTRAL_DIRECTORY_END);
+            if (e2 < 0) throw !this.isSignature(0, s.LOCAL_FILE_HEADER) ? new Error("Can't find end of central directory : is this a zip file ? If it is, see https://stuk.github.io/jszip/documentation/howto/read_zip.html") : new Error("Corrupted zip: can't find end of central directory");
+            this.reader.setIndex(e2);
+            var t2 = e2;
+            if (this.checkSignature(s.CENTRAL_DIRECTORY_END), this.readBlockEndOfCentral(), this.diskNumber === i.MAX_VALUE_16BITS || this.diskWithCentralDirStart === i.MAX_VALUE_16BITS || this.centralDirRecordsOnThisDisk === i.MAX_VALUE_16BITS || this.centralDirRecords === i.MAX_VALUE_16BITS || this.centralDirSize === i.MAX_VALUE_32BITS || this.centralDirOffset === i.MAX_VALUE_32BITS) {
+              if (this.zip64 = true, (e2 = this.reader.lastIndexOfSignature(s.ZIP64_CENTRAL_DIRECTORY_LOCATOR)) < 0) throw new Error("Corrupted zip: can't find the ZIP64 end of central directory locator");
+              if (this.reader.setIndex(e2), this.checkSignature(s.ZIP64_CENTRAL_DIRECTORY_LOCATOR), this.readBlockZip64EndOfCentralLocator(), !this.isSignature(this.relativeOffsetEndOfZip64CentralDir, s.ZIP64_CENTRAL_DIRECTORY_END) && (this.relativeOffsetEndOfZip64CentralDir = this.reader.lastIndexOfSignature(s.ZIP64_CENTRAL_DIRECTORY_END), this.relativeOffsetEndOfZip64CentralDir < 0)) throw new Error("Corrupted zip: can't find the ZIP64 end of central directory");
+              this.reader.setIndex(this.relativeOffsetEndOfZip64CentralDir), this.checkSignature(s.ZIP64_CENTRAL_DIRECTORY_END), this.readBlockZip64EndOfCentral();
+            }
+            var r2 = this.centralDirOffset + this.centralDirSize;
+            this.zip64 && (r2 += 20, r2 += 12 + this.zip64EndOfCentralSize);
+            var n2 = t2 - r2;
+            if (0 < n2) this.isSignature(t2, s.CENTRAL_FILE_HEADER) || (this.reader.zero = n2);
+            else if (n2 < 0) throw new Error("Corrupted zip: missing " + Math.abs(n2) + " bytes.");
+          }, prepareReader: function(e2) {
+            this.reader = n(e2);
+          }, load: function(e2) {
+            this.prepareReader(e2), this.readEndOfCentral(), this.readCentralDir(), this.readLocalFiles();
+          } }, t.exports = h;
+        }, { "./reader/readerFor": 22, "./signature": 23, "./support": 30, "./utils": 32, "./zipEntry": 34 }], 34: [function(e, t, r) {
+          "use strict";
+          var n = e("./reader/readerFor"), s = e("./utils"), i = e("./compressedObject"), a = e("./crc32"), o = e("./utf8"), h = e("./compressions"), u = e("./support");
+          function l(e2, t2) {
+            this.options = e2, this.loadOptions = t2;
+          }
+          l.prototype = { isEncrypted: function() {
+            return 1 == (1 & this.bitFlag);
+          }, useUTF8: function() {
+            return 2048 == (2048 & this.bitFlag);
+          }, readLocalPart: function(e2) {
+            var t2, r2;
+            if (e2.skip(22), this.fileNameLength = e2.readInt(2), r2 = e2.readInt(2), this.fileName = e2.readData(this.fileNameLength), e2.skip(r2), -1 === this.compressedSize || -1 === this.uncompressedSize) throw new Error("Bug or corrupted zip : didn't get enough information from the central directory (compressedSize === -1 || uncompressedSize === -1)");
+            if (null === (t2 = (function(e3) {
+              for (var t3 in h) if (Object.prototype.hasOwnProperty.call(h, t3) && h[t3].magic === e3) return h[t3];
+              return null;
+            })(this.compressionMethod))) throw new Error("Corrupted zip : compression " + s.pretty(this.compressionMethod) + " unknown (inner file : " + s.transformTo("string", this.fileName) + ")");
+            this.decompressed = new i(this.compressedSize, this.uncompressedSize, this.crc32, t2, e2.readData(this.compressedSize));
+          }, readCentralPart: function(e2) {
+            this.versionMadeBy = e2.readInt(2), e2.skip(2), this.bitFlag = e2.readInt(2), this.compressionMethod = e2.readString(2), this.date = e2.readDate(), this.crc32 = e2.readInt(4), this.compressedSize = e2.readInt(4), this.uncompressedSize = e2.readInt(4);
+            var t2 = e2.readInt(2);
+            if (this.extraFieldsLength = e2.readInt(2), this.fileCommentLength = e2.readInt(2), this.diskNumberStart = e2.readInt(2), this.internalFileAttributes = e2.readInt(2), this.externalFileAttributes = e2.readInt(4), this.localHeaderOffset = e2.readInt(4), this.isEncrypted()) throw new Error("Encrypted zip are not supported");
+            e2.skip(t2), this.readExtraFields(e2), this.parseZIP64ExtraField(e2), this.fileComment = e2.readData(this.fileCommentLength);
+          }, processAttributes: function() {
+            this.unixPermissions = null, this.dosPermissions = null;
+            var e2 = this.versionMadeBy >> 8;
+            this.dir = !!(16 & this.externalFileAttributes), 0 == e2 && (this.dosPermissions = 63 & this.externalFileAttributes), 3 == e2 && (this.unixPermissions = this.externalFileAttributes >> 16 & 65535), this.dir || "/" !== this.fileNameStr.slice(-1) || (this.dir = true);
+          }, parseZIP64ExtraField: function() {
+            if (this.extraFields[1]) {
+              var e2 = n(this.extraFields[1].value);
+              this.uncompressedSize === s.MAX_VALUE_32BITS && (this.uncompressedSize = e2.readInt(8)), this.compressedSize === s.MAX_VALUE_32BITS && (this.compressedSize = e2.readInt(8)), this.localHeaderOffset === s.MAX_VALUE_32BITS && (this.localHeaderOffset = e2.readInt(8)), this.diskNumberStart === s.MAX_VALUE_32BITS && (this.diskNumberStart = e2.readInt(4));
+            }
+          }, readExtraFields: function(e2) {
+            var t2, r2, n2, i2 = e2.index + this.extraFieldsLength;
+            for (this.extraFields || (this.extraFields = {}); e2.index + 4 < i2; ) t2 = e2.readInt(2), r2 = e2.readInt(2), n2 = e2.readData(r2), this.extraFields[t2] = { id: t2, length: r2, value: n2 };
+            e2.setIndex(i2);
+          }, handleUTF8: function() {
+            var e2 = u.uint8array ? "uint8array" : "array";
+            if (this.useUTF8()) this.fileNameStr = o.utf8decode(this.fileName), this.fileCommentStr = o.utf8decode(this.fileComment);
+            else {
+              var t2 = this.findExtraFieldUnicodePath();
+              if (null !== t2) this.fileNameStr = t2;
+              else {
+                var r2 = s.transformTo(e2, this.fileName);
+                this.fileNameStr = this.loadOptions.decodeFileName(r2);
+              }
+              var n2 = this.findExtraFieldUnicodeComment();
+              if (null !== n2) this.fileCommentStr = n2;
+              else {
+                var i2 = s.transformTo(e2, this.fileComment);
+                this.fileCommentStr = this.loadOptions.decodeFileName(i2);
+              }
+            }
+          }, findExtraFieldUnicodePath: function() {
+            var e2 = this.extraFields[28789];
+            if (e2) {
+              var t2 = n(e2.value);
+              return 1 !== t2.readInt(1) ? null : a(this.fileName) !== t2.readInt(4) ? null : o.utf8decode(t2.readData(e2.length - 5));
+            }
+            return null;
+          }, findExtraFieldUnicodeComment: function() {
+            var e2 = this.extraFields[25461];
+            if (e2) {
+              var t2 = n(e2.value);
+              return 1 !== t2.readInt(1) ? null : a(this.fileComment) !== t2.readInt(4) ? null : o.utf8decode(t2.readData(e2.length - 5));
+            }
+            return null;
+          } }, t.exports = l;
+        }, { "./compressedObject": 2, "./compressions": 3, "./crc32": 4, "./reader/readerFor": 22, "./support": 30, "./utf8": 31, "./utils": 32 }], 35: [function(e, t, r) {
+          "use strict";
+          function n(e2, t2, r2) {
+            this.name = e2, this.dir = r2.dir, this.date = r2.date, this.comment = r2.comment, this.unixPermissions = r2.unixPermissions, this.dosPermissions = r2.dosPermissions, this._data = t2, this._dataBinary = r2.binary, this.options = { compression: r2.compression, compressionOptions: r2.compressionOptions };
+          }
+          var s = e("./stream/StreamHelper"), i = e("./stream/DataWorker"), a = e("./utf8"), o = e("./compressedObject"), h = e("./stream/GenericWorker");
+          n.prototype = { internalStream: function(e2) {
+            var t2 = null, r2 = "string";
+            try {
+              if (!e2) throw new Error("No output type specified.");
+              var n2 = "string" === (r2 = e2.toLowerCase()) || "text" === r2;
+              "binarystring" !== r2 && "text" !== r2 || (r2 = "string"), t2 = this._decompressWorker();
+              var i2 = !this._dataBinary;
+              i2 && !n2 && (t2 = t2.pipe(new a.Utf8EncodeWorker())), !i2 && n2 && (t2 = t2.pipe(new a.Utf8DecodeWorker()));
+            } catch (e3) {
+              (t2 = new h("error")).error(e3);
+            }
+            return new s(t2, r2, "");
+          }, async: function(e2, t2) {
+            return this.internalStream(e2).accumulate(t2);
+          }, nodeStream: function(e2, t2) {
+            return this.internalStream(e2 || "nodebuffer").toNodejsStream(t2);
+          }, _compressWorker: function(e2, t2) {
+            if (this._data instanceof o && this._data.compression.magic === e2.magic) return this._data.getCompressedWorker();
+            var r2 = this._decompressWorker();
+            return this._dataBinary || (r2 = r2.pipe(new a.Utf8EncodeWorker())), o.createWorkerFrom(r2, e2, t2);
+          }, _decompressWorker: function() {
+            return this._data instanceof o ? this._data.getContentWorker() : this._data instanceof h ? this._data : new i(this._data);
+          } };
+          for (var u = ["asText", "asBinary", "asNodeBuffer", "asUint8Array", "asArrayBuffer"], l = function() {
+            throw new Error("This method has been removed in JSZip 3.0, please check the upgrade guide.");
+          }, f = 0; f < u.length; f++) n.prototype[u[f]] = l;
+          t.exports = n;
+        }, { "./compressedObject": 2, "./stream/DataWorker": 27, "./stream/GenericWorker": 28, "./stream/StreamHelper": 29, "./utf8": 31 }], 36: [function(e, l, t) {
+          (function(t2) {
+            "use strict";
+            var r, n, e2 = t2.MutationObserver || t2.WebKitMutationObserver;
+            if (e2) {
+              var i = 0, s = new e2(u), a = t2.document.createTextNode("");
+              s.observe(a, { characterData: true }), r = function() {
+                a.data = i = ++i % 2;
+              };
+            } else if (t2.setImmediate || void 0 === t2.MessageChannel) r = "document" in t2 && "onreadystatechange" in t2.document.createElement("script") ? function() {
+              var e3 = t2.document.createElement("script");
+              e3.onreadystatechange = function() {
+                u(), e3.onreadystatechange = null, e3.parentNode.removeChild(e3), e3 = null;
+              }, t2.document.documentElement.appendChild(e3);
+            } : function() {
+              setTimeout(u, 0);
+            };
+            else {
+              var o = new t2.MessageChannel();
+              o.port1.onmessage = u, r = function() {
+                o.port2.postMessage(0);
+              };
+            }
+            var h = [];
+            function u() {
+              var e3, t3;
+              n = true;
+              for (var r2 = h.length; r2; ) {
+                for (t3 = h, h = [], e3 = -1; ++e3 < r2; ) t3[e3]();
+                r2 = h.length;
+              }
+              n = false;
+            }
+            l.exports = function(e3) {
+              1 !== h.push(e3) || n || r();
+            };
+          }).call(this, "undefined" != typeof global ? global : "undefined" != typeof self ? self : "undefined" != typeof window ? window : {});
+        }, {}], 37: [function(e, t, r) {
+          "use strict";
+          var i = e("immediate");
+          function u() {
+          }
+          var l = {}, s = ["REJECTED"], a = ["FULFILLED"], n = ["PENDING"];
+          function o(e2) {
+            if ("function" != typeof e2) throw new TypeError("resolver must be a function");
+            this.state = n, this.queue = [], this.outcome = void 0, e2 !== u && d(this, e2);
+          }
+          function h(e2, t2, r2) {
+            this.promise = e2, "function" == typeof t2 && (this.onFulfilled = t2, this.callFulfilled = this.otherCallFulfilled), "function" == typeof r2 && (this.onRejected = r2, this.callRejected = this.otherCallRejected);
+          }
+          function f(t2, r2, n2) {
+            i(function() {
+              var e2;
+              try {
+                e2 = r2(n2);
+              } catch (e3) {
+                return l.reject(t2, e3);
+              }
+              e2 === t2 ? l.reject(t2, new TypeError("Cannot resolve promise with itself")) : l.resolve(t2, e2);
+            });
+          }
+          function c(e2) {
+            var t2 = e2 && e2.then;
+            if (e2 && ("object" == typeof e2 || "function" == typeof e2) && "function" == typeof t2) return function() {
+              t2.apply(e2, arguments);
+            };
+          }
+          function d(t2, e2) {
+            var r2 = false;
+            function n2(e3) {
+              r2 || (r2 = true, l.reject(t2, e3));
+            }
+            function i2(e3) {
+              r2 || (r2 = true, l.resolve(t2, e3));
+            }
+            var s2 = p(function() {
+              e2(i2, n2);
+            });
+            "error" === s2.status && n2(s2.value);
+          }
+          function p(e2, t2) {
+            var r2 = {};
+            try {
+              r2.value = e2(t2), r2.status = "success";
+            } catch (e3) {
+              r2.status = "error", r2.value = e3;
+            }
+            return r2;
+          }
+          (t.exports = o).prototype.finally = function(t2) {
+            if ("function" != typeof t2) return this;
+            var r2 = this.constructor;
+            return this.then(function(e2) {
+              return r2.resolve(t2()).then(function() {
+                return e2;
+              });
+            }, function(e2) {
+              return r2.resolve(t2()).then(function() {
+                throw e2;
+              });
+            });
+          }, o.prototype.catch = function(e2) {
+            return this.then(null, e2);
+          }, o.prototype.then = function(e2, t2) {
+            if ("function" != typeof e2 && this.state === a || "function" != typeof t2 && this.state === s) return this;
+            var r2 = new this.constructor(u);
+            this.state !== n ? f(r2, this.state === a ? e2 : t2, this.outcome) : this.queue.push(new h(r2, e2, t2));
+            return r2;
+          }, h.prototype.callFulfilled = function(e2) {
+            l.resolve(this.promise, e2);
+          }, h.prototype.otherCallFulfilled = function(e2) {
+            f(this.promise, this.onFulfilled, e2);
+          }, h.prototype.callRejected = function(e2) {
+            l.reject(this.promise, e2);
+          }, h.prototype.otherCallRejected = function(e2) {
+            f(this.promise, this.onRejected, e2);
+          }, l.resolve = function(e2, t2) {
+            var r2 = p(c, t2);
+            if ("error" === r2.status) return l.reject(e2, r2.value);
+            var n2 = r2.value;
+            if (n2) d(e2, n2);
+            else {
+              e2.state = a, e2.outcome = t2;
+              for (var i2 = -1, s2 = e2.queue.length; ++i2 < s2; ) e2.queue[i2].callFulfilled(t2);
+            }
+            return e2;
+          }, l.reject = function(e2, t2) {
+            e2.state = s, e2.outcome = t2;
+            for (var r2 = -1, n2 = e2.queue.length; ++r2 < n2; ) e2.queue[r2].callRejected(t2);
+            return e2;
+          }, o.resolve = function(e2) {
+            if (e2 instanceof this) return e2;
+            return l.resolve(new this(u), e2);
+          }, o.reject = function(e2) {
+            var t2 = new this(u);
+            return l.reject(t2, e2);
+          }, o.all = function(e2) {
+            var r2 = this;
+            if ("[object Array]" !== Object.prototype.toString.call(e2)) return this.reject(new TypeError("must be an array"));
+            var n2 = e2.length, i2 = false;
+            if (!n2) return this.resolve([]);
+            var s2 = new Array(n2), a2 = 0, t2 = -1, o2 = new this(u);
+            for (; ++t2 < n2; ) h2(e2[t2], t2);
+            return o2;
+            function h2(e3, t3) {
+              r2.resolve(e3).then(function(e4) {
+                s2[t3] = e4, ++a2 !== n2 || i2 || (i2 = true, l.resolve(o2, s2));
+              }, function(e4) {
+                i2 || (i2 = true, l.reject(o2, e4));
+              });
+            }
+          }, o.race = function(e2) {
+            var t2 = this;
+            if ("[object Array]" !== Object.prototype.toString.call(e2)) return this.reject(new TypeError("must be an array"));
+            var r2 = e2.length, n2 = false;
+            if (!r2) return this.resolve([]);
+            var i2 = -1, s2 = new this(u);
+            for (; ++i2 < r2; ) a2 = e2[i2], t2.resolve(a2).then(function(e3) {
+              n2 || (n2 = true, l.resolve(s2, e3));
+            }, function(e3) {
+              n2 || (n2 = true, l.reject(s2, e3));
+            });
+            var a2;
+            return s2;
+          };
+        }, { immediate: 36 }], 38: [function(e, t, r) {
+          "use strict";
+          var n = {};
+          (0, e("./lib/utils/common").assign)(n, e("./lib/deflate"), e("./lib/inflate"), e("./lib/zlib/constants")), t.exports = n;
+        }, { "./lib/deflate": 39, "./lib/inflate": 40, "./lib/utils/common": 41, "./lib/zlib/constants": 44 }], 39: [function(e, t, r) {
+          "use strict";
+          var a = e("./zlib/deflate"), o = e("./utils/common"), h = e("./utils/strings"), i = e("./zlib/messages"), s = e("./zlib/zstream"), u = Object.prototype.toString, l = 0, f = -1, c = 0, d = 8;
+          function p(e2) {
+            if (!(this instanceof p)) return new p(e2);
+            this.options = o.assign({ level: f, method: d, chunkSize: 16384, windowBits: 15, memLevel: 8, strategy: c, to: "" }, e2 || {});
+            var t2 = this.options;
+            t2.raw && 0 < t2.windowBits ? t2.windowBits = -t2.windowBits : t2.gzip && 0 < t2.windowBits && t2.windowBits < 16 && (t2.windowBits += 16), this.err = 0, this.msg = "", this.ended = false, this.chunks = [], this.strm = new s(), this.strm.avail_out = 0;
+            var r2 = a.deflateInit2(this.strm, t2.level, t2.method, t2.windowBits, t2.memLevel, t2.strategy);
+            if (r2 !== l) throw new Error(i[r2]);
+            if (t2.header && a.deflateSetHeader(this.strm, t2.header), t2.dictionary) {
+              var n2;
+              if (n2 = "string" == typeof t2.dictionary ? h.string2buf(t2.dictionary) : "[object ArrayBuffer]" === u.call(t2.dictionary) ? new Uint8Array(t2.dictionary) : t2.dictionary, (r2 = a.deflateSetDictionary(this.strm, n2)) !== l) throw new Error(i[r2]);
+              this._dict_set = true;
+            }
+          }
+          function n(e2, t2) {
+            var r2 = new p(t2);
+            if (r2.push(e2, true), r2.err) throw r2.msg || i[r2.err];
+            return r2.result;
+          }
+          p.prototype.push = function(e2, t2) {
+            var r2, n2, i2 = this.strm, s2 = this.options.chunkSize;
+            if (this.ended) return false;
+            n2 = t2 === ~~t2 ? t2 : true === t2 ? 4 : 0, "string" == typeof e2 ? i2.input = h.string2buf(e2) : "[object ArrayBuffer]" === u.call(e2) ? i2.input = new Uint8Array(e2) : i2.input = e2, i2.next_in = 0, i2.avail_in = i2.input.length;
+            do {
+              if (0 === i2.avail_out && (i2.output = new o.Buf8(s2), i2.next_out = 0, i2.avail_out = s2), 1 !== (r2 = a.deflate(i2, n2)) && r2 !== l) return this.onEnd(r2), !(this.ended = true);
+              0 !== i2.avail_out && (0 !== i2.avail_in || 4 !== n2 && 2 !== n2) || ("string" === this.options.to ? this.onData(h.buf2binstring(o.shrinkBuf(i2.output, i2.next_out))) : this.onData(o.shrinkBuf(i2.output, i2.next_out)));
+            } while ((0 < i2.avail_in || 0 === i2.avail_out) && 1 !== r2);
+            return 4 === n2 ? (r2 = a.deflateEnd(this.strm), this.onEnd(r2), this.ended = true, r2 === l) : 2 !== n2 || (this.onEnd(l), !(i2.avail_out = 0));
+          }, p.prototype.onData = function(e2) {
+            this.chunks.push(e2);
+          }, p.prototype.onEnd = function(e2) {
+            e2 === l && ("string" === this.options.to ? this.result = this.chunks.join("") : this.result = o.flattenChunks(this.chunks)), this.chunks = [], this.err = e2, this.msg = this.strm.msg;
+          }, r.Deflate = p, r.deflate = n, r.deflateRaw = function(e2, t2) {
+            return (t2 = t2 || {}).raw = true, n(e2, t2);
+          }, r.gzip = function(e2, t2) {
+            return (t2 = t2 || {}).gzip = true, n(e2, t2);
+          };
+        }, { "./utils/common": 41, "./utils/strings": 42, "./zlib/deflate": 46, "./zlib/messages": 51, "./zlib/zstream": 53 }], 40: [function(e, t, r) {
+          "use strict";
+          var c = e("./zlib/inflate"), d = e("./utils/common"), p = e("./utils/strings"), m = e("./zlib/constants"), n = e("./zlib/messages"), i = e("./zlib/zstream"), s = e("./zlib/gzheader"), _ = Object.prototype.toString;
+          function a(e2) {
+            if (!(this instanceof a)) return new a(e2);
+            this.options = d.assign({ chunkSize: 16384, windowBits: 0, to: "" }, e2 || {});
+            var t2 = this.options;
+            t2.raw && 0 <= t2.windowBits && t2.windowBits < 16 && (t2.windowBits = -t2.windowBits, 0 === t2.windowBits && (t2.windowBits = -15)), !(0 <= t2.windowBits && t2.windowBits < 16) || e2 && e2.windowBits || (t2.windowBits += 32), 15 < t2.windowBits && t2.windowBits < 48 && 0 == (15 & t2.windowBits) && (t2.windowBits |= 15), this.err = 0, this.msg = "", this.ended = false, this.chunks = [], this.strm = new i(), this.strm.avail_out = 0;
+            var r2 = c.inflateInit2(this.strm, t2.windowBits);
+            if (r2 !== m.Z_OK) throw new Error(n[r2]);
+            this.header = new s(), c.inflateGetHeader(this.strm, this.header);
+          }
+          function o(e2, t2) {
+            var r2 = new a(t2);
+            if (r2.push(e2, true), r2.err) throw r2.msg || n[r2.err];
+            return r2.result;
+          }
+          a.prototype.push = function(e2, t2) {
+            var r2, n2, i2, s2, a2, o2, h = this.strm, u = this.options.chunkSize, l = this.options.dictionary, f = false;
+            if (this.ended) return false;
+            n2 = t2 === ~~t2 ? t2 : true === t2 ? m.Z_FINISH : m.Z_NO_FLUSH, "string" == typeof e2 ? h.input = p.binstring2buf(e2) : "[object ArrayBuffer]" === _.call(e2) ? h.input = new Uint8Array(e2) : h.input = e2, h.next_in = 0, h.avail_in = h.input.length;
+            do {
+              if (0 === h.avail_out && (h.output = new d.Buf8(u), h.next_out = 0, h.avail_out = u), (r2 = c.inflate(h, m.Z_NO_FLUSH)) === m.Z_NEED_DICT && l && (o2 = "string" == typeof l ? p.string2buf(l) : "[object ArrayBuffer]" === _.call(l) ? new Uint8Array(l) : l, r2 = c.inflateSetDictionary(this.strm, o2)), r2 === m.Z_BUF_ERROR && true === f && (r2 = m.Z_OK, f = false), r2 !== m.Z_STREAM_END && r2 !== m.Z_OK) return this.onEnd(r2), !(this.ended = true);
+              h.next_out && (0 !== h.avail_out && r2 !== m.Z_STREAM_END && (0 !== h.avail_in || n2 !== m.Z_FINISH && n2 !== m.Z_SYNC_FLUSH) || ("string" === this.options.to ? (i2 = p.utf8border(h.output, h.next_out), s2 = h.next_out - i2, a2 = p.buf2string(h.output, i2), h.next_out = s2, h.avail_out = u - s2, s2 && d.arraySet(h.output, h.output, i2, s2, 0), this.onData(a2)) : this.onData(d.shrinkBuf(h.output, h.next_out)))), 0 === h.avail_in && 0 === h.avail_out && (f = true);
+            } while ((0 < h.avail_in || 0 === h.avail_out) && r2 !== m.Z_STREAM_END);
+            return r2 === m.Z_STREAM_END && (n2 = m.Z_FINISH), n2 === m.Z_FINISH ? (r2 = c.inflateEnd(this.strm), this.onEnd(r2), this.ended = true, r2 === m.Z_OK) : n2 !== m.Z_SYNC_FLUSH || (this.onEnd(m.Z_OK), !(h.avail_out = 0));
+          }, a.prototype.onData = function(e2) {
+            this.chunks.push(e2);
+          }, a.prototype.onEnd = function(e2) {
+            e2 === m.Z_OK && ("string" === this.options.to ? this.result = this.chunks.join("") : this.result = d.flattenChunks(this.chunks)), this.chunks = [], this.err = e2, this.msg = this.strm.msg;
+          }, r.Inflate = a, r.inflate = o, r.inflateRaw = function(e2, t2) {
+            return (t2 = t2 || {}).raw = true, o(e2, t2);
+          }, r.ungzip = o;
+        }, { "./utils/common": 41, "./utils/strings": 42, "./zlib/constants": 44, "./zlib/gzheader": 47, "./zlib/inflate": 49, "./zlib/messages": 51, "./zlib/zstream": 53 }], 41: [function(e, t, r) {
+          "use strict";
+          var n = "undefined" != typeof Uint8Array && "undefined" != typeof Uint16Array && "undefined" != typeof Int32Array;
+          r.assign = function(e2) {
+            for (var t2 = Array.prototype.slice.call(arguments, 1); t2.length; ) {
+              var r2 = t2.shift();
+              if (r2) {
+                if ("object" != typeof r2) throw new TypeError(r2 + "must be non-object");
+                for (var n2 in r2) r2.hasOwnProperty(n2) && (e2[n2] = r2[n2]);
+              }
+            }
+            return e2;
+          }, r.shrinkBuf = function(e2, t2) {
+            return e2.length === t2 ? e2 : e2.subarray ? e2.subarray(0, t2) : (e2.length = t2, e2);
+          };
+          var i = { arraySet: function(e2, t2, r2, n2, i2) {
+            if (t2.subarray && e2.subarray) e2.set(t2.subarray(r2, r2 + n2), i2);
+            else for (var s2 = 0; s2 < n2; s2++) e2[i2 + s2] = t2[r2 + s2];
+          }, flattenChunks: function(e2) {
+            var t2, r2, n2, i2, s2, a;
+            for (t2 = n2 = 0, r2 = e2.length; t2 < r2; t2++) n2 += e2[t2].length;
+            for (a = new Uint8Array(n2), t2 = i2 = 0, r2 = e2.length; t2 < r2; t2++) s2 = e2[t2], a.set(s2, i2), i2 += s2.length;
+            return a;
+          } }, s = { arraySet: function(e2, t2, r2, n2, i2) {
+            for (var s2 = 0; s2 < n2; s2++) e2[i2 + s2] = t2[r2 + s2];
+          }, flattenChunks: function(e2) {
+            return [].concat.apply([], e2);
+          } };
+          r.setTyped = function(e2) {
+            e2 ? (r.Buf8 = Uint8Array, r.Buf16 = Uint16Array, r.Buf32 = Int32Array, r.assign(r, i)) : (r.Buf8 = Array, r.Buf16 = Array, r.Buf32 = Array, r.assign(r, s));
+          }, r.setTyped(n);
+        }, {}], 42: [function(e, t, r) {
+          "use strict";
+          var h = e("./common"), i = true, s = true;
+          try {
+            String.fromCharCode.apply(null, [0]);
+          } catch (e2) {
+            i = false;
+          }
+          try {
+            String.fromCharCode.apply(null, new Uint8Array(1));
+          } catch (e2) {
+            s = false;
+          }
+          for (var u = new h.Buf8(256), n = 0; n < 256; n++) u[n] = 252 <= n ? 6 : 248 <= n ? 5 : 240 <= n ? 4 : 224 <= n ? 3 : 192 <= n ? 2 : 1;
+          function l(e2, t2) {
+            if (t2 < 65537 && (e2.subarray && s || !e2.subarray && i)) return String.fromCharCode.apply(null, h.shrinkBuf(e2, t2));
+            for (var r2 = "", n2 = 0; n2 < t2; n2++) r2 += String.fromCharCode(e2[n2]);
+            return r2;
+          }
+          u[254] = u[254] = 1, r.string2buf = function(e2) {
+            var t2, r2, n2, i2, s2, a = e2.length, o = 0;
+            for (i2 = 0; i2 < a; i2++) 55296 == (64512 & (r2 = e2.charCodeAt(i2))) && i2 + 1 < a && 56320 == (64512 & (n2 = e2.charCodeAt(i2 + 1))) && (r2 = 65536 + (r2 - 55296 << 10) + (n2 - 56320), i2++), o += r2 < 128 ? 1 : r2 < 2048 ? 2 : r2 < 65536 ? 3 : 4;
+            for (t2 = new h.Buf8(o), i2 = s2 = 0; s2 < o; i2++) 55296 == (64512 & (r2 = e2.charCodeAt(i2))) && i2 + 1 < a && 56320 == (64512 & (n2 = e2.charCodeAt(i2 + 1))) && (r2 = 65536 + (r2 - 55296 << 10) + (n2 - 56320), i2++), r2 < 128 ? t2[s2++] = r2 : (r2 < 2048 ? t2[s2++] = 192 | r2 >>> 6 : (r2 < 65536 ? t2[s2++] = 224 | r2 >>> 12 : (t2[s2++] = 240 | r2 >>> 18, t2[s2++] = 128 | r2 >>> 12 & 63), t2[s2++] = 128 | r2 >>> 6 & 63), t2[s2++] = 128 | 63 & r2);
+            return t2;
+          }, r.buf2binstring = function(e2) {
+            return l(e2, e2.length);
+          }, r.binstring2buf = function(e2) {
+            for (var t2 = new h.Buf8(e2.length), r2 = 0, n2 = t2.length; r2 < n2; r2++) t2[r2] = e2.charCodeAt(r2);
+            return t2;
+          }, r.buf2string = function(e2, t2) {
+            var r2, n2, i2, s2, a = t2 || e2.length, o = new Array(2 * a);
+            for (r2 = n2 = 0; r2 < a; ) if ((i2 = e2[r2++]) < 128) o[n2++] = i2;
+            else if (4 < (s2 = u[i2])) o[n2++] = 65533, r2 += s2 - 1;
+            else {
+              for (i2 &= 2 === s2 ? 31 : 3 === s2 ? 15 : 7; 1 < s2 && r2 < a; ) i2 = i2 << 6 | 63 & e2[r2++], s2--;
+              1 < s2 ? o[n2++] = 65533 : i2 < 65536 ? o[n2++] = i2 : (i2 -= 65536, o[n2++] = 55296 | i2 >> 10 & 1023, o[n2++] = 56320 | 1023 & i2);
+            }
+            return l(o, n2);
+          }, r.utf8border = function(e2, t2) {
+            var r2;
+            for ((t2 = t2 || e2.length) > e2.length && (t2 = e2.length), r2 = t2 - 1; 0 <= r2 && 128 == (192 & e2[r2]); ) r2--;
+            return r2 < 0 ? t2 : 0 === r2 ? t2 : r2 + u[e2[r2]] > t2 ? r2 : t2;
+          };
+        }, { "./common": 41 }], 43: [function(e, t, r) {
+          "use strict";
+          t.exports = function(e2, t2, r2, n) {
+            for (var i = 65535 & e2 | 0, s = e2 >>> 16 & 65535 | 0, a = 0; 0 !== r2; ) {
+              for (r2 -= a = 2e3 < r2 ? 2e3 : r2; s = s + (i = i + t2[n++] | 0) | 0, --a; ) ;
+              i %= 65521, s %= 65521;
+            }
+            return i | s << 16 | 0;
+          };
+        }, {}], 44: [function(e, t, r) {
+          "use strict";
+          t.exports = { Z_NO_FLUSH: 0, Z_PARTIAL_FLUSH: 1, Z_SYNC_FLUSH: 2, Z_FULL_FLUSH: 3, Z_FINISH: 4, Z_BLOCK: 5, Z_TREES: 6, Z_OK: 0, Z_STREAM_END: 1, Z_NEED_DICT: 2, Z_ERRNO: -1, Z_STREAM_ERROR: -2, Z_DATA_ERROR: -3, Z_BUF_ERROR: -5, Z_NO_COMPRESSION: 0, Z_BEST_SPEED: 1, Z_BEST_COMPRESSION: 9, Z_DEFAULT_COMPRESSION: -1, Z_FILTERED: 1, Z_HUFFMAN_ONLY: 2, Z_RLE: 3, Z_FIXED: 4, Z_DEFAULT_STRATEGY: 0, Z_BINARY: 0, Z_TEXT: 1, Z_UNKNOWN: 2, Z_DEFLATED: 8 };
+        }, {}], 45: [function(e, t, r) {
+          "use strict";
+          var o = (function() {
+            for (var e2, t2 = [], r2 = 0; r2 < 256; r2++) {
+              e2 = r2;
+              for (var n = 0; n < 8; n++) e2 = 1 & e2 ? 3988292384 ^ e2 >>> 1 : e2 >>> 1;
+              t2[r2] = e2;
+            }
+            return t2;
+          })();
+          t.exports = function(e2, t2, r2, n) {
+            var i = o, s = n + r2;
+            e2 ^= -1;
+            for (var a = n; a < s; a++) e2 = e2 >>> 8 ^ i[255 & (e2 ^ t2[a])];
+            return -1 ^ e2;
+          };
+        }, {}], 46: [function(e, t, r) {
+          "use strict";
+          var h, c = e("../utils/common"), u = e("./trees"), d = e("./adler32"), p = e("./crc32"), n = e("./messages"), l = 0, f = 4, m = 0, _ = -2, g = -1, b = 4, i = 2, v = 8, y = 9, s = 286, a = 30, o = 19, w = 2 * s + 1, k = 15, x = 3, S = 258, z = S + x + 1, C = 42, E = 113, A = 1, I = 2, O = 3, B = 4;
+          function R(e2, t2) {
+            return e2.msg = n[t2], t2;
+          }
+          function T(e2) {
+            return (e2 << 1) - (4 < e2 ? 9 : 0);
+          }
+          function D(e2) {
+            for (var t2 = e2.length; 0 <= --t2; ) e2[t2] = 0;
+          }
+          function F(e2) {
+            var t2 = e2.state, r2 = t2.pending;
+            r2 > e2.avail_out && (r2 = e2.avail_out), 0 !== r2 && (c.arraySet(e2.output, t2.pending_buf, t2.pending_out, r2, e2.next_out), e2.next_out += r2, t2.pending_out += r2, e2.total_out += r2, e2.avail_out -= r2, t2.pending -= r2, 0 === t2.pending && (t2.pending_out = 0));
+          }
+          function N(e2, t2) {
+            u._tr_flush_block(e2, 0 <= e2.block_start ? e2.block_start : -1, e2.strstart - e2.block_start, t2), e2.block_start = e2.strstart, F(e2.strm);
+          }
+          function U(e2, t2) {
+            e2.pending_buf[e2.pending++] = t2;
+          }
+          function P(e2, t2) {
+            e2.pending_buf[e2.pending++] = t2 >>> 8 & 255, e2.pending_buf[e2.pending++] = 255 & t2;
+          }
+          function L(e2, t2) {
+            var r2, n2, i2 = e2.max_chain_length, s2 = e2.strstart, a2 = e2.prev_length, o2 = e2.nice_match, h2 = e2.strstart > e2.w_size - z ? e2.strstart - (e2.w_size - z) : 0, u2 = e2.window, l2 = e2.w_mask, f2 = e2.prev, c2 = e2.strstart + S, d2 = u2[s2 + a2 - 1], p2 = u2[s2 + a2];
+            e2.prev_length >= e2.good_match && (i2 >>= 2), o2 > e2.lookahead && (o2 = e2.lookahead);
+            do {
+              if (u2[(r2 = t2) + a2] === p2 && u2[r2 + a2 - 1] === d2 && u2[r2] === u2[s2] && u2[++r2] === u2[s2 + 1]) {
+                s2 += 2, r2++;
+                do {
+                } while (u2[++s2] === u2[++r2] && u2[++s2] === u2[++r2] && u2[++s2] === u2[++r2] && u2[++s2] === u2[++r2] && u2[++s2] === u2[++r2] && u2[++s2] === u2[++r2] && u2[++s2] === u2[++r2] && u2[++s2] === u2[++r2] && s2 < c2);
+                if (n2 = S - (c2 - s2), s2 = c2 - S, a2 < n2) {
+                  if (e2.match_start = t2, o2 <= (a2 = n2)) break;
+                  d2 = u2[s2 + a2 - 1], p2 = u2[s2 + a2];
+                }
+              }
+            } while ((t2 = f2[t2 & l2]) > h2 && 0 != --i2);
+            return a2 <= e2.lookahead ? a2 : e2.lookahead;
+          }
+          function j(e2) {
+            var t2, r2, n2, i2, s2, a2, o2, h2, u2, l2, f2 = e2.w_size;
+            do {
+              if (i2 = e2.window_size - e2.lookahead - e2.strstart, e2.strstart >= f2 + (f2 - z)) {
+                for (c.arraySet(e2.window, e2.window, f2, f2, 0), e2.match_start -= f2, e2.strstart -= f2, e2.block_start -= f2, t2 = r2 = e2.hash_size; n2 = e2.head[--t2], e2.head[t2] = f2 <= n2 ? n2 - f2 : 0, --r2; ) ;
+                for (t2 = r2 = f2; n2 = e2.prev[--t2], e2.prev[t2] = f2 <= n2 ? n2 - f2 : 0, --r2; ) ;
+                i2 += f2;
+              }
+              if (0 === e2.strm.avail_in) break;
+              if (a2 = e2.strm, o2 = e2.window, h2 = e2.strstart + e2.lookahead, u2 = i2, l2 = void 0, l2 = a2.avail_in, u2 < l2 && (l2 = u2), r2 = 0 === l2 ? 0 : (a2.avail_in -= l2, c.arraySet(o2, a2.input, a2.next_in, l2, h2), 1 === a2.state.wrap ? a2.adler = d(a2.adler, o2, l2, h2) : 2 === a2.state.wrap && (a2.adler = p(a2.adler, o2, l2, h2)), a2.next_in += l2, a2.total_in += l2, l2), e2.lookahead += r2, e2.lookahead + e2.insert >= x) for (s2 = e2.strstart - e2.insert, e2.ins_h = e2.window[s2], e2.ins_h = (e2.ins_h << e2.hash_shift ^ e2.window[s2 + 1]) & e2.hash_mask; e2.insert && (e2.ins_h = (e2.ins_h << e2.hash_shift ^ e2.window[s2 + x - 1]) & e2.hash_mask, e2.prev[s2 & e2.w_mask] = e2.head[e2.ins_h], e2.head[e2.ins_h] = s2, s2++, e2.insert--, !(e2.lookahead + e2.insert < x)); ) ;
+            } while (e2.lookahead < z && 0 !== e2.strm.avail_in);
+          }
+          function Z(e2, t2) {
+            for (var r2, n2; ; ) {
+              if (e2.lookahead < z) {
+                if (j(e2), e2.lookahead < z && t2 === l) return A;
+                if (0 === e2.lookahead) break;
+              }
+              if (r2 = 0, e2.lookahead >= x && (e2.ins_h = (e2.ins_h << e2.hash_shift ^ e2.window[e2.strstart + x - 1]) & e2.hash_mask, r2 = e2.prev[e2.strstart & e2.w_mask] = e2.head[e2.ins_h], e2.head[e2.ins_h] = e2.strstart), 0 !== r2 && e2.strstart - r2 <= e2.w_size - z && (e2.match_length = L(e2, r2)), e2.match_length >= x) if (n2 = u._tr_tally(e2, e2.strstart - e2.match_start, e2.match_length - x), e2.lookahead -= e2.match_length, e2.match_length <= e2.max_lazy_match && e2.lookahead >= x) {
+                for (e2.match_length--; e2.strstart++, e2.ins_h = (e2.ins_h << e2.hash_shift ^ e2.window[e2.strstart + x - 1]) & e2.hash_mask, r2 = e2.prev[e2.strstart & e2.w_mask] = e2.head[e2.ins_h], e2.head[e2.ins_h] = e2.strstart, 0 != --e2.match_length; ) ;
+                e2.strstart++;
+              } else e2.strstart += e2.match_length, e2.match_length = 0, e2.ins_h = e2.window[e2.strstart], e2.ins_h = (e2.ins_h << e2.hash_shift ^ e2.window[e2.strstart + 1]) & e2.hash_mask;
+              else n2 = u._tr_tally(e2, 0, e2.window[e2.strstart]), e2.lookahead--, e2.strstart++;
+              if (n2 && (N(e2, false), 0 === e2.strm.avail_out)) return A;
+            }
+            return e2.insert = e2.strstart < x - 1 ? e2.strstart : x - 1, t2 === f ? (N(e2, true), 0 === e2.strm.avail_out ? O : B) : e2.last_lit && (N(e2, false), 0 === e2.strm.avail_out) ? A : I;
+          }
+          function W(e2, t2) {
+            for (var r2, n2, i2; ; ) {
+              if (e2.lookahead < z) {
+                if (j(e2), e2.lookahead < z && t2 === l) return A;
+                if (0 === e2.lookahead) break;
+              }
+              if (r2 = 0, e2.lookahead >= x && (e2.ins_h = (e2.ins_h << e2.hash_shift ^ e2.window[e2.strstart + x - 1]) & e2.hash_mask, r2 = e2.prev[e2.strstart & e2.w_mask] = e2.head[e2.ins_h], e2.head[e2.ins_h] = e2.strstart), e2.prev_length = e2.match_length, e2.prev_match = e2.match_start, e2.match_length = x - 1, 0 !== r2 && e2.prev_length < e2.max_lazy_match && e2.strstart - r2 <= e2.w_size - z && (e2.match_length = L(e2, r2), e2.match_length <= 5 && (1 === e2.strategy || e2.match_length === x && 4096 < e2.strstart - e2.match_start) && (e2.match_length = x - 1)), e2.prev_length >= x && e2.match_length <= e2.prev_length) {
+                for (i2 = e2.strstart + e2.lookahead - x, n2 = u._tr_tally(e2, e2.strstart - 1 - e2.prev_match, e2.prev_length - x), e2.lookahead -= e2.prev_length - 1, e2.prev_length -= 2; ++e2.strstart <= i2 && (e2.ins_h = (e2.ins_h << e2.hash_shift ^ e2.window[e2.strstart + x - 1]) & e2.hash_mask, r2 = e2.prev[e2.strstart & e2.w_mask] = e2.head[e2.ins_h], e2.head[e2.ins_h] = e2.strstart), 0 != --e2.prev_length; ) ;
+                if (e2.match_available = 0, e2.match_length = x - 1, e2.strstart++, n2 && (N(e2, false), 0 === e2.strm.avail_out)) return A;
+              } else if (e2.match_available) {
+                if ((n2 = u._tr_tally(e2, 0, e2.window[e2.strstart - 1])) && N(e2, false), e2.strstart++, e2.lookahead--, 0 === e2.strm.avail_out) return A;
+              } else e2.match_available = 1, e2.strstart++, e2.lookahead--;
+            }
+            return e2.match_available && (n2 = u._tr_tally(e2, 0, e2.window[e2.strstart - 1]), e2.match_available = 0), e2.insert = e2.strstart < x - 1 ? e2.strstart : x - 1, t2 === f ? (N(e2, true), 0 === e2.strm.avail_out ? O : B) : e2.last_lit && (N(e2, false), 0 === e2.strm.avail_out) ? A : I;
+          }
+          function M(e2, t2, r2, n2, i2) {
+            this.good_length = e2, this.max_lazy = t2, this.nice_length = r2, this.max_chain = n2, this.func = i2;
+          }
+          function H() {
+            this.strm = null, this.status = 0, this.pending_buf = null, this.pending_buf_size = 0, this.pending_out = 0, this.pending = 0, this.wrap = 0, this.gzhead = null, this.gzindex = 0, this.method = v, this.last_flush = -1, this.w_size = 0, this.w_bits = 0, this.w_mask = 0, this.window = null, this.window_size = 0, this.prev = null, this.head = null, this.ins_h = 0, this.hash_size = 0, this.hash_bits = 0, this.hash_mask = 0, this.hash_shift = 0, this.block_start = 0, this.match_length = 0, this.prev_match = 0, this.match_available = 0, this.strstart = 0, this.match_start = 0, this.lookahead = 0, this.prev_length = 0, this.max_chain_length = 0, this.max_lazy_match = 0, this.level = 0, this.strategy = 0, this.good_match = 0, this.nice_match = 0, this.dyn_ltree = new c.Buf16(2 * w), this.dyn_dtree = new c.Buf16(2 * (2 * a + 1)), this.bl_tree = new c.Buf16(2 * (2 * o + 1)), D(this.dyn_ltree), D(this.dyn_dtree), D(this.bl_tree), this.l_desc = null, this.d_desc = null, this.bl_desc = null, this.bl_count = new c.Buf16(k + 1), this.heap = new c.Buf16(2 * s + 1), D(this.heap), this.heap_len = 0, this.heap_max = 0, this.depth = new c.Buf16(2 * s + 1), D(this.depth), this.l_buf = 0, this.lit_bufsize = 0, this.last_lit = 0, this.d_buf = 0, this.opt_len = 0, this.static_len = 0, this.matches = 0, this.insert = 0, this.bi_buf = 0, this.bi_valid = 0;
+          }
+          function G(e2) {
+            var t2;
+            return e2 && e2.state ? (e2.total_in = e2.total_out = 0, e2.data_type = i, (t2 = e2.state).pending = 0, t2.pending_out = 0, t2.wrap < 0 && (t2.wrap = -t2.wrap), t2.status = t2.wrap ? C : E, e2.adler = 2 === t2.wrap ? 0 : 1, t2.last_flush = l, u._tr_init(t2), m) : R(e2, _);
+          }
+          function K(e2) {
+            var t2 = G(e2);
+            return t2 === m && (function(e3) {
+              e3.window_size = 2 * e3.w_size, D(e3.head), e3.max_lazy_match = h[e3.level].max_lazy, e3.good_match = h[e3.level].good_length, e3.nice_match = h[e3.level].nice_length, e3.max_chain_length = h[e3.level].max_chain, e3.strstart = 0, e3.block_start = 0, e3.lookahead = 0, e3.insert = 0, e3.match_length = e3.prev_length = x - 1, e3.match_available = 0, e3.ins_h = 0;
+            })(e2.state), t2;
+          }
+          function Y(e2, t2, r2, n2, i2, s2) {
+            if (!e2) return _;
+            var a2 = 1;
+            if (t2 === g && (t2 = 6), n2 < 0 ? (a2 = 0, n2 = -n2) : 15 < n2 && (a2 = 2, n2 -= 16), i2 < 1 || y < i2 || r2 !== v || n2 < 8 || 15 < n2 || t2 < 0 || 9 < t2 || s2 < 0 || b < s2) return R(e2, _);
+            8 === n2 && (n2 = 9);
+            var o2 = new H();
+            return (e2.state = o2).strm = e2, o2.wrap = a2, o2.gzhead = null, o2.w_bits = n2, o2.w_size = 1 << o2.w_bits, o2.w_mask = o2.w_size - 1, o2.hash_bits = i2 + 7, o2.hash_size = 1 << o2.hash_bits, o2.hash_mask = o2.hash_size - 1, o2.hash_shift = ~~((o2.hash_bits + x - 1) / x), o2.window = new c.Buf8(2 * o2.w_size), o2.head = new c.Buf16(o2.hash_size), o2.prev = new c.Buf16(o2.w_size), o2.lit_bufsize = 1 << i2 + 6, o2.pending_buf_size = 4 * o2.lit_bufsize, o2.pending_buf = new c.Buf8(o2.pending_buf_size), o2.d_buf = 1 * o2.lit_bufsize, o2.l_buf = 3 * o2.lit_bufsize, o2.level = t2, o2.strategy = s2, o2.method = r2, K(e2);
+          }
+          h = [new M(0, 0, 0, 0, function(e2, t2) {
+            var r2 = 65535;
+            for (r2 > e2.pending_buf_size - 5 && (r2 = e2.pending_buf_size - 5); ; ) {
+              if (e2.lookahead <= 1) {
+                if (j(e2), 0 === e2.lookahead && t2 === l) return A;
+                if (0 === e2.lookahead) break;
+              }
+              e2.strstart += e2.lookahead, e2.lookahead = 0;
+              var n2 = e2.block_start + r2;
+              if ((0 === e2.strstart || e2.strstart >= n2) && (e2.lookahead = e2.strstart - n2, e2.strstart = n2, N(e2, false), 0 === e2.strm.avail_out)) return A;
+              if (e2.strstart - e2.block_start >= e2.w_size - z && (N(e2, false), 0 === e2.strm.avail_out)) return A;
+            }
+            return e2.insert = 0, t2 === f ? (N(e2, true), 0 === e2.strm.avail_out ? O : B) : (e2.strstart > e2.block_start && (N(e2, false), e2.strm.avail_out), A);
+          }), new M(4, 4, 8, 4, Z), new M(4, 5, 16, 8, Z), new M(4, 6, 32, 32, Z), new M(4, 4, 16, 16, W), new M(8, 16, 32, 32, W), new M(8, 16, 128, 128, W), new M(8, 32, 128, 256, W), new M(32, 128, 258, 1024, W), new M(32, 258, 258, 4096, W)], r.deflateInit = function(e2, t2) {
+            return Y(e2, t2, v, 15, 8, 0);
+          }, r.deflateInit2 = Y, r.deflateReset = K, r.deflateResetKeep = G, r.deflateSetHeader = function(e2, t2) {
+            return e2 && e2.state ? 2 !== e2.state.wrap ? _ : (e2.state.gzhead = t2, m) : _;
+          }, r.deflate = function(e2, t2) {
+            var r2, n2, i2, s2;
+            if (!e2 || !e2.state || 5 < t2 || t2 < 0) return e2 ? R(e2, _) : _;
+            if (n2 = e2.state, !e2.output || !e2.input && 0 !== e2.avail_in || 666 === n2.status && t2 !== f) return R(e2, 0 === e2.avail_out ? -5 : _);
+            if (n2.strm = e2, r2 = n2.last_flush, n2.last_flush = t2, n2.status === C) if (2 === n2.wrap) e2.adler = 0, U(n2, 31), U(n2, 139), U(n2, 8), n2.gzhead ? (U(n2, (n2.gzhead.text ? 1 : 0) + (n2.gzhead.hcrc ? 2 : 0) + (n2.gzhead.extra ? 4 : 0) + (n2.gzhead.name ? 8 : 0) + (n2.gzhead.comment ? 16 : 0)), U(n2, 255 & n2.gzhead.time), U(n2, n2.gzhead.time >> 8 & 255), U(n2, n2.gzhead.time >> 16 & 255), U(n2, n2.gzhead.time >> 24 & 255), U(n2, 9 === n2.level ? 2 : 2 <= n2.strategy || n2.level < 2 ? 4 : 0), U(n2, 255 & n2.gzhead.os), n2.gzhead.extra && n2.gzhead.extra.length && (U(n2, 255 & n2.gzhead.extra.length), U(n2, n2.gzhead.extra.length >> 8 & 255)), n2.gzhead.hcrc && (e2.adler = p(e2.adler, n2.pending_buf, n2.pending, 0)), n2.gzindex = 0, n2.status = 69) : (U(n2, 0), U(n2, 0), U(n2, 0), U(n2, 0), U(n2, 0), U(n2, 9 === n2.level ? 2 : 2 <= n2.strategy || n2.level < 2 ? 4 : 0), U(n2, 3), n2.status = E);
+            else {
+              var a2 = v + (n2.w_bits - 8 << 4) << 8;
+              a2 |= (2 <= n2.strategy || n2.level < 2 ? 0 : n2.level < 6 ? 1 : 6 === n2.level ? 2 : 3) << 6, 0 !== n2.strstart && (a2 |= 32), a2 += 31 - a2 % 31, n2.status = E, P(n2, a2), 0 !== n2.strstart && (P(n2, e2.adler >>> 16), P(n2, 65535 & e2.adler)), e2.adler = 1;
+            }
+            if (69 === n2.status) if (n2.gzhead.extra) {
+              for (i2 = n2.pending; n2.gzindex < (65535 & n2.gzhead.extra.length) && (n2.pending !== n2.pending_buf_size || (n2.gzhead.hcrc && n2.pending > i2 && (e2.adler = p(e2.adler, n2.pending_buf, n2.pending - i2, i2)), F(e2), i2 = n2.pending, n2.pending !== n2.pending_buf_size)); ) U(n2, 255 & n2.gzhead.extra[n2.gzindex]), n2.gzindex++;
+              n2.gzhead.hcrc && n2.pending > i2 && (e2.adler = p(e2.adler, n2.pending_buf, n2.pending - i2, i2)), n2.gzindex === n2.gzhead.extra.length && (n2.gzindex = 0, n2.status = 73);
+            } else n2.status = 73;
+            if (73 === n2.status) if (n2.gzhead.name) {
+              i2 = n2.pending;
+              do {
+                if (n2.pending === n2.pending_buf_size && (n2.gzhead.hcrc && n2.pending > i2 && (e2.adler = p(e2.adler, n2.pending_buf, n2.pending - i2, i2)), F(e2), i2 = n2.pending, n2.pending === n2.pending_buf_size)) {
+                  s2 = 1;
+                  break;
+                }
+                s2 = n2.gzindex < n2.gzhead.name.length ? 255 & n2.gzhead.name.charCodeAt(n2.gzindex++) : 0, U(n2, s2);
+              } while (0 !== s2);
+              n2.gzhead.hcrc && n2.pending > i2 && (e2.adler = p(e2.adler, n2.pending_buf, n2.pending - i2, i2)), 0 === s2 && (n2.gzindex = 0, n2.status = 91);
+            } else n2.status = 91;
+            if (91 === n2.status) if (n2.gzhead.comment) {
+              i2 = n2.pending;
+              do {
+                if (n2.pending === n2.pending_buf_size && (n2.gzhead.hcrc && n2.pending > i2 && (e2.adler = p(e2.adler, n2.pending_buf, n2.pending - i2, i2)), F(e2), i2 = n2.pending, n2.pending === n2.pending_buf_size)) {
+                  s2 = 1;
+                  break;
+                }
+                s2 = n2.gzindex < n2.gzhead.comment.length ? 255 & n2.gzhead.comment.charCodeAt(n2.gzindex++) : 0, U(n2, s2);
+              } while (0 !== s2);
+              n2.gzhead.hcrc && n2.pending > i2 && (e2.adler = p(e2.adler, n2.pending_buf, n2.pending - i2, i2)), 0 === s2 && (n2.status = 103);
+            } else n2.status = 103;
+            if (103 === n2.status && (n2.gzhead.hcrc ? (n2.pending + 2 > n2.pending_buf_size && F(e2), n2.pending + 2 <= n2.pending_buf_size && (U(n2, 255 & e2.adler), U(n2, e2.adler >> 8 & 255), e2.adler = 0, n2.status = E)) : n2.status = E), 0 !== n2.pending) {
+              if (F(e2), 0 === e2.avail_out) return n2.last_flush = -1, m;
+            } else if (0 === e2.avail_in && T(t2) <= T(r2) && t2 !== f) return R(e2, -5);
+            if (666 === n2.status && 0 !== e2.avail_in) return R(e2, -5);
+            if (0 !== e2.avail_in || 0 !== n2.lookahead || t2 !== l && 666 !== n2.status) {
+              var o2 = 2 === n2.strategy ? (function(e3, t3) {
+                for (var r3; ; ) {
+                  if (0 === e3.lookahead && (j(e3), 0 === e3.lookahead)) {
+                    if (t3 === l) return A;
+                    break;
+                  }
+                  if (e3.match_length = 0, r3 = u._tr_tally(e3, 0, e3.window[e3.strstart]), e3.lookahead--, e3.strstart++, r3 && (N(e3, false), 0 === e3.strm.avail_out)) return A;
+                }
+                return e3.insert = 0, t3 === f ? (N(e3, true), 0 === e3.strm.avail_out ? O : B) : e3.last_lit && (N(e3, false), 0 === e3.strm.avail_out) ? A : I;
+              })(n2, t2) : 3 === n2.strategy ? (function(e3, t3) {
+                for (var r3, n3, i3, s3, a3 = e3.window; ; ) {
+                  if (e3.lookahead <= S) {
+                    if (j(e3), e3.lookahead <= S && t3 === l) return A;
+                    if (0 === e3.lookahead) break;
+                  }
+                  if (e3.match_length = 0, e3.lookahead >= x && 0 < e3.strstart && (n3 = a3[i3 = e3.strstart - 1]) === a3[++i3] && n3 === a3[++i3] && n3 === a3[++i3]) {
+                    s3 = e3.strstart + S;
+                    do {
+                    } while (n3 === a3[++i3] && n3 === a3[++i3] && n3 === a3[++i3] && n3 === a3[++i3] && n3 === a3[++i3] && n3 === a3[++i3] && n3 === a3[++i3] && n3 === a3[++i3] && i3 < s3);
+                    e3.match_length = S - (s3 - i3), e3.match_length > e3.lookahead && (e3.match_length = e3.lookahead);
+                  }
+                  if (e3.match_length >= x ? (r3 = u._tr_tally(e3, 1, e3.match_length - x), e3.lookahead -= e3.match_length, e3.strstart += e3.match_length, e3.match_length = 0) : (r3 = u._tr_tally(e3, 0, e3.window[e3.strstart]), e3.lookahead--, e3.strstart++), r3 && (N(e3, false), 0 === e3.strm.avail_out)) return A;
+                }
+                return e3.insert = 0, t3 === f ? (N(e3, true), 0 === e3.strm.avail_out ? O : B) : e3.last_lit && (N(e3, false), 0 === e3.strm.avail_out) ? A : I;
+              })(n2, t2) : h[n2.level].func(n2, t2);
+              if (o2 !== O && o2 !== B || (n2.status = 666), o2 === A || o2 === O) return 0 === e2.avail_out && (n2.last_flush = -1), m;
+              if (o2 === I && (1 === t2 ? u._tr_align(n2) : 5 !== t2 && (u._tr_stored_block(n2, 0, 0, false), 3 === t2 && (D(n2.head), 0 === n2.lookahead && (n2.strstart = 0, n2.block_start = 0, n2.insert = 0))), F(e2), 0 === e2.avail_out)) return n2.last_flush = -1, m;
+            }
+            return t2 !== f ? m : n2.wrap <= 0 ? 1 : (2 === n2.wrap ? (U(n2, 255 & e2.adler), U(n2, e2.adler >> 8 & 255), U(n2, e2.adler >> 16 & 255), U(n2, e2.adler >> 24 & 255), U(n2, 255 & e2.total_in), U(n2, e2.total_in >> 8 & 255), U(n2, e2.total_in >> 16 & 255), U(n2, e2.total_in >> 24 & 255)) : (P(n2, e2.adler >>> 16), P(n2, 65535 & e2.adler)), F(e2), 0 < n2.wrap && (n2.wrap = -n2.wrap), 0 !== n2.pending ? m : 1);
+          }, r.deflateEnd = function(e2) {
+            var t2;
+            return e2 && e2.state ? (t2 = e2.state.status) !== C && 69 !== t2 && 73 !== t2 && 91 !== t2 && 103 !== t2 && t2 !== E && 666 !== t2 ? R(e2, _) : (e2.state = null, t2 === E ? R(e2, -3) : m) : _;
+          }, r.deflateSetDictionary = function(e2, t2) {
+            var r2, n2, i2, s2, a2, o2, h2, u2, l2 = t2.length;
+            if (!e2 || !e2.state) return _;
+            if (2 === (s2 = (r2 = e2.state).wrap) || 1 === s2 && r2.status !== C || r2.lookahead) return _;
+            for (1 === s2 && (e2.adler = d(e2.adler, t2, l2, 0)), r2.wrap = 0, l2 >= r2.w_size && (0 === s2 && (D(r2.head), r2.strstart = 0, r2.block_start = 0, r2.insert = 0), u2 = new c.Buf8(r2.w_size), c.arraySet(u2, t2, l2 - r2.w_size, r2.w_size, 0), t2 = u2, l2 = r2.w_size), a2 = e2.avail_in, o2 = e2.next_in, h2 = e2.input, e2.avail_in = l2, e2.next_in = 0, e2.input = t2, j(r2); r2.lookahead >= x; ) {
+              for (n2 = r2.strstart, i2 = r2.lookahead - (x - 1); r2.ins_h = (r2.ins_h << r2.hash_shift ^ r2.window[n2 + x - 1]) & r2.hash_mask, r2.prev[n2 & r2.w_mask] = r2.head[r2.ins_h], r2.head[r2.ins_h] = n2, n2++, --i2; ) ;
+              r2.strstart = n2, r2.lookahead = x - 1, j(r2);
+            }
+            return r2.strstart += r2.lookahead, r2.block_start = r2.strstart, r2.insert = r2.lookahead, r2.lookahead = 0, r2.match_length = r2.prev_length = x - 1, r2.match_available = 0, e2.next_in = o2, e2.input = h2, e2.avail_in = a2, r2.wrap = s2, m;
+          }, r.deflateInfo = "pako deflate (from Nodeca project)";
+        }, { "../utils/common": 41, "./adler32": 43, "./crc32": 45, "./messages": 51, "./trees": 52 }], 47: [function(e, t, r) {
+          "use strict";
+          t.exports = function() {
+            this.text = 0, this.time = 0, this.xflags = 0, this.os = 0, this.extra = null, this.extra_len = 0, this.name = "", this.comment = "", this.hcrc = 0, this.done = false;
+          };
+        }, {}], 48: [function(e, t, r) {
+          "use strict";
+          t.exports = function(e2, t2) {
+            var r2, n, i, s, a, o, h, u, l, f, c, d, p, m, _, g, b, v, y, w, k, x, S, z, C;
+            r2 = e2.state, n = e2.next_in, z = e2.input, i = n + (e2.avail_in - 5), s = e2.next_out, C = e2.output, a = s - (t2 - e2.avail_out), o = s + (e2.avail_out - 257), h = r2.dmax, u = r2.wsize, l = r2.whave, f = r2.wnext, c = r2.window, d = r2.hold, p = r2.bits, m = r2.lencode, _ = r2.distcode, g = (1 << r2.lenbits) - 1, b = (1 << r2.distbits) - 1;
+            e: do {
+              p < 15 && (d += z[n++] << p, p += 8, d += z[n++] << p, p += 8), v = m[d & g];
+              t: for (; ; ) {
+                if (d >>>= y = v >>> 24, p -= y, 0 === (y = v >>> 16 & 255)) C[s++] = 65535 & v;
+                else {
+                  if (!(16 & y)) {
+                    if (0 == (64 & y)) {
+                      v = m[(65535 & v) + (d & (1 << y) - 1)];
+                      continue t;
+                    }
+                    if (32 & y) {
+                      r2.mode = 12;
+                      break e;
+                    }
+                    e2.msg = "invalid literal/length code", r2.mode = 30;
+                    break e;
+                  }
+                  w = 65535 & v, (y &= 15) && (p < y && (d += z[n++] << p, p += 8), w += d & (1 << y) - 1, d >>>= y, p -= y), p < 15 && (d += z[n++] << p, p += 8, d += z[n++] << p, p += 8), v = _[d & b];
+                  r: for (; ; ) {
+                    if (d >>>= y = v >>> 24, p -= y, !(16 & (y = v >>> 16 & 255))) {
+                      if (0 == (64 & y)) {
+                        v = _[(65535 & v) + (d & (1 << y) - 1)];
+                        continue r;
+                      }
+                      e2.msg = "invalid distance code", r2.mode = 30;
+                      break e;
+                    }
+                    if (k = 65535 & v, p < (y &= 15) && (d += z[n++] << p, (p += 8) < y && (d += z[n++] << p, p += 8)), h < (k += d & (1 << y) - 1)) {
+                      e2.msg = "invalid distance too far back", r2.mode = 30;
+                      break e;
+                    }
+                    if (d >>>= y, p -= y, (y = s - a) < k) {
+                      if (l < (y = k - y) && r2.sane) {
+                        e2.msg = "invalid distance too far back", r2.mode = 30;
+                        break e;
+                      }
+                      if (S = c, (x = 0) === f) {
+                        if (x += u - y, y < w) {
+                          for (w -= y; C[s++] = c[x++], --y; ) ;
+                          x = s - k, S = C;
+                        }
+                      } else if (f < y) {
+                        if (x += u + f - y, (y -= f) < w) {
+                          for (w -= y; C[s++] = c[x++], --y; ) ;
+                          if (x = 0, f < w) {
+                            for (w -= y = f; C[s++] = c[x++], --y; ) ;
+                            x = s - k, S = C;
+                          }
+                        }
+                      } else if (x += f - y, y < w) {
+                        for (w -= y; C[s++] = c[x++], --y; ) ;
+                        x = s - k, S = C;
+                      }
+                      for (; 2 < w; ) C[s++] = S[x++], C[s++] = S[x++], C[s++] = S[x++], w -= 3;
+                      w && (C[s++] = S[x++], 1 < w && (C[s++] = S[x++]));
+                    } else {
+                      for (x = s - k; C[s++] = C[x++], C[s++] = C[x++], C[s++] = C[x++], 2 < (w -= 3); ) ;
+                      w && (C[s++] = C[x++], 1 < w && (C[s++] = C[x++]));
+                    }
+                    break;
+                  }
+                }
+                break;
+              }
+            } while (n < i && s < o);
+            n -= w = p >> 3, d &= (1 << (p -= w << 3)) - 1, e2.next_in = n, e2.next_out = s, e2.avail_in = n < i ? i - n + 5 : 5 - (n - i), e2.avail_out = s < o ? o - s + 257 : 257 - (s - o), r2.hold = d, r2.bits = p;
+          };
+        }, {}], 49: [function(e, t, r) {
+          "use strict";
+          var I = e("../utils/common"), O = e("./adler32"), B = e("./crc32"), R = e("./inffast"), T = e("./inftrees"), D = 1, F = 2, N = 0, U = -2, P = 1, n = 852, i = 592;
+          function L(e2) {
+            return (e2 >>> 24 & 255) + (e2 >>> 8 & 65280) + ((65280 & e2) << 8) + ((255 & e2) << 24);
+          }
+          function s() {
+            this.mode = 0, this.last = false, this.wrap = 0, this.havedict = false, this.flags = 0, this.dmax = 0, this.check = 0, this.total = 0, this.head = null, this.wbits = 0, this.wsize = 0, this.whave = 0, this.wnext = 0, this.window = null, this.hold = 0, this.bits = 0, this.length = 0, this.offset = 0, this.extra = 0, this.lencode = null, this.distcode = null, this.lenbits = 0, this.distbits = 0, this.ncode = 0, this.nlen = 0, this.ndist = 0, this.have = 0, this.next = null, this.lens = new I.Buf16(320), this.work = new I.Buf16(288), this.lendyn = null, this.distdyn = null, this.sane = 0, this.back = 0, this.was = 0;
+          }
+          function a(e2) {
+            var t2;
+            return e2 && e2.state ? (t2 = e2.state, e2.total_in = e2.total_out = t2.total = 0, e2.msg = "", t2.wrap && (e2.adler = 1 & t2.wrap), t2.mode = P, t2.last = 0, t2.havedict = 0, t2.dmax = 32768, t2.head = null, t2.hold = 0, t2.bits = 0, t2.lencode = t2.lendyn = new I.Buf32(n), t2.distcode = t2.distdyn = new I.Buf32(i), t2.sane = 1, t2.back = -1, N) : U;
+          }
+          function o(e2) {
+            var t2;
+            return e2 && e2.state ? ((t2 = e2.state).wsize = 0, t2.whave = 0, t2.wnext = 0, a(e2)) : U;
+          }
+          function h(e2, t2) {
+            var r2, n2;
+            return e2 && e2.state ? (n2 = e2.state, t2 < 0 ? (r2 = 0, t2 = -t2) : (r2 = 1 + (t2 >> 4), t2 < 48 && (t2 &= 15)), t2 && (t2 < 8 || 15 < t2) ? U : (null !== n2.window && n2.wbits !== t2 && (n2.window = null), n2.wrap = r2, n2.wbits = t2, o(e2))) : U;
+          }
+          function u(e2, t2) {
+            var r2, n2;
+            return e2 ? (n2 = new s(), (e2.state = n2).window = null, (r2 = h(e2, t2)) !== N && (e2.state = null), r2) : U;
+          }
+          var l, f, c = true;
+          function j(e2) {
+            if (c) {
+              var t2;
+              for (l = new I.Buf32(512), f = new I.Buf32(32), t2 = 0; t2 < 144; ) e2.lens[t2++] = 8;
+              for (; t2 < 256; ) e2.lens[t2++] = 9;
+              for (; t2 < 280; ) e2.lens[t2++] = 7;
+              for (; t2 < 288; ) e2.lens[t2++] = 8;
+              for (T(D, e2.lens, 0, 288, l, 0, e2.work, { bits: 9 }), t2 = 0; t2 < 32; ) e2.lens[t2++] = 5;
+              T(F, e2.lens, 0, 32, f, 0, e2.work, { bits: 5 }), c = false;
+            }
+            e2.lencode = l, e2.lenbits = 9, e2.distcode = f, e2.distbits = 5;
+          }
+          function Z(e2, t2, r2, n2) {
+            var i2, s2 = e2.state;
+            return null === s2.window && (s2.wsize = 1 << s2.wbits, s2.wnext = 0, s2.whave = 0, s2.window = new I.Buf8(s2.wsize)), n2 >= s2.wsize ? (I.arraySet(s2.window, t2, r2 - s2.wsize, s2.wsize, 0), s2.wnext = 0, s2.whave = s2.wsize) : (n2 < (i2 = s2.wsize - s2.wnext) && (i2 = n2), I.arraySet(s2.window, t2, r2 - n2, i2, s2.wnext), (n2 -= i2) ? (I.arraySet(s2.window, t2, r2 - n2, n2, 0), s2.wnext = n2, s2.whave = s2.wsize) : (s2.wnext += i2, s2.wnext === s2.wsize && (s2.wnext = 0), s2.whave < s2.wsize && (s2.whave += i2))), 0;
+          }
+          r.inflateReset = o, r.inflateReset2 = h, r.inflateResetKeep = a, r.inflateInit = function(e2) {
+            return u(e2, 15);
+          }, r.inflateInit2 = u, r.inflate = function(e2, t2) {
+            var r2, n2, i2, s2, a2, o2, h2, u2, l2, f2, c2, d, p, m, _, g, b, v, y, w, k, x, S, z, C = 0, E = new I.Buf8(4), A = [16, 17, 18, 0, 8, 7, 9, 6, 10, 5, 11, 4, 12, 3, 13, 2, 14, 1, 15];
+            if (!e2 || !e2.state || !e2.output || !e2.input && 0 !== e2.avail_in) return U;
+            12 === (r2 = e2.state).mode && (r2.mode = 13), a2 = e2.next_out, i2 = e2.output, h2 = e2.avail_out, s2 = e2.next_in, n2 = e2.input, o2 = e2.avail_in, u2 = r2.hold, l2 = r2.bits, f2 = o2, c2 = h2, x = N;
+            e: for (; ; ) switch (r2.mode) {
+              case P:
+                if (0 === r2.wrap) {
+                  r2.mode = 13;
+                  break;
+                }
+                for (; l2 < 16; ) {
+                  if (0 === o2) break e;
+                  o2--, u2 += n2[s2++] << l2, l2 += 8;
+                }
+                if (2 & r2.wrap && 35615 === u2) {
+                  E[r2.check = 0] = 255 & u2, E[1] = u2 >>> 8 & 255, r2.check = B(r2.check, E, 2, 0), l2 = u2 = 0, r2.mode = 2;
+                  break;
+                }
+                if (r2.flags = 0, r2.head && (r2.head.done = false), !(1 & r2.wrap) || (((255 & u2) << 8) + (u2 >> 8)) % 31) {
+                  e2.msg = "incorrect header check", r2.mode = 30;
+                  break;
+                }
+                if (8 != (15 & u2)) {
+                  e2.msg = "unknown compression method", r2.mode = 30;
+                  break;
+                }
+                if (l2 -= 4, k = 8 + (15 & (u2 >>>= 4)), 0 === r2.wbits) r2.wbits = k;
+                else if (k > r2.wbits) {
+                  e2.msg = "invalid window size", r2.mode = 30;
+                  break;
+                }
+                r2.dmax = 1 << k, e2.adler = r2.check = 1, r2.mode = 512 & u2 ? 10 : 12, l2 = u2 = 0;
+                break;
+              case 2:
+                for (; l2 < 16; ) {
+                  if (0 === o2) break e;
+                  o2--, u2 += n2[s2++] << l2, l2 += 8;
+                }
+                if (r2.flags = u2, 8 != (255 & r2.flags)) {
+                  e2.msg = "unknown compression method", r2.mode = 30;
+                  break;
+                }
+                if (57344 & r2.flags) {
+                  e2.msg = "unknown header flags set", r2.mode = 30;
+                  break;
+                }
+                r2.head && (r2.head.text = u2 >> 8 & 1), 512 & r2.flags && (E[0] = 255 & u2, E[1] = u2 >>> 8 & 255, r2.check = B(r2.check, E, 2, 0)), l2 = u2 = 0, r2.mode = 3;
+              case 3:
+                for (; l2 < 32; ) {
+                  if (0 === o2) break e;
+                  o2--, u2 += n2[s2++] << l2, l2 += 8;
+                }
+                r2.head && (r2.head.time = u2), 512 & r2.flags && (E[0] = 255 & u2, E[1] = u2 >>> 8 & 255, E[2] = u2 >>> 16 & 255, E[3] = u2 >>> 24 & 255, r2.check = B(r2.check, E, 4, 0)), l2 = u2 = 0, r2.mode = 4;
+              case 4:
+                for (; l2 < 16; ) {
+                  if (0 === o2) break e;
+                  o2--, u2 += n2[s2++] << l2, l2 += 8;
+                }
+                r2.head && (r2.head.xflags = 255 & u2, r2.head.os = u2 >> 8), 512 & r2.flags && (E[0] = 255 & u2, E[1] = u2 >>> 8 & 255, r2.check = B(r2.check, E, 2, 0)), l2 = u2 = 0, r2.mode = 5;
+              case 5:
+                if (1024 & r2.flags) {
+                  for (; l2 < 16; ) {
+                    if (0 === o2) break e;
+                    o2--, u2 += n2[s2++] << l2, l2 += 8;
+                  }
+                  r2.length = u2, r2.head && (r2.head.extra_len = u2), 512 & r2.flags && (E[0] = 255 & u2, E[1] = u2 >>> 8 & 255, r2.check = B(r2.check, E, 2, 0)), l2 = u2 = 0;
+                } else r2.head && (r2.head.extra = null);
+                r2.mode = 6;
+              case 6:
+                if (1024 & r2.flags && (o2 < (d = r2.length) && (d = o2), d && (r2.head && (k = r2.head.extra_len - r2.length, r2.head.extra || (r2.head.extra = new Array(r2.head.extra_len)), I.arraySet(r2.head.extra, n2, s2, d, k)), 512 & r2.flags && (r2.check = B(r2.check, n2, d, s2)), o2 -= d, s2 += d, r2.length -= d), r2.length)) break e;
+                r2.length = 0, r2.mode = 7;
+              case 7:
+                if (2048 & r2.flags) {
+                  if (0 === o2) break e;
+                  for (d = 0; k = n2[s2 + d++], r2.head && k && r2.length < 65536 && (r2.head.name += String.fromCharCode(k)), k && d < o2; ) ;
+                  if (512 & r2.flags && (r2.check = B(r2.check, n2, d, s2)), o2 -= d, s2 += d, k) break e;
+                } else r2.head && (r2.head.name = null);
+                r2.length = 0, r2.mode = 8;
+              case 8:
+                if (4096 & r2.flags) {
+                  if (0 === o2) break e;
+                  for (d = 0; k = n2[s2 + d++], r2.head && k && r2.length < 65536 && (r2.head.comment += String.fromCharCode(k)), k && d < o2; ) ;
+                  if (512 & r2.flags && (r2.check = B(r2.check, n2, d, s2)), o2 -= d, s2 += d, k) break e;
+                } else r2.head && (r2.head.comment = null);
+                r2.mode = 9;
+              case 9:
+                if (512 & r2.flags) {
+                  for (; l2 < 16; ) {
+                    if (0 === o2) break e;
+                    o2--, u2 += n2[s2++] << l2, l2 += 8;
+                  }
+                  if (u2 !== (65535 & r2.check)) {
+                    e2.msg = "header crc mismatch", r2.mode = 30;
+                    break;
+                  }
+                  l2 = u2 = 0;
+                }
+                r2.head && (r2.head.hcrc = r2.flags >> 9 & 1, r2.head.done = true), e2.adler = r2.check = 0, r2.mode = 12;
+                break;
+              case 10:
+                for (; l2 < 32; ) {
+                  if (0 === o2) break e;
+                  o2--, u2 += n2[s2++] << l2, l2 += 8;
+                }
+                e2.adler = r2.check = L(u2), l2 = u2 = 0, r2.mode = 11;
+              case 11:
+                if (0 === r2.havedict) return e2.next_out = a2, e2.avail_out = h2, e2.next_in = s2, e2.avail_in = o2, r2.hold = u2, r2.bits = l2, 2;
+                e2.adler = r2.check = 1, r2.mode = 12;
+              case 12:
+                if (5 === t2 || 6 === t2) break e;
+              case 13:
+                if (r2.last) {
+                  u2 >>>= 7 & l2, l2 -= 7 & l2, r2.mode = 27;
+                  break;
+                }
+                for (; l2 < 3; ) {
+                  if (0 === o2) break e;
+                  o2--, u2 += n2[s2++] << l2, l2 += 8;
+                }
+                switch (r2.last = 1 & u2, l2 -= 1, 3 & (u2 >>>= 1)) {
+                  case 0:
+                    r2.mode = 14;
+                    break;
+                  case 1:
+                    if (j(r2), r2.mode = 20, 6 !== t2) break;
+                    u2 >>>= 2, l2 -= 2;
+                    break e;
+                  case 2:
+                    r2.mode = 17;
+                    break;
+                  case 3:
+                    e2.msg = "invalid block type", r2.mode = 30;
+                }
+                u2 >>>= 2, l2 -= 2;
+                break;
+              case 14:
+                for (u2 >>>= 7 & l2, l2 -= 7 & l2; l2 < 32; ) {
+                  if (0 === o2) break e;
+                  o2--, u2 += n2[s2++] << l2, l2 += 8;
+                }
+                if ((65535 & u2) != (u2 >>> 16 ^ 65535)) {
+                  e2.msg = "invalid stored block lengths", r2.mode = 30;
+                  break;
+                }
+                if (r2.length = 65535 & u2, l2 = u2 = 0, r2.mode = 15, 6 === t2) break e;
+              case 15:
+                r2.mode = 16;
+              case 16:
+                if (d = r2.length) {
+                  if (o2 < d && (d = o2), h2 < d && (d = h2), 0 === d) break e;
+                  I.arraySet(i2, n2, s2, d, a2), o2 -= d, s2 += d, h2 -= d, a2 += d, r2.length -= d;
+                  break;
+                }
+                r2.mode = 12;
+                break;
+              case 17:
+                for (; l2 < 14; ) {
+                  if (0 === o2) break e;
+                  o2--, u2 += n2[s2++] << l2, l2 += 8;
+                }
+                if (r2.nlen = 257 + (31 & u2), u2 >>>= 5, l2 -= 5, r2.ndist = 1 + (31 & u2), u2 >>>= 5, l2 -= 5, r2.ncode = 4 + (15 & u2), u2 >>>= 4, l2 -= 4, 286 < r2.nlen || 30 < r2.ndist) {
+                  e2.msg = "too many length or distance symbols", r2.mode = 30;
+                  break;
+                }
+                r2.have = 0, r2.mode = 18;
+              case 18:
+                for (; r2.have < r2.ncode; ) {
+                  for (; l2 < 3; ) {
+                    if (0 === o2) break e;
+                    o2--, u2 += n2[s2++] << l2, l2 += 8;
+                  }
+                  r2.lens[A[r2.have++]] = 7 & u2, u2 >>>= 3, l2 -= 3;
+                }
+                for (; r2.have < 19; ) r2.lens[A[r2.have++]] = 0;
+                if (r2.lencode = r2.lendyn, r2.lenbits = 7, S = { bits: r2.lenbits }, x = T(0, r2.lens, 0, 19, r2.lencode, 0, r2.work, S), r2.lenbits = S.bits, x) {
+                  e2.msg = "invalid code lengths set", r2.mode = 30;
+                  break;
+                }
+                r2.have = 0, r2.mode = 19;
+              case 19:
+                for (; r2.have < r2.nlen + r2.ndist; ) {
+                  for (; g = (C = r2.lencode[u2 & (1 << r2.lenbits) - 1]) >>> 16 & 255, b = 65535 & C, !((_ = C >>> 24) <= l2); ) {
+                    if (0 === o2) break e;
+                    o2--, u2 += n2[s2++] << l2, l2 += 8;
+                  }
+                  if (b < 16) u2 >>>= _, l2 -= _, r2.lens[r2.have++] = b;
+                  else {
+                    if (16 === b) {
+                      for (z = _ + 2; l2 < z; ) {
+                        if (0 === o2) break e;
+                        o2--, u2 += n2[s2++] << l2, l2 += 8;
+                      }
+                      if (u2 >>>= _, l2 -= _, 0 === r2.have) {
+                        e2.msg = "invalid bit length repeat", r2.mode = 30;
+                        break;
+                      }
+                      k = r2.lens[r2.have - 1], d = 3 + (3 & u2), u2 >>>= 2, l2 -= 2;
+                    } else if (17 === b) {
+                      for (z = _ + 3; l2 < z; ) {
+                        if (0 === o2) break e;
+                        o2--, u2 += n2[s2++] << l2, l2 += 8;
+                      }
+                      l2 -= _, k = 0, d = 3 + (7 & (u2 >>>= _)), u2 >>>= 3, l2 -= 3;
+                    } else {
+                      for (z = _ + 7; l2 < z; ) {
+                        if (0 === o2) break e;
+                        o2--, u2 += n2[s2++] << l2, l2 += 8;
+                      }
+                      l2 -= _, k = 0, d = 11 + (127 & (u2 >>>= _)), u2 >>>= 7, l2 -= 7;
+                    }
+                    if (r2.have + d > r2.nlen + r2.ndist) {
+                      e2.msg = "invalid bit length repeat", r2.mode = 30;
+                      break;
+                    }
+                    for (; d--; ) r2.lens[r2.have++] = k;
+                  }
+                }
+                if (30 === r2.mode) break;
+                if (0 === r2.lens[256]) {
+                  e2.msg = "invalid code -- missing end-of-block", r2.mode = 30;
+                  break;
+                }
+                if (r2.lenbits = 9, S = { bits: r2.lenbits }, x = T(D, r2.lens, 0, r2.nlen, r2.lencode, 0, r2.work, S), r2.lenbits = S.bits, x) {
+                  e2.msg = "invalid literal/lengths set", r2.mode = 30;
+                  break;
+                }
+                if (r2.distbits = 6, r2.distcode = r2.distdyn, S = { bits: r2.distbits }, x = T(F, r2.lens, r2.nlen, r2.ndist, r2.distcode, 0, r2.work, S), r2.distbits = S.bits, x) {
+                  e2.msg = "invalid distances set", r2.mode = 30;
+                  break;
+                }
+                if (r2.mode = 20, 6 === t2) break e;
+              case 20:
+                r2.mode = 21;
+              case 21:
+                if (6 <= o2 && 258 <= h2) {
+                  e2.next_out = a2, e2.avail_out = h2, e2.next_in = s2, e2.avail_in = o2, r2.hold = u2, r2.bits = l2, R(e2, c2), a2 = e2.next_out, i2 = e2.output, h2 = e2.avail_out, s2 = e2.next_in, n2 = e2.input, o2 = e2.avail_in, u2 = r2.hold, l2 = r2.bits, 12 === r2.mode && (r2.back = -1);
+                  break;
+                }
+                for (r2.back = 0; g = (C = r2.lencode[u2 & (1 << r2.lenbits) - 1]) >>> 16 & 255, b = 65535 & C, !((_ = C >>> 24) <= l2); ) {
+                  if (0 === o2) break e;
+                  o2--, u2 += n2[s2++] << l2, l2 += 8;
+                }
+                if (g && 0 == (240 & g)) {
+                  for (v = _, y = g, w = b; g = (C = r2.lencode[w + ((u2 & (1 << v + y) - 1) >> v)]) >>> 16 & 255, b = 65535 & C, !(v + (_ = C >>> 24) <= l2); ) {
+                    if (0 === o2) break e;
+                    o2--, u2 += n2[s2++] << l2, l2 += 8;
+                  }
+                  u2 >>>= v, l2 -= v, r2.back += v;
+                }
+                if (u2 >>>= _, l2 -= _, r2.back += _, r2.length = b, 0 === g) {
+                  r2.mode = 26;
+                  break;
+                }
+                if (32 & g) {
+                  r2.back = -1, r2.mode = 12;
+                  break;
+                }
+                if (64 & g) {
+                  e2.msg = "invalid literal/length code", r2.mode = 30;
+                  break;
+                }
+                r2.extra = 15 & g, r2.mode = 22;
+              case 22:
+                if (r2.extra) {
+                  for (z = r2.extra; l2 < z; ) {
+                    if (0 === o2) break e;
+                    o2--, u2 += n2[s2++] << l2, l2 += 8;
+                  }
+                  r2.length += u2 & (1 << r2.extra) - 1, u2 >>>= r2.extra, l2 -= r2.extra, r2.back += r2.extra;
+                }
+                r2.was = r2.length, r2.mode = 23;
+              case 23:
+                for (; g = (C = r2.distcode[u2 & (1 << r2.distbits) - 1]) >>> 16 & 255, b = 65535 & C, !((_ = C >>> 24) <= l2); ) {
+                  if (0 === o2) break e;
+                  o2--, u2 += n2[s2++] << l2, l2 += 8;
+                }
+                if (0 == (240 & g)) {
+                  for (v = _, y = g, w = b; g = (C = r2.distcode[w + ((u2 & (1 << v + y) - 1) >> v)]) >>> 16 & 255, b = 65535 & C, !(v + (_ = C >>> 24) <= l2); ) {
+                    if (0 === o2) break e;
+                    o2--, u2 += n2[s2++] << l2, l2 += 8;
+                  }
+                  u2 >>>= v, l2 -= v, r2.back += v;
+                }
+                if (u2 >>>= _, l2 -= _, r2.back += _, 64 & g) {
+                  e2.msg = "invalid distance code", r2.mode = 30;
+                  break;
+                }
+                r2.offset = b, r2.extra = 15 & g, r2.mode = 24;
+              case 24:
+                if (r2.extra) {
+                  for (z = r2.extra; l2 < z; ) {
+                    if (0 === o2) break e;
+                    o2--, u2 += n2[s2++] << l2, l2 += 8;
+                  }
+                  r2.offset += u2 & (1 << r2.extra) - 1, u2 >>>= r2.extra, l2 -= r2.extra, r2.back += r2.extra;
+                }
+                if (r2.offset > r2.dmax) {
+                  e2.msg = "invalid distance too far back", r2.mode = 30;
+                  break;
+                }
+                r2.mode = 25;
+              case 25:
+                if (0 === h2) break e;
+                if (d = c2 - h2, r2.offset > d) {
+                  if ((d = r2.offset - d) > r2.whave && r2.sane) {
+                    e2.msg = "invalid distance too far back", r2.mode = 30;
+                    break;
+                  }
+                  p = d > r2.wnext ? (d -= r2.wnext, r2.wsize - d) : r2.wnext - d, d > r2.length && (d = r2.length), m = r2.window;
+                } else m = i2, p = a2 - r2.offset, d = r2.length;
+                for (h2 < d && (d = h2), h2 -= d, r2.length -= d; i2[a2++] = m[p++], --d; ) ;
+                0 === r2.length && (r2.mode = 21);
+                break;
+              case 26:
+                if (0 === h2) break e;
+                i2[a2++] = r2.length, h2--, r2.mode = 21;
+                break;
+              case 27:
+                if (r2.wrap) {
+                  for (; l2 < 32; ) {
+                    if (0 === o2) break e;
+                    o2--, u2 |= n2[s2++] << l2, l2 += 8;
+                  }
+                  if (c2 -= h2, e2.total_out += c2, r2.total += c2, c2 && (e2.adler = r2.check = r2.flags ? B(r2.check, i2, c2, a2 - c2) : O(r2.check, i2, c2, a2 - c2)), c2 = h2, (r2.flags ? u2 : L(u2)) !== r2.check) {
+                    e2.msg = "incorrect data check", r2.mode = 30;
+                    break;
+                  }
+                  l2 = u2 = 0;
+                }
+                r2.mode = 28;
+              case 28:
+                if (r2.wrap && r2.flags) {
+                  for (; l2 < 32; ) {
+                    if (0 === o2) break e;
+                    o2--, u2 += n2[s2++] << l2, l2 += 8;
+                  }
+                  if (u2 !== (4294967295 & r2.total)) {
+                    e2.msg = "incorrect length check", r2.mode = 30;
+                    break;
+                  }
+                  l2 = u2 = 0;
+                }
+                r2.mode = 29;
+              case 29:
+                x = 1;
+                break e;
+              case 30:
+                x = -3;
+                break e;
+              case 31:
+                return -4;
+              case 32:
+              default:
+                return U;
+            }
+            return e2.next_out = a2, e2.avail_out = h2, e2.next_in = s2, e2.avail_in = o2, r2.hold = u2, r2.bits = l2, (r2.wsize || c2 !== e2.avail_out && r2.mode < 30 && (r2.mode < 27 || 4 !== t2)) && Z(e2, e2.output, e2.next_out, c2 - e2.avail_out) ? (r2.mode = 31, -4) : (f2 -= e2.avail_in, c2 -= e2.avail_out, e2.total_in += f2, e2.total_out += c2, r2.total += c2, r2.wrap && c2 && (e2.adler = r2.check = r2.flags ? B(r2.check, i2, c2, e2.next_out - c2) : O(r2.check, i2, c2, e2.next_out - c2)), e2.data_type = r2.bits + (r2.last ? 64 : 0) + (12 === r2.mode ? 128 : 0) + (20 === r2.mode || 15 === r2.mode ? 256 : 0), (0 == f2 && 0 === c2 || 4 === t2) && x === N && (x = -5), x);
+          }, r.inflateEnd = function(e2) {
+            if (!e2 || !e2.state) return U;
+            var t2 = e2.state;
+            return t2.window && (t2.window = null), e2.state = null, N;
+          }, r.inflateGetHeader = function(e2, t2) {
+            var r2;
+            return e2 && e2.state ? 0 == (2 & (r2 = e2.state).wrap) ? U : ((r2.head = t2).done = false, N) : U;
+          }, r.inflateSetDictionary = function(e2, t2) {
+            var r2, n2 = t2.length;
+            return e2 && e2.state ? 0 !== (r2 = e2.state).wrap && 11 !== r2.mode ? U : 11 === r2.mode && O(1, t2, n2, 0) !== r2.check ? -3 : Z(e2, t2, n2, n2) ? (r2.mode = 31, -4) : (r2.havedict = 1, N) : U;
+          }, r.inflateInfo = "pako inflate (from Nodeca project)";
+        }, { "../utils/common": 41, "./adler32": 43, "./crc32": 45, "./inffast": 48, "./inftrees": 50 }], 50: [function(e, t, r) {
+          "use strict";
+          var D = e("../utils/common"), F = [3, 4, 5, 6, 7, 8, 9, 10, 11, 13, 15, 17, 19, 23, 27, 31, 35, 43, 51, 59, 67, 83, 99, 115, 131, 163, 195, 227, 258, 0, 0], N = [16, 16, 16, 16, 16, 16, 16, 16, 17, 17, 17, 17, 18, 18, 18, 18, 19, 19, 19, 19, 20, 20, 20, 20, 21, 21, 21, 21, 16, 72, 78], U = [1, 2, 3, 4, 5, 7, 9, 13, 17, 25, 33, 49, 65, 97, 129, 193, 257, 385, 513, 769, 1025, 1537, 2049, 3073, 4097, 6145, 8193, 12289, 16385, 24577, 0, 0], P = [16, 16, 16, 16, 17, 17, 18, 18, 19, 19, 20, 20, 21, 21, 22, 22, 23, 23, 24, 24, 25, 25, 26, 26, 27, 27, 28, 28, 29, 29, 64, 64];
+          t.exports = function(e2, t2, r2, n, i, s, a, o) {
+            var h, u, l, f, c, d, p, m, _, g = o.bits, b = 0, v = 0, y = 0, w = 0, k = 0, x = 0, S = 0, z = 0, C = 0, E = 0, A = null, I = 0, O = new D.Buf16(16), B = new D.Buf16(16), R = null, T = 0;
+            for (b = 0; b <= 15; b++) O[b] = 0;
+            for (v = 0; v < n; v++) O[t2[r2 + v]]++;
+            for (k = g, w = 15; 1 <= w && 0 === O[w]; w--) ;
+            if (w < k && (k = w), 0 === w) return i[s++] = 20971520, i[s++] = 20971520, o.bits = 1, 0;
+            for (y = 1; y < w && 0 === O[y]; y++) ;
+            for (k < y && (k = y), b = z = 1; b <= 15; b++) if (z <<= 1, (z -= O[b]) < 0) return -1;
+            if (0 < z && (0 === e2 || 1 !== w)) return -1;
+            for (B[1] = 0, b = 1; b < 15; b++) B[b + 1] = B[b] + O[b];
+            for (v = 0; v < n; v++) 0 !== t2[r2 + v] && (a[B[t2[r2 + v]]++] = v);
+            if (d = 0 === e2 ? (A = R = a, 19) : 1 === e2 ? (A = F, I -= 257, R = N, T -= 257, 256) : (A = U, R = P, -1), b = y, c = s, S = v = E = 0, l = -1, f = (C = 1 << (x = k)) - 1, 1 === e2 && 852 < C || 2 === e2 && 592 < C) return 1;
+            for (; ; ) {
+              for (p = b - S, _ = a[v] < d ? (m = 0, a[v]) : a[v] > d ? (m = R[T + a[v]], A[I + a[v]]) : (m = 96, 0), h = 1 << b - S, y = u = 1 << x; i[c + (E >> S) + (u -= h)] = p << 24 | m << 16 | _ | 0, 0 !== u; ) ;
+              for (h = 1 << b - 1; E & h; ) h >>= 1;
+              if (0 !== h ? (E &= h - 1, E += h) : E = 0, v++, 0 == --O[b]) {
+                if (b === w) break;
+                b = t2[r2 + a[v]];
+              }
+              if (k < b && (E & f) !== l) {
+                for (0 === S && (S = k), c += y, z = 1 << (x = b - S); x + S < w && !((z -= O[x + S]) <= 0); ) x++, z <<= 1;
+                if (C += 1 << x, 1 === e2 && 852 < C || 2 === e2 && 592 < C) return 1;
+                i[l = E & f] = k << 24 | x << 16 | c - s | 0;
+              }
+            }
+            return 0 !== E && (i[c + E] = b - S << 24 | 64 << 16 | 0), o.bits = k, 0;
+          };
+        }, { "../utils/common": 41 }], 51: [function(e, t, r) {
+          "use strict";
+          t.exports = { 2: "need dictionary", 1: "stream end", 0: "", "-1": "file error", "-2": "stream error", "-3": "data error", "-4": "insufficient memory", "-5": "buffer error", "-6": "incompatible version" };
+        }, {}], 52: [function(e, t, r) {
+          "use strict";
+          var i = e("../utils/common"), o = 0, h = 1;
+          function n(e2) {
+            for (var t2 = e2.length; 0 <= --t2; ) e2[t2] = 0;
+          }
+          var s = 0, a = 29, u = 256, l = u + 1 + a, f = 30, c = 19, _ = 2 * l + 1, g = 15, d = 16, p = 7, m = 256, b = 16, v = 17, y = 18, w = [0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 2, 2, 2, 2, 3, 3, 3, 3, 4, 4, 4, 4, 5, 5, 5, 5, 0], k = [0, 0, 0, 0, 1, 1, 2, 2, 3, 3, 4, 4, 5, 5, 6, 6, 7, 7, 8, 8, 9, 9, 10, 10, 11, 11, 12, 12, 13, 13], x = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 3, 7], S = [16, 17, 18, 0, 8, 7, 9, 6, 10, 5, 11, 4, 12, 3, 13, 2, 14, 1, 15], z = new Array(2 * (l + 2));
+          n(z);
+          var C = new Array(2 * f);
+          n(C);
+          var E = new Array(512);
+          n(E);
+          var A = new Array(256);
+          n(A);
+          var I = new Array(a);
+          n(I);
+          var O, B, R, T = new Array(f);
+          function D(e2, t2, r2, n2, i2) {
+            this.static_tree = e2, this.extra_bits = t2, this.extra_base = r2, this.elems = n2, this.max_length = i2, this.has_stree = e2 && e2.length;
+          }
+          function F(e2, t2) {
+            this.dyn_tree = e2, this.max_code = 0, this.stat_desc = t2;
+          }
+          function N(e2) {
+            return e2 < 256 ? E[e2] : E[256 + (e2 >>> 7)];
+          }
+          function U(e2, t2) {
+            e2.pending_buf[e2.pending++] = 255 & t2, e2.pending_buf[e2.pending++] = t2 >>> 8 & 255;
+          }
+          function P(e2, t2, r2) {
+            e2.bi_valid > d - r2 ? (e2.bi_buf |= t2 << e2.bi_valid & 65535, U(e2, e2.bi_buf), e2.bi_buf = t2 >> d - e2.bi_valid, e2.bi_valid += r2 - d) : (e2.bi_buf |= t2 << e2.bi_valid & 65535, e2.bi_valid += r2);
+          }
+          function L(e2, t2, r2) {
+            P(e2, r2[2 * t2], r2[2 * t2 + 1]);
+          }
+          function j(e2, t2) {
+            for (var r2 = 0; r2 |= 1 & e2, e2 >>>= 1, r2 <<= 1, 0 < --t2; ) ;
+            return r2 >>> 1;
+          }
+          function Z(e2, t2, r2) {
+            var n2, i2, s2 = new Array(g + 1), a2 = 0;
+            for (n2 = 1; n2 <= g; n2++) s2[n2] = a2 = a2 + r2[n2 - 1] << 1;
+            for (i2 = 0; i2 <= t2; i2++) {
+              var o2 = e2[2 * i2 + 1];
+              0 !== o2 && (e2[2 * i2] = j(s2[o2]++, o2));
+            }
+          }
+          function W(e2) {
+            var t2;
+            for (t2 = 0; t2 < l; t2++) e2.dyn_ltree[2 * t2] = 0;
+            for (t2 = 0; t2 < f; t2++) e2.dyn_dtree[2 * t2] = 0;
+            for (t2 = 0; t2 < c; t2++) e2.bl_tree[2 * t2] = 0;
+            e2.dyn_ltree[2 * m] = 1, e2.opt_len = e2.static_len = 0, e2.last_lit = e2.matches = 0;
+          }
+          function M(e2) {
+            8 < e2.bi_valid ? U(e2, e2.bi_buf) : 0 < e2.bi_valid && (e2.pending_buf[e2.pending++] = e2.bi_buf), e2.bi_buf = 0, e2.bi_valid = 0;
+          }
+          function H(e2, t2, r2, n2) {
+            var i2 = 2 * t2, s2 = 2 * r2;
+            return e2[i2] < e2[s2] || e2[i2] === e2[s2] && n2[t2] <= n2[r2];
+          }
+          function G(e2, t2, r2) {
+            for (var n2 = e2.heap[r2], i2 = r2 << 1; i2 <= e2.heap_len && (i2 < e2.heap_len && H(t2, e2.heap[i2 + 1], e2.heap[i2], e2.depth) && i2++, !H(t2, n2, e2.heap[i2], e2.depth)); ) e2.heap[r2] = e2.heap[i2], r2 = i2, i2 <<= 1;
+            e2.heap[r2] = n2;
+          }
+          function K(e2, t2, r2) {
+            var n2, i2, s2, a2, o2 = 0;
+            if (0 !== e2.last_lit) for (; n2 = e2.pending_buf[e2.d_buf + 2 * o2] << 8 | e2.pending_buf[e2.d_buf + 2 * o2 + 1], i2 = e2.pending_buf[e2.l_buf + o2], o2++, 0 === n2 ? L(e2, i2, t2) : (L(e2, (s2 = A[i2]) + u + 1, t2), 0 !== (a2 = w[s2]) && P(e2, i2 -= I[s2], a2), L(e2, s2 = N(--n2), r2), 0 !== (a2 = k[s2]) && P(e2, n2 -= T[s2], a2)), o2 < e2.last_lit; ) ;
+            L(e2, m, t2);
+          }
+          function Y(e2, t2) {
+            var r2, n2, i2, s2 = t2.dyn_tree, a2 = t2.stat_desc.static_tree, o2 = t2.stat_desc.has_stree, h2 = t2.stat_desc.elems, u2 = -1;
+            for (e2.heap_len = 0, e2.heap_max = _, r2 = 0; r2 < h2; r2++) 0 !== s2[2 * r2] ? (e2.heap[++e2.heap_len] = u2 = r2, e2.depth[r2] = 0) : s2[2 * r2 + 1] = 0;
+            for (; e2.heap_len < 2; ) s2[2 * (i2 = e2.heap[++e2.heap_len] = u2 < 2 ? ++u2 : 0)] = 1, e2.depth[i2] = 0, e2.opt_len--, o2 && (e2.static_len -= a2[2 * i2 + 1]);
+            for (t2.max_code = u2, r2 = e2.heap_len >> 1; 1 <= r2; r2--) G(e2, s2, r2);
+            for (i2 = h2; r2 = e2.heap[1], e2.heap[1] = e2.heap[e2.heap_len--], G(e2, s2, 1), n2 = e2.heap[1], e2.heap[--e2.heap_max] = r2, e2.heap[--e2.heap_max] = n2, s2[2 * i2] = s2[2 * r2] + s2[2 * n2], e2.depth[i2] = (e2.depth[r2] >= e2.depth[n2] ? e2.depth[r2] : e2.depth[n2]) + 1, s2[2 * r2 + 1] = s2[2 * n2 + 1] = i2, e2.heap[1] = i2++, G(e2, s2, 1), 2 <= e2.heap_len; ) ;
+            e2.heap[--e2.heap_max] = e2.heap[1], (function(e3, t3) {
+              var r3, n3, i3, s3, a3, o3, h3 = t3.dyn_tree, u3 = t3.max_code, l2 = t3.stat_desc.static_tree, f2 = t3.stat_desc.has_stree, c2 = t3.stat_desc.extra_bits, d2 = t3.stat_desc.extra_base, p2 = t3.stat_desc.max_length, m2 = 0;
+              for (s3 = 0; s3 <= g; s3++) e3.bl_count[s3] = 0;
+              for (h3[2 * e3.heap[e3.heap_max] + 1] = 0, r3 = e3.heap_max + 1; r3 < _; r3++) p2 < (s3 = h3[2 * h3[2 * (n3 = e3.heap[r3]) + 1] + 1] + 1) && (s3 = p2, m2++), h3[2 * n3 + 1] = s3, u3 < n3 || (e3.bl_count[s3]++, a3 = 0, d2 <= n3 && (a3 = c2[n3 - d2]), o3 = h3[2 * n3], e3.opt_len += o3 * (s3 + a3), f2 && (e3.static_len += o3 * (l2[2 * n3 + 1] + a3)));
+              if (0 !== m2) {
+                do {
+                  for (s3 = p2 - 1; 0 === e3.bl_count[s3]; ) s3--;
+                  e3.bl_count[s3]--, e3.bl_count[s3 + 1] += 2, e3.bl_count[p2]--, m2 -= 2;
+                } while (0 < m2);
+                for (s3 = p2; 0 !== s3; s3--) for (n3 = e3.bl_count[s3]; 0 !== n3; ) u3 < (i3 = e3.heap[--r3]) || (h3[2 * i3 + 1] !== s3 && (e3.opt_len += (s3 - h3[2 * i3 + 1]) * h3[2 * i3], h3[2 * i3 + 1] = s3), n3--);
+              }
+            })(e2, t2), Z(s2, u2, e2.bl_count);
+          }
+          function X(e2, t2, r2) {
+            var n2, i2, s2 = -1, a2 = t2[1], o2 = 0, h2 = 7, u2 = 4;
+            for (0 === a2 && (h2 = 138, u2 = 3), t2[2 * (r2 + 1) + 1] = 65535, n2 = 0; n2 <= r2; n2++) i2 = a2, a2 = t2[2 * (n2 + 1) + 1], ++o2 < h2 && i2 === a2 || (o2 < u2 ? e2.bl_tree[2 * i2] += o2 : 0 !== i2 ? (i2 !== s2 && e2.bl_tree[2 * i2]++, e2.bl_tree[2 * b]++) : o2 <= 10 ? e2.bl_tree[2 * v]++ : e2.bl_tree[2 * y]++, s2 = i2, u2 = (o2 = 0) === a2 ? (h2 = 138, 3) : i2 === a2 ? (h2 = 6, 3) : (h2 = 7, 4));
+          }
+          function V(e2, t2, r2) {
+            var n2, i2, s2 = -1, a2 = t2[1], o2 = 0, h2 = 7, u2 = 4;
+            for (0 === a2 && (h2 = 138, u2 = 3), n2 = 0; n2 <= r2; n2++) if (i2 = a2, a2 = t2[2 * (n2 + 1) + 1], !(++o2 < h2 && i2 === a2)) {
+              if (o2 < u2) for (; L(e2, i2, e2.bl_tree), 0 != --o2; ) ;
+              else 0 !== i2 ? (i2 !== s2 && (L(e2, i2, e2.bl_tree), o2--), L(e2, b, e2.bl_tree), P(e2, o2 - 3, 2)) : o2 <= 10 ? (L(e2, v, e2.bl_tree), P(e2, o2 - 3, 3)) : (L(e2, y, e2.bl_tree), P(e2, o2 - 11, 7));
+              s2 = i2, u2 = (o2 = 0) === a2 ? (h2 = 138, 3) : i2 === a2 ? (h2 = 6, 3) : (h2 = 7, 4);
+            }
+          }
+          n(T);
+          var q = false;
+          function J(e2, t2, r2, n2) {
+            P(e2, (s << 1) + (n2 ? 1 : 0), 3), (function(e3, t3, r3, n3) {
+              M(e3), n3 && (U(e3, r3), U(e3, ~r3)), i.arraySet(e3.pending_buf, e3.window, t3, r3, e3.pending), e3.pending += r3;
+            })(e2, t2, r2, true);
+          }
+          r._tr_init = function(e2) {
+            q || ((function() {
+              var e3, t2, r2, n2, i2, s2 = new Array(g + 1);
+              for (n2 = r2 = 0; n2 < a - 1; n2++) for (I[n2] = r2, e3 = 0; e3 < 1 << w[n2]; e3++) A[r2++] = n2;
+              for (A[r2 - 1] = n2, n2 = i2 = 0; n2 < 16; n2++) for (T[n2] = i2, e3 = 0; e3 < 1 << k[n2]; e3++) E[i2++] = n2;
+              for (i2 >>= 7; n2 < f; n2++) for (T[n2] = i2 << 7, e3 = 0; e3 < 1 << k[n2] - 7; e3++) E[256 + i2++] = n2;
+              for (t2 = 0; t2 <= g; t2++) s2[t2] = 0;
+              for (e3 = 0; e3 <= 143; ) z[2 * e3 + 1] = 8, e3++, s2[8]++;
+              for (; e3 <= 255; ) z[2 * e3 + 1] = 9, e3++, s2[9]++;
+              for (; e3 <= 279; ) z[2 * e3 + 1] = 7, e3++, s2[7]++;
+              for (; e3 <= 287; ) z[2 * e3 + 1] = 8, e3++, s2[8]++;
+              for (Z(z, l + 1, s2), e3 = 0; e3 < f; e3++) C[2 * e3 + 1] = 5, C[2 * e3] = j(e3, 5);
+              O = new D(z, w, u + 1, l, g), B = new D(C, k, 0, f, g), R = new D(new Array(0), x, 0, c, p);
+            })(), q = true), e2.l_desc = new F(e2.dyn_ltree, O), e2.d_desc = new F(e2.dyn_dtree, B), e2.bl_desc = new F(e2.bl_tree, R), e2.bi_buf = 0, e2.bi_valid = 0, W(e2);
+          }, r._tr_stored_block = J, r._tr_flush_block = function(e2, t2, r2, n2) {
+            var i2, s2, a2 = 0;
+            0 < e2.level ? (2 === e2.strm.data_type && (e2.strm.data_type = (function(e3) {
+              var t3, r3 = 4093624447;
+              for (t3 = 0; t3 <= 31; t3++, r3 >>>= 1) if (1 & r3 && 0 !== e3.dyn_ltree[2 * t3]) return o;
+              if (0 !== e3.dyn_ltree[18] || 0 !== e3.dyn_ltree[20] || 0 !== e3.dyn_ltree[26]) return h;
+              for (t3 = 32; t3 < u; t3++) if (0 !== e3.dyn_ltree[2 * t3]) return h;
+              return o;
+            })(e2)), Y(e2, e2.l_desc), Y(e2, e2.d_desc), a2 = (function(e3) {
+              var t3;
+              for (X(e3, e3.dyn_ltree, e3.l_desc.max_code), X(e3, e3.dyn_dtree, e3.d_desc.max_code), Y(e3, e3.bl_desc), t3 = c - 1; 3 <= t3 && 0 === e3.bl_tree[2 * S[t3] + 1]; t3--) ;
+              return e3.opt_len += 3 * (t3 + 1) + 5 + 5 + 4, t3;
+            })(e2), i2 = e2.opt_len + 3 + 7 >>> 3, (s2 = e2.static_len + 3 + 7 >>> 3) <= i2 && (i2 = s2)) : i2 = s2 = r2 + 5, r2 + 4 <= i2 && -1 !== t2 ? J(e2, t2, r2, n2) : 4 === e2.strategy || s2 === i2 ? (P(e2, 2 + (n2 ? 1 : 0), 3), K(e2, z, C)) : (P(e2, 4 + (n2 ? 1 : 0), 3), (function(e3, t3, r3, n3) {
+              var i3;
+              for (P(e3, t3 - 257, 5), P(e3, r3 - 1, 5), P(e3, n3 - 4, 4), i3 = 0; i3 < n3; i3++) P(e3, e3.bl_tree[2 * S[i3] + 1], 3);
+              V(e3, e3.dyn_ltree, t3 - 1), V(e3, e3.dyn_dtree, r3 - 1);
+            })(e2, e2.l_desc.max_code + 1, e2.d_desc.max_code + 1, a2 + 1), K(e2, e2.dyn_ltree, e2.dyn_dtree)), W(e2), n2 && M(e2);
+          }, r._tr_tally = function(e2, t2, r2) {
+            return e2.pending_buf[e2.d_buf + 2 * e2.last_lit] = t2 >>> 8 & 255, e2.pending_buf[e2.d_buf + 2 * e2.last_lit + 1] = 255 & t2, e2.pending_buf[e2.l_buf + e2.last_lit] = 255 & r2, e2.last_lit++, 0 === t2 ? e2.dyn_ltree[2 * r2]++ : (e2.matches++, t2--, e2.dyn_ltree[2 * (A[r2] + u + 1)]++, e2.dyn_dtree[2 * N(t2)]++), e2.last_lit === e2.lit_bufsize - 1;
+          }, r._tr_align = function(e2) {
+            P(e2, 2, 3), L(e2, m, z), (function(e3) {
+              16 === e3.bi_valid ? (U(e3, e3.bi_buf), e3.bi_buf = 0, e3.bi_valid = 0) : 8 <= e3.bi_valid && (e3.pending_buf[e3.pending++] = 255 & e3.bi_buf, e3.bi_buf >>= 8, e3.bi_valid -= 8);
+            })(e2);
+          };
+        }, { "../utils/common": 41 }], 53: [function(e, t, r) {
+          "use strict";
+          t.exports = function() {
+            this.input = null, this.next_in = 0, this.avail_in = 0, this.total_in = 0, this.output = null, this.next_out = 0, this.avail_out = 0, this.total_out = 0, this.msg = "", this.state = null, this.data_type = 2, this.adler = 0;
+          };
+        }, {}], 54: [function(e, t, r) {
+          (function(e2) {
+            !(function(r2, n) {
+              "use strict";
+              if (!r2.setImmediate) {
+                var i, s, t2, a, o = 1, h = {}, u = false, l = r2.document, e3 = Object.getPrototypeOf && Object.getPrototypeOf(r2);
+                e3 = e3 && e3.setTimeout ? e3 : r2, i = "[object process]" === {}.toString.call(r2.process) ? function(e4) {
+                  process.nextTick(function() {
+                    c(e4);
+                  });
+                } : (function() {
+                  if (r2.postMessage && !r2.importScripts) {
+                    var e4 = true, t3 = r2.onmessage;
+                    return r2.onmessage = function() {
+                      e4 = false;
+                    }, r2.postMessage("", "*"), r2.onmessage = t3, e4;
+                  }
+                })() ? (a = "setImmediate$" + Math.random() + "$", r2.addEventListener ? r2.addEventListener("message", d, false) : r2.attachEvent("onmessage", d), function(e4) {
+                  r2.postMessage(a + e4, "*");
+                }) : r2.MessageChannel ? ((t2 = new MessageChannel()).port1.onmessage = function(e4) {
+                  c(e4.data);
+                }, function(e4) {
+                  t2.port2.postMessage(e4);
+                }) : l && "onreadystatechange" in l.createElement("script") ? (s = l.documentElement, function(e4) {
+                  var t3 = l.createElement("script");
+                  t3.onreadystatechange = function() {
+                    c(e4), t3.onreadystatechange = null, s.removeChild(t3), t3 = null;
+                  }, s.appendChild(t3);
+                }) : function(e4) {
+                  setTimeout(c, 0, e4);
+                }, e3.setImmediate = function(e4) {
+                  "function" != typeof e4 && (e4 = new Function("" + e4));
+                  for (var t3 = new Array(arguments.length - 1), r3 = 0; r3 < t3.length; r3++) t3[r3] = arguments[r3 + 1];
+                  var n2 = { callback: e4, args: t3 };
+                  return h[o] = n2, i(o), o++;
+                }, e3.clearImmediate = f;
+              }
+              function f(e4) {
+                delete h[e4];
+              }
+              function c(e4) {
+                if (u) setTimeout(c, 0, e4);
+                else {
+                  var t3 = h[e4];
+                  if (t3) {
+                    u = true;
+                    try {
+                      !(function(e5) {
+                        var t4 = e5.callback, r3 = e5.args;
+                        switch (r3.length) {
+                          case 0:
+                            t4();
+                            break;
+                          case 1:
+                            t4(r3[0]);
+                            break;
+                          case 2:
+                            t4(r3[0], r3[1]);
+                            break;
+                          case 3:
+                            t4(r3[0], r3[1], r3[2]);
+                            break;
+                          default:
+                            t4.apply(n, r3);
+                        }
+                      })(t3);
+                    } finally {
+                      f(e4), u = false;
+                    }
+                  }
+                }
+              }
+              function d(e4) {
+                e4.source === r2 && "string" == typeof e4.data && 0 === e4.data.indexOf(a) && c(+e4.data.slice(a.length));
+              }
+            })("undefined" == typeof self ? void 0 === e2 ? this : e2 : self);
+          }).call(this, "undefined" != typeof global ? global : "undefined" != typeof self ? self : "undefined" != typeof window ? window : {});
+        }, {}] }, {}, [10])(10);
+      });
     }
   });
 
@@ -12229,6 +14601,281 @@
     return value;
   }
 
+  // src/core/inline-png.ts
+  var MAX_VECTOR180_INLINE_PNG_BYTES = 4 * 1024 * 1024;
+  var MAX_VECTOR180_INLINE_PNG_PIXELS = 16 * 1024 * 1024;
+  var DATA_URI_PREFIX = "data:image/png;base64,";
+  var PNG_SIGNATURE = new Uint8Array([
+    137,
+    80,
+    78,
+    71,
+    13,
+    10,
+    26,
+    10
+  ]);
+  var MAX_PNG_DIMENSION = 2147483647;
+  var BASE64_VALUES = base64Values();
+  var CRC32_TABLE = crc32Table();
+  var VALID_DEPTHS_BY_COLOR_TYPE = /* @__PURE__ */ new Map([
+    [0, /* @__PURE__ */ new Set([1, 2, 4, 8, 16])],
+    [2, /* @__PURE__ */ new Set([8, 16])],
+    [3, /* @__PURE__ */ new Set([1, 2, 4, 8])],
+    [4, /* @__PURE__ */ new Set([8, 16])],
+    [6, /* @__PURE__ */ new Set([8, 16])]
+  ]);
+  var KNOWN_CRITICAL_CHUNKS = /* @__PURE__ */ new Set(["IHDR", "PLTE", "IDAT", "IEND"]);
+  var APNG_CHUNKS = /* @__PURE__ */ new Set(["acTL", "fcTL", "fdAT"]);
+  function parseVector180InlinePngDataUri(value) {
+    if (!value.startsWith(DATA_URI_PREFIX) || /[\u0000-\u0020\u007f]/u.test(value)) {
+      return failure(
+        "VECTOR180-INLINE-PNG-DATA-URI",
+        "Inline raster data must use the exact whitespace-free data:image/png;base64 form."
+      );
+    }
+    const encoded = value.slice(DATA_URI_PREFIX.length);
+    const decoded = decodeCanonicalBase64(encoded);
+    if (!decoded.ok) return decoded;
+    const png = inspectStaticPng(decoded.bytes);
+    if (!png.ok) return png;
+    const descriptor = Object.freeze({
+      mediaType: "image/png",
+      sha256: sha256HexSync(decoded.bytes),
+      byteLength: decoded.bytes.byteLength,
+      widthPixels: png.widthPixels,
+      heightPixels: png.heightPixels
+    });
+    return Object.freeze({
+      ok: true,
+      descriptor,
+      bytes: decoded.bytes
+    });
+  }
+  function decodeCanonicalBase64(encoded) {
+    if (encoded.length === 0 || encoded.length % 4 !== 0 || !/^[A-Za-z0-9+/]*={0,2}$/u.test(encoded)) {
+      return failure(
+        "VECTOR180-INLINE-PNG-DATA-URI",
+        "Inline PNG bytes must use canonical padded RFC 4648 base64."
+      );
+    }
+    const firstPadding = encoded.indexOf("=");
+    if (firstPadding >= 0 && firstPadding < encoded.length - (encoded.endsWith("==") ? 2 : 1)) {
+      return failure(
+        "VECTOR180-INLINE-PNG-DATA-URI",
+        "Inline PNG base64 padding is not canonical."
+      );
+    }
+    const padding = encoded.endsWith("==") ? 2 : encoded.endsWith("=") ? 1 : 0;
+    const byteLength = encoded.length / 4 * 3 - padding;
+    if (byteLength <= 0 || byteLength > MAX_VECTOR180_INLINE_PNG_BYTES) {
+      return failure(
+        "VECTOR180-INLINE-PNG-LIMIT",
+        `Inline PNG decoded length must be between 1 and ${MAX_VECTOR180_INLINE_PNG_BYTES} bytes.`
+      );
+    }
+    const bytes = new Uint8Array(byteLength);
+    let outputOffset = 0;
+    for (let inputOffset = 0; inputOffset < encoded.length; inputOffset += 4) {
+      const first = base64Value(encoded.charCodeAt(inputOffset));
+      const second = base64Value(encoded.charCodeAt(inputOffset + 1));
+      const thirdCharacter = encoded[inputOffset + 2];
+      const fourthCharacter = encoded[inputOffset + 3];
+      const third = thirdCharacter === "=" ? 0 : base64Value(thirdCharacter.charCodeAt(0));
+      const fourth = fourthCharacter === "=" ? 0 : base64Value(fourthCharacter.charCodeAt(0));
+      if (first < 0 || second < 0 || third < 0 || fourth < 0) {
+        return failure(
+          "VECTOR180-INLINE-PNG-DATA-URI",
+          "Inline PNG base64 contains an invalid alphabet character."
+        );
+      }
+      const finalQuartet = inputOffset + 4 === encoded.length;
+      if (!finalQuartet && (thirdCharacter === "=" || fourthCharacter === "=") || thirdCharacter === "=" && fourthCharacter !== "=" || finalQuartet && (padding === 2 && (second & 15) !== 0 || padding === 1 && (third & 3) !== 0)) {
+        return failure(
+          "VECTOR180-INLINE-PNG-DATA-URI",
+          "Inline PNG base64 has non-canonical padding bits."
+        );
+      }
+      const combined = first << 18 | second << 12 | third << 6 | fourth;
+      if (outputOffset < byteLength) bytes[outputOffset++] = combined >>> 16;
+      if (outputOffset < byteLength) bytes[outputOffset++] = combined >>> 8;
+      if (outputOffset < byteLength) bytes[outputOffset++] = combined;
+    }
+    return { ok: true, bytes };
+  }
+  function inspectStaticPng(bytes) {
+    if (bytes.byteLength < PNG_SIGNATURE.byteLength + 12 || PNG_SIGNATURE.some((byte, index) => bytes[index] !== byte)) {
+      return pngFailure(
+        "Inline raster bytes do not have the exact PNG signature."
+      );
+    }
+    let offset = PNG_SIGNATURE.byteLength;
+    let chunkIndex = 0;
+    let widthPixels = 0;
+    let heightPixels = 0;
+    let bitDepth = 0;
+    let colorType = -1;
+    let sawHeader = false;
+    let sawPalette = false;
+    let sawImageData = false;
+    let sawNonImageDataAfterImageData = false;
+    let imageDataBytes = 0;
+    while (offset < bytes.byteLength) {
+      if (bytes.byteLength - offset < 12) {
+        return pngFailure("Inline PNG ends inside a chunk frame.");
+      }
+      const length = readUint32(bytes, offset);
+      const typeOffset = offset + 4;
+      const dataOffset = typeOffset + 4;
+      const crcOffset = dataOffset + length;
+      const nextOffset = crcOffset + 4;
+      if (!Number.isSafeInteger(nextOffset) || nextOffset > bytes.byteLength || length > MAX_VECTOR180_INLINE_PNG_BYTES) {
+        return pngFailure("Inline PNG declares an out-of-bounds chunk.");
+      }
+      const type = chunkType(bytes, typeOffset);
+      if (type === void 0) {
+        return pngFailure(
+          "Inline PNG chunk types must contain four ASCII letters."
+        );
+      }
+      const expectedCrc = readUint32(bytes, crcOffset);
+      const actualCrc = pngCrc32(bytes, typeOffset, crcOffset);
+      if (expectedCrc !== actualCrc) {
+        return pngFailure(`Inline PNG chunk ${type} has an invalid CRC.`);
+      }
+      if (APNG_CHUNKS.has(type)) {
+        return pngFailure(
+          "Animated PNG chunks are outside the static asset profile."
+        );
+      }
+      if (type.charCodeAt(0) >= 65 && type.charCodeAt(0) <= 90) {
+        if (!KNOWN_CRITICAL_CHUNKS.has(type)) {
+          return pngFailure(
+            `Inline PNG uses unsupported critical chunk ${type}.`
+          );
+        }
+      }
+      if (chunkIndex === 0 && type !== "IHDR") {
+        return pngFailure("Inline PNG must begin with one IHDR chunk.");
+      }
+      if (type === "IHDR") {
+        if (sawHeader || chunkIndex !== 0 || length !== 13) {
+          return pngFailure(
+            "Inline PNG must contain exactly one 13-byte IHDR first."
+          );
+        }
+        widthPixels = readUint32(bytes, dataOffset);
+        heightPixels = readUint32(bytes, dataOffset + 4);
+        bitDepth = bytes[dataOffset + 8];
+        colorType = bytes[dataOffset + 9];
+        const compression = bytes[dataOffset + 10];
+        const filter = bytes[dataOffset + 11];
+        const interlace = bytes[dataOffset + 12];
+        if (widthPixels <= 0 || heightPixels <= 0 || widthPixels > MAX_PNG_DIMENSION || heightPixels > MAX_PNG_DIMENSION || widthPixels > Math.floor(MAX_VECTOR180_INLINE_PNG_PIXELS / heightPixels)) {
+          return pngFailure(
+            `Inline PNG dimensions must be positive and contain at most ${MAX_VECTOR180_INLINE_PNG_PIXELS} pixels.`
+          );
+        }
+        if (!VALID_DEPTHS_BY_COLOR_TYPE.get(colorType)?.has(bitDepth)) {
+          return pngFailure(
+            `Inline PNG bit depth ${bitDepth} is invalid for color type ${colorType}.`
+          );
+        }
+        if (compression !== 0 || filter !== 0 || interlace !== 0) {
+          return pngFailure(
+            "Inline PNG requires compression method 0, filter method 0, and non-interlaced storage."
+          );
+        }
+        sawHeader = true;
+      } else if (!sawHeader) {
+        return pngFailure("Inline PNG data appears before IHDR.");
+      } else if (type === "PLTE") {
+        if (sawPalette || sawImageData || length === 0 || length % 3 !== 0 || length > 768 || colorType === 3 && length / 3 > 2 ** bitDepth || colorType === 0 || colorType === 4) {
+          return pngFailure("Inline PNG has an invalid or misplaced PLTE chunk.");
+        }
+        sawPalette = true;
+      } else if (type === "IDAT") {
+        if (sawNonImageDataAfterImageData || length === 0) {
+          return pngFailure(
+            "Inline PNG IDAT chunks must be consecutive and non-empty."
+          );
+        }
+        sawImageData = true;
+        imageDataBytes += length;
+        if (!Number.isSafeInteger(imageDataBytes) || imageDataBytes > MAX_VECTOR180_INLINE_PNG_BYTES) {
+          return pngFailure("Inline PNG image data exceeds the resource limit.");
+        }
+      } else if (type === "IEND") {
+        if (length !== 0 || !sawImageData || imageDataBytes === 0 || colorType === 3 && !sawPalette) {
+          return pngFailure("Inline PNG has an invalid terminal IEND state.");
+        }
+        if (nextOffset !== bytes.byteLength) {
+          return pngFailure("Inline PNG contains trailing bytes after IEND.");
+        }
+        return {
+          ok: true,
+          widthPixels,
+          heightPixels
+        };
+      } else if (sawImageData) {
+        sawNonImageDataAfterImageData = true;
+      }
+      offset = nextOffset;
+      chunkIndex += 1;
+    }
+    return pngFailure("Inline PNG is missing its terminal IEND chunk.");
+  }
+  function base64Values() {
+    const values = new Int16Array(128);
+    values.fill(-1);
+    const alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
+    for (let index = 0; index < alphabet.length; index += 1) {
+      values[alphabet.charCodeAt(index)] = index;
+    }
+    return values;
+  }
+  function base64Value(codePoint) {
+    return codePoint >= 0 && codePoint < BASE64_VALUES.length ? BASE64_VALUES[codePoint] ?? -1 : -1;
+  }
+  function chunkType(bytes, offset) {
+    let result = "";
+    for (let index = 0; index < 4; index += 1) {
+      const value = bytes[offset + index];
+      if (!(value >= 65 && value <= 90 || value >= 97 && value <= 122)) {
+        return void 0;
+      }
+      result += String.fromCharCode(value);
+    }
+    return result;
+  }
+  function readUint32(bytes, offset) {
+    return (bytes[offset] << 24 | bytes[offset + 1] << 16 | bytes[offset + 2] << 8 | bytes[offset + 3]) >>> 0;
+  }
+  function crc32Table() {
+    const table = new Uint32Array(256);
+    for (let index = 0; index < table.length; index += 1) {
+      let value = index;
+      for (let bit = 0; bit < 8; bit += 1) {
+        value = (value & 1) !== 0 ? 3988292384 ^ value >>> 1 : value >>> 1;
+      }
+      table[index] = value >>> 0;
+    }
+    return table;
+  }
+  function pngCrc32(bytes, start, end) {
+    let crc = 4294967295;
+    for (let offset = start; offset < end; offset += 1) {
+      crc = (CRC32_TABLE[(crc ^ bytes[offset]) & 255] ?? 0) ^ crc >>> 8;
+    }
+    return (crc ^ 4294967295) >>> 0;
+  }
+  function pngFailure(message) {
+    return failure("VECTOR180-INLINE-PNG-FORMAT", message);
+  }
+  function failure(code, message) {
+    return Object.freeze({ ok: false, code, message });
+  }
+
   // src/core/scan.ts
   var import_saxes = __toESM(require_saxes(), 1);
   var SECTION_RANK = {
@@ -12444,7 +15091,7 @@
     } else {
       inspectStructureLimits(html, mapper, diagnostics, sourceOffset, options);
       if (!diagnostics.some((diagnostic) => diagnostic.severity === "fatal")) {
-        inspectSecurity(html, mapper, diagnostics, sourceOffset);
+        inspectSecurity(html, mapper, diagnostics, sourceOffset, dialect);
         rejectDeckAtomMetadataMarkers(html, mapper, diagnostics, sourceOffset);
         validateContainerAttributes(
           html,
@@ -12549,7 +15196,7 @@
       };
     }
     inspectStructureLimits(svg, mapper, diagnostics, sourceOffset, options);
-    inspectSecurity(svg, mapper, diagnostics, sourceOffset);
+    inspectSecurity(svg, mapper, diagnostics, sourceOffset, dialect);
     validateAtomMetadataMarkers(svg, mapper, diagnostics, sourceOffset, dialect);
     validateAtomRoot(svg, mapper, diagnostics, sourceOffset, dialect);
     validateAtomStyleAuthority(svg, mapper, diagnostics, sourceOffset, dialect);
@@ -13152,7 +15799,7 @@
       ...matching[1] === void 0 ? {} : { range: matching[1].range }
     });
   }
-  function inspectSecurity(root, mapper, diagnostics, sourceOffset) {
+  function inspectSecurity(root, mapper, diagnostics, sourceOffset, dialect) {
     walk(root, (node) => {
       if (!isElement(node)) return;
       const normalizedTagName = node.tagName.toLowerCase();
@@ -13171,6 +15818,16 @@
           code: "VECTOR180-SECURITY-EXECUTABLE",
           severity: "error",
           message: "Executable script elements are forbidden outside the recognized top-level Vector180 control blocks.",
+          ...range === void 0 ? {} : { range }
+        });
+      }
+      const inlinePngError = inlinePngRasterElementError(node, dialect);
+      if (inlinePngError !== void 0) {
+        const range = locationRange(node, mapper, sourceOffset);
+        diagnostics.push({
+          code: "VECTOR180-SECURITY-URL",
+          severity: "error",
+          message: inlinePngError,
           ...range === void 0 ? {} : { range }
         });
       }
@@ -13225,18 +15882,45 @@
           }
         }
         if (isUrlAttribute(node, qualifiedName)) {
-          const unsafeReason = unsafeUrlReason(attribute.value);
+          const unsafeReason = isAllowedInlinePngRasterAttribute(
+            node,
+            qualifiedName,
+            attribute.value,
+            dialect
+          ) ? void 0 : unsafeUrlReason(attribute.value);
           if (unsafeReason !== void 0) {
             diagnostics.push({
               code: "VECTOR180-SECURITY-URL",
               severity: "error",
-              message: `${unsafeReason} in ${qualifiedName}=${JSON.stringify(attribute.value)}.`,
+              message: `${unsafeReason} in ${qualifiedName}=${diagnosticResourceReference(attribute.value)}.`,
               ...range === void 0 ? {} : { range }
             });
           }
         }
       }
     });
+  }
+  function inlinePngRasterElementError(element, dialect) {
+    if (!isCanonicalRasterImage(element, dialect)) return void 0;
+    const references = element.attrs.filter((attribute) => {
+      const name = qualifiedAttributeName(attribute).toLowerCase();
+      return name === "href" || name === "xlink:href";
+    });
+    if (!references.some((attribute) => attribute.value.startsWith("data:"))) {
+      return void 0;
+    }
+    if (references.length !== 1) {
+      return "An inline PNG raster asset requires exactly one href or xlink:href attribute.";
+    }
+    const parsed = parseVector180InlinePngDataUri(references[0].value);
+    return parsed.ok ? void 0 : parsed.message;
+  }
+  function isAllowedInlinePngRasterAttribute(element, name, value, dialect) {
+    const normalized = name.toLowerCase();
+    return (normalized === "href" || normalized === "xlink:href") && isCanonicalRasterImage(element, dialect) && parseVector180InlinePngDataUri(value).ok;
+  }
+  function isCanonicalRasterImage(element, dialect) {
+    return dialect.wireFamily === "vector180" && element.tagName === "image" && getAttribute(element, "data-vector180-role") === "asset" && getAttribute(element, "data-vector180-export") === "raster";
   }
   function isUrlAttribute(element, name) {
     const normalized = name.toLowerCase();
@@ -13247,6 +15931,9 @@
       return "Control characters and whitespace are forbidden in resource references";
     }
     return value.startsWith("#") ? void 0 : "Only same-document fragment references are allowed in self-contained Vector180 0.1";
+  }
+  function diagnosticResourceReference(value) {
+    return /^data:/iu.test(value) ? JSON.stringify("<inline-data-uri:redacted>") : JSON.stringify(value);
   }
   async function validateReferenceRuntimes(source, sections, diagnostics, dialect) {
     for (const section of sections) {
@@ -14108,6 +16795,7 @@
         attribute.value
       ])
     );
+    const resource = scope.wireFamily === "vector180" && element.tagName === "image" && role === "asset" && exportMode === "raster" ? inlinePngResource(element) : void 0;
     const classes = (getAttribute2(element, "class") ?? "").split(/\s+/).filter(Boolean);
     return {
       id,
@@ -14119,11 +16807,21 @@
       parentId,
       children,
       ...text === void 0 ? {} : { text },
+      ...resource === void 0 ? {} : { resource },
       opaque,
       sourceRange,
       openTagRange,
       ...directTextRange === void 0 ? {} : { directTextRange }
     };
+  }
+  function inlinePngResource(element) {
+    const references = element.attrs.filter((attribute) => {
+      const name = qualifiedAttributeName2(attribute).toLowerCase();
+      return name === "href" || name === "xlink:href";
+    });
+    if (references.length !== 1) return void 0;
+    const parsed = parseVector180InlinePngDataUri(references[0].value);
+    return parsed.ok ? parsed.descriptor : void 0;
   }
   function invalidTextDescendants(element) {
     const invalid = [];
@@ -16097,23 +18795,46 @@
   function resolveRasterAsset(node, scope, parentId, order, worldOffset, styleEntry, context) {
     validateBoundaryAttributes(node, RASTER_ASSET_ATTRIBUTES, context);
     const bounds = parseDeclaredBounds(node, context);
-    const resourceRef = getAttribute4(node, "href") ?? getAttribute4(node, "xlink:href");
-    if (resourceRef === void 0 || resourceRef === "") {
+    const x = requiredNumber(node, "x", false, context);
+    const y = requiredNumber(node, "y", false, context);
+    const width = requiredNumber(node, "width", true, context);
+    const height = requiredNumber(node, "height", true, context);
+    const href = getAttribute4(node, "href");
+    const xlinkHref = getAttribute4(node, "xlink:href");
+    const resource = node.resource;
+    const aspectMatches = resource !== void 0 && sameExactAspectRatio(
+      resource.widthPixels,
+      resource.heightPixels,
+      getAttribute4(node, "width"),
+      getAttribute4(node, "height")
+    );
+    if (href === void 0 === (xlinkHref === void 0) || resource === void 0) {
       pushNodeDiagnostic(
         context,
         node,
         "VECTOR180-PROFILE-RESOURCE",
-        `Raster asset "${node.id}" has no separately resolvable static resource.`
-      );
-    } else {
-      pushNodeDiagnostic(
-        context,
-        node,
-        "VECTOR180-PROFILE-RESOURCE",
-        `Raster asset "${node.id}" cannot be resolved by the dependency-free C6 resolver.`
+        `Raster asset "${node.id}" requires exactly one validated inline PNG resource.`
       );
     }
-    if (bounds === void 0 || resourceRef === void 0) return void 0;
+    if (bounds !== void 0 && x !== void 0 && y !== void 0 && width !== void 0 && height !== void 0 && (x !== bounds.x || y !== bounds.y || width !== bounds.width || height !== bounds.height)) {
+      pushNodeDiagnostic(
+        context,
+        node,
+        "VECTOR180-PROFILE-GEOMETRY",
+        `Raster asset "${node.id}" x/y/width/height must equal its declared bounds.`
+      );
+    }
+    if (resource !== void 0 && !aspectMatches) {
+      pushNodeDiagnostic(
+        context,
+        node,
+        "VECTOR180-PROFILE-RESOURCE",
+        `Raster asset "${node.id}" intrinsic pixel ratio must exactly match its declared width and height.`
+      );
+    }
+    if (bounds === void 0 || x === void 0 || y === void 0 || width === void 0 || height === void 0 || resource === void 0 || href === void 0 === (xlinkHref === void 0) || x !== bounds.x || y !== bounds.y || width !== bounds.width || height !== bounds.height || !aspectMatches) {
+      return void 0;
+    }
     const worldBounds = offsetBounds(bounds, worldOffset, node, context);
     if (worldBounds === void 0) return void 0;
     return {
@@ -16128,7 +18849,7 @@
         worldOffset,
         styleEntry
       ),
-      resourceRef
+      resource
     };
   }
   function resolveText(node, scope, parentId, order, worldOffset, styleEntry, context) {
@@ -16340,26 +19061,26 @@
       );
     }
   }
-  function requiredNumber(node, name, positive, context) {
-    const value = parseSingleNumber(getAttribute4(node, name), positive);
+  function requiredNumber(node, name, positive2, context) {
+    const value = parseSingleNumber(getAttribute4(node, name), positive2);
     if (value === void 0) {
       pushNumberDiagnostic(context, node, `attribute "${name}" is invalid`);
     }
     return value;
   }
-  function optionalNumber(node, name, positive, context) {
+  function optionalNumber(node, name, positive2, context) {
     const raw = getAttribute4(node, name);
     if (raw === void 0) return void 0;
-    const value = parseSingleNumber(raw, positive);
+    const value = parseSingleNumber(raw, positive2);
     if (value === void 0) {
       pushNumberDiagnostic(context, node, `attribute "${name}" is invalid`);
     }
     return value;
   }
-  function parseSingleNumber(raw, positive) {
+  function parseSingleNumber(raw, positive2) {
     if (raw === void 0 || !SVG_NUMBER_PATTERN3.test(raw)) return void 0;
     const value = Number(raw);
-    if (!Number.isFinite(value) || positive && value <= 0) return void 0;
+    if (!Number.isFinite(value) || positive2 && value <= 0) return void 0;
     return normalizeZero2(value);
   }
   function exactDecimalDifference(currentSource, previousSource, stepSource) {
@@ -16376,6 +19097,18 @@
     );
     try {
       return scaleExactDecimal(current, commonExponent) - scaleExactDecimal(previous, commonExponent) === scaleExactDecimal(step, commonExponent);
+    } catch {
+      return false;
+    }
+  }
+  function sameExactAspectRatio(widthPixels, heightPixels, widthSource, heightSource) {
+    if (widthSource === void 0 || heightSource === void 0) return false;
+    const width = parseExactDecimal(widthSource);
+    const height = parseExactDecimal(heightSource);
+    if (width === void 0 || height === void 0) return false;
+    const commonExponent = Math.min(width.exponent, height.exponent);
+    try {
+      return scaleExactDecimal(width, commonExponent) * BigInt(heightPixels) === scaleExactDecimal(height, commonExponent) * BigInt(widthPixels);
     } catch {
       return false;
     }
@@ -20052,6 +22785,2816 @@
     };
   }
 
+  // src/node/pptx-deck.ts
+  var import_jszip2 = __toESM(require_jszip_min(), 1);
+
+  // src/node/pptx-canary.ts
+  var import_jszip = __toESM(require_jszip_min(), 1);
+
+  // src/node/pptx-units.ts
+  var MIN_NORMAL = 2 ** -1022;
+  function scaleOoxmlInteger(value, factor) {
+    if (!Number.isFinite(value) || !Number.isFinite(factor) || factor <= 0) {
+      return void 0;
+    }
+    const scaled = value * factor;
+    if (!Number.isFinite(scaled)) return void 0;
+    if (Number.isSafeInteger(scaled)) return Object.is(scaled, -0) ? 0 : scaled;
+    const nearest = Math.round(scaled);
+    if (!Number.isSafeInteger(nearest)) return void 0;
+    if (Math.abs(scaled - nearest) > unitInLastPlace(scaled)) return void 0;
+    const inverse = nearest / factor;
+    if (!Number.isFinite(inverse) || Math.abs(value - inverse) > unitInLastPlace(value)) {
+      return void 0;
+    }
+    return Object.is(nearest, -0) ? 0 : nearest;
+  }
+  function unitInLastPlace(value) {
+    const magnitude = Math.abs(value);
+    if (magnitude === 0 || magnitude < MIN_NORMAL) return Number.MIN_VALUE;
+    return 2 ** (Math.floor(Math.log2(magnitude)) - 52);
+  }
+
+  // src/node/pptx-canary.ts
+  var FIXED_DATE_ISO = "2000-01-01T00:00:00Z";
+  var EMU_PER_UNIT2 = 7620;
+  var HUNDREDTH_POINTS_PER_UNIT = 60;
+  var MAX_SIGNED_INT_31 = 2147483647;
+  var MASTER_ID = 2147483648;
+  var MAX_CANARY_ZIP_BYTES = 128 * 1024 * 1024;
+  var MIN_COORDINATE_EMU = -27273042329600;
+  var MAX_COORDINATE_EMU = 27273042316900;
+  var MAX_LINE_WIDTH_EMU = 20116800;
+  var MAX_FONT_HUNDREDTH_POINTS = 4e5;
+  var MAX_SPACING_HUNDREDTH_POINTS = 158400;
+  var MAX_TEXT_MARGIN_EMU = 51206400;
+  var PACKAGE_MIME = "application/vnd.openxmlformats-officedocument.presentationml.presentation";
+  var CANARY_SCHEMA = "vector180-pptx-canary/0.1";
+  var CANARY_COMPILER = "office180-vector180-pptx-canary/0.1";
+  var CONTENT_TYPES = {
+    app: "application/vnd.openxmlformats-officedocument.extended-properties+xml",
+    core: "application/vnd.openxmlformats-package.core-properties+xml",
+    custom: "application/vnd.openxmlformats-officedocument.custom-properties+xml",
+    layout: "application/vnd.openxmlformats-officedocument.presentationml.slideLayout+xml",
+    master: "application/vnd.openxmlformats-officedocument.presentationml.slideMaster+xml",
+    presProps: "application/vnd.openxmlformats-officedocument.presentationml.presProps+xml",
+    presentation: "application/vnd.openxmlformats-officedocument.presentationml.presentation.main+xml",
+    png: "image/png",
+    slide: "application/vnd.openxmlformats-officedocument.presentationml.slide+xml",
+    theme: "application/vnd.openxmlformats-officedocument.theme+xml"
+  };
+  var RELATIONSHIP_TYPES = {
+    core: "http://schemas.openxmlformats.org/package/2006/relationships/metadata/core-properties",
+    custom: "http://schemas.openxmlformats.org/officeDocument/2006/relationships/custom-properties",
+    extended: "http://schemas.openxmlformats.org/officeDocument/2006/relationships/extended-properties",
+    layout: "http://schemas.openxmlformats.org/officeDocument/2006/relationships/slideLayout",
+    image: "http://schemas.openxmlformats.org/officeDocument/2006/relationships/image",
+    master: "http://schemas.openxmlformats.org/officeDocument/2006/relationships/slideMaster",
+    office: "http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument",
+    presProps: "http://schemas.openxmlformats.org/officeDocument/2006/relationships/presProps",
+    slide: "http://schemas.openxmlformats.org/officeDocument/2006/relationships/slide",
+    theme: "http://schemas.openxmlformats.org/officeDocument/2006/relationships/theme"
+  };
+  var PptxCanaryCompileError = class extends Error {
+    code;
+    constructor(code, message) {
+      super(message);
+      this.name = "PptxCanaryCompileError";
+      this.code = code;
+    }
+  };
+  async function compilePptxCanaryWithLineage(input, lineage) {
+    return compilePptxCanaryPackage(input, lineage);
+  }
+  async function compilePptxCanaryPackage(input, lineage) {
+    const model = resolvedModel(input);
+    const graph = createPptxCanaryGraphWithLineage(model, lineage);
+    validatePptxCanaryGraph(graph);
+    const packageParts = materializePackageParts(graph);
+    if (packageParts.length > 65535) {
+      fail(
+        "VECTOR180-PPTX-ZIP-LIMIT",
+        "The canary package exceeds ZIP32 entries."
+      );
+    }
+    const estimatedZipBytes = packageParts.reduce(
+      (total, part) => total + part.bytes.byteLength + 30 + part.name.length + 46 + part.name.length,
+      22
+    );
+    if (!Number.isSafeInteger(estimatedZipBytes) || estimatedZipBytes > 4294967295 || estimatedZipBytes > MAX_CANARY_ZIP_BYTES) {
+      fail(
+        "VECTOR180-PPTX-ZIP-LIMIT",
+        `The STORE package estimate (${estimatedZipBytes} bytes) exceeds the C7/ZIP32 budget.`
+      );
+    }
+    const zip = new import_jszip.default();
+    for (const part of packageParts) {
+      zip.file(part.name, part.bytes, {
+        binary: true,
+        comment: "",
+        compression: "STORE",
+        createFolders: false,
+        date: fixedZipDate(),
+        dosPermissions: 0
+      });
+    }
+    const bytes = await zip.generateAsync({
+      type: "uint8array",
+      comment: "",
+      compression: "STORE",
+      mimeType: PACKAGE_MIME,
+      platform: "DOS",
+      streamFiles: false
+    });
+    const compiler = lineage.compiler ?? CANARY_COMPILER;
+    return Object.freeze({
+      schema: CANARY_SCHEMA,
+      compiler,
+      sourceSha256: model.sourceSha256,
+      bytes,
+      sha256: sha256HexSync(bytes),
+      parts: Object.freeze(
+        packageParts.map(
+          (part) => Object.freeze({ name: part.name, bytes: part.bytes })
+        )
+      ),
+      relationships: graph.relationships
+    });
+  }
+  function describePptxCanaryBindings(model) {
+    validateResolvedDeck(model);
+    const slideInfos = createSlideInfos(model.slides);
+    return Object.freeze(
+      slideInfos.map((info) => {
+        const flattened = flattenObjects(info.slide.objects);
+        const numericIds = allocateNumericIds(
+          flattened.map((object) => object.id),
+          `slide "${info.slide.id}"`
+        );
+        let rasterIndex = 0;
+        const objects = flattened.map((object) => {
+          const numericId = requiredMap(numericIds, object.id);
+          const imageRelationship = object.kind === "raster-asset" ? {
+            relationshipId: `rId${(rasterIndex += 1) + 1}`,
+            partName: `ppt/media/${object.resource.sha256}.png`
+          } : void 0;
+          return Object.freeze({
+            id: object.id,
+            element: emittedElementForKind(object),
+            cNvPrName: `src.${object.id}`,
+            cNvPrNumericId: numericId,
+            ...imageRelationship === void 0 ? {} : { imageRelationship }
+          });
+        });
+        return Object.freeze({
+          id: info.slide.id,
+          order: info.slide.order,
+          partName: info.partName,
+          presentationRelationshipId: info.relationshipId,
+          presentationNumericId: info.numericId,
+          objects: Object.freeze(objects)
+        });
+      })
+    );
+  }
+  function createPptxCanaryGraphWithLineage(model, lineage) {
+    validateResolvedDeck(model);
+    validatePackageLineage(lineage);
+    const slideInfos = createSlideInfos(model.slides);
+    const rasterState = createRasterPackageState(model, lineage);
+    const parts = [];
+    const relationships = [];
+    const addXml = (name, contentType, xml) => {
+      parts.push({
+        name,
+        contentType,
+        bytes: new TextEncoder().encode(xml)
+      });
+    };
+    addXml("docProps/app.xml", CONTENT_TYPES.app, renderAppProperties(model));
+    addXml(
+      "docProps/core.xml",
+      CONTENT_TYPES.core,
+      renderCoreProperties(lineage.coreTitle)
+    );
+    addXml(
+      "docProps/custom.xml",
+      CONTENT_TYPES.custom,
+      renderCustomProperties(model, lineage)
+    );
+    addXml(
+      "ppt/presentation.xml",
+      CONTENT_TYPES.presentation,
+      renderPresentation(model, slideInfos)
+    );
+    addXml(
+      "ppt/presProps.xml",
+      CONTENT_TYPES.presProps,
+      renderPresentationProperties()
+    );
+    addXml(
+      "ppt/slideLayouts/slideLayout1.xml",
+      CONTENT_TYPES.layout,
+      renderBlankLayout()
+    );
+    addXml(
+      "ppt/slideMasters/slideMaster1.xml",
+      CONTENT_TYPES.master,
+      renderSlideMaster()
+    );
+    addXml("ppt/theme/theme1.xml", CONTENT_TYPES.theme, renderTheme());
+    parts.push(...rasterState.mediaParts);
+    for (const info of slideInfos) {
+      addXml(
+        info.partName,
+        CONTENT_TYPES.slide,
+        renderSlide(
+          info.slide,
+          rasterState.renderRelationshipsBySlide.get(info.slide.id) ?? /* @__PURE__ */ new Map()
+        )
+      );
+    }
+    relationships.push(
+      {
+        source: null,
+        id: "rId1",
+        type: RELATIONSHIP_TYPES.office,
+        target: "ppt/presentation.xml"
+      },
+      {
+        source: null,
+        id: "rId2",
+        type: RELATIONSHIP_TYPES.core,
+        target: "docProps/core.xml"
+      },
+      {
+        source: null,
+        id: "rId3",
+        type: RELATIONSHIP_TYPES.extended,
+        target: "docProps/app.xml"
+      },
+      {
+        source: null,
+        id: "rId4",
+        type: RELATIONSHIP_TYPES.custom,
+        target: "docProps/custom.xml"
+      }
+    );
+    for (const info of slideInfos) {
+      relationships.push({
+        source: "ppt/presentation.xml",
+        id: info.relationshipId,
+        type: RELATIONSHIP_TYPES.slide,
+        target: `slides/slide${info.partNumber}.xml`
+      });
+    }
+    relationships.push({
+      source: "ppt/presentation.xml",
+      id: `rId${slideInfos.length + 1}`,
+      type: RELATIONSHIP_TYPES.master,
+      target: "slideMasters/slideMaster1.xml"
+    });
+    relationships.push(
+      {
+        source: "ppt/presentation.xml",
+        id: `rId${slideInfos.length + 2}`,
+        type: RELATIONSHIP_TYPES.theme,
+        target: "theme/theme1.xml"
+      },
+      {
+        source: "ppt/presentation.xml",
+        id: `rId${slideInfos.length + 3}`,
+        type: RELATIONSHIP_TYPES.presProps,
+        target: "presProps.xml"
+      }
+    );
+    relationships.push(
+      {
+        source: "ppt/slideMasters/slideMaster1.xml",
+        id: "rId1",
+        type: RELATIONSHIP_TYPES.theme,
+        target: "../theme/theme1.xml"
+      },
+      {
+        source: "ppt/slideMasters/slideMaster1.xml",
+        id: "rId2",
+        type: RELATIONSHIP_TYPES.layout,
+        target: "../slideLayouts/slideLayout1.xml"
+      },
+      {
+        source: "ppt/slideLayouts/slideLayout1.xml",
+        id: "rId1",
+        type: RELATIONSHIP_TYPES.master,
+        target: "../slideMasters/slideMaster1.xml"
+      }
+    );
+    for (const info of slideInfos) {
+      relationships.push({
+        source: info.partName,
+        id: "rId1",
+        type: RELATIONSHIP_TYPES.layout,
+        target: "../slideLayouts/slideLayout1.xml"
+      });
+    }
+    relationships.push(...rasterState.relationships);
+    return Object.freeze({
+      parts: Object.freeze(parts),
+      relationships: Object.freeze(relationships)
+    });
+  }
+  function validatePptxCanaryGraph(graph) {
+    const parts = /* @__PURE__ */ new Map();
+    const caseFoldedNames = /* @__PURE__ */ new Set();
+    for (const part of graph.parts) {
+      validatePartName(part.name);
+      const folded = part.name.toLowerCase();
+      if (caseFoldedNames.has(folded)) {
+        graphFail(`Duplicate or case-colliding OPC part "${part.name}".`);
+      }
+      caseFoldedNames.add(folded);
+      const expected = expectedContentType(part.name);
+      if (expected === void 0 || part.contentType !== expected) {
+        graphFail(
+          `Part "${part.name}" has content type "${part.contentType}", expected "${expected ?? "no canary part"}".`
+        );
+      }
+      if (!(part.bytes instanceof Uint8Array) || part.bytes.byteLength === 0) {
+        graphFail(`Part "${part.name}" must contain non-empty bytes.`);
+      }
+      const mediaDigest = /^ppt\/media\/([0-9a-f]{64})\.png$/u.exec(
+        part.name
+      )?.[1];
+      if (mediaDigest !== void 0 && sha256HexSync(part.bytes) !== mediaDigest) {
+        graphFail(
+          `Content-addressed PNG part "${part.name}" does not match its filename digest.`
+        );
+      }
+      parts.set(part.name, part);
+    }
+    const slidePartNames = [...parts.keys()].filter((name) => /^ppt\/slides\/slide[1-9]\d*\.xml$/u.test(name)).sort(partNameOrder);
+    const mediaPartNames = [...parts.keys()].filter((name) => /^ppt\/media\/[0-9a-f]{64}\.png$/u.test(name)).sort(compareText);
+    for (const [index, name] of slidePartNames.entries()) {
+      if (name !== `ppt/slides/slide${index + 1}.xml`) {
+        graphFail("Slide part numbers must be contiguous from slide1.xml.");
+      }
+    }
+    if (slidePartNames.length === 0) {
+      graphFail("The canary package requires at least one slide.");
+    }
+    const expectedParts = /* @__PURE__ */ new Set([
+      "docProps/app.xml",
+      "docProps/core.xml",
+      "docProps/custom.xml",
+      "ppt/presentation.xml",
+      "ppt/presProps.xml",
+      "ppt/slideLayouts/slideLayout1.xml",
+      "ppt/slideMasters/slideMaster1.xml",
+      "ppt/theme/theme1.xml",
+      ...slidePartNames,
+      ...mediaPartNames
+    ]);
+    if (parts.size !== expectedParts.size || [...parts.keys()].some((name) => !expectedParts.has(name))) {
+      graphFail("The content-part set differs from the exact C7 canary graph.");
+    }
+    const relationshipsBySource = /* @__PURE__ */ new Map();
+    const relationshipKeys = /* @__PURE__ */ new Set();
+    for (const relationship of graph.relationships) {
+      if (relationship.source !== null && !parts.has(relationship.source)) {
+        graphFail(
+          `Relationship source "${relationship.source}" is not a content part.`
+        );
+      }
+      if (!/^rId[1-9]\d*$/u.test(relationship.id)) {
+        graphFail(`Relationship ID "${relationship.id}" is not canonical.`);
+      }
+      const key = `${relationship.source ?? "<root>"}\0${relationship.id}`;
+      if (relationshipKeys.has(key)) {
+        graphFail(
+          `Relationship ID "${relationship.id}" is duplicated for "${relationship.source ?? "<root>"}".`
+        );
+      }
+      relationshipKeys.add(key);
+      const target = resolveRelationshipTarget(
+        relationship.source,
+        relationship.target
+      );
+      if (!parts.has(target)) {
+        graphFail(
+          `Relationship "${relationship.id}" from "${relationship.source ?? "<root>"}" targets missing part "${target}".`
+        );
+      }
+      const siblings = relationshipsBySource.get(relationship.source) ?? [];
+      siblings.push(relationship);
+      relationshipsBySource.set(relationship.source, siblings);
+    }
+    const slideImageRelationships = [];
+    for (const slidePartNameValue of slidePartNames) {
+      const imageRelationships = (relationshipsBySource.get(slidePartNameValue) ?? []).filter((relationship) => relationship.type === RELATIONSHIP_TYPES.image).sort(
+        (left, right) => relationshipIdNumber(left.id) - relationshipIdNumber(right.id)
+      );
+      for (const [index, relationship] of imageRelationships.entries()) {
+        if (relationship.id !== `rId${index + 2}` || !/^\.\.\/media\/[0-9a-f]{64}\.png$/u.test(relationship.target)) {
+          graphFail(
+            `Slide image relationships for "${slidePartNameValue}" must be contiguous from rId2 and target content-addressed PNG media.`
+          );
+        }
+      }
+      const slideXml = new TextDecoder("utf-8", { fatal: true }).decode(
+        requiredMap(parts, slidePartNameValue).bytes
+      );
+      const embeddedIds = [
+        ...slideXml.matchAll(/<a:blip r:embed="(rId[1-9]\d*)"\/>/gu)
+      ].map((match) => match[1]);
+      const relationshipIds = imageRelationships.map(
+        (relationship) => relationship.id
+      );
+      if (embeddedIds.length !== relationshipIds.length || embeddedIds.some((id, index) => id !== relationshipIds[index])) {
+        graphFail(
+          `Slide "${slidePartNameValue}" picture embeds do not exactly match its image relationships in painter order.`
+        );
+      }
+      slideImageRelationships.push(...imageRelationships);
+    }
+    for (const [source, sourceRelationships] of relationshipsBySource) {
+      if ((source === null || !/^ppt\/slides\/slide[1-9]\d*\.xml$/u.test(source)) && sourceRelationships.some(
+        (relationship) => relationship.type === RELATIONSHIP_TYPES.image
+      )) {
+        graphFail("Image relationships may originate only from slide parts.");
+      }
+    }
+    const expectedRelationships = [
+      {
+        source: null,
+        id: "rId1",
+        type: RELATIONSHIP_TYPES.office,
+        target: "ppt/presentation.xml"
+      },
+      {
+        source: null,
+        id: "rId2",
+        type: RELATIONSHIP_TYPES.core,
+        target: "docProps/core.xml"
+      },
+      {
+        source: null,
+        id: "rId3",
+        type: RELATIONSHIP_TYPES.extended,
+        target: "docProps/app.xml"
+      },
+      {
+        source: null,
+        id: "rId4",
+        type: RELATIONSHIP_TYPES.custom,
+        target: "docProps/custom.xml"
+      },
+      ...slidePartNames.map((name, index) => ({
+        source: "ppt/presentation.xml",
+        id: `rId${index + 1}`,
+        type: RELATIONSHIP_TYPES.slide,
+        target: `slides/${name.slice("ppt/slides/".length)}`
+      })),
+      {
+        source: "ppt/presentation.xml",
+        id: `rId${slidePartNames.length + 1}`,
+        type: RELATIONSHIP_TYPES.master,
+        target: "slideMasters/slideMaster1.xml"
+      },
+      {
+        source: "ppt/presentation.xml",
+        id: `rId${slidePartNames.length + 2}`,
+        type: RELATIONSHIP_TYPES.theme,
+        target: "theme/theme1.xml"
+      },
+      {
+        source: "ppt/presentation.xml",
+        id: `rId${slidePartNames.length + 3}`,
+        type: RELATIONSHIP_TYPES.presProps,
+        target: "presProps.xml"
+      },
+      {
+        source: "ppt/slideMasters/slideMaster1.xml",
+        id: "rId1",
+        type: RELATIONSHIP_TYPES.theme,
+        target: "../theme/theme1.xml"
+      },
+      {
+        source: "ppt/slideMasters/slideMaster1.xml",
+        id: "rId2",
+        type: RELATIONSHIP_TYPES.layout,
+        target: "../slideLayouts/slideLayout1.xml"
+      },
+      {
+        source: "ppt/slideLayouts/slideLayout1.xml",
+        id: "rId1",
+        type: RELATIONSHIP_TYPES.master,
+        target: "../slideMasters/slideMaster1.xml"
+      },
+      ...slidePartNames.map((name) => ({
+        source: name,
+        id: "rId1",
+        type: RELATIONSHIP_TYPES.layout,
+        target: "../slideLayouts/slideLayout1.xml"
+      })),
+      ...slideImageRelationships
+    ];
+    const actualRelationSet = new Set(graph.relationships.map(relationshipKey));
+    const expectedRelationSet = new Set(
+      expectedRelationships.map(relationshipKey)
+    );
+    if (actualRelationSet.size !== expectedRelationSet.size || [...actualRelationSet].some((key) => !expectedRelationSet.has(key))) {
+      graphFail("The relationship set differs from the exact C7 canary graph.");
+    }
+    const reachable = /* @__PURE__ */ new Set();
+    const queue = [...relationshipsBySource.get(null) ?? []].map(
+      (relationship) => resolveRelationshipTarget(null, relationship.target)
+    );
+    while (queue.length > 0) {
+      const name = queue.shift();
+      if (name === void 0 || reachable.has(name)) continue;
+      reachable.add(name);
+      for (const relationship of relationshipsBySource.get(name) ?? []) {
+        queue.push(resolveRelationshipTarget(name, relationship.target));
+      }
+    }
+    for (const name of parts.keys()) {
+      if (!reachable.has(name)) {
+        graphFail(`Content part "${name}" is unreachable from package root.`);
+      }
+    }
+  }
+  function resolvedModel(input) {
+    if ("schema" in input) return input;
+    if (input.model !== void 0) {
+      assertCanonicalSourceFamily(input.model);
+    }
+    if (input.model === void 0 || input.diagnostics.some(
+      (diagnostic) => diagnostic.severity === "error" || diagnostic.severity === "fatal"
+    )) {
+      fail(
+        "VECTOR180-PPTX-UNRESOLVED",
+        "C7 requires a complete C6 model with no error diagnostics."
+      );
+    }
+    return input.model;
+  }
+  function validateResolvedDeck(model) {
+    assertCanonicalSourceFamily(model);
+    if (model.schema !== "vector180-resolved-deck/0.1" || !/^[0-9a-f]{64}$/u.test(model.sourceSha256) || model.activeTheme.length === 0 || model.canvas.widthEmu !== 12192e3 || model.canvas.heightEmu !== 6858e3 || model.canvas.emuPerUnit !== EMU_PER_UNIT2 || model.canvas.viewBox.length !== 4 || model.canvas.viewBox.some(
+      (value, index) => value !== [0, 0, 1600, 900][index]
+    )) {
+      fail(
+        "VECTOR180-PPTX-INVALID-MODEL",
+        "Resolved deck does not carry the exact C6 schema, hash, theme, and 16:9 canvas."
+      );
+    }
+    if (model.slides.length === 0) {
+      fail("VECTOR180-PPTX-INVALID-MODEL", "A PPTX requires at least one slide.");
+    }
+    const slideIds = /* @__PURE__ */ new Set();
+    for (const [slideIndex, slide] of model.slides.entries()) {
+      if (slide.id.length === 0 || slide.order !== slideIndex || slideIds.has(slide.id)) {
+        fail(
+          "VECTOR180-PPTX-INVALID-MODEL",
+          `Slide identity/order is inconsistent at position ${slideIndex}.`
+        );
+      }
+      slideIds.add(slide.id);
+      const objectIds = /* @__PURE__ */ new Set();
+      validateSiblings(slide.objects, slide.id, null, { x: 0, y: 0 }, objectIds);
+      allocateNumericIds([...objectIds], `slide "${slide.id}"`);
+    }
+    allocateSlideNumericIds(model.slides.map((slide) => slide.id));
+  }
+  function assertCanonicalSourceFamily(model) {
+    if (model.sourceWireFamily !== "vector180") {
+      fail(
+        "VECTOR180-PPTX-FAMILY",
+        "C7 accepts only resolved source whose wire family is exactly vector180."
+      );
+    }
+  }
+  function validateSiblings(objects, slideId2, parentId, parentWorldOffset, objectIds) {
+    for (const [index, object] of objects.entries()) {
+      if (object.id.length === 0 || objectIds.has(object.id) || object.slideId !== slideId2 || object.parentId !== parentId || object.order !== index) {
+        fail(
+          "VECTOR180-PPTX-INVALID-MODEL",
+          `Object identity/parent/order is inconsistent for "${object.id}".`
+        );
+      }
+      objectIds.add(object.id);
+      validateStyle(object.style, object.id);
+      validateBounds(object.localBounds, `${object.id} local bounds`);
+      validateBounds(object.worldBounds, `${object.id} world bounds`);
+      const expectedOffset = object.kind === "group" ? {
+        x: parentWorldOffset.x + object.translateX,
+        y: parentWorldOffset.y + object.translateY
+      } : parentWorldOffset;
+      if (!sameNumber(object.worldOffset.x, expectedOffset.x) || !sameNumber(object.worldOffset.y, expectedOffset.y) || !sameNumber(
+        object.worldBounds.x,
+        object.localBounds.x + expectedOffset.x
+      ) || !sameNumber(
+        object.worldBounds.y,
+        object.localBounds.y + expectedOffset.y
+      ) || !sameNumber(object.worldBounds.width, object.localBounds.width) || !sameNumber(object.worldBounds.height, object.localBounds.height)) {
+        fail(
+          "VECTOR180-PPTX-INVALID-MODEL",
+          `World geometry is inconsistent for object "${object.id}".`
+        );
+      }
+      validateObjectGeometry(object);
+      if (object.kind === "group") {
+        validateSiblings(
+          object.children,
+          slideId2,
+          object.id,
+          object.worldOffset,
+          objectIds
+        );
+        validateGroupBounds(object);
+      }
+    }
+  }
+  function validateObjectGeometry(object) {
+    switch (object.kind) {
+      case "rect":
+        positive(object.width, `${object.id} width`);
+        positive(object.height, `${object.id} height`);
+        if (!sameBounds2(object.localBounds, {
+          x: object.x,
+          y: object.y,
+          width: object.width,
+          height: object.height
+        })) {
+          invalidModel(
+            `Rectangle geometry differs from bounds for "${object.id}".`
+          );
+        }
+        return;
+      case "ellipse": {
+        positive(object.rx, `${object.id} rx`);
+        positive(object.ry, `${object.id} ry`);
+        if (!sameBounds2(object.localBounds, {
+          x: object.cx - object.rx,
+          y: object.cy - object.ry,
+          width: object.rx * 2,
+          height: object.ry * 2
+        })) {
+          invalidModel(
+            `Ellipse geometry differs from bounds for "${object.id}".`
+          );
+        }
+        return;
+      }
+      case "line": {
+        finite(object.x1, `${object.id} x1`);
+        finite(object.y1, `${object.id} y1`);
+        finite(object.x2, `${object.id} x2`);
+        finite(object.y2, `${object.id} y2`);
+        if (object.x1 === object.x2 && object.y1 === object.y2) {
+          invalidModel(`Line "${object.id}" has identical endpoints.`);
+        }
+        if (!sameBounds2(object.localBounds, {
+          x: Math.min(object.x1, object.x2),
+          y: Math.min(object.y1, object.y2),
+          width: Math.abs(object.x2 - object.x1),
+          height: Math.abs(object.y2 - object.y1)
+        })) {
+          invalidModel(`Line geometry differs from bounds for "${object.id}".`);
+        }
+        return;
+      }
+      case "text": {
+        if (object.lines.length !== 1) {
+          fail(
+            "VECTOR180-PPTX-UNSUPPORTED-OBJECT",
+            `Text "${object.id}" has ${object.lines.length} hard lines; C7 accepts exactly one.`
+          );
+        }
+        if (object.wrap !== "none" || object.autofit !== "none" || Object.values(object.margins).some((value) => value !== 0)) {
+          invalidModel(`Text intent is inconsistent for "${object.id}".`);
+        }
+        if (object.style.fontFamily === void 0 || object.style.fontSize === void 0) {
+          invalidModel(`Text "${object.id}" lacks a concrete font.`);
+        }
+        positive(object.frame.width, `${object.id} frame width`);
+        positive(object.frame.height, `${object.id} frame height`);
+        positive(object.lineStep, `${object.id} line step`);
+        if (!sameBounds2(object.localBounds, object.frame)) {
+          invalidModel(`Text frame differs from bounds for "${object.id}".`);
+        }
+        const line = object.lines[0];
+        if (line === void 0 || line.x < object.frame.x || line.x > object.frame.x + object.frame.width || line.y < object.frame.y || line.y > object.frame.y + object.frame.height) {
+          invalidModel(`Text line lies outside frame for "${object.id}".`);
+        }
+        return;
+      }
+      case "group":
+        if (object.children.length === 0) {
+          invalidModel(`Group "${object.id}" has no emitted children.`);
+        }
+        return;
+      case "svg-asset":
+        return;
+      case "raster-asset":
+        positive(object.localBounds.width, `${object.id} width`);
+        positive(object.localBounds.height, `${object.id} height`);
+        if (!validRasterDescriptor(object.resource)) {
+          invalidModel(
+            `Raster asset "${object.id}" lacks a valid PNG descriptor.`
+          );
+        }
+        return;
+      default:
+        return assertNever(object);
+    }
+  }
+  function validateGroupBounds(object) {
+    const first = object.children[0];
+    if (first === void 0) {
+      invalidModel(`Group "${object.id}" has no emitted children.`);
+    }
+    let minX = first.worldBounds.x;
+    let minY = first.worldBounds.y;
+    let maxX = first.worldBounds.x + first.worldBounds.width;
+    let maxY = first.worldBounds.y + first.worldBounds.height;
+    for (const child of object.children.slice(1)) {
+      minX = Math.min(minX, child.worldBounds.x);
+      minY = Math.min(minY, child.worldBounds.y);
+      maxX = Math.max(maxX, child.worldBounds.x + child.worldBounds.width);
+      maxY = Math.max(maxY, child.worldBounds.y + child.worldBounds.height);
+    }
+    const worldBounds = {
+      x: minX,
+      y: minY,
+      width: maxX - minX,
+      height: maxY - minY
+    };
+    const localBounds = {
+      x: minX - object.worldOffset.x,
+      y: minY - object.worldOffset.y,
+      width: worldBounds.width,
+      height: worldBounds.height
+    };
+    if (!sameBounds2(object.worldBounds, worldBounds) || !sameBounds2(object.localBounds, localBounds)) {
+      invalidModel(
+        `Group bounds are not the union of children for "${object.id}".`
+      );
+    }
+  }
+  function validateStyle(style, objectId) {
+    if (!validPaint(style.fill) || !validPaint(style.stroke) || !Number.isFinite(style.strokeWidth) || style.strokeWidth < 0 || !Number.isFinite(style.opacity) || style.opacity !== 1 || style.fontSize !== void 0 && (!Number.isFinite(style.fontSize) || style.fontSize <= 0) || ![400, 700].includes(style.fontWeight) || !["normal", "italic"].includes(style.fontStyle) || !["start", "middle", "end"].includes(style.textAnchor)) {
+      if (style.opacity !== 1) {
+        fail(
+          "VECTOR180-PPTX-UNSUPPORTED-GEOMETRY",
+          `Object "${objectId}" opacity must be exactly 1 in C7.`
+        );
+      }
+      invalidModel(`Resolved style is inconsistent for "${objectId}".`);
+    }
+  }
+  function createSlideInfos(slides) {
+    const sortedIds = slides.map((slide) => slide.id).sort(compareText);
+    const partNumberById = new Map(
+      sortedIds.map((id, index) => [id, index + 1])
+    );
+    const numericIds = allocateSlideNumericIds(sortedIds);
+    return Object.freeze(
+      slides.map((slide) => {
+        const partNumber = requiredMap(partNumberById, slide.id);
+        return Object.freeze({
+          slide,
+          partNumber,
+          partName: `ppt/slides/slide${partNumber}.xml`,
+          relationshipId: `rId${partNumber}`,
+          numericId: requiredMap(numericIds, slide.id)
+        });
+      })
+    );
+  }
+  function createRasterPackageState(model, lineage) {
+    const provided = /* @__PURE__ */ new Map();
+    for (const entry of lineage.rasterResources ?? []) {
+      const key = rasterResourceKey(entry.slideId, entry.objectId);
+      if (provided.has(key)) {
+        fail(
+          "VECTOR180-PPTX-INVALID-MODEL",
+          `Raster bytes are duplicated for object "${entry.objectId}" on slide "${entry.slideId}".`
+        );
+      }
+      if (entry.slideId.length === 0 || entry.objectId.length === 0 || !validRasterDescriptor(entry.descriptor) || !(entry.bytes instanceof Uint8Array) || entry.bytes.byteLength !== entry.descriptor.byteLength || sha256HexSync(entry.bytes) !== entry.descriptor.sha256) {
+        fail(
+          "VECTOR180-PPTX-INVALID-MODEL",
+          `Raster bytes for object "${entry.objectId}" do not match their exact PNG descriptor.`
+        );
+      }
+      provided.set(key, entry);
+    }
+    const used = /* @__PURE__ */ new Set();
+    const media = /* @__PURE__ */ new Map();
+    const renderRelationshipsBySlide = /* @__PURE__ */ new Map();
+    const relationships = [];
+    for (const slide of model.slides) {
+      const rasterObjects = flattenObjects(slide.objects).filter(
+        (object) => object.kind === "raster-asset"
+      );
+      const byObject = /* @__PURE__ */ new Map();
+      for (const [index, object] of rasterObjects.entries()) {
+        const key = rasterResourceKey(slide.id, object.id);
+        const entry = provided.get(key);
+        if (entry === void 0 || !sameRasterDescriptor(entry.descriptor, object.resource)) {
+          fail(
+            "VECTOR180-PPTX-UNSUPPORTED-OBJECT",
+            `Raster asset "${object.id}" requires exact authenticated PNG bytes in the package lineage.`
+          );
+        }
+        used.add(key);
+        const partName = `ppt/media/${object.resource.sha256}.png`;
+        const existing = media.get(partName);
+        if (existing !== void 0 && (existing.bytes.byteLength !== entry.bytes.byteLength || sha256HexSync(existing.bytes) !== object.resource.sha256)) {
+          fail(
+            "VECTOR180-PPTX-INVALID-MODEL",
+            `Content-addressed PNG part "${partName}" has inconsistent bytes.`
+          );
+        }
+        if (existing === void 0) {
+          media.set(partName, {
+            name: partName,
+            contentType: CONTENT_TYPES.png,
+            bytes: new Uint8Array(entry.bytes)
+          });
+        }
+        const relationshipId = `rId${index + 2}`;
+        byObject.set(object.id, { relationshipId, partName });
+        relationships.push({
+          source: slidePartName(model.slides, slide.id),
+          id: relationshipId,
+          type: RELATIONSHIP_TYPES.image,
+          target: `../media/${object.resource.sha256}.png`
+        });
+      }
+      renderRelationshipsBySlide.set(slide.id, byObject);
+    }
+    if (used.size !== provided.size || [...provided.keys()].some((key) => !used.has(key))) {
+      fail(
+        "VECTOR180-PPTX-INVALID-MODEL",
+        "Raster package lineage contains bytes not consumed by one resolved raster asset."
+      );
+    }
+    return Object.freeze({
+      mediaParts: Object.freeze(
+        [...media.values()].sort(
+          (left, right) => compareText(left.name, right.name)
+        )
+      ),
+      renderRelationshipsBySlide,
+      relationships: Object.freeze(relationships)
+    });
+  }
+  function slidePartName(slides, slideId2) {
+    const sorted = slides.map((slide) => slide.id).sort(compareText);
+    const index = sorted.indexOf(slideId2);
+    if (index < 0) {
+      fail(
+        "VECTOR180-PPTX-INVALID-MODEL",
+        `Raster relationship refers to unknown slide "${slideId2}".`
+      );
+    }
+    return `ppt/slides/slide${index + 1}.xml`;
+  }
+  function rasterResourceKey(slideId2, objectId) {
+    return `${slideId2}\0${objectId}`;
+  }
+  function validRasterDescriptor(descriptor) {
+    return descriptor.mediaType === "image/png" && /^[0-9a-f]{64}$/u.test(descriptor.sha256) && Number.isSafeInteger(descriptor.byteLength) && descriptor.byteLength > 0 && Number.isSafeInteger(descriptor.widthPixels) && descriptor.widthPixels > 0 && Number.isSafeInteger(descriptor.heightPixels) && descriptor.heightPixels > 0;
+  }
+  function sameRasterDescriptor(left, right) {
+    return left.mediaType === right.mediaType && left.sha256 === right.sha256 && left.byteLength === right.byteLength && left.widthPixels === right.widthPixels && left.heightPixels === right.heightPixels;
+  }
+  function renderAppProperties(model) {
+    const titles = model.slides.map((slide) => `      <vt:lpstr>${xmlText(slide.id)}</vt:lpstr>`).join("\n");
+    const hidden = model.slides.filter((slide) => slide.hidden).length;
+    return xmlDocument(`<Properties xmlns="http://schemas.openxmlformats.org/officeDocument/2006/extended-properties"
+  xmlns:vt="http://schemas.openxmlformats.org/officeDocument/2006/docPropsVTypes">
+  <Application>office180 Vector180</Application>
+  <PresentationFormat>On-screen Show (16:9)</PresentationFormat>
+  <Slides>${model.slides.length}</Slides>
+  <Notes>0</Notes>
+  <HiddenSlides>${hidden}</HiddenSlides>
+  <MMClips>0</MMClips>
+  <ScaleCrop>false</ScaleCrop>
+  <TitlesOfParts>
+    <vt:vector size="${model.slides.length}" baseType="lpstr">
+${titles}
+    </vt:vector>
+  </TitlesOfParts>
+  <Company>Office180</Company>
+  <AppVersion>0.1</AppVersion>
+</Properties>`);
+  }
+  function renderCoreProperties(title = "Vector180 deterministic compiler canary") {
+    return xmlDocument(`<cp:coreProperties
+  xmlns:cp="http://schemas.openxmlformats.org/package/2006/metadata/core-properties"
+  xmlns:dc="http://purl.org/dc/elements/1.1/"
+  xmlns:dcterms="http://purl.org/dc/terms/"
+  xmlns:dcmitype="http://purl.org/dc/dcmitype/"
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <dc:title>${xmlText(title)}</dc:title>
+  <dc:creator>office180</dc:creator>
+  <cp:lastModifiedBy>office180</cp:lastModifiedBy>
+  <dcterms:created xsi:type="dcterms:W3CDTF">${FIXED_DATE_ISO}</dcterms:created>
+  <dcterms:modified xsi:type="dcterms:W3CDTF">${FIXED_DATE_ISO}</dcterms:modified>
+</cp:coreProperties>`);
+  }
+  function renderCustomProperties(model, lineage) {
+    const values = [
+      ["vector180.compiler", lineage.compiler ?? CANARY_COMPILER],
+      ["vector180.resolvedSchema", model.schema],
+      ["vector180.activeTheme", model.activeTheme],
+      ["vector180.sourceSha256", model.sourceSha256],
+      ...Object.entries(lineage.customProperties ?? {}).sort(
+        ([left], [right]) => compareText(left, right)
+      )
+    ];
+    return xmlDocument(`<Properties
+  xmlns="http://schemas.openxmlformats.org/officeDocument/2006/custom-properties"
+  xmlns:vt="http://schemas.openxmlformats.org/officeDocument/2006/docPropsVTypes">
+${values.map(
+      ([name, value], index) => `  <property fmtid="{D5CDD505-2E9C-101B-9397-08002B2CF9AE}" pid="${index + 2}" name="${xmlAttribute(name)}"><vt:lpwstr>${xmlText(value)}</vt:lpwstr></property>`
+    ).join("\n")}
+</Properties>`);
+  }
+  function validatePackageLineage(lineage) {
+    if (lineage.compiler?.toLowerCase().includes("pptv") === true || Object.keys(lineage.customProperties ?? {}).some(
+      (name) => name.toLowerCase().startsWith("pptv.")
+    )) {
+      fail(
+        "VECTOR180-PPTX-FAMILY",
+        "Legacy PPTV package lineage cannot enter the canonical Vector180 compiler."
+      );
+    }
+    for (const [label, value] of [
+      ["compiler", lineage.compiler],
+      ["core title", lineage.coreTitle]
+    ]) {
+      if (value !== void 0 && value.length === 0) {
+        fail(
+          "VECTOR180-PPTX-INVALID-MODEL",
+          `The ${label} option cannot be empty.`
+        );
+      }
+    }
+    const reserved = /* @__PURE__ */ new Set([
+      "vector180.compiler",
+      "vector180.resolvedSchema",
+      "vector180.activeTheme",
+      "vector180.sourceSha256"
+    ]);
+    for (const [name, value] of Object.entries(lineage.customProperties ?? {})) {
+      if (name.length === 0 || value.length === 0 || reserved.has(name) || /[\u0000-\u001f\u007f]/u.test(name) || /[\u0000-\u0008\u000b\u000c\u000e-\u001f\u007f]/u.test(value)) {
+        fail(
+          "VECTOR180-PPTX-INVALID-MODEL",
+          `Invalid or reserved custom package property "${name}".`
+        );
+      }
+    }
+  }
+  function renderPresentation(model, slideInfos) {
+    const infoById = new Map(
+      slideInfos.map((info) => [info.slide.id, info])
+    );
+    const slideIds = model.slides.map((slide) => {
+      const info = requiredMap(infoById, slide.id);
+      return `    <p:sldId id="${info.numericId}" r:id="${info.relationshipId}"/>`;
+    }).join("\n");
+    return xmlDocument(`<p:presentation
+  xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main"
+  xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"
+  xmlns:p="http://schemas.openxmlformats.org/presentationml/2006/main">
+  <p:sldMasterIdLst>
+    <p:sldMasterId id="${MASTER_ID}" r:id="rId${slideInfos.length + 1}"/>
+  </p:sldMasterIdLst>
+  <p:sldIdLst>
+${slideIds}
+  </p:sldIdLst>
+  <p:sldSz cx="${model.canvas.widthEmu}" cy="${model.canvas.heightEmu}" type="screen16x9"/>
+  <p:notesSz cx="${model.canvas.heightEmu}" cy="${model.canvas.widthEmu}"/>
+  <p:defaultTextStyle/>
+</p:presentation>`);
+  }
+  function renderPresentationProperties() {
+    return xmlDocument(
+      `<p:presentationPr xmlns:p="http://schemas.openxmlformats.org/presentationml/2006/main"/>`
+    );
+  }
+  function renderBlankLayout() {
+    return xmlDocument(`<p:sldLayout
+  xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main"
+  xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"
+  xmlns:p="http://schemas.openxmlformats.org/presentationml/2006/main"
+  type="blank" preserve="1">
+  <p:cSld name="Blank">
+    <p:spTree>
+      <p:nvGrpSpPr>
+        <p:cNvPr id="1" name=""/>
+        <p:cNvGrpSpPr/>
+        <p:nvPr/>
+      </p:nvGrpSpPr>
+      <p:grpSpPr/>
+    </p:spTree>
+  </p:cSld>
+  <p:clrMapOvr><a:masterClrMapping/></p:clrMapOvr>
+</p:sldLayout>`);
+  }
+  function renderSlideMaster() {
+    return xmlDocument(`<p:sldMaster
+  xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main"
+  xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"
+  xmlns:p="http://schemas.openxmlformats.org/presentationml/2006/main">
+  <p:cSld name="Vector180 Blank Master">
+    <p:bg><p:bgPr><a:solidFill><a:srgbClr val="FFFFFF"/></a:solidFill><a:effectLst/></p:bgPr></p:bg>
+    <p:spTree>
+      <p:nvGrpSpPr>
+        <p:cNvPr id="1" name=""/>
+        <p:cNvGrpSpPr/>
+        <p:nvPr/>
+      </p:nvGrpSpPr>
+      <p:grpSpPr/>
+    </p:spTree>
+  </p:cSld>
+  <p:clrMap bg1="lt1" tx1="dk1" bg2="lt2" tx2="dk2"
+    accent1="accent1" accent2="accent2" accent3="accent3"
+    accent4="accent4" accent5="accent5" accent6="accent6"
+    hlink="hlink" folHlink="folHlink"/>
+  <p:sldLayoutIdLst>
+    <p:sldLayoutId id="2147483649" r:id="rId2"/>
+  </p:sldLayoutIdLst>
+  <p:txStyles>
+    <p:titleStyle/>
+    <p:bodyStyle/>
+    <p:otherStyle/>
+  </p:txStyles>
+</p:sldMaster>`);
+  }
+  function renderTheme() {
+    return xmlDocument(`<a:theme xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" name="Vector180 Canary">
+  <a:themeElements>
+    <a:clrScheme name="Vector180 Canary">
+      <a:dk1><a:srgbClr val="000000"/></a:dk1>
+      <a:lt1><a:srgbClr val="FFFFFF"/></a:lt1>
+      <a:dk2><a:srgbClr val="17211E"/></a:dk2>
+      <a:lt2><a:srgbClr val="F4F6F5"/></a:lt2>
+      <a:accent1><a:srgbClr val="3D7A6A"/></a:accent1>
+      <a:accent2><a:srgbClr val="D06B47"/></a:accent2>
+      <a:accent3><a:srgbClr val="7297A7"/></a:accent3>
+      <a:accent4><a:srgbClr val="D8A93E"/></a:accent4>
+      <a:accent5><a:srgbClr val="7566A8"/></a:accent5>
+      <a:accent6><a:srgbClr val="7A9854"/></a:accent6>
+      <a:hlink><a:srgbClr val="0563C1"/></a:hlink>
+      <a:folHlink><a:srgbClr val="954F72"/></a:folHlink>
+    </a:clrScheme>
+    <a:fontScheme name="Vector180 Canary">
+      <a:majorFont><a:latin typeface="Arial"/><a:ea typeface=""/><a:cs typeface=""/></a:majorFont>
+      <a:minorFont><a:latin typeface="Arial"/><a:ea typeface=""/><a:cs typeface=""/></a:minorFont>
+    </a:fontScheme>
+    <a:fmtScheme name="Vector180 Canary">
+      <a:fillStyleLst>
+        <a:solidFill><a:schemeClr val="phClr"/></a:solidFill>
+        <a:solidFill><a:schemeClr val="phClr"/></a:solidFill>
+        <a:solidFill><a:schemeClr val="phClr"/></a:solidFill>
+      </a:fillStyleLst>
+      <a:lnStyleLst>
+        <a:ln w="7620"><a:solidFill><a:schemeClr val="phClr"/></a:solidFill></a:ln>
+        <a:ln w="15240"><a:solidFill><a:schemeClr val="phClr"/></a:solidFill></a:ln>
+        <a:ln w="22860"><a:solidFill><a:schemeClr val="phClr"/></a:solidFill></a:ln>
+      </a:lnStyleLst>
+      <a:effectStyleLst>
+        <a:effectStyle><a:effectLst/></a:effectStyle>
+        <a:effectStyle><a:effectLst/></a:effectStyle>
+        <a:effectStyle><a:effectLst/></a:effectStyle>
+      </a:effectStyleLst>
+      <a:bgFillStyleLst>
+        <a:solidFill><a:schemeClr val="phClr"/></a:solidFill>
+        <a:solidFill><a:schemeClr val="phClr"/></a:solidFill>
+        <a:solidFill><a:schemeClr val="phClr"/></a:solidFill>
+      </a:bgFillStyleLst>
+    </a:fmtScheme>
+  </a:themeElements>
+</a:theme>`);
+  }
+  function renderSlide(slide, rasterRelationships) {
+    const objectIds = collectObjectIds(slide.objects);
+    const context = {
+      slideId: slide.id,
+      numericIds: allocateNumericIds(objectIds, `slide "${slide.id}"`),
+      rasterRelationships
+    };
+    const shapes = slide.objects.map((object) => renderObject(object, context, "    ")).join("");
+    return xmlDocument(`<p:sld
+  xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main"
+  xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"
+  xmlns:p="http://schemas.openxmlformats.org/presentationml/2006/main"${slide.hidden ? ' show="0"' : ""}>
+  <p:cSld name="${xmlAttribute(`src.${slide.id}`)}">
+    <p:spTree>
+      <p:nvGrpSpPr>
+        <p:cNvPr id="1" name=""/>
+        <p:cNvGrpSpPr/>
+        <p:nvPr/>
+      </p:nvGrpSpPr>
+      <p:grpSpPr/>
+${shapes}    </p:spTree>
+  </p:cSld>
+  <p:clrMapOvr><a:masterClrMapping/></p:clrMapOvr>
+</p:sld>`);
+  }
+  function renderObject(object, context, indent) {
+    switch (object.kind) {
+      case "rect":
+        return renderRect(object, context, indent);
+      case "ellipse":
+        return renderEllipse(object, context, indent);
+      case "line":
+        return renderLine(object, context, indent);
+      case "text":
+        return renderText(object, context, indent);
+      case "group":
+        return renderGroup(object, context, indent);
+      case "svg-asset":
+        return fail(
+          "VECTOR180-PPTX-UNSUPPORTED-OBJECT",
+          `C7 cannot compile ${object.kind} object "${object.id}".`
+        );
+      case "raster-asset":
+        return renderRasterAsset(object, context, indent);
+      default:
+        return assertNever(object);
+    }
+  }
+  function emittedElementForKind(object) {
+    switch (object.kind) {
+      case "rect":
+      case "ellipse":
+      case "text":
+        return "p:sp";
+      case "line":
+        return "p:cxnSp";
+      case "group":
+        return "p:grpSp";
+      case "raster-asset":
+        return "p:pic";
+      case "svg-asset":
+        return fail(
+          "VECTOR180-PPTX-UNSUPPORTED-OBJECT",
+          `C7 cannot compile ${object.kind} object "${object.id}".`
+        );
+      default:
+        return assertNever(object);
+    }
+  }
+  function renderRasterAsset(object, context, indent) {
+    const relationship = context.rasterRelationships.get(object.id);
+    if (relationship === void 0) {
+      return fail(
+        "VECTOR180-PPTX-UNSUPPORTED-OBJECT",
+        `Raster asset "${object.id}" has no authenticated image relationship.`
+      );
+    }
+    const numericId = requiredMap(context.numericIds, object.id);
+    const bounds = {
+      x: coordinateEmu(object.localBounds.x, `${object.id}.bounds.x`),
+      y: coordinateEmu(object.localBounds.y, `${object.id}.bounds.y`),
+      width: positiveExtentEmu(
+        object.localBounds.width,
+        `${object.id}.bounds.width`
+      ),
+      height: positiveExtentEmu(
+        object.localBounds.height,
+        `${object.id}.bounds.height`
+      )
+    };
+    return `${indent}<p:pic>
+${indent}  <p:nvPicPr>
+${indent}    <p:cNvPr id="${numericId}" name="${xmlAttribute(`src.${object.id}`)}"/>
+${indent}    <p:cNvPicPr><a:picLocks noChangeAspect="1"/></p:cNvPicPr>
+${indent}    <p:nvPr/>
+${indent}  </p:nvPicPr>
+${indent}  <p:blipFill>
+${indent}    <a:blip r:embed="${relationship.relationshipId}"/>
+${indent}    <a:stretch><a:fillRect/></a:stretch>
+${indent}  </p:blipFill>
+${indent}  <p:spPr>
+${renderTransform(bounds, `${indent}    `)}
+${indent}    <a:prstGeom prst="rect"><a:avLst/></a:prstGeom>
+${indent}  </p:spPr>
+${indent}</p:pic>
+`;
+  }
+  function renderRect(object, context, indent) {
+    if (object.rx !== void 0 || object.ry !== void 0) {
+      return fail(
+        "VECTOR180-PPTX-UNSUPPORTED-GEOMETRY",
+        `Rounded rectangle "${object.id}" is outside the C7 canary.`
+      );
+    }
+    return renderPrimitiveShape(
+      object.id,
+      "rect",
+      {
+        x: coordinateEmu(object.x, `${object.id}.x`),
+        y: coordinateEmu(object.y, `${object.id}.y`),
+        width: positiveExtentEmu(object.width, `${object.id}.width`),
+        height: positiveExtentEmu(object.height, `${object.id}.height`)
+      },
+      object.style,
+      context,
+      indent
+    );
+  }
+  function renderEllipse(object, context, indent) {
+    const radiusX = positiveExtentEmu(object.rx, `${object.id}.rx`);
+    const radiusY = positiveExtentEmu(object.ry, `${object.id}.ry`);
+    const centerX = coordinateEmu(object.cx, `${object.id}.cx`);
+    const centerY = coordinateEmu(object.cy, `${object.id}.cy`);
+    const x = centerX - radiusX;
+    const y = centerY - radiusY;
+    const width = radiusX * 2;
+    const height = radiusY * 2;
+    assertCoordinateRange(x, `${object.id}.ellipse.x`);
+    assertCoordinateRange(y, `${object.id}.ellipse.y`);
+    assertExtentRange(width, `${object.id}.ellipse.width`, true);
+    assertExtentRange(height, `${object.id}.ellipse.height`, true);
+    return renderPrimitiveShape(
+      object.id,
+      "ellipse",
+      {
+        x,
+        y,
+        width,
+        height
+      },
+      object.style,
+      context,
+      indent
+    );
+  }
+  function renderPrimitiveShape(id, preset, bounds, style, context, indent) {
+    const numericId = requiredMap(context.numericIds, id);
+    return `${indent}<p:sp>
+${indent}  <p:nvSpPr>
+${indent}    <p:cNvPr id="${numericId}" name="${xmlAttribute(`src.${id}`)}"/>
+${indent}    <p:cNvSpPr/>
+${indent}    <p:nvPr/>
+${indent}  </p:nvSpPr>
+${indent}  <p:spPr>
+${renderTransform(bounds, `${indent}    `)}
+${indent}    <a:prstGeom prst="${preset}"><a:avLst/></a:prstGeom>
+${renderFill(style, `${indent}    `)}
+${renderLineStyle(style, `${indent}    `)}
+${indent}  </p:spPr>
+${indent}</p:sp>
+`;
+  }
+  function renderLine(object, context, indent) {
+    const x1 = coordinateEmu(object.x1, `${object.id}.x1`);
+    const y1 = coordinateEmu(object.y1, `${object.id}.y1`);
+    const x2 = coordinateEmu(object.x2, `${object.id}.x2`);
+    const y2 = coordinateEmu(object.y2, `${object.id}.y2`);
+    assertExtentRange(Math.abs(x2 - x1), `${object.id}.line.width`, false);
+    assertExtentRange(Math.abs(y2 - y1), `${object.id}.line.height`, false);
+    const flipH = x1 > x2 ? ' flipH="1"' : "";
+    const flipV = y1 > y2 ? ' flipV="1"' : "";
+    const numericId = requiredMap(context.numericIds, object.id);
+    return `${indent}<p:cxnSp>
+${indent}  <p:nvCxnSpPr>
+${indent}    <p:cNvPr id="${numericId}" name="${xmlAttribute(`src.${object.id}`)}"/>
+${indent}    <p:cNvCxnSpPr/>
+${indent}    <p:nvPr/>
+${indent}  </p:nvCxnSpPr>
+${indent}  <p:spPr>
+${indent}    <a:xfrm${flipH}${flipV}>
+${indent}      <a:off x="${Math.min(x1, x2)}" y="${Math.min(y1, y2)}"/>
+${indent}      <a:ext cx="${Math.abs(x2 - x1)}" cy="${Math.abs(y2 - y1)}"/>
+${indent}    </a:xfrm>
+${indent}    <a:prstGeom prst="line"><a:avLst/></a:prstGeom>
+${renderLineStyle(object.style, `${indent}    `)}
+${indent}  </p:spPr>
+${indent}</p:cxnSp>
+`;
+  }
+  function renderText(object, context, indent) {
+    if (object.lines.length !== 1) {
+      return fail(
+        "VECTOR180-PPTX-UNSUPPORTED-OBJECT",
+        `Text "${object.id}" has ${object.lines.length} hard lines; C7 accepts exactly one.`
+      );
+    }
+    const line = object.lines[0];
+    if (line === void 0) {
+      return fail(
+        "VECTOR180-PPTX-INVALID-MODEL",
+        `Text "${object.id}" has no hard line.`
+      );
+    }
+    const fontFamily = object.style.fontFamily;
+    const fontSize = object.style.fontSize;
+    if (fontFamily === void 0 || fontSize === void 0) {
+      return fail(
+        "VECTOR180-PPTX-INVALID-MODEL",
+        `Text "${object.id}" lacks a concrete font family and size.`
+      );
+    }
+    const frame = {
+      x: coordinateEmu(object.frame.x, `${object.id}.frame.x`),
+      y: coordinateEmu(object.frame.y, `${object.id}.frame.y`),
+      width: positiveExtentEmu(object.frame.width, `${object.id}.frame.width`),
+      height: positiveExtentEmu(object.frame.height, `${object.id}.frame.height`)
+    };
+    const anchorX = coordinateEmu(line.x, `${object.id}.line.x`);
+    const baselineY = coordinateEmu(line.y, `${object.id}.line.y`);
+    const lineStep = spacingHundredthPoints(
+      object.lineStep,
+      `${object.id}.lineStep`
+    );
+    const fontSizePoints = fontHundredthPoints(fontSize, `${object.id}.fontSize`);
+    const fontSizeEmu = positiveExtentEmu(fontSize, `${object.id}.fontSizeEmu`);
+    const topInset = baselineY - frame.y - fontSizeEmu;
+    if (!Number.isSafeInteger(topInset) || topInset < -MAX_TEXT_MARGIN_EMU || topInset > MAX_TEXT_MARGIN_EMU) {
+      return fail(
+        "VECTOR180-PPTX-UNSUPPORTED-GEOMETRY",
+        `Text "${object.id}" authored baseline requires unsupported top inset ${topInset} EMU.`
+      );
+    }
+    const relativeX = anchorX - frame.x;
+    if (relativeX < 0 || relativeX > frame.width) {
+      return fail(
+        "VECTOR180-PPTX-INVALID-MODEL",
+        `Text anchor for "${object.id}" lies outside its frame.`
+      );
+    }
+    const margins = paragraphMargins(object.anchor, relativeX, frame.width);
+    const alignment = object.anchor === "start" ? "l" : object.anchor === "middle" ? "ctr" : "r";
+    const numericId = requiredMap(context.numericIds, object.id);
+    return `${indent}<p:sp>
+${indent}  <p:nvSpPr>
+${indent}    <p:cNvPr id="${numericId}" name="${xmlAttribute(`src.${object.id}`)}"/>
+${indent}    <p:cNvSpPr txBox="1"/>
+${indent}    <p:nvPr/>
+${indent}  </p:nvSpPr>
+${indent}  <p:spPr>
+${renderTransform(frame, `${indent}    `)}
+${indent}    <a:prstGeom prst="rect"><a:avLst/></a:prstGeom>
+${indent}    <a:noFill/>
+${indent}    <a:ln><a:noFill/></a:ln>
+${indent}  </p:spPr>
+${indent}  <p:txBody>
+${indent}    <a:bodyPr wrap="none" lIns="0" tIns="${topInset}" rIns="0" bIns="0" anchor="t"><a:noAutofit/></a:bodyPr>
+${indent}    <a:lstStyle/>
+${indent}    <a:p>
+${indent}      <a:pPr algn="${alignment}" marL="${margins.left}" marR="${margins.right}" indent="0">
+${indent}        <a:lnSpc><a:spcPts val="${lineStep}"/></a:lnSpc>
+${indent}        <a:spcBef><a:spcPts val="0"/></a:spcBef>
+${indent}        <a:spcAft><a:spcPts val="0"/></a:spcAft>
+${indent}        <a:buNone/>
+${indent}      </a:pPr>
+${indent}      <a:r>
+${indent}        <a:rPr lang="en-US" sz="${fontSizePoints}" b="${object.style.fontWeight === 700 ? 1 : 0}" i="${object.style.fontStyle === "italic" ? 1 : 0}" dirty="0">
+${renderTextOutline(object.style, `${indent}          `)}
+${renderFill(object.style, `${indent}          `)}
+${indent}          <a:latin typeface="${xmlAttribute(fontFamily)}"/>
+${indent}          <a:ea typeface="${xmlAttribute(fontFamily)}"/>
+${indent}          <a:cs typeface="${xmlAttribute(fontFamily)}"/>
+${indent}        </a:rPr>
+${indent}        <a:t${drawingTextSpaceAttribute(line.text)}>${xmlText(line.text)}</a:t>
+${indent}      </a:r>
+${indent}      <a:endParaRPr lang="en-US" sz="${fontSizePoints}" b="${object.style.fontWeight === 700 ? 1 : 0}" i="${object.style.fontStyle === "italic" ? 1 : 0}" dirty="0">
+${renderTextOutline(object.style, `${indent}        `)}
+${renderFill(object.style, `${indent}        `)}
+${indent}        <a:latin typeface="${xmlAttribute(fontFamily)}"/>
+${indent}        <a:ea typeface="${xmlAttribute(fontFamily)}"/>
+${indent}        <a:cs typeface="${xmlAttribute(fontFamily)}"/>
+${indent}      </a:endParaRPr>
+${indent}    </a:p>
+${indent}  </p:txBody>
+${indent}</p:sp>
+`;
+  }
+  function renderGroup(object, context, indent) {
+    if (object.style.opacity !== 1) {
+      return fail(
+        "VECTOR180-PPTX-UNSUPPORTED-GEOMETRY",
+        `Group "${object.id}" opacity cannot be represented by the C7 canary.`
+      );
+    }
+    if (object.localBounds.width <= 0 || object.localBounds.height <= 0) {
+      return fail(
+        "VECTOR180-PPTX-UNSUPPORTED-GEOMETRY",
+        `Group "${object.id}" requires positive two-dimensional bounds.`
+      );
+    }
+    const localX = coordinateEmu(object.localBounds.x, `${object.id}.bounds.x`);
+    const localY = coordinateEmu(object.localBounds.y, `${object.id}.bounds.y`);
+    const translateX = coordinateEmu(
+      object.translateX,
+      `${object.id}.translateX`
+    );
+    const translateY = coordinateEmu(
+      object.translateY,
+      `${object.id}.translateY`
+    );
+    const width = positiveExtentEmu(
+      object.localBounds.width,
+      `${object.id}.bounds.width`
+    );
+    const height = positiveExtentEmu(
+      object.localBounds.height,
+      `${object.id}.bounds.height`
+    );
+    const numericId = requiredMap(context.numericIds, object.id);
+    assertCoordinateRange(localX + translateX, `${object.id}.group.x`);
+    assertCoordinateRange(localY + translateY, `${object.id}.group.y`);
+    const children = object.children.map((child) => renderObject(child, context, `${indent}  `)).join("");
+    return `${indent}<p:grpSp>
+${indent}  <p:nvGrpSpPr>
+${indent}    <p:cNvPr id="${numericId}" name="${xmlAttribute(`src.${object.id}`)}"/>
+${indent}    <p:cNvGrpSpPr/>
+${indent}    <p:nvPr/>
+${indent}  </p:nvGrpSpPr>
+${indent}  <p:grpSpPr>
+${indent}    <a:xfrm>
+${indent}      <a:off x="${localX + translateX}" y="${localY + translateY}"/>
+${indent}      <a:ext cx="${width}" cy="${height}"/>
+${indent}      <a:chOff x="${localX}" y="${localY}"/>
+${indent}      <a:chExt cx="${width}" cy="${height}"/>
+${indent}    </a:xfrm>
+${indent}  </p:grpSpPr>
+${children}${indent}</p:grpSp>
+`;
+  }
+  function renderTransform(bounds, indent) {
+    return `${indent}<a:xfrm>
+${indent}  <a:off x="${bounds.x}" y="${bounds.y}"/>
+${indent}  <a:ext cx="${bounds.width}" cy="${bounds.height}"/>
+${indent}</a:xfrm>`;
+  }
+  function renderFill(style, indent) {
+    return renderPaint(style.fill, style.opacity, "fill", indent);
+  }
+  function renderLineStyle(style, indent) {
+    const width = lineWidthEmu(style.strokeWidth, "stroke-width");
+    if (style.stroke === "none") {
+      return `${indent}<a:ln w="${width}"><a:noFill/></a:ln>`;
+    }
+    return `${indent}<a:ln w="${width}">
+${renderPaint(style.stroke, style.opacity, "stroke", `${indent}  `)}
+${indent}</a:ln>`;
+  }
+  function renderTextOutline(style, indent) {
+    const width = lineWidthEmu(style.strokeWidth, "text stroke-width");
+    if (style.stroke === "none") {
+      return `${indent}<a:ln w="${width}"><a:noFill/></a:ln>`;
+    }
+    return `${indent}<a:ln w="${width}">
+${renderPaint(style.stroke, style.opacity, "text stroke", `${indent}  `)}
+${indent}</a:ln>`;
+  }
+  function renderPaint(paint, opacity, label, indent) {
+    if (paint === "none") return `${indent}<a:noFill/>`;
+    if (opacity !== 1) {
+      return fail(
+        "VECTOR180-PPTX-UNSUPPORTED-GEOMETRY",
+        `${label} opacity must be exactly 1 in C7.`
+      );
+    }
+    if (!/^#[0-9a-f]{6}$/u.test(paint)) {
+      return fail(
+        "VECTOR180-PPTX-INVALID-MODEL",
+        `Unsupported ${label} paint "${paint}".`
+      );
+    }
+    const color = paint.slice(1).toUpperCase();
+    return `${indent}<a:solidFill><a:srgbClr val="${color}"/></a:solidFill>`;
+  }
+  function paragraphMargins(anchor, relativeX, frameWidth) {
+    let result;
+    if (anchor === "start") {
+      result = { left: relativeX, right: 0 };
+    } else if (anchor === "end") {
+      result = { left: 0, right: frameWidth - relativeX };
+    } else {
+      const halfSpan = Math.min(relativeX, frameWidth - relativeX);
+      result = {
+        left: relativeX - halfSpan,
+        right: frameWidth - relativeX - halfSpan
+      };
+    }
+    for (const [side, value] of Object.entries(result)) {
+      if (!Number.isInteger(value) || value < 0 || value > MAX_TEXT_MARGIN_EMU) {
+        fail(
+          "VECTOR180-PPTX-UNSUPPORTED-GEOMETRY",
+          `Paragraph ${side} margin ${value} is outside DrawingML range.`
+        );
+      }
+    }
+    return result;
+  }
+  function materializePackageParts(graph) {
+    const encoder = new TextEncoder();
+    const packageParts = graph.parts.map(
+      (part) => ({ name: part.name, bytes: part.bytes })
+    );
+    packageParts.push({
+      name: "[Content_Types].xml",
+      bytes: encoder.encode(renderContentTypes(graph.parts))
+    });
+    const relationshipsBySource = /* @__PURE__ */ new Map();
+    for (const relationship of graph.relationships) {
+      const siblings = relationshipsBySource.get(relationship.source) ?? [];
+      siblings.push(relationship);
+      relationshipsBySource.set(relationship.source, siblings);
+    }
+    for (const [source, relationships] of relationshipsBySource) {
+      packageParts.push({
+        name: relationshipPartName(source),
+        bytes: encoder.encode(renderRelationships(relationships))
+      });
+    }
+    const names = /* @__PURE__ */ new Set();
+    for (const part of packageParts) {
+      if (names.has(part.name)) {
+        graphFail(`Materialized package part "${part.name}" is duplicated.`);
+      }
+      names.add(part.name);
+      if (part.bytes.byteLength > 4294967295) {
+        fail(
+          "VECTOR180-PPTX-ZIP-LIMIT",
+          `Part "${part.name}" exceeds ZIP32 size limits.`
+        );
+      }
+    }
+    packageParts.sort((left, right) => compareText(left.name, right.name));
+    return Object.freeze(packageParts);
+  }
+  function renderContentTypes(parts) {
+    const overrides = [...parts].sort((left, right) => compareText(left.name, right.name)).map(
+      (part) => `  <Override PartName="/${xmlAttribute(part.name)}" ContentType="${xmlAttribute(part.contentType)}"/>`
+    ).join("\n");
+    return xmlDocument(`<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">
+  <Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/>
+  <Default Extension="xml" ContentType="application/xml"/>
+${overrides}
+</Types>`);
+  }
+  function renderRelationships(relationships) {
+    const body = [...relationships].sort(
+      (left, right) => relationshipIdNumber(left.id) - relationshipIdNumber(right.id)
+    ).map(
+      (relationship) => `  <Relationship Id="${relationship.id}" Type="${xmlAttribute(relationship.type)}" Target="${xmlAttribute(relationship.target)}"/>`
+    ).join("\n");
+    return xmlDocument(`<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">
+${body}
+</Relationships>`);
+  }
+  function relationshipPartName(source) {
+    if (source === null) return "_rels/.rels";
+    const separator = source.lastIndexOf("/");
+    const directory = separator < 0 ? "" : source.slice(0, separator + 1);
+    const basename = source.slice(separator + 1);
+    return `${directory}_rels/${basename}.rels`;
+  }
+  function relationshipIdNumber(id) {
+    return Number(id.slice(3));
+  }
+  function expectedContentType(name) {
+    switch (name) {
+      case "docProps/app.xml":
+        return CONTENT_TYPES.app;
+      case "docProps/core.xml":
+        return CONTENT_TYPES.core;
+      case "docProps/custom.xml":
+        return CONTENT_TYPES.custom;
+      case "ppt/presentation.xml":
+        return CONTENT_TYPES.presentation;
+      case "ppt/presProps.xml":
+        return CONTENT_TYPES.presProps;
+      case "ppt/slideLayouts/slideLayout1.xml":
+        return CONTENT_TYPES.layout;
+      case "ppt/slideMasters/slideMaster1.xml":
+        return CONTENT_TYPES.master;
+      case "ppt/theme/theme1.xml":
+        return CONTENT_TYPES.theme;
+      default:
+        if (/^ppt\/slides\/slide[1-9]\d*\.xml$/u.test(name)) {
+          return CONTENT_TYPES.slide;
+        }
+        return /^ppt\/media\/[0-9a-f]{64}\.png$/u.test(name) ? CONTENT_TYPES.png : void 0;
+    }
+  }
+  function validatePartName(name) {
+    if (name.length === 0 || name.startsWith("/") || name.endsWith("/") || name.includes("\\") || name.includes("%") || name.includes("?") || name.includes("#") || !/^[\x21-\x7e]+$/u.test(name)) {
+      graphFail(`OPC part name "${name}" is not canonical ASCII.`);
+    }
+    const segments = name.split("/");
+    if (segments.some(
+      (segment) => segment === "" || segment === "." || segment === ".." || !/^[A-Za-z0-9_.\-[\]]+$/u.test(segment)
+    )) {
+      graphFail(`OPC part name "${name}" has a forbidden path segment.`);
+    }
+  }
+  function resolveRelationshipTarget(source, target) {
+    if (target.length === 0 || target.startsWith("/") || target.includes("\\") || target.includes("%") || target.includes("?") || target.includes("#") || target.includes(":") || !/^[\x21-\x7e]+$/u.test(target)) {
+      graphFail(
+        `Relationship target "${target}" is not a canonical relative URI.`
+      );
+    }
+    const sourceDirectory = source === null || !source.includes("/") ? [] : source.slice(0, source.lastIndexOf("/")).split("/");
+    const resolved = [...sourceDirectory];
+    for (const segment of target.split("/")) {
+      if (segment === "" || segment === ".") {
+        graphFail(`Relationship target "${target}" has an empty/dot segment.`);
+      }
+      if (segment === "..") {
+        if (resolved.length === 0) {
+          graphFail(`Relationship target "${target}" escapes the package root.`);
+        }
+        resolved.pop();
+        continue;
+      }
+      if (!/^[A-Za-z0-9_.\-[\]]+$/u.test(segment)) {
+        graphFail(`Relationship target "${target}" has a forbidden segment.`);
+      }
+      resolved.push(segment);
+    }
+    const name = resolved.join("/");
+    validatePartName(name);
+    return name;
+  }
+  function relationshipKey(relationship) {
+    return [
+      relationship.source ?? "<root>",
+      relationship.id,
+      relationship.type,
+      relationship.target
+    ].join("\0");
+  }
+  function collectObjectIds(objects) {
+    const ids = [];
+    const visit2 = (siblings) => {
+      for (const object of siblings) {
+        ids.push(object.id);
+        if (object.kind === "group") visit2(object.children);
+      }
+    };
+    visit2(objects);
+    return ids;
+  }
+  function flattenObjects(objects) {
+    const result = [];
+    const visit2 = (siblings) => {
+      for (const object of siblings) {
+        result.push(object);
+        if (object.kind === "group") visit2(object.children);
+      }
+    };
+    visit2(objects);
+    return result;
+  }
+  function allocateNumericIds(ids, scope) {
+    const result = /* @__PURE__ */ new Map();
+    const reverse = /* @__PURE__ */ new Map();
+    for (const id of [...ids].sort(compareText)) {
+      const numeric = 2 + stableHash(id) % (MAX_SIGNED_INT_31 - 1);
+      const collision = reverse.get(numeric);
+      if (collision !== void 0 && collision !== id) {
+        fail(
+          "VECTOR180-PPTX-ID-COLLISION",
+          `Stable IDs "${collision}" and "${id}" collide at numeric ID ${numeric} in ${scope}.`
+        );
+      }
+      reverse.set(numeric, id);
+      result.set(id, numeric);
+    }
+    return result;
+  }
+  function allocateSlideNumericIds(ids) {
+    const result = /* @__PURE__ */ new Map();
+    const reverse = /* @__PURE__ */ new Map();
+    for (const id of [...ids].sort(compareText)) {
+      const numeric = 256 + stableHash(id) % (MAX_SIGNED_INT_31 - 255);
+      const collision = reverse.get(numeric);
+      if (collision !== void 0 && collision !== id) {
+        fail(
+          "VECTOR180-PPTX-ID-COLLISION",
+          `Slides "${collision}" and "${id}" collide at numeric ID ${numeric}.`
+        );
+      }
+      reverse.set(numeric, id);
+      result.set(id, numeric);
+    }
+    return result;
+  }
+  function stableHash(value) {
+    let hash = 2166136261;
+    for (const byte of new TextEncoder().encode(value)) {
+      hash ^= byte;
+      hash = Math.imul(hash, 16777619);
+    }
+    return hash >>> 0;
+  }
+  function scaledEmu(value, label) {
+    return scaledInteger(
+      value,
+      EMU_PER_UNIT2,
+      "VECTOR180-PPTX-NON-INTEGRAL-EMU",
+      label
+    );
+  }
+  function coordinateEmu(value, label) {
+    const result = scaledEmu(value, label);
+    assertCoordinateRange(result, label);
+    return result;
+  }
+  function positiveExtentEmu(value, label) {
+    const result = scaledEmu(value, label);
+    assertExtentRange(result, label, true);
+    return result;
+  }
+  function lineWidthEmu(value, label) {
+    const result = scaledEmu(value, label);
+    if (result < 0 || result > MAX_LINE_WIDTH_EMU) {
+      fail(
+        "VECTOR180-PPTX-UNSUPPORTED-GEOMETRY",
+        `${label}=${result} is outside DrawingML line-width range.`
+      );
+    }
+    return result;
+  }
+  function fontHundredthPoints(value, label) {
+    const result = scaledInteger(
+      value,
+      HUNDREDTH_POINTS_PER_UNIT,
+      "VECTOR180-PPTX-NON-INTEGRAL-FONT",
+      label
+    );
+    if (result < 100 || result > MAX_FONT_HUNDREDTH_POINTS) {
+      fail(
+        "VECTOR180-PPTX-NON-INTEGRAL-FONT",
+        `${label}=${result} is outside DrawingML font-size range.`
+      );
+    }
+    return result;
+  }
+  function spacingHundredthPoints(value, label) {
+    const result = scaledInteger(
+      value,
+      HUNDREDTH_POINTS_PER_UNIT,
+      "VECTOR180-PPTX-NON-INTEGRAL-FONT",
+      label
+    );
+    if (result <= 0 || result > MAX_SPACING_HUNDREDTH_POINTS) {
+      fail(
+        "VECTOR180-PPTX-NON-INTEGRAL-FONT",
+        `${label}=${result} is outside DrawingML point-spacing range.`
+      );
+    }
+    return result;
+  }
+  function assertCoordinateRange(value, label) {
+    if (value < MIN_COORDINATE_EMU || value > MAX_COORDINATE_EMU) {
+      fail(
+        "VECTOR180-PPTX-UNSUPPORTED-GEOMETRY",
+        `${label}=${value} is outside DrawingML coordinate range.`
+      );
+    }
+  }
+  function assertExtentRange(value, label, strictlyPositive) {
+    if ((strictlyPositive ? value <= 0 : value < 0) || value > MAX_COORDINATE_EMU) {
+      fail(
+        "VECTOR180-PPTX-UNSUPPORTED-GEOMETRY",
+        `${label}=${value} is outside DrawingML extent range.`
+      );
+    }
+  }
+  function scaledInteger(value, factor, code, label) {
+    if (!Number.isFinite(value)) {
+      fail("VECTOR180-PPTX-INVALID-MODEL", `${label} must be finite.`);
+    }
+    const result = scaleOoxmlInteger(value, factor);
+    if (result === void 0) {
+      fail(
+        code,
+        `${label}=${canonicalNumber2(value)} does not map exactly by factor ${factor}.`
+      );
+    }
+    return result;
+  }
+  function validateBounds(bounds, label) {
+    finite(bounds.x, `${label}.x`);
+    finite(bounds.y, `${label}.y`);
+    finite(bounds.width, `${label}.width`);
+    finite(bounds.height, `${label}.height`);
+    if (bounds.width < 0 || bounds.height < 0) {
+      invalidModel(`${label} has a negative extent.`);
+    }
+  }
+  function finite(value, label) {
+    if (!Number.isFinite(value)) invalidModel(`${label} must be finite.`);
+  }
+  function positive(value, label) {
+    if (!Number.isFinite(value) || value <= 0) {
+      invalidModel(`${label} must be positive and finite.`);
+    }
+  }
+  function validPaint(value) {
+    return value === "none" || /^#[0-9a-f]{6}$/u.test(value);
+  }
+  function sameBounds2(left, right) {
+    return sameNumber(left.x, right.x) && sameNumber(left.y, right.y) && sameNumber(left.width, right.width) && sameNumber(left.height, right.height);
+  }
+  function sameNumber(left, right) {
+    if (Object.is(left, right) || left === right) return true;
+    const scale = Math.max(1, Math.abs(left), Math.abs(right));
+    return Math.abs(left - right) <= Number.EPSILON * scale * 8;
+  }
+  function xmlDocument(root) {
+    return `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+${root}
+`;
+  }
+  function xmlText(value) {
+    validateXmlCharacters(value);
+    return value.replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;");
+  }
+  function drawingTextSpaceAttribute(value) {
+    return /^[\t\r\n ]|[\t\r\n ]$/u.test(value) ? ' xml:space="preserve"' : "";
+  }
+  function xmlAttribute(value) {
+    return xmlText(value).replaceAll('"', "&quot;").replaceAll("'", "&apos;").replaceAll("\r", "&#13;").replaceAll("\n", "&#10;").replaceAll("	", "&#9;");
+  }
+  function validateXmlCharacters(value) {
+    for (const character of value) {
+      const codePoint = character.codePointAt(0);
+      if (codePoint === void 0 || !(codePoint === 9 || codePoint === 10 || codePoint === 13 || codePoint >= 32 && codePoint <= 55295 || codePoint >= 57344 && codePoint <= 65533 || codePoint >= 65536 && codePoint <= 1114111)) {
+        invalidModel("Source text contains a character forbidden by XML 1.0.");
+      }
+    }
+  }
+  function canonicalNumber2(value) {
+    return Object.is(value, -0) ? "0" : String(value);
+  }
+  function fixedZipDate() {
+    return new Date(FIXED_DATE_ISO);
+  }
+  function compareText(left, right) {
+    return left < right ? -1 : left > right ? 1 : 0;
+  }
+  function partNameOrder(left, right) {
+    const leftNumber = Number(left.match(/slide(\d+)\.xml$/u)?.[1] ?? 0);
+    const rightNumber = Number(right.match(/slide(\d+)\.xml$/u)?.[1] ?? 0);
+    return leftNumber - rightNumber;
+  }
+  function requiredMap(map, key) {
+    const value = map.get(key);
+    if (value === void 0) {
+      return fail(
+        "VECTOR180-PPTX-INVALID-MODEL",
+        "A required deterministic identity mapping is missing."
+      );
+    }
+    return value;
+  }
+  function invalidModel(message) {
+    return fail("VECTOR180-PPTX-INVALID-MODEL", message);
+  }
+  function graphFail(message) {
+    return fail("VECTOR180-PPTX-OPC-GRAPH", message);
+  }
+  function fail(code, message) {
+    throw new PptxCanaryCompileError(code, message);
+  }
+  function assertNever(value) {
+    return fail(
+      "VECTOR180-PPTX-UNSUPPORTED-OBJECT",
+      `Unknown resolved object kind ${String(value)}.`
+    );
+  }
+
+  // src/node/pptx-deck.ts
+  var COMPILER = "office180-vector180-pptx-deck/0.1";
+  var MAP_SCHEMA = "vector180-pptx-deck-map/0.1";
+  var RESULT_SCHEMA = "vector180-pptx-deck-result/0.1";
+  var RESOLVED_SCHEMA = "vector180-resolved-deck/0.1";
+  var SLIDE_WIDTH = 1600;
+  var SLIDE_HEIGHT = 900;
+  var UNSUPPORTED_DIAGNOSTIC_CODES = /* @__PURE__ */ new Set([
+    "VECTOR180-SECURITY-URL",
+    "VECTOR180-SVG-UNSUPPORTED-NATIVE",
+    "VECTOR180-PROFILE-ASSET-BOUNDS",
+    "VECTOR180-PROFILE-CSS-PROPERTY",
+    "VECTOR180-PROFILE-STYLE",
+    "VECTOR180-PROFILE-FONT",
+    "VECTOR180-PROFILE-OBJECT-KIND",
+    "VECTOR180-PROFILE-RESOURCE",
+    "VECTOR180-PROFILE-TEXT-LINES",
+    "VECTOR180-PROFILE-TRANSFORM"
+  ]);
+  var Vector180PptxDeckCompileError = class extends Error {
+    code;
+    constructor(code, message) {
+      super(message);
+      this.name = "Vector180PptxDeckCompileError";
+      this.code = code;
+    }
+  };
+  async function compileVector180PptxDeck(deck) {
+    const sourceDeck = await authenticateSourceDeck(deck);
+    const resolution = resolveVector180Deck(sourceDeck);
+    if (resolution.model === void 0 || resolution.diagnostics.some(isErrorDiagnostic)) {
+      const errors = resolution.diagnostics.filter(isErrorDiagnostic);
+      deckFail(
+        errors.some(isUnsupportedDiagnostic) ? "VECTOR180-DECK-PPTX-UNSUPPORTED" : "VECTOR180-DECK-PPTX-INVALID-SOURCE",
+        `Deck did not produce a complete C6 model${errors.length === 0 ? "" : ` (${errors.map((diagnostic) => diagnostic.code).join(", ")})`}.`
+      );
+    }
+    const model = resolution.model;
+    validateResolvedCapability(model);
+    validateDeckInventory(sourceDeck, model);
+    const rasterResources = collectRasterPackageResources(sourceDeck, model);
+    let packageArtifact;
+    try {
+      packageArtifact = await compilePptxCanaryWithLineage(model, {
+        compiler: COMPILER,
+        coreTitle: sourceDeck.title ?? "Vector180 mapped deck",
+        customProperties: {
+          "vector180.mapSchema": MAP_SCHEMA,
+          "vector180.sourceKind": "deck",
+          "vector180.sourceProfile": sourceDeck.version,
+          "vector180.slideOrder": JSON.stringify(sourceDeck.slideOrder)
+        },
+        rasterResources
+      });
+    } catch (error) {
+      if (error instanceof PptxCanaryCompileError) rethrowCanaryError(error);
+      throw error;
+    }
+    const bindings = describePptxCanaryBindings(model);
+    const slides = buildSlideMap(sourceDeck, model, bindings);
+    const map = {
+      schema: MAP_SCHEMA,
+      source: {
+        family: "vector180",
+        kind: "deck",
+        sha256: sourceDeck.source.sha256,
+        byteLength: sourceDeck.source.byteLength,
+        profile: "0.1",
+        ...sourceDeck.title === void 0 ? {} : { title: sourceDeck.title },
+        activeTheme: model.activeTheme,
+        slideOrder: Object.freeze([...sourceDeck.slideOrder])
+      },
+      compiler: COMPILER,
+      sourceResolvedSchema: RESOLVED_SCHEMA,
+      pptx: {
+        sha256: packageArtifact.sha256,
+        byteLength: packageArtifact.bytes.byteLength,
+        partNames: Object.freeze(packageArtifact.parts.map((part) => part.name)),
+        relationships: Object.freeze(
+          packageArtifact.relationships.map(
+            (relationship) => Object.freeze({ ...relationship })
+          )
+        )
+      },
+      slides
+    };
+    await validateMapAgainstPackage(map, packageArtifact.bytes);
+    const frozenMap = deepFreeze3(map);
+    const mapText = serializeVector180PptxDeckMap(frozenMap);
+    return Object.freeze({
+      schema: RESULT_SCHEMA,
+      pptxBytes: packageArtifact.bytes,
+      pptxSha256: packageArtifact.sha256,
+      map: frozenMap,
+      mapText,
+      mapSha256: sha256HexSync(new TextEncoder().encode(mapText)),
+      diagnostics: Object.freeze([...resolution.diagnostics])
+    });
+  }
+  async function authenticateSourceDeck(deck) {
+    validateSourceDeck(deck);
+    let trusted;
+    try {
+      trusted = await loadDeck({
+        kind: "bytes",
+        bytes: deck.source.bytes,
+        ...deck.source.name === void 0 ? {} : { name: deck.source.name }
+      });
+    } catch (error) {
+      if (!(error instanceof Vector180LoadError)) throw error;
+      return deckFail(
+        "VECTOR180-DECK-PPTX-INVALID-SOURCE",
+        "The retained exact source bytes could not be reconstructed as one canonical Vector180 HTML deck."
+      );
+    }
+    validateSourceDeck(trusted);
+    if (trusted.source.sha256 !== deck.source.sha256 || trusted.source.byteLength !== deck.source.byteLength || trusted.source.charLength !== deck.source.charLength || trusted.source.text !== deck.source.text || compilerInputSnapshot(trusted) !== compilerInputSnapshot(deck)) {
+      deckFail(
+        "VECTOR180-DECK-PPTX-IDENTITY",
+        "The supplied deck interpretation does not match the canonical snapshot reconstructed from its exact retained source bytes."
+      );
+    }
+    return trusted;
+  }
+  function serializeVector180PptxDeckMap(map) {
+    return `${JSON.stringify(canonicalJsonValue(map), null, 2)}
+`;
+  }
+  function validateSourceDeck(deck) {
+    if (deck.sourceKind !== "html") {
+      deckFail(
+        "VECTOR180-DECK-PPTX-INVALID-SOURCE",
+        "Mapped deck compilation requires one canonical Vector180 HTML deck."
+      );
+    }
+    if (deck.wireFamily !== "vector180") {
+      deckFail(
+        "VECTOR180-DECK-PPTX-FAMILY",
+        "Mapped deck compilation accepts only canonical Vector180 source; migrate legacy PPTV first."
+      );
+    }
+    const errors = deck.diagnostics.filter(isErrorDiagnostic);
+    if (errors.length > 0) {
+      deckFail(
+        errors.some(isUnsupportedDiagnostic) ? "VECTOR180-DECK-PPTX-UNSUPPORTED" : "VECTOR180-DECK-PPTX-INVALID-SOURCE",
+        "Deck contains C4 validation errors."
+      );
+    }
+    if (!deck.materialization.complete || deck.slides.size !== deck.slideOrder.length || deck.slideOrder.length === 0 || deck.slideOrder.some((id) => !deck.slides.has(id))) {
+      deckFail(
+        "VECTOR180-DECK-PPTX-INVALID-SOURCE",
+        "Mapped deck compilation requires the complete manifest-ordered deck, not a partial slide materialization."
+      );
+    }
+    for (const slideId2 of deck.slideOrder) {
+      const slide = deck.slides.get(slideId2);
+      visitSourceNodes2(slide.children, (node) => {
+        const raster = node.elementName === "image" && node.role === "asset" && node.exportMode === "raster" && node.opaque && node.resource !== void 0;
+        if (node.exportMode !== "native" && !raster) {
+          deckFail(
+            "VECTOR180-DECK-PPTX-UNSUPPORTED",
+            `Object "${node.id}" requests data-vector180-export="${node.exportMode}"; mapped decks admit native primitives or exact static inline PNG pictures.`
+          );
+        }
+        if (node.exportMode === "native" && node.opaque) {
+          deckFail(
+            "VECTOR180-DECK-PPTX-UNSUPPORTED",
+            `Opaque object "${node.id}" is outside the mapped deck native subset.`
+          );
+        }
+      });
+    }
+  }
+  function validateResolvedCapability(model) {
+    for (const slide of model.slides) {
+      for (const object of flattenObjects2(slide.objects)) {
+        if (object.kind === "svg-asset") {
+          deckFail(
+            "VECTOR180-DECK-PPTX-UNSUPPORTED",
+            `SVG asset "${object.id}" is outside the mapped deck subset.`
+          );
+        }
+        if (object.kind === "rect" && (object.rx !== void 0 || object.ry !== void 0)) {
+          deckFail(
+            "VECTOR180-DECK-PPTX-UNSUPPORTED",
+            `Rounded rectangle "${object.id}" is outside the mapped deck subset.`
+          );
+        }
+        if (object.kind === "text" && object.lines.length !== 1) {
+          deckFail(
+            "VECTOR180-DECK-PPTX-UNSUPPORTED",
+            `Text "${object.id}" has ${object.lines.length} hard lines; mapped deck text currently accepts exactly one.`
+          );
+        }
+        if (object.style.opacity !== 1) {
+          deckFail(
+            "VECTOR180-DECK-PPTX-UNSUPPORTED",
+            `Object "${object.id}" opacity must be exactly 1.`
+          );
+        }
+        const bounds = object.worldBounds;
+        if (bounds.x < 0 || bounds.y < 0 || bounds.x + bounds.width > SLIDE_WIDTH || bounds.y + bounds.height > SLIDE_HEIGHT) {
+          deckFail(
+            "VECTOR180-DECK-PPTX-UNSUPPORTED",
+            `Object "${object.id}" crosses its 1600 × 900 slide; the compiler does not silently drop SVG clipping semantics.`
+          );
+        }
+      }
+    }
+  }
+  function validateDeckInventory(deck, model) {
+    if (model.sourceSha256 !== deck.source.sha256 || model.slides.length !== deck.slideOrder.length) {
+      deckFail(
+        "VECTOR180-DECK-PPTX-IDENTITY",
+        "Exact source, manifest order, and resolved slide inventory disagree."
+      );
+    }
+    for (const [order, slideId2] of deck.slideOrder.entries()) {
+      const sourceSlide = deck.slides.get(slideId2);
+      const resolvedSlide = model.slides[order];
+      if (sourceSlide === void 0 || resolvedSlide === void 0 || resolvedSlide.id !== slideId2 || resolvedSlide.order !== order || resolvedSlide.hidden !== sourceSlide.hidden || resolvedSlide.layout !== sourceSlide.layout) {
+        deckFail(
+          "VECTOR180-DECK-PPTX-IDENTITY",
+          `Slide "${slideId2}" changed identity, order, visibility, or layout during resolution.`
+        );
+      }
+      const sourceNodes = indexSourceNodes2(sourceSlide.children);
+      const resolvedObjects = flattenObjects2(resolvedSlide.objects);
+      if (sourceNodes.size !== resolvedObjects.length) {
+        deckFail(
+          "VECTOR180-DECK-PPTX-IDENTITY",
+          `Slide "${slideId2}" source and resolved object inventories are not one-to-one.`
+        );
+      }
+      for (const object of resolvedObjects) {
+        const source = sourceNodes.get(object.id);
+        if (source === void 0 || source.node.parentId !== object.parentId || source.order !== object.order) {
+          deckFail(
+            "VECTOR180-DECK-PPTX-IDENTITY",
+            `Object "${object.id}" changed stable identity, parent, or painter order during resolution.`
+          );
+        }
+      }
+    }
+  }
+  function collectRasterPackageResources(deck, model) {
+    const resources = [];
+    for (const slide of model.slides) {
+      const sourceSlide = deck.slides.get(slide.id);
+      if (sourceSlide === void 0) {
+        deckFail(
+          "VECTOR180-DECK-PPTX-IDENTITY",
+          `Resolved slide "${slide.id}" lacks its exact source template.`
+        );
+      }
+      const sourceNodes = indexSourceNodes2(sourceSlide.children);
+      for (const object of flattenObjects2(slide.objects)) {
+        if (object.kind !== "raster-asset") continue;
+        const sourceNode = sourceNodes.get(object.id)?.node;
+        if (sourceNode === void 0 || sourceNode.resource === void 0) {
+          deckFail(
+            "VECTOR180-DECK-PPTX-IDENTITY",
+            `Raster asset "${object.id}" lacks one exact source identity.`
+          );
+        }
+        const parsed = parseVector180InlinePngDataUri(
+          exactInlinePngHref(sourceNode)
+        );
+        if (!parsed.ok || !sameRasterDescriptor2(parsed.descriptor, sourceNode.resource) || !sameRasterDescriptor2(parsed.descriptor, object.resource)) {
+          deckFail(
+            "VECTOR180-DECK-PPTX-UNSUPPORTED",
+            `Raster asset "${object.id}" source, C4 descriptor, C6 descriptor, and package bytes disagree.`
+          );
+        }
+        resources.push(
+          Object.freeze({
+            slideId: slide.id,
+            objectId: object.id,
+            descriptor: object.resource,
+            bytes: new Uint8Array(parsed.bytes)
+          })
+        );
+      }
+    }
+    return Object.freeze(resources);
+  }
+  function buildSlideMap(deck, model, bindings) {
+    if (bindings.length !== model.slides.length) {
+      deckFail(
+        "VECTOR180-DECK-PPTX-MAP",
+        "Resolved and emitted slide inventories are not one-to-one."
+      );
+    }
+    return Object.freeze(
+      model.slides.map((slide, index) => {
+        const sourceSlide = deck.slides.get(slide.id);
+        const binding = bindings[index];
+        if (sourceSlide === void 0 || binding === void 0 || binding.id !== slide.id || binding.order !== slide.order) {
+          deckFail(
+            "VECTOR180-DECK-PPTX-MAP",
+            `Slide "${slide.id}" lacks one exact source/resolved/emitted mapping.`
+          );
+        }
+        const sourceNodes = indexSourceNodes2(sourceSlide.children);
+        const resolvedObjects = flattenObjects2(slide.objects);
+        if (sourceNodes.size !== resolvedObjects.length || binding.objects.length !== resolvedObjects.length) {
+          deckFail(
+            "VECTOR180-DECK-PPTX-MAP",
+            `Slide "${slide.id}" object inventories are not one-to-one.`
+          );
+        }
+        const objects = resolvedObjects.map(
+          (object, objectIndex) => {
+            const sourceEntry = sourceNodes.get(object.id);
+            const emitted = binding.objects[objectIndex];
+            const expectedExport = object.kind === "raster-asset" ? "raster" : "native";
+            if (sourceEntry === void 0 || emitted === void 0 || emitted.id !== object.id || sourceEntry.node.exportMode !== expectedExport || sourceEntry.node.parentId !== object.parentId || sourceEntry.order !== object.order) {
+              deckFail(
+                "VECTOR180-DECK-PPTX-MAP",
+                `Object "${object.id}" lacks one exact source/resolved/emitted mapping.`
+              );
+            }
+            const imageRelationship = emitted.imageRelationship;
+            if (object.kind === "raster-asset" !== (imageRelationship !== void 0)) {
+              deckFail(
+                "VECTOR180-DECK-PPTX-MAP",
+                `Object "${object.id}" picture relationship does not match its resolved kind.`
+              );
+            }
+            return {
+              id: object.id,
+              kind: object.kind,
+              parentId: object.parentId,
+              order: object.order,
+              source: {
+                element: sourceEntry.node.elementName,
+                role: sourceEntry.node.role,
+                exportMode: expectedExport,
+                parentId: sourceEntry.node.parentId,
+                order: sourceEntry.order,
+                attributes: sourceMapAttributes(sourceEntry.node),
+                ...sourceEntry.node.text === void 0 ? {} : { text: sourceEntry.node.text },
+                ...sourceEntry.node.resource === void 0 ? {} : { resource: sourceEntry.node.resource },
+                sourceRange: { ...sourceEntry.node.sourceRange }
+              },
+              resolved: snapshotObject(object),
+              emitted: {
+                partName: binding.partName,
+                element: emitted.element,
+                cNvPrName: emitted.cNvPrName,
+                cNvPrNumericId: emitted.cNvPrNumericId,
+                ...imageRelationship === void 0 ? {} : { imageRelationship: { ...imageRelationship } }
+              },
+              capability: {
+                classification: object.kind === "raster-asset" ? "atomic-raster" : "native",
+                exportMode: expectedExport,
+                compilerCapability: object.kind === "raster-asset" ? "deck-static-png-picture/0.1" : "deck-native-primitive/0.1"
+              }
+            };
+          }
+        );
+        return {
+          id: slide.id,
+          order: slide.order,
+          hidden: slide.hidden,
+          ...slide.layout === void 0 ? {} : { layout: slide.layout },
+          sourceRange: { ...sourceSlide.sourceRange },
+          partName: binding.partName,
+          presentationRelationshipId: binding.presentationRelationshipId,
+          presentationNumericId: binding.presentationNumericId,
+          layoutRelationship: {
+            relationshipId: "rId1",
+            partName: "ppt/slideLayouts/slideLayout1.xml"
+          },
+          objects: Object.freeze(objects)
+        };
+      })
+    );
+  }
+  function snapshotObject(object) {
+    return {
+      kind: object.kind,
+      localBounds: { ...object.localBounds },
+      worldBounds: { ...object.worldBounds },
+      worldOffset: { ...object.worldOffset },
+      style: styleSnapshot(object.style),
+      geometry: geometrySnapshot(object)
+    };
+  }
+  function styleSnapshot(style) {
+    return {
+      fill: style.fill,
+      stroke: style.stroke,
+      strokeWidth: style.strokeWidth,
+      opacity: style.opacity,
+      fontWeight: style.fontWeight,
+      fontStyle: style.fontStyle,
+      textAnchor: style.textAnchor,
+      ...style.fontFamily === void 0 ? {} : { fontFamily: style.fontFamily },
+      ...style.fontSize === void 0 ? {} : { fontSize: style.fontSize }
+    };
+  }
+  function geometrySnapshot(object) {
+    switch (object.kind) {
+      case "rect":
+        return {
+          x: object.x,
+          y: object.y,
+          width: object.width,
+          height: object.height,
+          ...object.rx === void 0 ? {} : { rx: object.rx },
+          ...object.ry === void 0 ? {} : { ry: object.ry }
+        };
+      case "ellipse":
+        return {
+          sourceElement: object.sourceElement,
+          cx: object.cx,
+          cy: object.cy,
+          rx: object.rx,
+          ry: object.ry
+        };
+      case "line":
+        return {
+          x1: object.x1,
+          y1: object.y1,
+          x2: object.x2,
+          y2: object.y2,
+          ...object.fromId === void 0 ? {} : { fromId: object.fromId },
+          ...object.toId === void 0 ? {} : { toId: object.toId }
+        };
+      case "text":
+        return {
+          frame: { ...object.frame },
+          lineStep: object.lineStep,
+          anchor: object.anchor,
+          lines: object.lines.map((line) => ({ ...line })),
+          wrap: object.wrap,
+          autofit: object.autofit,
+          margins: { ...object.margins }
+        };
+      case "group":
+        return {
+          translateX: object.translateX,
+          translateY: object.translateY,
+          childIds: object.children.map((child) => child.id)
+        };
+      case "raster-asset":
+        return { resource: { ...object.resource } };
+      case "svg-asset":
+        return {};
+      default:
+        return assertNever2(object);
+    }
+  }
+  async function validateMapAgainstPackage(map, bytes) {
+    let zip;
+    try {
+      zip = await import_jszip2.default.loadAsync(bytes, { checkCRC32: true });
+    } catch (error) {
+      deckFail(
+        "VECTOR180-DECK-PPTX-OPC",
+        `Generated PPTX could not be reopened: ${error instanceof Error ? error.message : String(error)}`
+      );
+    }
+    const actualPartNames = Object.values(zip.files).filter((entry) => !entry.dir).map((entry) => entry.name);
+    if (actualPartNames.length !== map.pptx.partNames.length || map.pptx.partNames.some((name, index) => actualPartNames[index] !== name)) {
+      deckFail(
+        "VECTOR180-DECK-PPTX-MAP",
+        "The map and emitted PPTX part inventories differ."
+      );
+    }
+    const presentationXml = await zip.file("ppt/presentation.xml")?.async("string");
+    const presentationRels = await zip.file("ppt/_rels/presentation.xml.rels")?.async("string");
+    const customXml = await zip.file("docProps/custom.xml")?.async("string");
+    if (presentationXml === void 0 || presentationRels === void 0 || customXml === void 0) {
+      deckFail(
+        "VECTOR180-DECK-PPTX-OPC",
+        "Generated PPTX lacks its presentation or custom-property lineage parts."
+      );
+    }
+    const emittedSlideOrder = [
+      ...presentationXml.matchAll(
+        /<p:sldId id="[1-9]\d*" r:id="(rId[1-9]\d*)"\/>/gu
+      )
+    ].map((match) => match[1]);
+    const mappedSlideOrder = map.slides.map(
+      (slide) => slide.presentationRelationshipId
+    );
+    if (emittedSlideOrder.length !== mappedSlideOrder.length || emittedSlideOrder.some((id, index) => id !== mappedSlideOrder[index])) {
+      deckFail(
+        "VECTOR180-DECK-PPTX-MAP",
+        "Manifest slide order and emitted presentation order differ."
+      );
+    }
+    if (!customXml.includes(COMPILER) || !customXml.includes(MAP_SCHEMA) || !customXml.includes("vector180.sourceKind") || !customXml.includes("<vt:lpwstr>deck</vt:lpwstr>")) {
+      deckFail(
+        "VECTOR180-DECK-PPTX-MAP",
+        "Generated PPTX lacks its mapped-deck compiler lineage."
+      );
+    }
+    for (const slide of map.slides) {
+      const slideXml = await zip.file(slide.partName)?.async("string");
+      const partNumber = /^ppt\/slides\/slide([1-9]\d*)\.xml$/u.exec(
+        slide.partName
+      )?.[1];
+      const slideRels = partNumber === void 0 ? void 0 : await zip.file(`ppt/slides/_rels/slide${partNumber}.xml.rels`)?.async("string");
+      if (slideXml === void 0 || slideRels === void 0) {
+        deckFail(
+          "VECTOR180-DECK-PPTX-OPC",
+          `Mapped slide "${slide.id}" lacks its slide or relationship part.`
+        );
+      }
+      if (!presentationXml.includes(
+        `<p:sldId id="${slide.presentationNumericId}" r:id="${slide.presentationRelationshipId}"/>`
+      ) || !presentationRels.includes(
+        `<Relationship Id="${slide.presentationRelationshipId}" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/slide" Target="slides/slide${partNumber}.xml"/>`
+      ) || !slideRels.includes(
+        '<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/slideLayout" Target="../slideLayouts/slideLayout1.xml"/>'
+      )) {
+        deckFail(
+          "VECTOR180-DECK-PPTX-MAP",
+          `Mapped slide "${slide.id}" part and relationships disagree.`
+        );
+      }
+      const actualObjects = [
+        ...slideXml.matchAll(
+          /<p:cNvPr id="([1-9]\d*)" name="src\.([^"&]+)"\/>/gu
+        )
+      ].map((match) => `${match[2]}\0${match[1]}`).sort(compareText2);
+      const expectedObjects = slide.objects.map((object) => `${object.id}\0${object.emitted.cNvPrNumericId}`).sort(compareText2);
+      if (actualObjects.length !== expectedObjects.length || actualObjects.some((entry, index) => entry !== expectedObjects[index])) {
+        deckFail(
+          "VECTOR180-DECK-PPTX-MAP",
+          `Mapped slide "${slide.id}" stable-name/numeric-ID inventory differs from its PPTX part.`
+        );
+      }
+      const emittedHidden = /<p:sld\b[^>]*\bshow="0"/u.test(slideXml);
+      if (emittedHidden !== slide.hidden) {
+        deckFail(
+          "VECTOR180-DECK-PPTX-MAP",
+          `Mapped slide "${slide.id}" visibility differs from its PPTX part.`
+        );
+      }
+      for (const object of slide.objects) {
+        const relationship = object.emitted.imageRelationship;
+        const descriptor = object.source.resource;
+        if (relationship === void 0 && descriptor === void 0) continue;
+        if (relationship === void 0 || descriptor === void 0) {
+          deckFail(
+            "VECTOR180-DECK-PPTX-MAP",
+            `Mapped raster asset "${object.id}" lacks its complete picture binding.`
+          );
+        }
+        const target = `../media/${descriptor.sha256}.png`;
+        const mediaBytes = await zip.file(relationship.partName)?.async("uint8array");
+        if (!slideXml.includes(
+          `<a:blip r:embed="${relationship.relationshipId}"/>`
+        ) || !slideRels.includes(
+          `<Relationship Id="${relationship.relationshipId}" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="${target}"/>`
+        ) || mediaBytes === void 0 || mediaBytes.byteLength !== descriptor.byteLength || sha256HexSync(mediaBytes) !== descriptor.sha256) {
+          deckFail(
+            "VECTOR180-DECK-PPTX-MAP",
+            `Mapped raster asset "${object.id}" does not match its picture, relationship, and content-addressed media part.`
+          );
+        }
+      }
+    }
+  }
+  function exactInlinePngHref(node) {
+    const references = Object.entries(node.attributes).filter(([name]) => {
+      const normalized = name.toLowerCase();
+      return normalized === "href" || normalized === "xlink:href";
+    });
+    if (references.length !== 1) {
+      deckFail(
+        "VECTOR180-DECK-PPTX-UNSUPPORTED",
+        `Raster asset "${node.id}" requires exactly one inline PNG href.`
+      );
+    }
+    const value = references[0][1];
+    const parsed = parseVector180InlinePngDataUri(value);
+    if (!parsed.ok || node.resource === void 0 || !sameRasterDescriptor2(parsed.descriptor, node.resource)) {
+      deckFail(
+        "VECTOR180-DECK-PPTX-UNSUPPORTED",
+        `Raster asset "${node.id}" no longer matches its validated PNG descriptor.`
+      );
+    }
+    return value;
+  }
+  function sameRasterDescriptor2(left, right) {
+    return left.mediaType === right.mediaType && left.sha256 === right.sha256 && left.byteLength === right.byteLength && left.widthPixels === right.widthPixels && left.heightPixels === right.heightPixels;
+  }
+  function indexSourceNodes2(nodes2) {
+    const result = /* @__PURE__ */ new Map();
+    const visit2 = (siblings) => {
+      for (const [order, node] of siblings.entries()) {
+        if (result.has(node.id)) {
+          deckFail(
+            "VECTOR180-DECK-PPTX-IDENTITY",
+            `Duplicate stable object ID "${node.id}".`
+          );
+        }
+        result.set(node.id, { node, order });
+        visit2(node.children);
+      }
+    };
+    visit2(nodes2);
+    return result;
+  }
+  function flattenObjects2(objects) {
+    const result = [];
+    const visit2 = (siblings) => {
+      for (const object of siblings) {
+        result.push(object);
+        if (object.kind === "group") visit2(object.children);
+      }
+    };
+    visit2(objects);
+    return result;
+  }
+  function sourceMapAttributes(node) {
+    return sortedRecord(
+      Object.fromEntries(
+        Object.entries(node.attributes).filter(([name]) => {
+          if (node.resource === void 0) return true;
+          const normalized = name.toLowerCase();
+          return normalized !== "href" && normalized !== "xlink:href";
+        })
+      )
+    );
+  }
+  function compilerInputSnapshot(deck) {
+    const slides = deck.slideOrder.map((id) => {
+      const slide = deck.slides.get(id);
+      if (slide === void 0) {
+        deckFail(
+          "VECTOR180-DECK-PPTX-IDENTITY",
+          `Manifest slide "${id}" is absent from the supplied deck interpretation.`
+        );
+      }
+      return {
+        id: slide.id,
+        ...slide.layout === void 0 ? {} : { layout: slide.layout },
+        hidden: slide.hidden,
+        viewBox: [...slide.viewBox],
+        sourceRange: { ...slide.sourceRange },
+        children: slide.children.map(snapshotSourceNode)
+      };
+    });
+    const themes = [...deck.themes.entries()].sort(([left], [right]) => compareText2(left, right)).map(([id, theme]) => [id, { ...theme }]);
+    return JSON.stringify(
+      canonicalJsonValue({
+        version: deck.version,
+        sourceKind: deck.sourceKind,
+        wireFamily: deck.wireFamily,
+        ...deck.title === void 0 ? {} : { title: deck.title },
+        ...deck.activeTheme === void 0 ? {} : { activeTheme: deck.activeTheme },
+        slideOrder: [...deck.slideOrder],
+        ...deck.baseStyle === void 0 ? {} : { baseStyle: { ...deck.baseStyle } },
+        themes,
+        slides,
+        materialization: {
+          ...deck.materialization,
+          slideIds: [...deck.materialization.slideIds]
+        },
+        diagnostics: deck.diagnostics.map((diagnostic) => ({ ...diagnostic })),
+        source: {
+          ...deck.source.wireFamily === void 0 ? {} : { wireFamily: deck.source.wireFamily },
+          charLength: deck.source.charLength,
+          byteLength: deck.source.byteLength,
+          sha256: deck.source.sha256
+        }
+      })
+    );
+  }
+  function snapshotSourceNode(node) {
+    return {
+      id: node.id,
+      role: node.role,
+      exportMode: node.exportMode,
+      elementName: node.elementName,
+      classes: [...node.classes],
+      attributes: sortedRecord(node.attributes),
+      parentId: node.parentId,
+      children: node.children.map(snapshotSourceNode),
+      ...node.text === void 0 ? {} : { text: node.text },
+      ...node.resource === void 0 ? {} : { resource: { ...node.resource } },
+      opaque: node.opaque,
+      sourceRange: { ...node.sourceRange },
+      openTagRange: { ...node.openTagRange },
+      ...node.directTextRange === void 0 ? {} : { directTextRange: { ...node.directTextRange } }
+    };
+  }
+  function sortedRecord(record) {
+    return Object.fromEntries(
+      Object.entries(record).sort(([left], [right]) => compareText2(left, right))
+    );
+  }
+  function rethrowCanaryError(error) {
+    if (error.code === "VECTOR180-PPTX-FAMILY") {
+      return deckFail("VECTOR180-DECK-PPTX-FAMILY", error.message);
+    }
+    if (error.code === "VECTOR180-PPTX-ID-COLLISION") {
+      return deckFail("VECTOR180-DECK-PPTX-IDENTITY", error.message);
+    }
+    if (error.code === "VECTOR180-PPTX-OPC-GRAPH" || error.code === "VECTOR180-PPTX-ZIP-LIMIT") {
+      return deckFail("VECTOR180-DECK-PPTX-OPC", error.message);
+    }
+    if (error.code === "VECTOR180-PPTX-UNRESOLVED" || error.code === "VECTOR180-PPTX-INVALID-MODEL") {
+      return deckFail("VECTOR180-DECK-PPTX-INVALID-SOURCE", error.message);
+    }
+    return deckFail("VECTOR180-DECK-PPTX-UNSUPPORTED", error.message);
+  }
+  function visitSourceNodes2(nodes2, visitor) {
+    for (const node of nodes2) {
+      visitor(node);
+      visitSourceNodes2(node.children, visitor);
+    }
+  }
+  function isErrorDiagnostic(diagnostic) {
+    return diagnostic.severity === "error" || diagnostic.severity === "fatal";
+  }
+  function isUnsupportedDiagnostic(diagnostic) {
+    return UNSUPPORTED_DIAGNOSTIC_CODES.has(diagnostic.code);
+  }
+  function compareText2(left, right) {
+    return left < right ? -1 : left > right ? 1 : 0;
+  }
+  function canonicalJsonValue(value) {
+    if (Array.isArray(value)) return value.map(canonicalJsonValue);
+    if (value !== null && typeof value === "object") {
+      const entries = Object.entries(value).filter(([, entry]) => entry !== void 0).sort(([left], [right]) => compareText2(left, right)).map(([key, entry]) => [key, canonicalJsonValue(entry)]);
+      return Object.fromEntries(entries);
+    }
+    return value;
+  }
+  function deepFreeze3(value) {
+    if (value !== null && typeof value === "object" && !Object.isFrozen(value)) {
+      Object.freeze(value);
+      for (const child of Object.values(value)) {
+        deepFreeze3(child);
+      }
+    }
+    return value;
+  }
+  function deckFail(code, message) {
+    throw new Vector180PptxDeckCompileError(code, message);
+  }
+  function assertNever2(value) {
+    throw new Error(`Unhandled resolved object kind: ${JSON.stringify(value)}`);
+  }
+
+  // src/browser/derivative-export.ts
+  var SVG_NAMESPACE2 = "http://www.w3.org/2000/svg";
+  var MAX_EXPORT_PIXELS = 16 * 1024 * 1024;
+  var MAX_EXPORT_AXIS = 8192;
+  var Vector180DerivativeExportError = class extends Error {
+    constructor(message) {
+      super(message);
+      this.name = "Vector180DerivativeExportError";
+    }
+  };
+  async function renderVector180PreviewPng(preview, options = {}) {
+    const viewBox = parseViewBox2(preview.getAttribute("viewBox"));
+    const pixelScale = options.pixelScale ?? 1;
+    if (!Number.isFinite(pixelScale) || pixelScale <= 0 || pixelScale > 4) {
+      throw new Vector180DerivativeExportError(
+        "PNG pixelScale must be finite, greater than zero, and at most 4."
+      );
+    }
+    const widthPixels = Math.round(viewBox.width * pixelScale);
+    const heightPixels = Math.round(viewBox.height * pixelScale);
+    if (widthPixels <= 0 || heightPixels <= 0 || widthPixels > MAX_EXPORT_AXIS || heightPixels > MAX_EXPORT_AXIS || widthPixels > Math.floor(MAX_EXPORT_PIXELS / heightPixels)) {
+      throw new Vector180DerivativeExportError(
+        `PNG dimensions ${widthPixels} × ${heightPixels} exceed the bounded browser export profile.`
+      );
+    }
+    const clone = preview.cloneNode(true);
+    cleanEditorProjection(clone, options.rasterDataUris ?? /* @__PURE__ */ new Map());
+    clone.setAttribute("xmlns", SVG_NAMESPACE2);
+    clone.setAttribute("width", String(widthPixels));
+    clone.setAttribute("height", String(heightPixels));
+    clone.removeAttribute("class");
+    embedFonts(clone, options.fonts ?? []);
+    const serialized = new XMLSerializer().serializeToString(clone);
+    const svgBlob = new Blob([serialized], {
+      type: "image/svg+xml;charset=utf-8"
+    });
+    const svgUrl = URL.createObjectURL(svgBlob);
+    try {
+      const image = await loadImage(svgUrl);
+      const canvas = document.createElement("canvas");
+      canvas.width = widthPixels;
+      canvas.height = heightPixels;
+      const context = canvas.getContext("2d", { alpha: true });
+      if (context === null) {
+        throw new Vector180DerivativeExportError(
+          "The browser did not provide a 2D canvas context."
+        );
+      }
+      context.drawImage(image, 0, 0, widthPixels, heightPixels);
+      const blob = await canvasPng(canvas);
+      return Object.freeze({
+        blob,
+        widthPixels,
+        heightPixels,
+        renderer: Object.freeze({
+          kind: "browser-svg-canvas",
+          userAgent: navigator.userAgent,
+          pixelScale
+        })
+      });
+    } finally {
+      URL.revokeObjectURL(svgUrl);
+    }
+  }
+  function cleanEditorProjection(svg, rasterDataUris) {
+    for (const overlay of svg.querySelectorAll(
+      ".fit-overlay, .selection-overlay"
+    )) {
+      overlay.remove();
+    }
+    for (const element of [svg, ...svg.querySelectorAll("*")]) {
+      const objectId = element.dataset.vector180ObjectId;
+      if (element.localName === "image" && objectId !== void 0) {
+        const dataUri = rasterDataUris.get(objectId);
+        if (dataUri === void 0) {
+          throw new Vector180DerivativeExportError(
+            `Raster object "${objectId}" lacks exact authenticated bytes for PNG export.`
+          );
+        }
+        element.setAttribute("href", dataUri);
+      }
+      element.removeAttribute("data-selected");
+      element.removeAttribute("data-fit-status");
+      element.removeAttribute("data-vector180-object-id");
+      element.removeAttribute("data-selection-overlay");
+    }
+  }
+  function embedFonts(svg, fonts) {
+    if (fonts.length === 0) return;
+    const definitions = document.createElementNS(SVG_NAMESPACE2, "defs");
+    const style = document.createElementNS(SVG_NAMESPACE2, "style");
+    style.textContent = fonts.map((font) => {
+      const data = fontDataDescriptor(font.sourceBase64);
+      return `@font-face{font-family:${cssString(font.family)};font-style:${font.style};font-weight:${font.weight};src:url("data:${data.mediaType};base64,${font.sourceBase64}") format("${data.format}");}`;
+    }).join("");
+    definitions.append(style);
+    svg.prepend(definitions);
+  }
+  function parseViewBox2(value) {
+    const values = (value ?? "").trim().split(/[\s,]+/u).map(Number);
+    if (values.length !== 4 || values.some((entry) => !Number.isFinite(entry)) || values[2] <= 0 || values[3] <= 0) {
+      throw new Vector180DerivativeExportError(
+        "The selected preview does not have one finite positive SVG viewBox."
+      );
+    }
+    return { width: values[2], height: values[3] };
+  }
+  function cssString(value) {
+    return `"${value.replaceAll("\\", "\\\\").replaceAll('"', '\\"')}"`;
+  }
+  function fontDataDescriptor(sourceBase64) {
+    let signature = "";
+    try {
+      signature = atob(sourceBase64.slice(0, 8)).slice(0, 4);
+    } catch {
+      throw new Vector180DerivativeExportError(
+        "An embedded exact font has invalid base64 bytes."
+      );
+    }
+    if (signature === "OTTO") {
+      return { mediaType: "font/otf", format: "opentype" };
+    }
+    if (signature === "ttcf") {
+      return { mediaType: "font/collection", format: "collection" };
+    }
+    if (signature === "wOFF") {
+      return { mediaType: "font/woff", format: "woff" };
+    }
+    if (signature === "wOF2") {
+      return { mediaType: "font/woff2", format: "woff2" };
+    }
+    return { mediaType: "font/ttf", format: "truetype" };
+  }
+  function loadImage(url) {
+    return new Promise((resolve, reject) => {
+      const image = new Image();
+      image.decoding = "sync";
+      image.addEventListener("load", () => resolve(image), { once: true });
+      image.addEventListener(
+        "error",
+        () => reject(
+          new Vector180DerivativeExportError(
+            "The browser could not decode the authenticated SVG derivative."
+          )
+        ),
+        { once: true }
+      );
+      image.src = url;
+    });
+  }
+  function canvasPng(canvas) {
+    return new Promise((resolve, reject) => {
+      canvas.toBlob((blob) => {
+        if (blob === null || blob.size === 0 || blob.type !== "image/png") {
+          reject(
+            new Vector180DerivativeExportError(
+              "The browser did not produce one non-empty PNG derivative."
+            )
+          );
+          return;
+        }
+        resolve(blob);
+      }, "image/png");
+    });
+  }
+
   // src/browser/session.ts
   var DEFAULT_HISTORY_LIMIT = 100;
   var EditorSession = class _EditorSession {
@@ -20236,6 +25779,43 @@
         diagnostics: []
       };
     }
+    if (intent.kind === "set-child-order") {
+      const resolved2 = resolveIntentState(document2);
+      const parent = resolved2.state?.objects.get(intent.parentId);
+      const children = resolved2.state?.roots.get(intent.parentId) ?? (parent?.kind === "group" ? parent.children : void 0);
+      if (children === void 0) {
+        return unresolvedIntent(
+          intent.parentId,
+          `No native container has stable ID "${intent.parentId}".`,
+          resolved2.diagnostics
+        );
+      }
+      const sourceChildren = findContainerNodes(document2, intent.parentId);
+      const movesProtectedChild = sourceChildren?.some(
+        (child, index) => !isEntirelyNative(child) && intent.order.indexOf(child.id) !== index
+      );
+      if (movesProtectedChild) {
+        return {
+          diagnostics: [
+            {
+              code: "VECTOR180-EDITOR-TARGET",
+              severity: "error",
+              message: `Container "${intent.parentId}" order cannot move an opaque or non-native child.`,
+              objectId: intent.parentId
+            }
+          ]
+        };
+      }
+      return {
+        operation: {
+          op: "set-child-order",
+          parentId: intent.parentId,
+          oldOrder: children.map(({ id }) => id),
+          order: [...intent.order]
+        },
+        diagnostics: []
+      };
+    }
     const node = findObject2(document2, intent.id);
     if (node === void 0) {
       return {
@@ -20249,26 +25829,255 @@
         ]
       };
     }
-    if (node.role !== "text") {
+    if (intent.kind === "set-text") {
+      if (node.role !== "text" || node.exportMode !== "native" || node.opaque) {
+        return {
+          diagnostics: [
+            {
+              code: "VECTOR180-EDITOR-TARGET",
+              severity: "error",
+              message: `Object "${intent.id}" is not editable native text.`,
+              objectId: intent.id
+            }
+          ]
+        };
+      }
+      return {
+        operation: {
+          op: "set-text",
+          id: intent.id,
+          oldText: node.text ?? "",
+          value: intent.value
+        },
+        diagnostics: []
+      };
+    }
+    if (node.exportMode !== "native" || node.opaque) {
       return {
         diagnostics: [
           {
             code: "VECTOR180-EDITOR-TARGET",
             severity: "error",
-            message: `Object "${intent.id}" is not editable text.`,
+            message: `Object "${intent.id}" is opaque or non-native and cannot accept a native editor intent.`,
             objectId: intent.id
           }
         ]
       };
     }
+    const resolved = resolveIntentState(document2);
+    const object = resolved.state?.objects.get(intent.id);
+    if (object === void 0) {
+      return unresolvedIntent(
+        intent.id,
+        `Object "${intent.id}" does not have a complete native resolved model.`,
+        resolved.diagnostics
+      );
+    }
+    if (intent.kind === "set-object-geometry") {
+      const oldGeometry = objectGeometry(object);
+      if (oldGeometry === void 0) {
+        return wrongResolvedKind(intent.id, "a native rect or ellipse");
+      }
+      return {
+        operation: {
+          op: "set-object-geometry",
+          id: intent.id,
+          oldGeometry,
+          geometry: intent.geometry
+        },
+        diagnostics: []
+      };
+    }
+    if (intent.kind === "set-connector-endpoints") {
+      if (object.kind !== "line") {
+        return wrongResolvedKind(intent.id, "a native connector");
+      }
+      return {
+        operation: {
+          op: "set-connector-endpoints",
+          id: intent.id,
+          oldEndpoints: {
+            x1: object.x1,
+            y1: object.y1,
+            x2: object.x2,
+            y2: object.y2
+          },
+          endpoints: intent.endpoints
+        },
+        diagnostics: []
+      };
+    }
+    if (intent.kind === "set-group-translation") {
+      if (object.kind !== "group") {
+        return wrongResolvedKind(intent.id, "a native group");
+      }
+      if (!isEntirelyNative(node)) {
+        return wrongResolvedKind(
+          intent.id,
+          "an entirely native group with no protected asset subtree"
+        );
+      }
+      return {
+        operation: {
+          op: "set-group-translation",
+          id: intent.id,
+          oldTranslation: { x: object.translateX, y: object.translateY },
+          translation: intent.translation
+        },
+        diagnostics: []
+      };
+    }
+    if (intent.kind === "set-text-frame") {
+      const line = object.kind === "text" ? object.lines[0] : void 0;
+      if (object.kind !== "text" || object.lines.length !== 1 || line === void 0) {
+        return wrongResolvedKind(intent.id, "one direct native hard text line");
+      }
+      return {
+        operation: {
+          op: "set-text-frame",
+          id: intent.id,
+          oldFrame: { ...object.frame },
+          frame: intent.frame,
+          oldLineAnchor: { x: line.x, y: line.y },
+          lineAnchor: intent.lineAnchor
+        },
+        diagnostics: []
+      };
+    }
+    if (intent.kind === "delete-object") {
+      if (!isEntirelyNative(node)) {
+        return {
+          diagnostics: [
+            {
+              code: "VECTOR180-EDITOR-TARGET",
+              severity: "error",
+              message: `Object "${intent.id}" contains an opaque or non-native subtree and cannot be deleted by the trusted editor.`,
+              objectId: intent.id
+            }
+          ]
+        };
+      }
+      return {
+        operation: {
+          op: "delete-object",
+          id: intent.id,
+          oldParentId: object.parentId,
+          oldOrder: object.order
+        },
+        diagnostics: []
+      };
+    }
     return {
       operation: {
-        op: "set-text",
+        op: "set-native-style",
         id: intent.id,
-        oldText: node.text ?? "",
-        value: intent.value
+        oldStyle: concreteStyle(object.style),
+        style: intent.style
       },
       diagnostics: []
+    };
+  }
+  function isEntirelyNative(node) {
+    return node.exportMode === "native" && !node.opaque && node.children.every(isEntirelyNative);
+  }
+  function findContainerNodes(document2, parentId) {
+    if (document2.sourceKind === "svg") {
+      if (document2.id === parentId) return document2.children;
+      const parent = findNode2(document2.children, parentId);
+      return parent?.role === "group" ? parent.children : void 0;
+    }
+    const slide = document2.slides.get(parentId);
+    if (slide !== void 0) return slide.children;
+    for (const candidate of document2.slides.values()) {
+      const parent = findNode2(candidate.children, parentId);
+      if (parent?.role === "group") return parent.children;
+    }
+    return void 0;
+  }
+  function resolveIntentState(document2) {
+    const result = document2.sourceKind === "html" ? resolveVector180Deck(document2) : resolveVector180Atom(document2);
+    if (result.model === void 0) return { diagnostics: result.diagnostics };
+    const objects = /* @__PURE__ */ new Map();
+    const roots = /* @__PURE__ */ new Map();
+    if (result.model.schema === "vector180-resolved-deck/0.1") {
+      for (const slide of result.model.slides) {
+        roots.set(slide.id, slide.objects);
+        indexResolvedIntentObjects(slide.objects, objects);
+      }
+    } else {
+      roots.set(result.model.atomId, result.model.objects);
+      indexResolvedIntentObjects(result.model.objects, objects);
+    }
+    return { state: { objects, roots }, diagnostics: result.diagnostics };
+  }
+  function indexResolvedIntentObjects(values, target) {
+    for (const value of values) {
+      target.set(value.id, value);
+      if (value.kind === "group") {
+        indexResolvedIntentObjects(value.children, target);
+      }
+    }
+  }
+  function objectGeometry(object) {
+    if (object.kind === "rect") {
+      return {
+        kind: "rect",
+        x: object.x,
+        y: object.y,
+        width: object.width,
+        height: object.height
+      };
+    }
+    if (object.kind === "ellipse") {
+      return {
+        kind: "ellipse",
+        cx: object.cx,
+        cy: object.cy,
+        rx: object.rx,
+        ry: object.ry
+      };
+    }
+    return void 0;
+  }
+  function concreteStyle(style) {
+    return {
+      fill: style.fill,
+      stroke: style.stroke,
+      strokeWidth: style.strokeWidth,
+      opacity: style.opacity,
+      ...style.fontFamily === void 0 ? {} : { fontFamily: style.fontFamily },
+      ...style.fontSize === void 0 ? {} : { fontSize: style.fontSize },
+      fontWeight: style.fontWeight,
+      fontStyle: style.fontStyle,
+      textAnchor: style.textAnchor
+    };
+  }
+  function unresolvedIntent(objectId, message, relatedDiagnostics) {
+    return {
+      diagnostics: [
+        {
+          code: "VECTOR180-EDITOR-RESOLVED",
+          severity: "error",
+          message,
+          objectId,
+          related: relatedDiagnostics.map((diagnostic) => ({
+            message: `${diagnostic.code}: ${diagnostic.message}`,
+            ...diagnostic.range === void 0 ? {} : { range: diagnostic.range }
+          }))
+        }
+      ]
+    };
+  }
+  function wrongResolvedKind(id, expected) {
+    return {
+      diagnostics: [
+        {
+          code: "VECTOR180-EDITOR-TARGET",
+          severity: "error",
+          message: `Object "${id}" is not ${expected}.`,
+          objectId: id
+        }
+      ]
     };
   }
   function snapshot(document2) {
@@ -20339,8 +26148,96 @@
     };
   }
 
+  // src/browser/trusted-raster.ts
+  function recoverTrustedInlinePng(document2, objectId, expected, integrityVerified) {
+    if (!integrityVerified) {
+      return failure2(
+        objectId,
+        "VECTOR180-EDITOR-RASTER-INTEGRITY",
+        "Raster preview is unavailable because the exact source integrity gate did not pass."
+      );
+    }
+    const node = findNode3(document2, objectId);
+    const indexed = document2.index.objects.get(objectId);
+    if (node === void 0 || indexed === void 0 || node.elementName !== "image" || node.role !== "asset" || node.exportMode !== "raster" || node.resource === void 0 || !sameDescriptor(node.resource, expected)) {
+      return failure2(
+        objectId,
+        "VECTOR180-EDITOR-RASTER-DESCRIPTOR",
+        `Raster "${objectId}" no longer matches its descriptor-only resolved model.`
+      );
+    }
+    const hrefRanges = ["href", "xlink:href"].map((name) => ({ name, range: indexed.attributeRanges.get(name) })).filter(
+      (candidate2) => candidate2.range !== void 0
+    );
+    if (hrefRanges.length !== 1) {
+      return failure2(
+        objectId,
+        "VECTOR180-EDITOR-RASTER-SOURCE",
+        `Raster "${objectId}" does not have exactly one source-located inline PNG attribute.`
+      );
+    }
+    const candidate = hrefRanges[0];
+    const exactAttribute = document2.source.text.slice(
+      candidate.range.charStart,
+      candidate.range.charEnd
+    );
+    const dataUri = literalAttributeValue(exactAttribute, candidate.name);
+    if (dataUri === void 0) {
+      return failure2(
+        objectId,
+        "VECTOR180-EDITOR-RASTER-SOURCE",
+        `Raster "${objectId}" does not retain one literal canonical inline PNG attribute.`
+      );
+    }
+    const parsed = parseVector180InlinePngDataUri(dataUri);
+    if (!parsed.ok || !sameDescriptor(parsed.descriptor, expected)) {
+      return failure2(
+        objectId,
+        "VECTOR180-EDITOR-RASTER-AUTHENTICATION",
+        `Raster "${objectId}" failed exact-byte authentication against its descriptor.`
+      );
+    }
+    return {
+      ok: true,
+      bytes: parsed.bytes.slice(),
+      descriptor: parsed.descriptor
+    };
+  }
+  function literalAttributeValue(exactAttribute, expectedName) {
+    const match = exactAttribute.match(
+      /^([A-Za-z_][A-Za-z0-9_.:-]*)\s*=\s*(["'])([^"'<>]*)\2$/u
+    );
+    if (match?.[1]?.toLowerCase() !== expectedName) return void 0;
+    return match[3];
+  }
+  function sameDescriptor(left, right) {
+    return left.mediaType === right.mediaType && left.sha256 === right.sha256 && left.byteLength === right.byteLength && left.widthPixels === right.widthPixels && left.heightPixels === right.heightPixels;
+  }
+  function findNode3(document2, id) {
+    if (document2.sourceKind === "svg") return findInRoots(document2.children, id);
+    for (const slide of document2.slides.values()) {
+      const node = findInRoots(slide.children, id);
+      if (node !== void 0) return node;
+    }
+    return void 0;
+  }
+  function findInRoots(roots, id) {
+    for (const node of roots) {
+      if (node.id === id) return node;
+      const child = findInRoots(node.children, id);
+      if (child !== void 0) return child;
+    }
+    return void 0;
+  }
+  function failure2(objectId, code, message) {
+    return {
+      ok: false,
+      diagnostic: { code, severity: "error", message, objectId }
+    };
+  }
+
   // src/browser/text-measurer.ts
-  var SVG_NAMESPACE2 = "http://www.w3.org/2000/svg";
+  var SVG_NAMESPACE3 = "http://www.w3.org/2000/svg";
   var MAX_FONT_FACES = 32;
   var MAX_FONT_FILE_BYTES = 64 * 1024 * 1024;
   var MAX_FONT_MAP_BYTES = 256 * 1024 * 1024;
@@ -20462,7 +26359,7 @@
           fontIdentity(loaded.evidence, environment)
         );
       }
-      const text = hostDocument.createElementNS(SVG_NAMESPACE2, "text");
+      const text = hostDocument.createElementNS(SVG_NAMESPACE3, "text");
       text.setAttribute("font-family", loaded.evidence.alias);
       text.setAttribute("font-size", String(request.font.size));
       text.setAttribute("font-weight", String(request.font.weight));
@@ -20655,7 +26552,7 @@
     if (root === null) {
       throw new Error("Browser text measurement requires a document root.");
     }
-    const svg = hostDocument.createElementNS(SVG_NAMESPACE2, "svg");
+    const svg = hostDocument.createElementNS(SVG_NAMESPACE3, "svg");
     svg.setAttribute("aria-hidden", "true");
     svg.setAttribute("width", "1");
     svg.setAttribute("height", "1");
@@ -20706,7 +26603,7 @@
   }
 
   // src/browser/editor-app.ts
-  var SVG_NAMESPACE3 = "http://www.w3.org/2000/svg";
+  var SVG_NAMESPACE4 = "http://www.w3.org/2000/svg";
   var FIT_SEVERITY = {
     clear: 0,
     "near-limit": 1,
@@ -20714,6 +26611,7 @@
     unverified: 3
   };
   var nodes = {
+    app: required(".app"),
     payload: required("#vector180-editor-payload"),
     title: required("[data-title]"),
     hash: required("[data-hash]"),
@@ -20722,6 +26620,8 @@
     navigationTitle: required("[data-navigation-title]"),
     navigation: required("[data-navigation]"),
     deckControls: required("[data-deck-controls]"),
+    modeView: required("[data-mode-view]"),
+    modeEdit: required("[data-mode-edit]"),
     theme: required("[data-theme]"),
     themeApply: required("[data-theme-apply]"),
     slideUp: required("[data-slide-up]"),
@@ -20733,23 +26633,34 @@
     textEdit: required("[data-text-edit]"),
     textApply: required("[data-text-apply]"),
     textHelp: required("[data-text-help]"),
+    manipulation: required("[data-manipulation]"),
     inspector: required("[data-inspector]"),
     diagnostics: required("[data-diagnostics]"),
     undo: required("[data-undo]"),
     redo: required("[data-redo]"),
     save: required("[data-save]"),
-    download: required("[data-download]")
+    download: required("[data-download]"),
+    exportSvg: required("[data-export-svg]"),
+    exportPng: required("[data-export-png]"),
+    exportPptx: required("[data-export-pptx]"),
+    exportMap: required("[data-export-map]")
   };
   var payload;
   var session;
   var view;
   var browserMeasurer;
+  var authenticatedDerivativeFonts;
   var browserMeasurementError;
   var selectedSlideId;
   var lastOperationDiagnostics = [];
   var fitLinesByObject = /* @__PURE__ */ new Map();
   var fileHandle;
   var lastSavedSha256;
+  var editorMode = "view";
+  var rasterRenderDiagnostics = [];
+  var rasterObjectUrls = /* @__PURE__ */ new Map();
+  var verifiedRasterUrls = /* @__PURE__ */ new Map();
+  var lastDeckExport;
   void bootstrap().catch((error) => {
     const message = error instanceof Error ? error.message : String(error);
     nodes.integrity.textContent = `Editor failed closed: ${message}`;
@@ -20813,16 +26724,45 @@
         });
       }
       browserMeasurer = await prepareVector180BrowserTextMeasurer(sources);
+      authenticatedDerivativeFonts = Object.freeze(
+        payload.fonts.map((font) => {
+          const loaded = browserMeasurer?.fonts.find(
+            (candidate) => candidate.family.trim().toLowerCase() === font.family.trim().toLowerCase() && candidate.weight === font.weight && candidate.style === font.style && candidate.sha256 === font.sha256
+          );
+          if (loaded === void 0) {
+            throw new Error(
+              `Embedded font "${font.postscriptName}" did not produce matching browser evidence.`
+            );
+          }
+          return Object.freeze({
+            family: loaded.alias,
+            weight: font.weight,
+            style: font.style,
+            sourceBase64: font.sourceBase64
+          });
+        })
+      );
     } catch (error) {
       browserMeasurementError = error instanceof Error ? error.message : String(error);
       browserMeasurer = void 0;
+      authenticatedDerivativeFonts = void 0;
     }
   }
   function bindControls() {
+    nodes.modeView.addEventListener("click", () => setEditorMode("view"));
+    nodes.modeEdit.addEventListener("click", () => setEditorMode("edit"));
     nodes.download.addEventListener("click", downloadCurrentSource);
+    nodes.exportSvg.addEventListener("click", () => void exportCurrentSvg());
+    nodes.exportPng.addEventListener("click", () => void exportCurrentPng());
+    nodes.exportPptx.addEventListener(
+      "click",
+      () => void exportCurrentDeckPptx()
+    );
+    nodes.exportMap.addEventListener("click", downloadCurrentDeckMap);
     nodes.undo.addEventListener("click", () => {
       if (!session.undo()) return;
       lastOperationDiagnostics = [];
+      lastDeckExport = void 0;
       announce("Undo restored the prior exact source snapshot.", "success");
       recompute();
       render();
@@ -20830,6 +26770,7 @@
     nodes.redo.addEventListener("click", () => {
       if (!session.redo()) return;
       lastOperationDiagnostics = [];
+      lastDeckExport = void 0;
       announce("Redo restored the next exact source snapshot.", "success");
       recompute();
       render();
@@ -20841,6 +26782,9 @@
     nodes.slideDown.addEventListener("click", () => void moveSlide(1));
     nodes.extract.addEventListener("click", () => void extractSelectedSlide());
     nodes.save.addEventListener("click", () => void saveCurrentSource());
+    globalThis.addEventListener("beforeunload", revokeRasterObjectUrls, {
+      once: true
+    });
   }
   function recompute() {
     const state = session.state;
@@ -20922,19 +26866,37 @@
   }
   function render() {
     const state = session.state;
+    nodes.app.dataset.editorMode = editorMode;
+    nodes.modeView.ariaPressed = String(editorMode === "view");
+    nodes.modeEdit.ariaPressed = String(editorMode === "edit");
+    for (const element of document.querySelectorAll(
+      "[data-edit-only]"
+    )) {
+      element.hidden = editorMode !== "edit";
+    }
     nodes.hash.textContent = state.sourceSha256;
     nodes.source.value = state.sourceText;
     nodes.integrity.textContent = state.editable ? "source hash verified" : "source integrity failed — read only";
     nodes.integrity.dataset.ok = String(state.editable);
-    nodes.undo.disabled = !state.editable || !state.canUndo;
-    nodes.redo.disabled = !state.editable || !state.canRedo;
+    nodes.modeEdit.disabled = !state.editable;
+    nodes.undo.disabled = editorMode !== "edit" || !state.editable || !state.canUndo;
+    nodes.redo.disabled = editorMode !== "edit" || !state.editable || !state.canRedo;
     nodes.save.hidden = getSaveFilePicker() === void 0;
     nodes.save.disabled = !state.editable;
-    nodes.download.textContent = state.sourceKind === "html" ? "Download deck" : "Download diagram";
+    nodes.download.textContent = "Download source";
+    nodes.exportSvg.disabled = !state.editable;
+    nodes.exportSvg.textContent = state.sourceKind === "html" ? "Selected slide SVG" : "SVG";
+    nodes.exportPng.disabled = !state.editable;
+    nodes.exportPptx.hidden = state.sourceKind !== "html";
+    nodes.exportPptx.disabled = !state.editable;
+    const currentDeckExport = lastDeckExport !== void 0 && lastDeckExport.sourceSha256 === state.sourceSha256;
+    nodes.exportMap.hidden = state.sourceKind !== "html" || !currentDeckExport;
+    nodes.exportMap.disabled = !currentDeckExport;
     renderNavigation();
     renderTree();
     renderViewport();
     renderTextEditor();
+    renderManipulation();
     renderInspector();
     renderDiagnostics();
     renderDeckControls();
@@ -21007,6 +26969,7 @@
     return item;
   }
   function renderViewport() {
+    rasterRenderDiagnostics = [];
     const container = view.kind === "deck" ? view.resolved.slides.find(({ id }) => id === selectedSlideId) : view.resolved;
     if (container === void 0) {
       nodes.viewport.replaceChildren();
@@ -21022,6 +26985,10 @@
     );
     const objects = view.kind === "deck" ? container.objects : view.resolved.objects;
     for (const object of objects) svg.append(renderResolvedObject(object));
+    const selected = findResolvedObject(session.state.selectedId);
+    if (editorMode === "edit" && selected !== void 0) {
+      svg.append(renderSelectionOverlay(selected));
+    }
     svg.addEventListener("click", (event) => {
       if (event.target === svg) clearSelection();
     });
@@ -21106,6 +27073,30 @@
       boundary.setAttribute("stroke-width", "2");
       boundary.setAttribute("stroke-dasharray", "8 6");
       element.append(boundary);
+    } else if (object.kind === "raster-asset") {
+      const trustedUrl = trustedRasterObjectUrl(object);
+      if (trustedUrl === void 0) {
+        element = svgElement("g");
+        const boundary = svgElement("rect");
+        setAttributes(boundary, {
+          x: object.localBounds.x,
+          y: object.localBounds.y,
+          width: object.localBounds.width,
+          height: object.localBounds.height
+        });
+        boundary.classList.add("raster-placeholder");
+        element.append(boundary);
+      } else {
+        element = svgElement("image");
+        setAttributes(element, {
+          x: object.localBounds.x,
+          y: object.localBounds.y,
+          width: object.localBounds.width,
+          height: object.localBounds.height,
+          href: trustedUrl,
+          preserveAspectRatio: "xMidYMid meet"
+        });
+      }
     } else {
       element = svgElement("g");
     }
@@ -21117,6 +27108,67 @@
       selectObject(object.id);
     });
     return element;
+  }
+  function renderSelectionOverlay(object) {
+    const group = svgElement("g");
+    group.classList.add("selection-overlay");
+    group.dataset.selectionOverlay = object.id;
+    const boundary = svgElement("rect");
+    const minimumExtent = 2;
+    const width = Math.max(object.worldBounds.width, minimumExtent);
+    const height = Math.max(object.worldBounds.height, minimumExtent);
+    setAttributes(boundary, {
+      x: object.worldBounds.x - (width - object.worldBounds.width) / 2,
+      y: object.worldBounds.y - (height - object.worldBounds.height) / 2,
+      width,
+      height
+    });
+    group.append(boundary);
+    for (const [x, y] of [
+      [object.worldBounds.x, object.worldBounds.y],
+      [
+        object.worldBounds.x + object.worldBounds.width,
+        object.worldBounds.y + object.worldBounds.height
+      ]
+    ]) {
+      const handle = svgElement("circle");
+      setAttributes(handle, { cx: x, cy: y, r: 5 });
+      group.append(handle);
+    }
+    return group;
+  }
+  function trustedRasterObjectUrl(object) {
+    const state = session.state;
+    const verificationKey = `${state.sourceSha256}:${object.id}:${object.resource.sha256}`;
+    const verifiedUrl = verifiedRasterUrls.get(verificationKey);
+    if (verifiedUrl !== void 0) return verifiedUrl;
+    const recovered = recoverTrustedInlinePng(
+      state.document,
+      object.id,
+      object.resource,
+      state.editable
+    );
+    if (!recovered.ok) {
+      rasterRenderDiagnostics = [
+        ...rasterRenderDiagnostics,
+        recovered.diagnostic
+      ];
+      return void 0;
+    }
+    let url = rasterObjectUrls.get(recovered.descriptor.sha256);
+    if (url === void 0) {
+      url = URL.createObjectURL(
+        new Blob([recovered.bytes.slice().buffer], { type: "image/png" })
+      );
+      rasterObjectUrls.set(recovered.descriptor.sha256, url);
+    }
+    verifiedRasterUrls.set(verificationKey, url);
+    return url;
+  }
+  function revokeRasterObjectUrls() {
+    for (const url of rasterObjectUrls.values()) URL.revokeObjectURL(url);
+    rasterObjectUrls.clear();
+    verifiedRasterUrls.clear();
   }
   function objectFitStatus(objectId) {
     return (fitLinesByObject.get(objectId) ?? []).reduce(
@@ -21130,12 +27182,18 @@
       stroke: style.stroke,
       "stroke-width": style.strokeWidth,
       opacity: style.opacity,
-      "font-family": style.fontFamily,
+      "font-family": browserRenderFontFamily(style),
       "font-size": style.fontSize,
       "font-weight": style.fontWeight,
       "font-style": style.fontStyle,
       "text-anchor": style.textAnchor
     });
+  }
+  function browserRenderFontFamily(style) {
+    if (style.fontFamily === void 0) return void 0;
+    return browserMeasurer?.fonts.find(
+      (font) => font.family.trim().toLowerCase() === style.fontFamily?.trim().toLowerCase() && font.weight === style.fontWeight && font.style === style.fontStyle
+    )?.alias ?? style.fontFamily;
   }
   function setAttributes(element, attributes) {
     for (const [name, value] of Object.entries(attributes)) {
@@ -21147,9 +27205,540 @@
     const object = findSelectedNode(state);
     const directText = object?.role === "text" && object.directTextRange !== void 0;
     nodes.textEdit.value = object?.role === "text" ? object.text ?? "" : "";
-    nodes.textEdit.disabled = !state.editable || !directText;
-    nodes.textApply.disabled = !state.editable || !directText;
+    nodes.textEdit.disabled = editorMode !== "edit" || !state.editable || !directText;
+    nodes.textApply.disabled = editorMode !== "edit" || !state.editable || !directText;
     nodes.textHelp.textContent = object?.role !== "text" ? "Select one direct-text object." : directText ? "Apply commits one hash-bound C5 text replacement. No wrapping or repair occurs." : "This text has structured hard lines and is read-only in the direct-text editor.";
+  }
+  function renderManipulation() {
+    nodes.manipulation.replaceChildren();
+    if (editorMode !== "edit") return;
+    const state = session.state;
+    const object = findResolvedObject(state.selectedId);
+    const node = findSelectedNode(state);
+    if (object === void 0 || node === void 0) {
+      nodes.manipulation.append(
+        manipulationHelp("Select one native object to edit its exact fields.")
+      );
+      return;
+    }
+    if (!state.editable) {
+      nodes.manipulation.append(
+        manipulationHelp("Source integrity must pass before edits are enabled.")
+      );
+      return;
+    }
+    if (node.exportMode !== "native" || node.opaque) {
+      nodes.manipulation.append(
+        manipulationHelp(
+          object.kind === "raster-asset" ? "This authenticated picture is immutable. Replace, move, resize, crop, effects, deletion, duplication, and reorder remain review-required." : "This object is opaque or non-native and remains read-only."
+        )
+      );
+      return;
+    }
+    const geometry = geometryEditor(object, node);
+    if (geometry !== void 0) nodes.manipulation.append(geometry);
+    if (object.kind === "rect" || object.kind === "ellipse" || object.kind === "line" || object.kind === "text") {
+      nodes.manipulation.append(styleEditor(object));
+    }
+    nodes.manipulation.append(orderEditor(object), deletionEditor(object));
+  }
+  function geometryEditor(object, node) {
+    if (object.kind === "rect") {
+      return numericEditor(
+        "Rectangle geometry",
+        [
+          numberField("x", "X", object.x),
+          numberField("y", "Y", object.y),
+          numberField("width", "Width", object.width, { positive: true }),
+          numberField("height", "Height", object.height, { positive: true })
+        ],
+        "geometry",
+        hasDirectAttributes(object.id, ["x", "y", "width", "height"]),
+        (values) => dispatch(
+          {
+            kind: "set-object-geometry",
+            id: object.id,
+            geometry: {
+              kind: "rect",
+              x: values.x,
+              y: values.y,
+              width: values.width,
+              height: values.height
+            }
+          },
+          `Updated rectangle geometry "${object.id}".`
+        )
+      );
+    }
+    if (object.kind === "ellipse") {
+      if (object.sourceElement !== "ellipse") {
+        return manipulationHelp(
+          "Circle representation cannot be converted into ellipse geometry by the typed editor."
+        );
+      }
+      return numericEditor(
+        "Ellipse geometry",
+        [
+          numberField("cx", "Center X", object.cx),
+          numberField("cy", "Center Y", object.cy),
+          numberField("rx", "Radius X", object.rx, { positive: true }),
+          numberField("ry", "Radius Y", object.ry, { positive: true })
+        ],
+        "geometry",
+        hasDirectAttributes(object.id, ["cx", "cy", "rx", "ry"]),
+        (values) => dispatch(
+          {
+            kind: "set-object-geometry",
+            id: object.id,
+            geometry: {
+              kind: "ellipse",
+              cx: values.cx,
+              cy: values.cy,
+              rx: values.rx,
+              ry: values.ry
+            }
+          },
+          `Updated ellipse geometry "${object.id}".`
+        )
+      );
+    }
+    if (object.kind === "line") {
+      return numericEditor(
+        "Connector endpoints",
+        [
+          numberField("x1", "Start X", object.x1),
+          numberField("y1", "Start Y", object.y1),
+          numberField("x2", "End X", object.x2),
+          numberField("y2", "End Y", object.y2)
+        ],
+        "endpoints",
+        hasDirectAttributes(object.id, ["x1", "y1", "x2", "y2"]),
+        (values) => dispatch(
+          {
+            kind: "set-connector-endpoints",
+            id: object.id,
+            endpoints: {
+              x1: values.x1,
+              y1: values.y1,
+              x2: values.x2,
+              y2: values.y2
+            }
+          },
+          `Updated connector endpoints "${object.id}".`
+        )
+      );
+    }
+    if (object.kind === "group") {
+      return numericEditor(
+        "Group translation",
+        [
+          numberField("x", "Translate X", object.translateX),
+          numberField("y", "Translate Y", object.translateY)
+        ],
+        "translation",
+        hasDirectAttributes(object.id, ["transform"]),
+        (values) => dispatch(
+          {
+            kind: "set-group-translation",
+            id: object.id,
+            translation: { x: values.x, y: values.y }
+          },
+          `Updated group translation "${object.id}".`
+        )
+      );
+    }
+    if (object.kind === "text" && object.lines.length === 1 && node.directTextRange !== void 0) {
+      const line = object.lines[0];
+      return numericEditor(
+        "Text frame and hard-line anchor",
+        [
+          numberField("x", "Frame X", object.frame.x),
+          numberField("y", "Frame Y", object.frame.y),
+          numberField("width", "Frame width", object.frame.width, {
+            positive: true
+          }),
+          numberField("height", "Frame height", object.frame.height, {
+            positive: true
+          }),
+          numberField("anchorX", "Line anchor X", line.x),
+          numberField("anchorY", "Baseline Y", line.y)
+        ],
+        "text-frame",
+        hasDirectAttributes(object.id, ["data-vector180-frame", "x", "y"]),
+        (values) => dispatch(
+          {
+            kind: "set-text-frame",
+            id: object.id,
+            frame: {
+              x: values.x,
+              y: values.y,
+              width: values.width,
+              height: values.height
+            },
+            lineAnchor: { x: values.anchorX, y: values.anchorY }
+          },
+          `Updated text frame and anchor "${object.id}".`
+        )
+      );
+    }
+    return object.kind === "text" ? manipulationHelp(
+      "Structured multiline text remains read-only; no wrapping or rich-text approximation is available."
+    ) : void 0;
+  }
+  function numberField(name, label, value, options = {}) {
+    return { name, label, value, positive: options.positive ?? false };
+  }
+  function numericEditor(title, fields, kind, editable, commit) {
+    const section = manipulationSection(title);
+    const form = document.createElement("form");
+    form.className = "field-form";
+    form.dataset.manipulationForm = kind;
+    for (const field of fields) {
+      const label = document.createElement("label");
+      label.textContent = field.label;
+      const input = document.createElement("input");
+      input.type = "number";
+      input.step = "any";
+      input.name = field.name;
+      input.value = String(field.value);
+      input.disabled = !editable;
+      if (field.positive) input.min = "0.000000000001";
+      label.append(input);
+      form.append(label);
+    }
+    const button = document.createElement("button");
+    button.type = "submit";
+    button.textContent = "Apply";
+    button.disabled = !editable;
+    form.append(button);
+    if (!editable) {
+      form.append(
+        manipulationHelp(
+          "These values are inherited, implicit, or not represented by the required direct attributes."
+        )
+      );
+    }
+    form.addEventListener("submit", (event) => {
+      event.preventDefault();
+      const values = {};
+      for (const field of fields) {
+        const input = form.elements.namedItem(field.name);
+        const value = input instanceof HTMLInputElement ? input.valueAsNumber : Number.NaN;
+        if (!Number.isFinite(value) || field.positive && value <= 0) {
+          announce(`${field.label} must be a valid finite number.`, "error");
+          return;
+        }
+        values[field.name] = value;
+      }
+      if (fields.every((field) => values[field.name] === field.value)) {
+        announce("No numeric value changed.", "info");
+        return;
+      }
+      void commit(values);
+    });
+    section.append(form);
+    return section;
+  }
+  function styleEditor(object) {
+    const section = manipulationSection("Direct native style");
+    const form = document.createElement("form");
+    form.className = "field-form style-form";
+    form.dataset.manipulationForm = "style";
+    const oldStyle = concreteStyle2(object);
+    const definitions = [
+      {
+        key: "fill",
+        label: "Fill",
+        attribute: "fill",
+        kind: "text",
+        value: oldStyle.fill
+      },
+      {
+        key: "stroke",
+        label: "Stroke",
+        attribute: "stroke",
+        kind: "text",
+        value: oldStyle.stroke
+      },
+      {
+        key: "strokeWidth",
+        label: "Stroke width",
+        attribute: "stroke-width",
+        kind: "number",
+        value: oldStyle.strokeWidth
+      },
+      {
+        key: "opacity",
+        label: "Opacity",
+        attribute: "opacity",
+        kind: "number",
+        value: oldStyle.opacity
+      },
+      {
+        key: "fontFamily",
+        label: "Font family",
+        attribute: "font-family",
+        kind: "text",
+        value: oldStyle.fontFamily
+      },
+      {
+        key: "fontSize",
+        label: "Font size",
+        attribute: "font-size",
+        kind: "number",
+        value: oldStyle.fontSize
+      },
+      {
+        key: "fontWeight",
+        label: "Font weight",
+        attribute: "font-weight",
+        kind: "weight",
+        value: oldStyle.fontWeight
+      },
+      {
+        key: "fontStyle",
+        label: "Font style",
+        attribute: "font-style",
+        kind: "font-style",
+        value: oldStyle.fontStyle
+      },
+      {
+        key: "textAnchor",
+        label: "Text anchor",
+        attribute: "text-anchor",
+        kind: "anchor",
+        value: oldStyle.textAnchor
+      }
+    ];
+    let directCount = 0;
+    for (const definition of definitions) {
+      if (definition.value === void 0) continue;
+      const direct = directStyleProperty(
+        object.id,
+        object.styleProvenance,
+        definition.key,
+        definition.attribute
+      );
+      if (direct) directCount += 1;
+      const label = document.createElement("label");
+      label.textContent = definition.label;
+      label.dataset.direct = String(direct);
+      let control;
+      if (definition.kind === "weight" || definition.kind === "font-style" || definition.kind === "anchor") {
+        const select = document.createElement("select");
+        const values = definition.kind === "weight" ? ["400", "700"] : definition.kind === "font-style" ? ["normal", "italic"] : ["start", "middle", "end"];
+        for (const value of values) {
+          const option = document.createElement("option");
+          option.value = value;
+          option.textContent = value;
+          select.append(option);
+        }
+        control = select;
+      } else {
+        const input = document.createElement("input");
+        input.type = definition.kind;
+        if (definition.kind === "number") input.step = "any";
+        control = input;
+      }
+      control.name = definition.key;
+      control.value = String(definition.value);
+      control.disabled = !direct;
+      label.append(control);
+      form.append(label);
+    }
+    const button = document.createElement("button");
+    button.type = "submit";
+    button.textContent = "Apply style";
+    button.disabled = directCount === 0;
+    form.append(button);
+    const note = manipulationHelp(
+      "Only fields backed by direct presentation attributes are writable; inherited or inline values stay locked."
+    );
+    form.append(note);
+    form.addEventListener("submit", (event) => {
+      event.preventDefault();
+      const fill = stringFormValue(form, "fill").toLowerCase();
+      const stroke = stringFormValue(form, "stroke").toLowerCase();
+      const strokeWidth = numberFormValue(form, "strokeWidth");
+      const opacity = numberFormValue(form, "opacity");
+      const fontFamily = optionalStringFormValue(form, "fontFamily");
+      const fontSize = optionalNumberFormValue(form, "fontSize");
+      const fontWeight = Number(stringFormValue(form, "fontWeight"));
+      const fontStyle = stringFormValue(form, "fontStyle");
+      const textAnchor = stringFormValue(form, "textAnchor");
+      if (!/^(?:none|#[0-9a-f]{6})$/u.test(fill) || !/^(?:none|#[0-9a-f]{6})$/u.test(stroke) || !Number.isFinite(strokeWidth) || strokeWidth < 0 || !Number.isFinite(opacity) || opacity < 0 || opacity > 1 || fontSize !== void 0 && (!Number.isFinite(fontSize) || fontSize <= 0) || fontWeight !== 400 && fontWeight !== 700 || fontStyle !== "normal" && fontStyle !== "italic" || textAnchor !== "start" && textAnchor !== "middle" && textAnchor !== "end") {
+        announce(
+          "Style values must match the strict native paint and typography profile.",
+          "error"
+        );
+        return;
+      }
+      const style = {
+        fill,
+        stroke,
+        strokeWidth,
+        opacity,
+        ...fontFamily === void 0 ? {} : { fontFamily },
+        ...fontSize === void 0 ? {} : { fontSize },
+        fontWeight,
+        fontStyle,
+        textAnchor
+      };
+      if (sameConcreteStyle(style, oldStyle)) {
+        announce("No direct style value changed.", "info");
+        return;
+      }
+      void dispatch(
+        { kind: "set-native-style", id: object.id, style },
+        `Updated direct native style "${object.id}".`
+      );
+    });
+    section.append(form);
+    return section;
+  }
+  function orderEditor(object) {
+    const section = manipulationSection("Sibling painter order");
+    const context = siblingContext(object);
+    if (context === void 0) {
+      section.append(
+        manipulationHelp(
+          "The selected object's exact sibling order is unavailable."
+        )
+      );
+      return section;
+    }
+    const row = document.createElement("div");
+    row.className = "button-row";
+    const backward = document.createElement("button");
+    backward.type = "button";
+    backward.dataset.orderBackward = "";
+    backward.textContent = "Send backward";
+    backward.disabled = context.index <= 0 || !isEntirelyNativeNode(sourceNodeById(context.order[context.index - 1]));
+    backward.addEventListener("click", () => void moveSibling(object.id, -1));
+    const forward = document.createElement("button");
+    forward.type = "button";
+    forward.dataset.orderForward = "";
+    forward.textContent = "Bring forward";
+    forward.disabled = context.index >= context.order.length - 1 || !isEntirelyNativeNode(sourceNodeById(context.order[context.index + 1]));
+    forward.addEventListener("click", () => void moveSibling(object.id, 1));
+    row.append(backward, forward);
+    section.append(row);
+    return section;
+  }
+  function deletionEditor(object) {
+    const section = manipulationSection("Safe deletion");
+    const safeSubtree = isEntirelyNativeNode(sourceNodeById(object.id));
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = "danger-button";
+    button.dataset.deleteObject = "";
+    button.textContent = `Delete ${object.id}`;
+    button.disabled = !safeSubtree;
+    button.addEventListener(
+      "click",
+      () => void dispatch(
+        { kind: "delete-object", id: object.id },
+        `Deleted native object "${object.id}". Undo remains available.`
+      )
+    );
+    section.append(
+      button,
+      manipulationHelp(
+        safeSubtree ? "Deletion fails closed when a surviving connector references this object or the source slice is unsafe." : "Deletion is unavailable because this subtree contains an opaque or non-native asset."
+      )
+    );
+    return section;
+  }
+  function manipulationSection(title) {
+    const section = document.createElement("section");
+    section.className = "manipulation-section";
+    const heading = document.createElement("h3");
+    heading.textContent = title;
+    section.append(heading);
+    return section;
+  }
+  function manipulationHelp(message) {
+    const help = document.createElement("small");
+    help.className = "manipulation-help";
+    help.textContent = message;
+    return help;
+  }
+  function hasDirectAttributes(id, names) {
+    const indexed = session.state.document.index.objects.get(id);
+    return indexed !== void 0 && names.every((name) => indexed.attributeRanges.has(name));
+  }
+  function directStyleProperty(id, provenance, key, attribute) {
+    return provenance[key]?.origin === "presentation-attribute" && hasDirectAttributes(id, [attribute]);
+  }
+  function concreteStyle2(object) {
+    return {
+      fill: object.style.fill,
+      stroke: object.style.stroke,
+      strokeWidth: object.style.strokeWidth,
+      opacity: object.style.opacity,
+      ...object.style.fontFamily === void 0 ? {} : { fontFamily: object.style.fontFamily },
+      ...object.style.fontSize === void 0 ? {} : { fontSize: object.style.fontSize },
+      fontWeight: object.style.fontWeight,
+      fontStyle: object.style.fontStyle,
+      textAnchor: object.style.textAnchor
+    };
+  }
+  function sameConcreteStyle(left, right) {
+    return left.fill === right.fill && left.stroke === right.stroke && left.strokeWidth === right.strokeWidth && left.opacity === right.opacity && left.fontFamily === right.fontFamily && left.fontSize === right.fontSize && left.fontWeight === right.fontWeight && left.fontStyle === right.fontStyle && left.textAnchor === right.textAnchor;
+  }
+  function stringFormValue(form, name) {
+    const control = form.elements.namedItem(name);
+    return control instanceof HTMLInputElement || control instanceof HTMLSelectElement ? control.value.trim() : "";
+  }
+  function optionalStringFormValue(form, name) {
+    const control = form.elements.namedItem(name);
+    if (!(control instanceof HTMLInputElement || control instanceof HTMLSelectElement)) {
+      return void 0;
+    }
+    const value = control.value.trim();
+    return value === "" ? void 0 : value;
+  }
+  function numberFormValue(form, name) {
+    const control = form.elements.namedItem(name);
+    return control instanceof HTMLInputElement ? control.valueAsNumber : Number.NaN;
+  }
+  function optionalNumberFormValue(form, name) {
+    const control = form.elements.namedItem(name);
+    return control instanceof HTMLInputElement ? control.valueAsNumber : void 0;
+  }
+  function siblingContext(object) {
+    const parentId = object.parentId ?? ("slideId" in object ? object.slideId : object.atomId);
+    const roots = view.kind === "deck" ? view.resolved.slides.find(({ id }) => id === parentId)?.objects : parentId === view.resolved.atomId ? view.resolved.objects : void 0;
+    const parent = findResolvedObject(parentId);
+    const children = roots ?? (parent?.kind === "group" ? parent.children : void 0);
+    if (children === void 0) return void 0;
+    const order = children.map(({ id }) => id);
+    const index = order.indexOf(object.id);
+    return index < 0 ? void 0 : { parentId, order, index };
+  }
+  async function moveSibling(id, delta) {
+    const object = findResolvedObject(id);
+    if (object === void 0) return;
+    const context = siblingContext(object);
+    if (context === void 0) return;
+    const target = context.index + delta;
+    if (target < 0 || target >= context.order.length) return;
+    if (!isEntirelyNativeNode(sourceNodeById(context.order[target]))) {
+      announce(
+        "Painter-order edit refused: an opaque or non-native sibling cannot move.",
+        "error"
+      );
+      return;
+    }
+    const order = [...context.order];
+    [order[context.index], order[target]] = [
+      order[target],
+      order[context.index]
+    ];
+    await dispatch(
+      { kind: "set-child-order", parentId: context.parentId, order },
+      `Moved "${id}" ${delta < 0 ? "backward" : "forward"} in sibling painter order.`
+    );
   }
   function renderInspector() {
     const state = session.state;
@@ -21246,6 +27835,7 @@
     const entries = [
       ...state.diagnostics,
       ...view.diagnostics,
+      ...rasterRenderDiagnostics,
       ...lastOperationDiagnostics,
       ...browserMeasurementError === void 0 ? [] : [
         {
@@ -21287,12 +27877,12 @@
       })
     );
     nodes.theme.value = state.deck.themes.has(selectedTheme) ? selectedTheme : state.deck.activeTheme ?? "";
-    nodes.theme.disabled = !state.editable;
-    nodes.themeApply.disabled = !state.editable || nodes.theme.value === state.deck.activeTheme;
+    nodes.theme.disabled = editorMode !== "edit" || !state.editable;
+    nodes.themeApply.disabled = editorMode !== "edit" || !state.editable || nodes.theme.value === state.deck.activeTheme;
     const index = state.deck.slideOrder.indexOf(selectedSlideId ?? "");
-    nodes.slideUp.disabled = !state.editable || index <= 0;
-    nodes.slideDown.disabled = !state.editable || index < 0 || index >= state.deck.slideOrder.length - 1;
-    nodes.extract.disabled = selectedSlideId === void 0;
+    nodes.slideUp.disabled = editorMode !== "edit" || !state.editable || index <= 0;
+    nodes.slideDown.disabled = editorMode !== "edit" || !state.editable || index < 0 || index >= state.deck.slideOrder.length - 1;
+    nodes.extract.disabled = !state.editable || selectedSlideId === void 0;
   }
   async function applyDirectText() {
     const id = session.state.selectedId;
@@ -21330,6 +27920,7 @@
     const result = await session.dispatch(intent);
     lastOperationDiagnostics = result.diagnostics;
     if (result.applied) {
+      lastDeckExport = void 0;
       announce(successMessage, "success");
       recompute();
       render();
@@ -21343,8 +27934,18 @@
   }
   async function extractSelectedSlide() {
     const state = session.state;
-    if (state.sourceKind !== "html" || selectedSlideId === void 0) return;
-    const result = await extractVector180Atom(state.deck, selectedSlideId);
+    if (state.sourceKind !== "html" || !state.editable || selectedSlideId === void 0)
+      return;
+    const sourceSha256 = state.sourceSha256;
+    const slideId2 = selectedSlideId;
+    const result = await extractVector180Atom(state.deck, slideId2);
+    if (session.state.sourceSha256 !== sourceSha256) {
+      recordExportError(
+        "VECTOR180-EDITOR-SVG-STALE",
+        "SVG export refused because canonical source changed while hydration was running."
+      );
+      return;
+    }
     lastOperationDiagnostics = result.diagnostics;
     if (result.sourceText === void 0) {
       announce(
@@ -21356,13 +27957,171 @@
     }
     downloadBytes(
       new TextEncoder().encode(result.sourceText),
-      `${selectedSlideId}.vector180.svg`,
+      `${slideId2}.vector180.svg`,
       "image/svg+xml;charset=utf-8"
     );
     announce(
-      `Downloaded hydrated standalone diagram "${selectedSlideId}.vector180.svg".`,
+      `Downloaded hydrated standalone diagram "${slideId2}.vector180.svg".`,
       "success"
     );
+    renderDiagnostics();
+  }
+  async function exportCurrentSvg() {
+    const state = session.state;
+    if (!state.editable) return;
+    if (state.sourceKind === "html") {
+      await extractSelectedSlide();
+      return;
+    }
+    downloadBytes(
+      state.document.source.bytes,
+      payload.downloadName,
+      "image/svg+xml;charset=utf-8"
+    );
+    announce(`Exported canonical SVG "${payload.downloadName}".`, "success");
+  }
+  async function exportCurrentPng() {
+    const state = session.state;
+    if (!state.editable) return;
+    const sourceSha256 = state.sourceSha256;
+    const visualId = currentVisualId();
+    recompute();
+    render();
+    const preview = nodes.viewport.querySelector(".vector180-preview");
+    if (preview === null) {
+      recordExportError(
+        "VECTOR180-EDITOR-PNG-PREVIEW",
+        "PNG export requires one current resolved SVG preview."
+      );
+      return;
+    }
+    nodes.exportPng.disabled = true;
+    announce("Rendering the selected visual as a browser-bound PNG…", "info");
+    try {
+      const derivative = await renderVector180PreviewPng(preview, {
+        fonts: derivativeFonts(),
+        rasterDataUris: currentRasterDataUris()
+      });
+      if (session.state.sourceSha256 !== sourceSha256) {
+        throw new Error(
+          "PNG export refused because canonical source changed while rendering was running."
+        );
+      }
+      const filename = `${visualId}.png`;
+      downloadBlob(derivative.blob, filename);
+      announce(
+        `Exported ${filename} at ${derivative.widthPixels} × ${derivative.heightPixels}; PNG output is bound to this browser renderer.`,
+        "success"
+      );
+    } catch (error) {
+      recordExportError(
+        "VECTOR180-EDITOR-PNG-EXPORT",
+        error instanceof Error ? error.message : String(error)
+      );
+    } finally {
+      render();
+    }
+  }
+  function derivativeFonts() {
+    if (payload.fonts.length === 0) return [];
+    if (authenticatedDerivativeFonts === void 0) {
+      throw new Error(
+        `PNG export requires authenticated browser font bytes: ${browserMeasurementError ?? "font preparation did not complete"}.`
+      );
+    }
+    return authenticatedDerivativeFonts;
+  }
+  async function exportCurrentDeckPptx() {
+    const state = session.state;
+    if (state.sourceKind !== "html" || !state.editable) return;
+    const sourceSha256 = state.sourceSha256;
+    nodes.exportPptx.disabled = true;
+    announce("Compiling the complete mapped deck to editable PPTX…", "info");
+    try {
+      const artifact = await compileVector180PptxDeck(state.deck);
+      if (session.state.sourceSha256 !== sourceSha256) {
+        throw new Error(
+          "PPTX export refused because canonical source changed while compilation was running."
+        );
+      }
+      lastDeckExport = { sourceSha256, artifact };
+      lastOperationDiagnostics = artifact.diagnostics;
+      const filename = `${deckExportStem()}.pptx`;
+      downloadBytes(
+        artifact.pptxBytes,
+        filename,
+        "application/vnd.openxmlformats-officedocument.presentationml.presentation"
+      );
+      announce(
+        `Exported editable ${filename}; its descriptor-only mapping is ready for a separate download.`,
+        "success"
+      );
+    } catch (error) {
+      lastDeckExport = void 0;
+      recordExportError(
+        "VECTOR180-EDITOR-PPTX-EXPORT",
+        error instanceof Error ? error.message : String(error)
+      );
+    } finally {
+      render();
+    }
+  }
+  function downloadCurrentDeckMap() {
+    const state = session.state;
+    if (state.sourceKind !== "html" || lastDeckExport === void 0 || lastDeckExport.sourceSha256 !== state.sourceSha256) {
+      recordExportError(
+        "VECTOR180-EDITOR-PPTX-MAP-STALE",
+        "Compile the current deck before downloading its mapping sidecar."
+      );
+      return;
+    }
+    const filename = `${deckExportStem()}.vector180.deck.map.json`;
+    downloadBytes(
+      new TextEncoder().encode(lastDeckExport.artifact.mapText),
+      filename,
+      "application/json;charset=utf-8"
+    );
+    announce(`Downloaded descriptor-only mapping "${filename}".`, "success");
+  }
+  function currentRasterDataUris() {
+    const state = session.state;
+    const result = /* @__PURE__ */ new Map();
+    visitResolvedObjects3(currentResolvedRoots(), (object) => {
+      if (object.kind !== "raster-asset") return;
+      const recovered = recoverTrustedInlinePng(
+        state.document,
+        object.id,
+        object.resource,
+        state.editable
+      );
+      if (!recovered.ok) throw new Error(recovered.diagnostic.message);
+      result.set(
+        object.id,
+        `data:image/png;base64,${encodeBase64(recovered.bytes)}`
+      );
+    });
+    return result;
+  }
+  function currentResolvedRoots() {
+    if (view.kind === "atom") return view.resolved.objects;
+    return view.resolved.slides.find(({ id }) => id === selectedSlideId)?.objects ?? [];
+  }
+  function visitResolvedObjects3(objects, visitor) {
+    for (const object of objects) {
+      visitor(object);
+      if (object.kind === "group") visitResolvedObjects3(object.children, visitor);
+    }
+  }
+  function currentVisualId() {
+    return view.kind === "deck" ? selectedSlideId ?? "slide" : view.resolved.atomId;
+  }
+  function deckExportStem() {
+    const suffix = ".vector180.html";
+    return payload.downloadName.endsWith(suffix) ? payload.downloadName.slice(0, -suffix.length) : payload.downloadName;
+  }
+  function recordExportError(code, message) {
+    lastOperationDiagnostics = [{ code, severity: "error", message }];
+    announce(message, "error");
     renderDiagnostics();
   }
   function downloadCurrentSource() {
@@ -21377,7 +28136,9 @@
     );
   }
   function downloadBytes(bytes, name, mime) {
-    const blob = new Blob([bytes.slice().buffer], { type: mime });
+    downloadBlob(new Blob([bytes.slice().buffer], { type: mime }), name);
+  }
+  function downloadBlob(blob, name) {
     const url = URL.createObjectURL(blob);
     const anchor = document.createElement("a");
     anchor.href = url;
@@ -21444,6 +28205,22 @@
     if (!session.select(id)) return;
     render();
   }
+  function setEditorMode(mode) {
+    if (mode === "edit" && !session.state.editable) {
+      announce(
+        "Edit mode is unavailable until source integrity passes.",
+        "error"
+      );
+      return;
+    }
+    if (editorMode === mode) return;
+    editorMode = mode;
+    announce(
+      mode === "edit" ? "Edit mode enabled. Every Apply action commits one hash-bound transaction." : "View mode enabled. Source mutation controls are hidden.",
+      "info"
+    );
+    render();
+  }
   function clearSelection() {
     session.select();
     render();
@@ -21451,13 +28228,20 @@
   function findSelectedNode(state) {
     const id = state.selectedId;
     if (id === void 0) return void 0;
-    const roots = state.sourceKind === "html" ? [...state.deck.slides.values()].flatMap(({ children }) => children) : state.atom.children;
-    return findNode3(roots, id);
+    return sourceNodeById(id, state);
   }
-  function findNode3(roots, id) {
+  function sourceNodeById(id, state = session.state) {
+    if (id === void 0) return void 0;
+    const roots = state.sourceKind === "html" ? [...state.deck.slides.values()].flatMap(({ children }) => children) : state.atom.children;
+    return findNode4(roots, id);
+  }
+  function isEntirelyNativeNode(node) {
+    return node !== void 0 && node.exportMode === "native" && !node.opaque && node.children.every(isEntirelyNativeNode);
+  }
+  function findNode4(roots, id) {
     for (const node of roots) {
       if (node.id === id) return node;
-      const child = findNode3(node.children, id);
+      const child = findNode4(node.children, id);
       if (child !== void 0) return child;
     }
     return void 0;
@@ -21486,19 +28270,24 @@
       nodes.undo,
       nodes.redo,
       nodes.save,
+      nodes.modeEdit,
       nodes.textEdit,
       nodes.textApply,
       nodes.theme,
       nodes.themeApply,
       nodes.slideUp,
       nodes.slideDown,
-      nodes.extract
+      nodes.extract,
+      nodes.exportSvg,
+      nodes.exportPng,
+      nodes.exportPptx,
+      nodes.exportMap
     ]) {
       control.disabled = true;
     }
   }
   function svgElement(name) {
-    return document.createElementNS(SVG_NAMESPACE3, name);
+    return document.createElementNS(SVG_NAMESPACE4, name);
   }
   function decodeBase642(value) {
     let binary;
@@ -21508,6 +28297,16 @@
       throw new Error("Embedded base64 data is invalid.");
     }
     return Uint8Array.from(binary, (character) => character.charCodeAt(0));
+  }
+  function encodeBase64(bytes) {
+    const chunks = [];
+    const chunkSize = 32768;
+    for (let offset = 0; offset < bytes.length; offset += chunkSize) {
+      chunks.push(
+        String.fromCharCode(...bytes.subarray(offset, offset + chunkSize))
+      );
+    }
+    return btoa(chunks.join(""));
   }
   function required(selector) {
     const element = document.querySelector(selector);

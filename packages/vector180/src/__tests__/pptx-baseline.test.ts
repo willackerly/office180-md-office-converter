@@ -35,6 +35,8 @@ const RUNTIME_ARTIFACT_URL = new URL(
   "../../assets/vector180-browser-0.1.script.html",
   import.meta.url,
 );
+const ONE_PIXEL_PNG_BASE64 =
+  "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=";
 const IDENTITY_PLACEMENT: Vector180Placement = {
   slideId: "system-overview",
   x: 200,
@@ -65,6 +67,23 @@ async function minimalDeck(): Promise<Vector180Deck> {
     kind: "text",
     text: await readMinimalDeck(),
     name: "minimal-deck.vector180.html",
+  });
+}
+
+async function rasterAtom(): Promise<Vector180Atom> {
+  return loadAtom({
+    kind: "text",
+    name: "raster-picture.vector180.svg",
+    text: `<svg id="raster-picture" data-vector180-version="0.1"
+  viewBox="0 0 1 1" xmlns="http://www.w3.org/2000/svg">
+  <image id="raster-picture.background"
+    data-vector180-role="asset"
+    data-vector180-export="raster"
+    data-vector180-bounds="0 0 1 1"
+    x="0" y="0" width="1" height="1"
+    href="data:image/png;base64,${ONE_PIXEL_PNG_BASE64}"/>
+</svg>
+`,
   });
 }
 
@@ -107,7 +126,7 @@ async function withTempDirectory<T>(
 }
 
 describe("C9 standalone atom PPTX baseline", () => {
-  it("preserves the exact C7 canary when package lineage options are omitted", async () => {
+  it("emits the deterministic C7 canary when package lineage options are omitted", async () => {
     const resolved = resolveVector180Deck(await minimalDeck());
     expect(resolved.model).toBeDefined();
     const model = structuredClone(resolved.model) as Vector180ResolvedDeck;
@@ -133,9 +152,9 @@ describe("C9 standalone atom PPTX baseline", () => {
     }
 
     const artifact = await compilePptxCanary(model);
-    expect(artifact.bytes).toHaveLength(26_547);
+    expect(artifact.bytes).toHaveLength(26_571);
     expect(createHash("sha256").update(artifact.bytes).digest("hex")).toBe(
-      "36ef0e8f8bd63d94cd4b63c4a40b2792e60a4710ecb9e0cbaab72fcd158eaf1d",
+      "4a6640e61e232e5fc89e73b99158ef16b5e5fe12304afa8253849a49491df245",
     );
   });
 
@@ -151,10 +170,10 @@ describe("C9 standalone atom PPTX baseline", () => {
     expect(first.pptxBytes).toEqual(second.pptxBytes);
     expect(first.mapText).toBe(second.mapText);
     expect(first.pptxSha256).toBe(
-      "884b65b45a1316d657bb8023a1b67b6d4b84fa84bc9149096d9f1640b6d0a457",
+      "3c9a3f860ee17cfc49d0aa7588808bf60fff30e34a0c95985e25624853528f3f",
     );
     expect(first.mapSha256).toBe(
-      "add2bab986eb705f2089475e12940e8dd38c5f7c0a092831c4cb6d32df4db013",
+      "c5d1a033145df0c16e4c48cd3d7a77855dd15c5740ae7fca0bd219347051b2df",
     );
     expect(first.pptxSha256).toBe(
       createHash("sha256").update(first.pptxBytes).digest("hex"),
@@ -309,6 +328,12 @@ describe("C9 standalone atom PPTX baseline", () => {
       body: {
         wrap: "none",
         autofit: "none",
+        marginsEmu: {
+          left: 0,
+          top: 91_440,
+          right: 0,
+          bottom: 0,
+        },
       },
       run: {
         text: "Standalone Vector180 diagram",
@@ -326,6 +351,9 @@ describe("C9 standalone atom PPTX baseline", () => {
     const presentationRels = await zip
       .file("ppt/_rels/presentation.xml.rels")!
       .async("string");
+    expect(slideXml).toContain(
+      '<a:bodyPr wrap="none" lIns="0" tIns="91440" rIns="0" bIns="0" anchor="t"><a:noAutofit/></a:bodyPr>',
+    );
     expect(
       slideXml.match(/<p:cNvPr id="[1-9]\d*" name="src\.[^"]+"\/>/gu),
     ).toHaveLength(objects.length);
@@ -348,6 +376,121 @@ describe("C9 standalone atom PPTX baseline", () => {
     expect(first.composedDeckSource).toBeDefined();
     expect(first.composedDeckSha256).toBe(
       first.map.composition.composedDeckSha256,
+    );
+  });
+
+  it("refuses forged derived atom state that still claims the exact source hash", async () => {
+    const diagram = await minimalAtom();
+    const background = diagram.children[0]!;
+    const forgedBackground = {
+      ...background,
+      attributes: { ...background.attributes, x: "201" },
+    };
+    const forged: Vector180Atom = {
+      ...diagram,
+      children: [forgedBackground, ...diagram.children.slice(1)],
+    };
+
+    await expectBaselineError(
+      composeVector180AtomDeck(forged, IDENTITY_PLACEMENT),
+      "VECTOR180-BASELINE-IDENTITY",
+    );
+    await expectBaselineError(
+      compilePptxBaseline(forged, { placement: IDENTITY_PLACEMENT }),
+      "VECTOR180-BASELINE-IDENTITY",
+    );
+  });
+
+  it("packages one exact static PNG as an atomic mapped PowerPoint picture", async () => {
+    const diagram = await rasterAtom();
+    const placement: Vector180Placement = {
+      slideId: "raster-picture-slide",
+      x: 100,
+      y: 100,
+      width: 400,
+      height: 400,
+      policy: "uniform-scale-translate",
+    };
+    const first = await compilePptxBaseline(diagram, { placement });
+    const second = await compilePptxBaseline(diagram, { placement });
+    expect(first.pptxBytes).toEqual(second.pptxBytes);
+    expect(first.mapText).toBe(second.mapText);
+    expect(first.mapText).not.toContain("data:image/png");
+    expect(first.mapText).not.toContain(ONE_PIXEL_PNG_BASE64);
+
+    const object = first.map.slides[0]!.objects[0]!;
+    expect(object).toMatchObject({
+      id: "raster-picture.background",
+      kind: "raster-asset",
+      source: {
+        element: "image",
+        role: "asset",
+        exportMode: "raster",
+        resource: {
+          mediaType: "image/png",
+          byteLength: 68,
+          widthPixels: 1,
+          heightPixels: 1,
+        },
+      },
+      composed: {
+        localBounds: { x: 100, y: 100, width: 400, height: 400 },
+      },
+      emitted: {
+        element: "p:pic",
+        drawingMl: {
+          transform: {
+            offXEmu: 762_000,
+            offYEmu: 762_000,
+            extCxEmu: 3_048_000,
+            extCyEmu: 3_048_000,
+          },
+          picture: {
+            relationshipId: "rId2",
+            mediaType: "image/png",
+            byteLength: 68,
+            widthPixels: 1,
+            heightPixels: 1,
+            stretch: "fillRect",
+            lockAspect: true,
+          },
+        },
+      },
+      capability: {
+        classification: "atomic-raster",
+        exportMode: "raster",
+        compilerCapability: "c9-static-png-picture/0.1",
+      },
+    });
+    expect(object.source.attributes).not.toHaveProperty("href");
+    const digest = object.source.resource!.sha256;
+    expect(object.emitted.drawingMl).toMatchObject({
+      picture: {
+        sha256: digest,
+        partName: `ppt/media/${digest}.png`,
+      },
+    });
+    expect(first.map.pptx.partNames).toContain(`ppt/media/${digest}.png`);
+
+    const zip = await JSZip.loadAsync(first.pptxBytes, { checkCRC32: true });
+    const [slideXml, slideRels, media] = await Promise.all([
+      zip.file("ppt/slides/slide1.xml")!.async("string"),
+      zip.file("ppt/slides/_rels/slide1.xml.rels")!.async("string"),
+      zip.file(`ppt/media/${digest}.png`)!.async("uint8array"),
+    ]);
+    expect(slideXml).toContain("<p:pic>");
+    expect(slideXml).toContain(
+      '<p:cNvPr id="' +
+        object.emitted.cNvPrNumericId +
+        '" name="src.raster-picture.background"/>',
+    );
+    expect(slideXml).toContain('<a:blip r:embed="rId2"/>');
+    expect(slideXml).toContain("<a:stretch><a:fillRect/></a:stretch>");
+    expect(slideRels).toContain(
+      `Id="rId2" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="../media/${digest}.png"`,
+    );
+    expect(media).toEqual(
+      Uint8Array.from(Buffer.from(ONE_PIXEL_PNG_BASE64, "base64")),
     );
   });
 

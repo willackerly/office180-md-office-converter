@@ -84,6 +84,22 @@ For every text edit:
 Character counts, average-character estimates, CSS width heuristics,
 `getBBox()` alone, and browser fallback fonts are not proof.
 
+## PowerPoint authored baseline
+
+For the current direct one-line PPTX subset, C7/C9 preserve the SVG baseline in
+the text frame's signed top inset:
+
+```text
+tIns = (line.y - frame.y - fontSize) × 7620 EMU
+baselineY = frameY + tIns + fontSize × 7620 EMU
+```
+
+The emitted DrawingML also fixes zero left/right/bottom inset, top anchor,
+`wrap="none"`, and exactly `a:noAutofit`. C10 may turn only a supported
+baseline/top-inset delta back into the exact typed line-anchor change. A
+changed side/bottom inset, wrap, anchor, autofit, or other text-body policy
+refuses rather than being normalized silently.
+
 ## Browser and native evidence
 
 A trusted editor may measure caller-supplied exact bytes after
@@ -94,3 +110,6 @@ evidence until recomputed.
 Browser variance remains environment evidence, not universal parity. Native
 PowerPoint text calibration and human visual review are higher fidelity gates.
 Neither structural PPTX reopen nor Quick Look proves native text fidelity.
+Quick Look may use host fallback fonts even when PowerPoint resolves the
+intended Office font. Treat it as preview smoke only; the current native PDF
+bridge has not completed a live success path.

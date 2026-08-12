@@ -4,7 +4,8 @@
 deck/atom kernel, the unified C5 `vector180-patch/0.1` protocol, C6/C8
 projections, trusted
 browser editor, C7 deck canary, bounded C9 atom composition/PPTX compilation,
-and C10 2.0 mapped-PPTX reconciliation; C11 1.2 automates browser/Quick Look
+and C10 2.0 mapped-PPTX reconciliation, plus C13 complete-deck PPTX/map and
+trusted-editor derivatives; C11 1.2 automates browser/Quick Look
 evidence and a bounded exact-path native no-op lifecycle, while general
 authoring/import, representative native edits, and native text/cross-renderer
 fidelity remain open.
@@ -40,8 +41,8 @@ may add only the collection-level work they actually require.
 The executable source profile remains Vector180 `0.1`: authored hard lines,
 no wrapping, and no autofit. The package version is
 `@office180/vector180@0.1.0-alpha.5`; the banked 0.1.1 paragraph-resilience design is
-not accepted syntax or compiler behavior. The single package, C4 through C10,
-the published schemas, C11 evidence tooling, and their tests currently provide:
+not accepted syntax or compiler behavior. The single package, current C4–C13
+contracts, published schemas, evidence tooling, and tests currently provide:
 
 - `scanVector180Source`; deck-only `parseManifest`/`validateManifest`; explicit
   `loadDeck` and `loadAtom`; and discriminated-union `loadVector180Document`;
@@ -79,12 +80,15 @@ the published schemas, C11 evidence tooling, and their tests currently provide:
   save/close/reopen on 2026-08-02; bound visual evidence remains
   `manual-required`; and
 - C12 atom-only stable-ID source comparison, with exact lexical, metadata, and
-  supported semantic changes kept distinct.
+  supported semantic changes kept distinct; and
+- C13 deterministic complete-canonical-deck PPTX compilation with a
+  source-bound descriptor-only map, plus trusted-editor hydrated SVG, browser
+  PNG, mapped PPTX, and separately revealed map downloads.
 
 Interfaces in this document that exceed those bounded surfaces—rich text,
-structural insertion/reparenting, browser geometry/style controls, external
-dependencies, canonical serialization, arbitrary SVG/PPTX import, broader
-rendering, or representative native Office edit automation—remain roadmap
+structural insertion/reparenting, drag handles, external dependencies,
+canonical serialization, arbitrary SVG/PPTX import, broader rendering, or
+representative native Office edit automation—remain roadmap
 unless explicitly identified as implemented.
 
 Behavioral authority lives in
@@ -98,9 +102,12 @@ and
 [`CONTRACT:C10-PPTV-PPTX-RECONCILIATION.2.0`](architecture/CONTRACT-C10-PPTV-PPTX-RECONCILIATION.2.0.md),
 [`CONTRACT:C11-OFFICE-VISUAL-EVIDENCE.1.2`](architecture/CONTRACT-C11-OFFICE-VISUAL-EVIDENCE.1.2.md),
 and
-[`CONTRACT:C12-VECTOR180-SOURCE-DIFF.1.0`](architecture/CONTRACT-C12-VECTOR180-SOURCE-DIFF.1.0.md).
-All current C4-C12 successor contracts remain `in-progress`; “implemented” in
-this document describes tested bounded code, not contract promotion.
+[`CONTRACT:C12-VECTOR180-SOURCE-DIFF.1.0`](architecture/CONTRACT-C12-VECTOR180-SOURCE-DIFF.1.0.md),
+and
+[`CONTRACT:C13-VECTOR180-DECK-EXPORT.0.1`](architecture/CONTRACT-C13-VECTOR180-DECK-EXPORT.0.1.md).
+C8 2.0 is verified. Current C4–C7 and C9–C13 successor contracts remain
+`in-progress`; “implemented” in this document describes tested bounded code,
+not contract promotion.
 
 ## 2. Hard invariants
 
@@ -1049,9 +1056,10 @@ never allocates identity, infers references, reparents, clones another object
 kind, or accepts more than one clone.
 
 These operations are available through the portable patch API and CLI. The
-generated browser editor UI still exposes only direct text plus deck
-theme/order controls; it does not yet present geometry, style, ordering, or
-deletion controls.
+generated browser editor UI exposes direct text, exact numeric geometry,
+concrete direct style, safe within-parent ordering/deletion, and deck
+theme/slide-order controls. Drag handles, insertion, reparenting, rich text,
+wrapping, and edits across raster/non-native boundaries remain unavailable.
 
 ### 13.4 Representative operations
 
@@ -1283,7 +1291,7 @@ Normalization:
 
 Normalization must not silently convert a requested native object to raster.
 
-### 15.2 Implemented bounded C9/C10 PowerPoint path
+### 15.2 Implemented bounded C9/C10/C13 PowerPoint paths
 
 The C9 atom path does not wait for a general normalization API and does not
 coerce arbitrary SVG. It consumes one complete C4/C6 standalone diagram plus a
@@ -1307,8 +1315,23 @@ infers physical size, stretches, crops, or letterboxes. It emits a
 deterministic self-contained one-slide deck aggregation, a native PPTX, and a
 canonical `vector180-pptx-map/0.1` sidecar that binds the atom, composed deck,
 placement, supported object inventory, and PPTX hashes. The atom remains source
-authority. Current C9 compilation accepts atoms only; deck input stays on the
-independent C7 canary.
+authority. Current C9 compilation accepts atoms only.
+
+C13 owns the distinct complete-deck path:
+
+```ts
+compileVector180PptxDeck(
+  deck: Vector180Deck
+): Promise<Vector180PptxDeckArtifact>
+```
+
+It reparses the retained exact source, requires complete canonical HTML
+materialization, preserves manifest order and hidden state, authenticates and
+deduplicates inline PNG bytes across slides, then emits native PPTX plus
+`vector180-pptx-deck-map/0.1`. The descriptor-only map binds exact
+source/resolved/emitted/OPC identities and contains no payload bytes. This pure
+kernel is shared by Node `compile-deck` and the trusted editor. It does not
+widen the C7 canary or create a C10 reconciliation baseline.
 
 The Node boundary exposes fail-closed inspection and reconciliation:
 

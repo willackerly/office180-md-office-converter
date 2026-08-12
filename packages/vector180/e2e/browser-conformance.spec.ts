@@ -75,6 +75,17 @@ const BROWSER_KERNEL_URL = new URL(
   "../assets/vector180-browser-kernel-0.1.iife.js",
   import.meta.url,
 );
+const INLINE_PNG_DATA_URI =
+  "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=";
+const INLINE_PNG_ATOM = `<svg id="inline-png" data-vector180-version="0.1"
+  viewBox="0 0 1 1" xmlns="http://www.w3.org/2000/svg">
+  <image id="inline-png.background"
+    data-vector180-role="asset" data-vector180-export="raster"
+    data-vector180-bounds="0 0 1 1"
+    x="0" y="0" width="1" height="1"
+    href="${INLINE_PNG_DATA_URI}"/>
+</svg>
+`;
 
 const fixtures = [
   {
@@ -119,6 +130,34 @@ for (const fixture of fixtures) {
     expect(browserResult).toEqual(nodeResult);
   });
 }
+
+test("C4/C6 inline PNG stays descriptor-only in the browser kernel", async ({
+  page,
+}) => {
+  const name = "inline-png.vector180.svg";
+  const nodeResult = await inspectVector180Conformance({
+    kind: "text",
+    text: INLINE_PNG_ATOM,
+    name,
+  });
+  const browserResult = await page.evaluate(
+    async ({ name, text }) => {
+      const kernel = (
+        globalThis as unknown as { Vector180BrowserKernel: BrowserKernel }
+      ).Vector180BrowserKernel;
+      return kernel.inspectVector180Conformance({ kind: "text", text, name });
+    },
+    { name, text: INLINE_PNG_ATOM },
+  );
+
+  expect(browserResult).toEqual(nodeResult);
+  expect(browserResult.c4Diagnostics).toEqual([]);
+  expect(browserResult.c6Diagnostics).toEqual([]);
+  const serialized = JSON.stringify(browserResult);
+  expect(serialized).not.toContain("data:image/png");
+  expect(serialized).toContain('"mediaType":"image/png"');
+  expect(serialized).toMatch(/"sha256":"[0-9a-f]{64}"/u);
+});
 
 test("C8 loads exact bytes, labels the environment, and fails closed on missing glyphs", async ({
   page,

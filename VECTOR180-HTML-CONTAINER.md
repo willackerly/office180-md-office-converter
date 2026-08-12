@@ -3,10 +3,12 @@
 **Status:** `@office180/vector180@0.1.0-alpha.5` implements the source/container 0.1
 deck and diagram surfaces through C4-C8, C5 2.0 typed patches including one
 exact reviewed connector clone, bounded C9 atom composition/PPTX compilation,
-and C10 2.0 mapped-PPTX reconciliation. Repository C11 1.2 tooling adds
+and C10 2.0 mapped-PPTX reconciliation, plus C13 mapped complete-deck export
+and trusted-editor derivatives. Repository C11 1.2 tooling adds
 browser/Quick Look evidence and a proven exact-path native no-op lifecycle.
-The browser editor UI remains direct-text plus deck theme/order only; general
-deck or multi-atom composition, baseline-free PPTX import, representative
+The browser editor UI exposes safe numeric C5 controls and protected
+authenticated backgrounds; drag handles, external multi-atom composition,
+deck reconciliation, baseline-free PPTX import, representative
 native edits/fidelity, and source/profile 0.1.1 remain roadmap.
 
 Vector180 HTML is the declarative, single-file aggregation envelope for a deck of
@@ -19,7 +21,7 @@ the default authoring source is a fully hydrated independent `*.vector180.svg`, 
 a synthetic one-slide HTML deck. Keep a related visual suite as atoms. Use HTML
 only when the artifact needs real collection semantics: multiple ordered
 slides, shared deck themes, the fixed browser viewer, or the C7 PowerPoint
-canary. Use the standalone atom itself for the bounded C9 `compile` path;
+canary/C13 mapped deck compiler. Use the standalone atom itself for the bounded C9 `compile` path;
 `compose` is optional when the generated one-slide aggregation is requested.
 
 The compound extension is:
@@ -674,6 +676,7 @@ vector180 editor-pack
 vector180 pptx-canary
 vector180 compose
 vector180 compile
+vector180 compile-deck
 vector180 reconcile
 vector180 migrate
 vector180 new atom
@@ -698,6 +701,12 @@ when `--font-map` is omitted; a custom exact map remains explicit.
 `extract` accepts an HTML deck plus one slide ID and emits a standalone SVG.
 `pptx-canary` accepts HTML decks only and never wraps an SVG into a synthetic
 slide, even when its viewBox is 16:9.
+
+`compile-deck` accepts one complete canonical HTML deck and atomically writes
+native PPTX plus `vector180-pptx-deck-map/0.1`. It preserves manifest order and
+hidden state, authenticates/deduplicates inline PNG bytes across slides, and
+keeps the map descriptor-only. The same pure compiler powers trusted-editor
+PPTX/map downloads; C10 does not accept this deck map.
 
 `compose` and `compile` are the bounded C9 standalone-atom path. Both require
 an explicit `X,Y,W,H` placement on a `1600 × 900` slide and accept either
@@ -730,8 +739,8 @@ vector180 explode
 vector180 agent-guide
 ```
 
-General deck/multi-atom composition, deck-mode C9 compilation, and
-baseline-free PowerPoint import remain capability work, not alternate meanings
+External multi-atom composition, C13 deck reconciliation, and baseline-free
+PowerPoint import remain capability work, not alternate meanings
 of the implemented `compose`, `compile`, or `reconcile` commands.
 
 The CLI is the universal substrate. MCP servers, editor integrations, and agent
@@ -755,20 +764,23 @@ editor application under a strict CSP. The source runtime or event-bearing
 markup is never executed to discover meaning. A payload hash mismatch makes
 the session read-only.
 
-The implemented editor supports object selection, direct-text Apply for either
-source kind, deck-only active-theme and slide-order controls, exact-source
-undo/redo, diagnostics, source inspection, and clean current-source download.
+The implemented editor supports safe-default View/Edit state, object selection,
+direct-text Apply, exact numeric C5 geometry/connector/group/one-line-frame/
+style/order/delete controls, deck-only active-theme and slide-order controls,
+exact-source undo/redo, diagnostics, source inspection, and clean current-source download.
+Authenticated inline PNG assets render through exact retained bytes but remain
+protected.
 A deck can additionally download its selected slide through the same hydrated
 extraction path described above. Optional File System Access persistence
 requires explicit user authorization; after the initial choice, every save
 compares the on-disk hash with the last successful editor save and refuses a
 stale overwrite.
 
-Those are the browser UI's only write controls. The portable C5 kernel can
-apply typed geometry, connector, explicit group translation, direct
-one-line text-frame, child-order, safe-deletion, and direct native-style
-transactions programmatically, and C10 may propose them, but the editor does
-not expose corresponding gestures or property controls.
+The separate derivative menu exports a hydrated selected-slide SVG, bounded
+renderer-labelled PNG, complete-deck PPTX, and its descriptor-only map. Source
+save/download stays distinct, async work is source-hash checked, and any edit
+invalidates a prior map. Drag handles, insertion/reparenting/grouping, rich
+text, and token-rule controls remain absent; PDF is deferred.
 
 Text remains strictly no-reflow. Neither C5 patches, the editor, nor C6-C10
 wrap, autofit, shrink, or re-line authored text. The selected exact map is the
@@ -839,8 +851,12 @@ comparisons plus the exact-path no-op Office lifecycle. The writable trusted
 editor and hydrated slide extraction consume those contracted surfaces without
 creating a second source authority.
 
-Browser geometry/style/structure controls, general deck or multi-atom
-composition, arbitrary or baseline-free PPTX import, richer text/assets,
+C13 compiles one complete canonical HTML deck to native PPTX plus a strict
+descriptor-only map and owns the trusted editor derivative menu. Its map is not
+a C10 reconciliation baseline.
+
+Browser drag handles and richer structural controls, external multi-atom
+composition, deck reconciliation, arbitrary or baseline-free PPTX import, richer text/assets,
 broader compilation, representative native Office editing, cross-renderer
 fidelity/human review, and the banked source/profile 0.1.1 behavior remain
 future work.

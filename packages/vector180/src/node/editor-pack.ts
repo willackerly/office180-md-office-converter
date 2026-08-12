@@ -10,6 +10,7 @@
  * CONTRACT:C5-PPTV-PATCH.2.0
  * CONTRACT:C6-PPTV-RESOLVED.2.0
  * CONTRACT:C8-PPTV-TEXT-FIT.2.0
+ * CONTRACT:C13-VECTOR180-DECK-EXPORT.0.1
  */
 
 import { createHash } from "node:crypto";
@@ -149,6 +150,19 @@ export async function createEditorPack(
   }
   if (hasErrors(document.diagnostics)) {
     return { diagnostics: [...document.diagnostics] };
+  }
+  if (document.wireFamily !== "vector180") {
+    return {
+      diagnostics: [
+        ...document.diagnostics,
+        {
+          code: "VECTOR180-EDITOR-WIRE-FAMILY",
+          severity: "error",
+          message:
+            "Writable editor publication requires canonical Vector180 source; migrate legacy PPTV explicitly first.",
+        },
+      ],
+    };
   }
 
   const nearLimit = options.nearLimit ?? DEFAULT_NEAR_LIMIT;
@@ -320,7 +334,7 @@ function renderWrapper(
     "default-src 'none'",
     `script-src '${sha256Csp(serializedPayload)}' '${sha256Csp(app)}'`,
     `style-src '${sha256Csp(css)}'`,
-    "img-src data:",
+    "img-src data: blob:",
     "connect-src 'none'",
     "font-src 'none'",
     "object-src 'none'",
@@ -343,17 +357,31 @@ function renderWrapper(
   <style>${css}</style>
 </head>
 <body>
-  <div class="app">
+  <div class="app" data-editor-mode="view">
     <header class="toolbar">
       <div class="toolbar__title">
         <strong data-title>Vector180 Editor</strong>
         <small data-hash></small>
       </div>
       <span class="status" data-integrity data-ok="false">verifying source…</span>
+      <div class="mode-toggle" role="group" aria-label="Editor mode">
+        <button type="button" data-mode-view aria-pressed="true">View</button>
+        <button type="button" data-mode-edit aria-pressed="false">Edit</button>
+      </div>
       <button type="button" data-undo disabled>Undo</button>
       <button type="button" data-redo disabled>Redo</button>
       <button type="button" data-save hidden>Save file</button>
       <button type="button" data-download>Download source</button>
+      <details class="export-menu">
+        <summary>Export as</summary>
+        <div class="export-menu__panel">
+          <button type="button" data-export-svg>SVG</button>
+          <button type="button" data-export-png>PNG</button>
+          <button type="button" data-export-pptx>PPTX</button>
+          <button type="button" data-export-map hidden>PPTX map</button>
+          <small>PDF is intentionally deferred.</small>
+        </div>
+      </details>
     </header>
     <div class="operation-status" data-operation-status role="status" aria-live="polite"></div>
     <main class="workspace">
@@ -381,13 +409,15 @@ function renderWrapper(
       <aside class="panel" aria-label="Object inspector">
         <h2>Objects</h2>
         <ul class="tree" data-tree></ul>
-        <h2>Direct text</h2>
-        <div class="text-editor">
+        <h2 data-edit-only>Direct text</h2>
+        <div class="text-editor" data-text-editor data-edit-only>
           <label for="vector180-direct-text">Selected hard line</label>
           <input id="vector180-direct-text" type="text" data-text-edit disabled>
           <button type="button" data-text-apply disabled>Apply text</button>
           <small data-text-help>Select one direct-text object.</small>
         </div>
+        <h2 data-edit-only>Manipulate</h2>
+        <div class="manipulation" data-manipulation data-edit-only></div>
         <h2>Inspector</h2>
         <div class="inspector" data-inspector></div>
         <h2>Diagnostics</h2>

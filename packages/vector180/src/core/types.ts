@@ -134,6 +134,31 @@ export interface ManifestParseResult {
 export type Vector180Role = "shape" | "text" | "connector" | "group" | "asset";
 export type Vector180ExportMode = "native" | "svg" | "raster" | "ignore";
 
+export interface Vector180InlinePngResourceDescriptor {
+  readonly mediaType: "image/png";
+  readonly sha256: string;
+  readonly byteLength: number;
+  readonly widthPixels: number;
+  readonly heightPixels: number;
+}
+
+export type Vector180InlinePngParseFailureCode =
+  | "VECTOR180-INLINE-PNG-DATA-URI"
+  | "VECTOR180-INLINE-PNG-LIMIT"
+  | "VECTOR180-INLINE-PNG-FORMAT";
+
+export type Vector180InlinePngParseResult =
+  | {
+      readonly ok: true;
+      readonly descriptor: Vector180InlinePngResourceDescriptor;
+      readonly bytes: Uint8Array;
+    }
+  | {
+      readonly ok: false;
+      readonly code: Vector180InlinePngParseFailureCode;
+      readonly message: string;
+    };
+
 export interface IndexedObject {
   id: string;
   slideId: string;
@@ -223,6 +248,7 @@ export interface Vector180Node {
   readonly parentId: string | null;
   readonly children: readonly Vector180Node[];
   readonly text?: string;
+  readonly resource?: Vector180InlinePngResourceDescriptor;
   readonly opaque: boolean;
   readonly sourceRange: SourceRange;
   readonly openTagRange: SourceRange;
@@ -406,6 +432,7 @@ export interface ObjectProjection {
   export: Vector180ExportMode;
   element: string;
   text?: string;
+  resource?: Vector180InlinePngResourceDescriptor;
   children: ObjectProjection[];
   classes?: string[];
   attributes?: Record<string, string>;

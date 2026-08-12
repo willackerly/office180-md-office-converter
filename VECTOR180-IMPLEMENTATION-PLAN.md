@@ -3,21 +3,24 @@
 **Status:** active delivery roadmap; first-class standalone diagrams, shared
 browser conformance, the writable trusted editor MVP, C5 2.0 typed
 native-object patches plus one exact reviewed connector clone, C9 explicit atom
-composition/baselines, C10 2.0 proof-carrying reconciliation, and C11 1.2
-browser/Quick Look plus exact-path native no-op lifecycle evidence are
-implemented; the hydrated SVG atom is now the documented default source,
-pre-production naming/lineage/diff gates are implemented, C7 through C11 retain
-their remaining promotion gates, and source/profile 0.1.1 text resilience is
-banked but not implemented
+composition/baselines with strict inline static-PNG pictures and
+authored-baseline text mapping, C10 2.0 proof-carrying reconciliation with an
+immutable first picture slice, and C11 1.2 browser/Quick Look plus exact-path
+native no-op lifecycle evidence are implemented; C13 0.1 mapped complete-deck
+PPTX/map plus trusted-editor SVG/PNG/PPTX derivatives are implemented; the
+hydrated SVG atom is now the documented default source, pre-production
+naming/lineage/diff gates are implemented, C8 2.0 is verified, C4–C7 and
+C9–C13 retain their remaining promotion gates, and
+source/profile 0.1.1 text resilience is banked but not implemented
 
 **Decision date:** 2026-07-28
 
-**Status refreshed:** 2026-08-02
+**Status refreshed:** 2026-08-12
 
 **Sequence:** strict hydrated atom → trusted browser editor → early PPTX
 canary → typed patch/atom baseline/reconciliation → pre-production
 destination-neutral naming/lineage/diff cutover → banked text-resilience contracts →
-editor/compiler/evidence expansion
+mapped deck/editor derivative export → editor/compiler/evidence expansion
 
 This plan turns the implemented C4 source kernel and C5 patch engine into a
 small, reliable visual authoring system and editable PowerPoint compiler. It
@@ -59,27 +62,38 @@ transactions. Its
 `vector180-patch/0.1` envelope adds exactly one structural exception:
 `clone-connector` copies one existing native straight connector into the same
 parent with an explicit fresh ID, references, endpoints, style, and complete
-sibling order. The browser editor still exposes direct text and deck
-theme/order controls only; the wider C5 vocabulary is currently a
-programmatic/CLI/reconciliation surface. Structured hard-line/rich-text
-editing, general hit-testing, generic insertion or duplication, reparenting,
+sibling order. The browser editor exposes those supported operations as
+hash-bound numeric inspector controls in safe-default View/Edit modes; exact
+source remains authoritative and protected raster/non-native objects cannot be
+mutated. Structured hard-line/rich-text editing, drag handles, generic
+insertion or duplication, reparenting,
 group scaling, and broad native PowerPoint fidelity remain outside the
 implemented boundary.
 
 C9 additionally turns one supported standalone atom into a deterministic
 one-slide deck and paired PPTX/map through explicit identity or
-uniform-scale-plus-translation placement. C10 authenticates an edited
-descendant against that exact source/map/placement, records named proof for
-accepted native serializer normalizations, emits only typed C5 proposals, and
-proves a patchable result by temporary application, regeneration, and
-reinspection. Duplicate identity refuses by default. C10 2.0 accepts a strict
-hash/fingerprint-bound review document only when one of exactly two occurrences
-of one mapped straight connector remains baseline-equivalent; the reviewer
-supplies the fresh ID, explicit source references, hashes, occurrence
-fingerprints, parent/order, inverse endpoints, and complete style. Zero or two
-baseline matches, another finding, or stale/incomplete review data still
-refuse with deterministic findings and resolution options. Neither surface is
-deck-mode C9, arbitrary PPTX import, or a general converter.
+uniform-scale-plus-translation placement. Its supported objects now include
+strict inline static PNGs packaged as content-addressed stable-name `p:pic`
+objects, and one-line authored SVG baselines map through signed DrawingML
+`tIns`. C10 authenticates an edited descendant against that exact
+source/map/placement, records named proof for accepted native serializer
+normalizations, emits only typed C5 proposals, and proves a patchable result by
+temporary application, regeneration, and reinspection. It can invert supported
+`tIns` changes into exact authored line-anchor moves, while the first PNG slice
+accepts only unchanged pictures and makes any media/relationship/geometry/
+deletion/order mutation review-required. Duplicate identity refuses by
+default. C10 2.0 accepts a strict hash/fingerprint-bound review document only
+when one of exactly two occurrences of one mapped straight connector remains
+baseline-equivalent; the reviewer supplies the fresh ID, explicit source
+references, hashes, occurrence fingerprints, parent/order, inverse endpoints,
+and complete style. Zero or two baseline matches, another finding, or
+stale/incomplete review data still refuse with deterministic findings and
+resolution options. C13 separately compiles one complete canonical HTML deck
+to native PPTX plus a descriptor-only map, preserving order/hidden state and
+deduplicating authenticated PNG media. The same pure kernel runs in the trusted
+editor, which also exports hydrated selected-slide SVG and renderer-labelled
+PNG. C10 does not accept C13 maps. None of these surfaces is arbitrary PPTX
+import or a general converter.
 
 That boundary is useful rather than alarming: the source and identity model do
 not need redesign. The next work specializes and proves the intentionally small
@@ -131,14 +145,14 @@ introducing arbitrary unit/layout behavior.
 The author declares role and export intent; the resolver derives the concrete
 kind from the SVG element.
 
-| Source boundary | Semantic/editor selection boundary | PowerPoint intent / current C7/C9 status |
-|---|---|---|
-| `rect`, `circle`, or `ellipse`; role `shape`, export `native` | Independent native primitive | Native shape; strict subset implemented in C7/C9 |
-| `text`; role `text`, export `native` | Explicit-line text frame | Native text box; one hard line implemented in C7/C9 |
-| `line`; role `connector`, export `native` | Independent straight edge | Native line/connector; straight form implemented in C7/C9 |
-| `g`; role `group`, export `native` | Addressable children plus one parent scope | Native PowerPoint group; translated subset implemented in C7/C9 |
-| `g`; role `asset`, export `svg` | One atomic vector image; internals are opaque | SVG picture plus PNG fallback; roadmap |
-| `image`; role `asset`, export `raster` | One atomic raster image | Native picture; roadmap |
+| Source boundary                                               | Semantic/editor selection boundary            | PowerPoint intent / current C7/C9 status                                          |
+| ------------------------------------------------------------- | --------------------------------------------- | --------------------------------------------------------------------------------- |
+| `rect`, `circle`, or `ellipse`; role `shape`, export `native` | Independent native primitive                  | Native shape; strict subset implemented in C7/C9                                  |
+| `text`; role `text`, export `native`                          | Explicit-line text frame                      | Native text box; one hard line plus authored-baseline `tIns` implemented in C7/C9 |
+| `line`; role `connector`, export `native`                     | Independent straight edge                     | Native line/connector; straight form implemented in C7/C9                         |
+| `g`; role `group`, export `native`                            | Addressable children plus one parent scope    | Native PowerPoint group; translated subset implemented in C7/C9                   |
+| `g`; role `asset`, export `svg`                               | One atomic vector image; internals are opaque | SVG picture plus fallback; roadmap                                                |
+| strict inline PNG `image`; role `asset`, export `raster`      | One atomic raster image                       | Stable-name content-addressed `p:pic`; implemented in C9                          |
 
 A visual “box with text” is a native group containing a rectangle and a text
 object. It is not one inferred compound object. A complex illustration is an
@@ -155,6 +169,15 @@ compiler must not use browser `getBBox()` as canonical geometry. Their safe
 internal SVG may be arbitrarily rich within the separately enforced static
 resource policy, but it remains one selection and, if promoted through the
 later native gates, one PowerPoint picture.
+
+The implemented raster boundary is intentionally smaller: exactly one
+canonical whitespace-free inline static PNG on an `image`, no larger than 4
+MiB decoded or 16,777,216 pixels. Explicit `x/y/width/height` equal declared
+bounds and the intrinsic/authored aspect ratios match exactly. C4/C6 project
+only the media type/SHA-256/byte-length/pixel-dimensions descriptor while exact
+source retains the data URI. C9 reparses and authenticates those source bytes;
+external URLs, APNG, JPEG/other raster formats, implicit crop/stretch, and
+fallback rendering refuse.
 
 ### 2.3 Executable 0.1 explicit-line text; never automatic reflow
 
@@ -174,10 +197,15 @@ The first native text model makes reflow impossible by design:
 - styled runs, bullets, columns, text paths, and nested spans are deferred.
 
 The current C7 and C9 writers emit exactly one explicit paragraph with
-zero/contracted margins, `wrap="none"`, and `a:noAutofit`; they reject
-multiline text. A later multiline writer must emit one explicit
-paragraph/break per source hard line. A text frame resize changes only the
-frame; it does not reflow or resize text.
+zero left/right/bottom inset, top anchor, `wrap="none"`, and
+`a:noAutofit`; they reject multiline text. The authored baseline is retained as
+signed `a:bodyPr/@tIns = (line.y - frame.y - fontSize) × 7620` EMU. C10
+reconstructs it as `shapeY + tIns + fontSizeHundredthPoints × 127`, allowing a
+typed baseline-only or combined frame/inset move while refusing wrapping,
+autofit, other body anchors/insets, and out-of-range/non-integral values. A
+later multiline writer must emit one explicit paragraph/break per source hard
+line. A text frame resize changes only the frame; it does not reflow or resize
+text.
 
 Compiler-grade text uses one concrete resolved font family rather than a
 browser fallback stack. The first profile supports the small set of font
@@ -190,6 +218,9 @@ browser measurement. Its overlay uses the worse current Node/browser status;
 an edited line whose embedded Node evidence no longer matches is unverified.
 C8 does not discover a system font or certify PowerPoint pixel parity. Native
 calibration, Vector180/PPTX font embedding, and arbitrary web fonts remain deferred.
+Quick Look may substitute a host fallback face and is preview smoke only; the
+current evidence does not establish a successful native PDF bridge or final
+PowerPoint positional fidelity.
 
 The banked source/profile 0.1.1 direction in
 [`VECTOR180-TEXT-RESILIENCE-0.1.1.md`](VECTOR180-TEXT-RESILIENCE-0.1.1.md)
@@ -278,12 +309,14 @@ stable IDs, painter/group order, and a hash-bound composition declaration. It
 must independently reload through C4 and resolve through C6. `compile` emits a
 paired PPTX and map from that exact placement. C7 remains HTML-deck-only, while
 the current C9 slice remains standalone-atom-only: adding atoms to existing
-decks, deck-mode C9, qualified identities, external dependencies, multi-root
-composition, and cycle rules remain future work.
+decks, reverse reconciliation for C13 complete-deck exports, qualified
+identities, external dependencies, multi-root composition, and cycle rules
+remain future work. C13 separately compiles one already-canonical HTML deck;
+it does not widen C9's atom-composition contract.
 
 ## 3. Delivery sequence
 
-Progress at the 2026-08-02 integration point:
+Progress at the 2026-08-12 integration point:
 
 - C4-C6 load and resolve both self-contained HTML decks and first-class
   standalone SVG diagrams without coercion. The shared browser kernel matches
@@ -294,15 +327,19 @@ Progress at the 2026-08-02 integration point:
 - The exact-source editor session and deterministic strict-CSP pack now provide
   writable deck/diagram controls, fresh literal-data projections, integrity
   fail-closed behavior, clean downloads, per-slide SVG extraction, exact
-  undo/redo, and stale-safe optional file persistence. The UI controls remain
-  direct-text/theme/order only even though C5 2.0 now exposes typed
-  native-object operations to programmatic, CLI, and reconciliation callers.
-- C7's deterministic primitive-only PPTX canary is implemented. It passes
-  applicable ISO/ECMA schemas, independent OpenDocKit reopen, and native
-  PowerPoint 16.111.2 open/PDF-render smoke without repair. The C11 bridge also
-  passed an exact-path PowerPoint 16.111.2 no-op save/close/reopen on a mapped
-  C9 artifact. It is not a general converter, representative-edit, or
-  quantitative native-fidelity claim.
+  undo/redo, and stale-safe optional file persistence. Safe-default Edit mode
+  now exposes exact numeric C5 geometry, connector, group-translation,
+  one-line frame/anchor, native-style, sibling-order, and deletion controls;
+  authenticated raster assets render but remain protected.
+- C7's deterministic primitive-only public PPTX canary is implemented. Its
+  shared package engine also packages C9-authenticated PNG bytes as
+  content-addressed `p:pic` media and maps authored one-line baselines through
+  signed `tIns`. Applicable ISO/ECMA schemas, independent OpenDocKit reopen,
+  and prior minimal-fixture native PowerPoint open/render smoke pass. That
+  prior/manual smoke is not a successful result from the newer native PDF
+  bridge. The C11 bridge also passed an exact-path PowerPoint 16.111.2 no-op
+  save/close/reopen on a mapped C9 artifact. It is not a general converter,
+  representative-edit, or quantitative native-fidelity claim.
 - C8's pure anchor-aware deck/diagram preflight, strict selected font map with
   one bundled exact ABeeZee default, exact-byte Fontkit adapter, worked-deck
   regression, environment-labeled browser adapter, and conservative editor
@@ -318,31 +355,45 @@ Progress at the 2026-08-02 integration point:
   connector clone with a fresh ID and fully explicit semantic state/order.
 - C9's bounded atom path explicitly composes identity or aspect-preserving
   uniform placement into a deterministic one-slide deck, then emits a paired
-  native PPTX and complete hash-bound object map. Deck input, multiline text,
-  opaque/raster assets, rounded rectangles, and non-unit opacity remain
-  refused.
+  editable PPTX and complete hash-bound object map. Canonical inline PNGs emit
+  as atomic stable-name pictures and map without base64. Deck input, multiline
+  text, opaque SVG/JPEG/other raster assets, mutable/cropped pictures, rounded
+  rectangles, and non-unit opacity remain refused.
 - C10 2.0 authenticates exact atom, composed-deck, map, placement, and PPTX
   lineage; accepts native-save drift only through named structural proofs;
   emits deterministic findings, blocked candidates, and resolution options;
   and proves patchable results by C5 application and exact-placement C9
-  regeneration/reinspection. A strict reviewed resolution can recover exactly
-  one same-parent connector copy when exactly one of two occurrences remains
-  baseline-equivalent. Duplicate identity otherwise refuses, including zero or
-  two matches, and all arbitrary/stale PPTX, missing identity, reparenting,
-  group scaling, representation changes, implicit transforms, unsupported
-  style rewrites, and unsupported constructs still fail closed.
+  regeneration/reinspection. It inverts supported `tIns` baseline changes into
+  typed line-anchor updates. Unchanged mapped PNG pictures authenticate, but
+  any media, relationship, geometry, deletion, duplication, or order mutation
+  is review-required with no partial patch. A strict reviewed resolution can
+  recover exactly one same-parent connector copy when exactly one of two
+  occurrences remains baseline-equivalent. Duplicate identity otherwise
+  refuses, including zero or two matches, and all arbitrary/stale PPTX,
+  missing identity, reparenting, group scaling, representation changes,
+  implicit transforms, unsupported style rewrites, and unsupported constructs
+  still fail closed.
+- C13 0.1 accepts one complete canonical HTML deck, preserves manifest order
+  and hidden slides, compiles the strict native subset plus authenticated
+  cross-slide deduplicated PNG pictures, and emits a deterministic
+  descriptor-only source/resolved/emitted/OPC map. The browser and Node use the
+  same pure compiler and produce byte-identical PPTX/map output. The editor's
+  derivative menu also downloads a hydrated selected-slide SVG and bounded
+  renderer-labelled PNG; source save remains separate and PDF is deferred.
 - C11 1.2 implements deterministic trusted standalone-SVG browser capture,
   DOCX/PPTX Quick Look smoke, evidence-envelope validation/comparison, and a
   bounded non-interactive exact-path native Office bridge. On 2026-08-02 the
   bridge passed no-op save/close/reopen with Word and PowerPoint 16.111.2 while
   preserving DOCX provenance and C9 lineage. Quick Look remains preview
-  evidence only, and the no-op bridge does not prove representative edits,
-  native text calibration, cross-renderer fidelity, or checked human review.
+  evidence only and may substitute host fonts. The no-op bridge does not prove
+  representative edits, native text calibration, native PDF export,
+  cross-renderer fidelity, or checked human review.
 - Vector180 0.1.1 paragraph intent, reliable/editable PPTX export, and conservative
   baseline-free import grace are banked design only. Current source/container
   identifiers, schemas, and examples remain `0.1`; the current contract
-  revisions are C4-C10 `2.0`, C11 `1.2`, and C12 `1.0`. C7-C11 retain their
-  declared in-progress gates, and the npm package is
+  revisions are C4-C10 `2.0`, C11 `1.2`, C12 `1.0`, and C13 `0.1`. C8 2.0 is
+  verified; C4–C7 and C9–C13 retain their declared in-progress gates, and the
+  npm package is
   `@office180/vector180@0.1.0-alpha.5`.
 
 ### Milestone 0 — C6 resolved-profile contract and fixtures (implemented subset)
@@ -398,7 +449,7 @@ evidence. The editor reports the worse Node/browser status and treats stale
 Node evidence as unverified. Representative native PowerPoint calibration is
 the remaining promotion gate. No gate may mutate source or infer a new line.
 
-### Milestone 1 — Trusted browser editor MVP on existing C5 (implemented)
+### Milestone 1 — Trusted browser editor on C5/C13 (implemented bounded slice)
 
 Build a useful editor before broad geometry authoring.
 
@@ -407,12 +458,18 @@ Deliver:
 - deterministic `editor-pack` generation for trusted direct-open wrappers;
 - slide rail, object tree, diagnostics panel, selection, and inspector;
 - scriptless/isolated rendering from semantic projections;
-- direct-text editing only;
+- direct-text editing plus exact numeric controls for supported geometry,
+  connector endpoints, group translation, one-line text frame/anchor, native
+  style, sibling order, and safe deletion;
+- safe-default View/Edit state and authenticated inline-PNG rendering through
+  revocable blob URLs while semantic/resolved JSON stays descriptor-only;
 - active-theme switching;
 - manifest slide reordering;
 - semantic undo/redo with exact before/after source states and hashes;
 - explicit clean deck/diagram download;
 - deck-only hydrated single-slide `.vector180.svg` download;
+- bounded browser PNG plus complete-deck PPTX and separately downloaded
+  descriptor-only map, with source-hash checks and map invalidation after edits;
 - optional user-granted File System Access save with stale-hash protection.
 
 The canonical browser DOM is never saved. Live previews are disposable; every
@@ -431,8 +488,9 @@ Exit gate:
 These gates pass for both the minimal deck and standalone diagram editor packs.
 The real-HTTP matrix also proves integrity-mismatch read-only behavior, no
 source-runtime execution, no editor subresource/network fetch, clean
-download/reload, hydrated-slide reload, and stale on-disk save refusal. This
-milestone does not include geometry/style/structure controls, structured
+download/reload, hydrated-slide reload, PNG dimensions, mapped PPTX/map ZIP
+reopen and payload privacy, and stale on-disk save refusal. This milestone does
+not include drag handles, insertion/reparenting/grouping, structured
 `tspan`/rich-text, token-rule, or general SVG editing.
 
 ### Milestone 2 — Early PPTX compiler canary (implemented; final fidelity gates open)
@@ -449,6 +507,10 @@ Deliver:
 - white or one resolved solid background;
 - rectangles, circles/ellipses, straight connectors, translated native groups,
   and one-line native text;
+- exact authored-baseline mapping through signed text-body `tIns`;
+- a C9-only authenticated-resource extension that packages strict static PNG
+  bytes as content-addressed stable-name `p:pic` objects without turning the
+  public resolved-deck canary into a resource fetcher;
 - direct RGB/font values;
 - manifest slide order and DOM object order;
 - `src.<stable-id>` PowerPoint object names;
@@ -478,7 +540,8 @@ errors, and native PowerPoint open/render smoke pass. C11's ordinary in-place
 Save path also passed exact-path no-op save/close/reopen in PowerPoint 16.111.2;
 the earlier Open XML Save As experiment's zero-byte output remains rejected
 evidence. Quantitative cross-renderer thresholds, representative native edits,
-and evidence-bound human review remain.
+and evidence-bound human review remain. The newer native PDF bridge has not
+produced a successful live result and is not implied by the earlier smoke.
 
 ### Milestone 2.5 — Banked 0.1.1 text-resilience contracts and fixtures
 
@@ -543,9 +606,8 @@ Every operation carries complete old-value preconditions, edits only existing
 safe source ranges, and reloads through C4/C6 before success. Circles are not
 rewritten as ellipses, implicit transforms or attributes are not inserted, and
 CSS/inline/inherited styles are not rewritten. Direct text/deck-control
-`vector180-patch/0.1` transactions remain compatible. Browser
-drag/resize/style controls have not
-yet been built over this vocabulary.
+`vector180-patch/0.1` transactions remain compatible. Browser numeric controls
+now cover this vocabulary; drag handles remain future work.
 
 The planned `set-text-lines` operation remains deliberately unimplemented
 because source/profile 0.1.1 paragraph intent and multiline compiler behavior
@@ -559,11 +621,16 @@ C9 is the corresponding second compiler baseline for one standalone atom. It:
 - composes an explicit identity or aspect-preserving uniform placement into a
   newly validated one-slide deck;
 - compiles the C7 native rectangle, circle/ellipse, straight-connector,
-  translated-group, and one-hard-line text subset;
+  translated-group, and one-hard-line text subset with authored-baseline
+  `tIns`;
+- packages strict inline static PNG assets as content-addressed stable-name
+  `p:pic` objects after exact source/descriptor/byte authentication;
 - emits a paired complete map bound to the exact atom, composed-deck, placement,
-  native objects, and PPTX hashes; and
-- refuses multiline text, rounded rectangles, non-unit opacity, opaque/raster
-  assets, deck input, or any unsupported source before publishing artifacts.
+  supported native/picture objects, and PPTX hashes without copying base64 into
+  the map; and
+- refuses multiline text, rounded rectangles, non-unit opacity, opaque SVG,
+  JPEG/other raster formats, mutable/cropped pictures, deck input, or any
+  unsupported source before publishing artifacts.
 
 The typed-operation, exact-preservation, deterministic composition,
 map-inventory, strict OPC, independent-reopen, C10 regeneration, and C11
@@ -580,12 +647,14 @@ Expand only where the same conformance fixture works in browser and PowerPoint:
 - straight connectors and arrowheads;
 - native translated groups;
 - explicit multiline text and approved font styles;
-- atomic SVG/raster assets;
+- atomic SVG/JPEG/other raster assets and mutable picture operations (strict
+  immutable inline PNG packaging is implemented);
 - theme token editing after provenance is implemented;
 - C9 standalone-atom source-map generation and verification (implemented); and
-- slide/deck packaging across the worked examples.
+- C13 complete-deck packaging and descriptor-only mapping across the worked
+  examples (implemented), with deck reconciliation still future.
 
-The bounded C7/C9/C10 Node implementations currently remain in
+The bounded C7/C9/C10/C13 implementations currently remain in
 `@office180/vector180`; core, ops, and browser code remain free of OpenDocKit,
 filesystem, and OOXML dependencies. A separate optional PPTX adapter should
 exist only when independent consumers justify that package boundary.
@@ -625,12 +694,20 @@ only through named, evidence-bearing structural normalization rules. Its result
 is `unchanged`, `patchable`, `review-required`, or `refused`.
 
 The patchable slice carries direct one-line text, rect/true-ellipse geometry,
-line endpoints, explicit group translation, one-line text frame/anchor,
-concrete direct presentation-attribute style, safe deletion, and pure
-within-parent sibling order into old-value-preconditioned `vector180-patch/0.1`
-operations. `reconcile` writes a report and, only for wholly patchable results,
-a reviewable patch. It never mutates source or PowerPoint; application remains
-a separate `vector180 patch` action.
+line endpoints, explicit group translation, one-line text frame/horizontal
+anchor/authored vertical baseline, concrete direct presentation-attribute
+style, safe deletion, and pure within-parent sibling order into
+old-value-preconditioned `vector180-patch/0.1` operations. Signed `tIns`
+baseline-only edits and combined frame/inset moves invert exactly. `reconcile`
+writes a report and, only for wholly patchable results, a reviewable patch. It
+never mutates source or PowerPoint; application remains a separate
+`vector180 patch` action.
+
+The first picture slice is authentication-only. C10 validates exact PNG bytes,
+media inventory, slide image relationship, stable-name `p:pic` structure,
+transform, aspect lock, fill form, and painter order. Exact pictures are
+unchanged; replacement, movement, resize, crop/effect, deletion, duplication,
+or reorder is review-required and blocks every partial patch.
 
 Duplicate identity refuses by default. For exactly one duplicated mapped
 straight connector with exactly two occurrences, C10 reports both composite
@@ -652,6 +729,8 @@ unresolved missing/copied identities, unsupported DrawingML, reparenting,
 group scaling,
 circle-to-ellipse representation changes, implicit transforms,
 inline/inherited style rewrites, rich text, and unsafe source ranges.
+It also fails closed on any mapped picture mutation; C5 has no generic media
+operation.
 
 Arbitrary or baseline-free PPTX import, general insertion/ID allocation beyond
 the reviewed connector exception, and general Office edit recovery remain
@@ -733,7 +812,9 @@ Stable identity uses redundant evidence:
 4. the C9 `.vector180.map.json`, which records the exact atom/composed-deck/PPTX
    hashes, placement transform, slide part, parent, kind, source order,
    baseline text, typed geometry/style, and emitted Office identity for every
-   supported native object.
+   supported native object or atomic PNG picture. Picture entries retain only
+   the immutable resource descriptor and emitted `p:pic`/relationship/part
+   metadata, never the source base64.
 
 The current C9 map and compiler accept only the bounded standalone-atom path.
 They are not a map for C7 deck-canary output or a promise of general deck
@@ -782,7 +863,8 @@ the exact-path no-op native Office lifecycle bridge. Word and PowerPoint
 16.111.2 passed save/close/reopen on 2026-08-02, but the bound evidence
 deliberately remains `manual-required`: a no-op save does not satisfy
 representative editability, native text/cross-renderer fidelity, or checked
-human review.
+human review. Quick Look can substitute a host font and is not a native
+typography oracle. The newer native PDF bridge has not passed live.
 
 ## 7. Recommended dependency sequence
 
@@ -790,27 +872,29 @@ The first coherent source/browser/editor vertical slice above is now
 implemented. `QUICKCONTEXT.md` remains the sole priority authority; the list
 below records implementation dependencies rather than a competing work order:
 
-1. calibrate representative C8 lines against native PowerPoint and retain the
+1. land the current C13/editor/native-evidence checkpoint through fresh remote
+   CI and clean-clone acceptance before widening behavior;
+2. complete representative native C9 edits and C11 review so C13 reverse
+   design and text calibration start from measured Office behavior;
+3. contract C13 whole-deck reconciliation before allowing complete-deck maps
+   into any C10 successor or adding broader deck semantics;
+4. layer drag handles over the implemented exact numeric C5 editor controls
+   only where byte-neutral failure, snapping, and fresh C6 reload remain proven;
+   keep `set-text-lines` behind the 0.1.1 contracts;
+5. calibrate representative C8 lines against native PowerPoint and retain the
    observed engine-specific variance as labeled evidence, never automatic
    repair;
-2. promote the banked 0.1.1 text-resilience direction through successor
+6. promote the banked 0.1.1 text-resilience direction through successor
    contracts and fixtures before adding its source syntax or exporter flags;
-3. expose browser-editor gestures for the safe C5 2.0 geometry, connector,
-   explicit-group-translation, text-frame, order, deletion, and direct-style
-   vocabulary; keep `set-text-lines` behind the 0.1.1 contracts;
-4. expand C9 to deck input or additional native features only where the same
-   C5/C10 fixtures pass browser, schema, independent-reopen, and native Office
-   gates;
-5. add C11 quantitative browser/Office comparison, checked high-risk crops,
-   and evidence-bound human review;
-6. extend the proven exact-path native no-op bridge to representative,
+7. extend the proven exact-path native no-op bridge to representative,
    explicitly verified edits without weakening document isolation or bounded
    failure behavior;
-7. define static self-contained resource/asset handling before compiling SVG
-   or raster assets;
-8. add sandboxed untrusted intake without weakening the trusted direct-open
+8. extend the implemented self-contained inline-PNG resource path only through
+   matched source/map/reverse fixtures before adding SVG, JPEG, external
+   resources, fallback media, or mutable picture behavior;
+9. add sandboxed untrusted intake without weakening the trusted direct-open
    path; and
-9. define canonical structural serialization and typed ID allocation before
+10. define canonical structural serialization and typed ID allocation before
    general insertion/duplication, reparenting, group creation/scaling, or
    extending C10 beyond its exact reviewed connector-clone exception; keep
    external multi-atom/dependency composition behind its own hash, capability,

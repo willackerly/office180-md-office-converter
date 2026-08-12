@@ -689,7 +689,7 @@ describe("C7 deterministic PPTX compiler canary", () => {
     expect(cover).toContain('<a:off x="914400" y="2133600"/>');
     expect(cover).toContain('<a:ext cx="10363200" cy="1219200"/>');
     expect(cover).toContain(
-      '<a:bodyPr wrap="none" lIns="0" tIns="0" rIns="0" bIns="0" anchor="t"><a:noAutofit/></a:bodyPr>',
+      '<a:bodyPr wrap="none" lIns="0" tIns="259080" rIns="0" bIns="0" anchor="t"><a:noAutofit/></a:bodyPr>',
     );
     expect(cover).toContain("<a:t>Minimal Vector180 deck</a:t>");
     expect(cover).not.toContain("xml:space=");
@@ -860,6 +860,22 @@ describe("C7 deterministic PPTX compiler canary", () => {
   );
   const maximumLineWidthUnit = TEST_MAX_LINE_WIDTH_EMU / TEST_EMU_PER_UNIT;
   const maximumTextMarginUnit = TEST_MAX_TEXT_MARGIN_EMU / TEST_EMU_PER_UNIT;
+
+  it("normalizes one-ULP font and EMU multiplication residue to the declared OOXML integers", async () => {
+    const model = structuredClone(
+      await canaryModel(),
+    ) as unknown as MutableDeck;
+    setBackgroundX(model, 239 / TEST_EMU_PER_UNIT);
+    setTitleFontSize(model, 16_000 / TEST_HUNDREDTH_POINTS_PER_UNIT);
+
+    const artifact = await compilePptxCanary(
+      model as unknown as Vector180ResolvedDeck,
+    );
+    const zip = await JSZip.loadAsync(artifact.bytes, { checkCRC32: true });
+    const coverXml = await zip.file("ppt/slides/slide2.xml")!.async("string");
+    expect(coverXml).toContain('<a:off x="239" y="0"/>');
+    expect(coverXml).toContain('sz="16000"');
+  });
 
   it("accepts every representable DrawingML numeric boundary", async () => {
     const acceptedRanges: readonly RangeCase[] = [

@@ -1,0 +1,6 @@
+interface:
+  display_name: "Vector180 Authoring"
+  short_description: "PowerPoint/PPTX slides from no-reflow vectors"
+  default_prompt: "Use $vector180-authoring for PowerPoint, presentation, slides, slide deck, and PPTX work with strict no-reflow Vector180 diagrams and figures: create, read, compare, edit, migrate one legacy SVG atom, extract one legacy deck slide, or compile a hydration-complete SVG atom, using HTML only for a real deck or report."
+policy:
+  allow_implicit_invocation: true

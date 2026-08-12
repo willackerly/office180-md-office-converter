@@ -13,8 +13,10 @@ is `0.1`; contract revisions are versioned independently.
 Use a self-contained `*.vector180.svg` for each independent diagram, figure,
 reusable visual, or slide-sized canvas. A hydrated atom keeps every supported
 shape, group, connector, text frame, hard line, style, and reference needed to
-interpret it inside the SVG. Stable IDs are identity and SVG DOM sibling order
-is painter order.
+interpret it inside the SVG. It may also carry a bounded canonical inline
+static PNG as one atomic raster object; ordinary projections retain only its
+immutable digest/size/dimensions descriptor. Stable IDs are identity and SVG
+DOM sibling order is painter order.
 
 Use `*.vector180.html` only when the canonical deliverable is an actual ordered
 multi-slide deck/report or requires manifest order, shared themes, or deck-only
@@ -67,13 +69,23 @@ vector180 new deck --output report.vector180.html --title "System report"
 vector180 validate report.vector180.html
 vector180 extract report.vector180.html \
   --slide architecture --output architecture.vector180.svg
-vector180 pptx-canary report.vector180.html --output report.pptx
+vector180 compile-deck report.vector180.html \
+  --output report.pptx --map report.vector180.deck.map.json
 ```
 
 Extraction is hydration, not a byte slice. It localizes supported resolved
 styles, retains identity/hierarchy/order/hard lines, records bounded provenance
 metadata, then independently reloads and resolves the result before publishing
 any SVG bytes.
+
+`editor-pack` opens in safe View mode and reconstructs inline PNG assets from
+exact authenticated source bytes without putting payloads into semantic JSON.
+Edit mode exposes bounded numeric C5 controls for supported geometry,
+connector endpoints, translated groups, one-line text frames/anchors, direct
+style, sibling order, and safe deletion. `Export as` downloads a selected
+hydrated SVG, a browser-labelled PNG, or a complete-deck PPTX and its separate
+descriptor-only map. Source save/download remains visibly distinct; PDF is
+deferred.
 
 Run `vector180 help` for the complete command surface.
 
@@ -83,6 +95,13 @@ Executable 0.1 text has explicit font size, frame, baseline, line step, and hard
 line membership. Vector180 never wraps, reflows, shrinks, substitutes a font,
 or performs autofit. A width warning is preferable to silently moving a word
 onto another line.
+
+C7/C9 map one authored hard-line baseline to signed DrawingML
+`tIns = (line.y - frame.y - fontSize) × 7620` EMU with zero side/bottom inset,
+top anchor, `wrap="none"`, and `a:noAutofit`. C10 can invert that channel into
+an exact typed line-anchor change. Quick Look may substitute a host fallback
+font and is preview smoke only; it does not prove native PowerPoint typography
+or a successful native PDF bridge.
 
 `text-fit` and text-checking `editor-pack` use the immutable package-owned
 default when `--font-map` is omitted or is literally `default`. The default is:
@@ -200,8 +219,16 @@ placement on the `1600 × 900` slide:
 - `uniform-scale-translate` requires the same aspect ratio and applies one
   finite positive scale plus translation;
 - stretching, cropping, letterboxing, inferred physical size, multiline text,
-  rounded rectangles, opacity, and raster/SVG assets are outside the current
-  native slice.
+  rounded rectangles, opacity, SVG assets, JPEG/other raster formats, and
+  mutable picture behavior are outside the current slice.
+
+The raster exception is exact and self-contained: one canonical inline static
+PNG `image` with explicit geometry equal to declared bounds, exact intrinsic
+aspect, at most 4 MiB decoded and 16,777,216 pixels. C9 reparses the source
+bytes, cross-checks the C4/C6 descriptor, stores
+`ppt/media/<sha256>.png`, and emits one stable-name `p:pic` with an authenticated
+image relationship. The map carries descriptor/relationship/part metadata but
+never the data URI or base64.
 
 The command publishes one native editable PPTX and
 `vector180-pptx-map/0.1` sidecar atomically. The map binds canonical atom and
@@ -226,6 +253,21 @@ parent/order, inverse endpoints, and complete style. Rerun `reconcile` with
 that reviewed input; any intervening change fails closed.
 
 Applying a proposed patch remains a separate `vector180 patch` action.
+
+Mapped PNG pictures are immutable in the first C10 slice. Exact media,
+relationship, `p:pic` geometry, and order authenticate as unchanged; any
+replacement, movement, resize, crop/effect, deletion, duplication, or reorder
+is review-required and suppresses every partial patch.
+
+`compile-deck` is the distinct C13 whole-deck path. It accepts only one
+complete canonical `.vector180.html` deck, preserves manifest order and hidden
+state, emits the same strict native primitives and immutable PNG pictures, and
+deduplicates identical media across slides. It publishes a deterministic
+`vector180-pptx-deck-map/0.1` that binds source ranges, resolved semantics,
+stable Office names/IDs, OPC parts/relationships, and exact PPTX bytes while
+excluding `href`, data URI, base64, and raw media. The pure compiler is shared
+by Node and the trusted editor. C10 deliberately does not accept this deck map;
+deck reconciliation remains future work.
 
 ## Library
 
@@ -281,6 +323,7 @@ Exact-font and native-PPTX operations live at the Node boundary:
 
 ```ts
 import {
+  compileVector180PptxDeck,
   compileVector180PptxBaseline,
   createDefaultFontkitTextMeasurer,
   reconcileVector180Pptx,
@@ -288,6 +331,7 @@ import {
 } from "@office180/vector180/node";
 import {
   loadAtom,
+  loadDeck,
   preflightAtomTextFit,
   resolveVector180Atom,
 } from "@office180/vector180";
@@ -316,6 +360,10 @@ const unresolved = await reconcileVector180Pptx(
   editedPptxBytes,
 );
 console.log(fit.summary, reconciliationReportSha256(unresolved));
+
+const deck = await loadDeck({ kind: "text", text: html });
+const mappedDeck = await compileVector180PptxDeck(deck);
+console.log(mappedDeck.pptxSha256, mappedDeck.mapSha256);
 ```
 
 `Vector180Atom` and `Vector180Deck` are immutable source-hash-bound snapshots;
@@ -338,20 +386,24 @@ exact declarative source bytes (persistent authority)
        -> deck --C7 strict canary--> fresh PPTX
        -> atom --C9 explicit placement--> composed deck + native PPTX + map
        -> edited C9 PPTX --C10 typed reconcile/review--> C5 patch
+       -> complete deck --C13--> native PPTX + descriptor-only deck map
+       -> trusted editor --C13--> hydrated SVG / browser PNG / deck PPTX + map
 ```
 
 The portable core does not depend on OpenDocKit, filesystem APIs, browser
-globals, or Office automation. Node-only C7/C9/C10 use exact `jszip@3.10.1`;
-C8 uses exact `fontkit@2.0.4`; standalone XML is gated through exact
-`saxes@6.0.0`. OpenDocKit remains an independent reopen/inspection oracle and a
-future optional adapter/upstream collaboration target.
+globals, or Office automation. Node-hosted C7/C9/C10 and portable C13 packaging
+use exact `jszip@3.10.1`; C8 uses exact `fontkit@2.0.4`; standalone XML is gated
+through exact `saxes@6.0.0`; and strict C13 map-schema acceptance uses exact
+development-only `ajv@8.18.0`. OpenDocKit remains an independent
+reopen/inspection oracle and a future optional adapter/upstream collaboration
+target.
 
 ## Published surfaces
 
 - `@office180/vector180` — portable core, browser session, and operations;
 - `@office180/vector180/core` — source/load/resolve/text-fit types and logic;
 - `@office180/vector180/browser` — conformance, session, browser font evidence;
-- `@office180/vector180/node` — files, wrappers, exact fonts, C7/C9/C10;
+- `@office180/vector180/node` — files, wrappers, exact fonts, C7/C9/C10/C13;
 - `@office180/vector180/ops` — projections, patch, metadata, migration, diff.
 
 Versioned schema exports:
@@ -361,6 +413,7 @@ Versioned schema exports:
 - `schemas/patch`
 - `schemas/migration-report`
 - `schemas/source-diff`
+- `schemas/pptx-deck-map`
 - `schemas/reconciliation`
 - `schemas/reconcile-resolution-0.1`
 
@@ -381,10 +434,12 @@ Not implemented:
 - aspect-changing atom placement;
 - rich `tspan` editing, paragraph intent, wrapping, or autofit;
 - automatic source repair based on width warnings;
-- general browser drag/resize/grouping controls;
-- PPTX beyond the strict native C7/C9 primitives;
+- browser drag handles, grouping/insertion/reparenting, or rich-line controls;
+- PPTX beyond the strict native C7/C9/C13 primitives plus immutable static-PNG
+  picture slice;
 - representative automated native edits and complete native/cross-renderer
   fidelity proof;
+- a successful native PDF bridge result;
 - PowerPoint-native C8 calibration;
 - OpenDocKit runtime adapters.
 
@@ -399,6 +454,7 @@ Behavioral authority:
 - `CONTRACT:C10-PPTV-PPTX-RECONCILIATION.2.0`
 - `CONTRACT:C11-OFFICE-VISUAL-EVIDENCE.1.2`
 - `CONTRACT:C12-VECTOR180-SOURCE-DIFF.1.0`
+- `CONTRACT:C13-VECTOR180-DECK-EXPORT.0.1`
 
 ## Development
 

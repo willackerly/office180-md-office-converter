@@ -3,6 +3,7 @@ __pycache__/
 *.py[cod]
 *$py.class
 .venv/
+*.egg-info/
 
 # TypeScript / Node
 node_modules/
@@ -40,6 +41,11 @@ manual-tests/office-native-roundtrip/native-work-test/
 manual-tests/office-native-roundtrip/previews/
 manual-tests/office-native-roundtrip/regenerate-*/
 manual-tests/office-native-roundtrip/runs/
+
+# Private branded-template studies and acceptance artifacts. These remain local
+# evidence and must never be swept into a blanket repository staging command.
+manual-tests/*-private/
+manual-tests/*-template-study/
 
 # Editors
 .vscode/

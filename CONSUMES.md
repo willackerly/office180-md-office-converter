@@ -1,12 +1,12 @@
 # CONSUMES — external contract dependencies
 
-<!-- last-synced: 2026-08-02 -->
+<!-- last-synced: 2026-08-12 -->
 <!-- format: rebar-consumes-v1 -->
 
 This file declares which **external contracts** (owned by other rebar
 repos) this converter repository depends on.
 
-**Current state: no entries.** All twelve C1–C12 contracts are owned locally, and
+**Current state: no entries.** All thirteen C1–C13 contracts are owned locally, and
 neither the DOCX track nor `@office180/vector180` consumes a contract from another
 rebar repository. In particular, OpenDocKit is not a current runtime or
 contract dependency; future integration stays behind an optional adapter. This
@@ -70,7 +70,7 @@ encoding "extends" semantics in this file.
   is wired into CI *once* an entry exists — with zero entries, that check
   is a no-op.
 - **Owner-side `scan-consumers.sh`** is useful when another repository begins
-  consuming one of this repository's locally owned C1–C12 contracts. It is not
+consuming one of this repository's locally owned C1–C13 contracts. It is not
   required merely because this file currently declares zero external inputs.
 
 ---

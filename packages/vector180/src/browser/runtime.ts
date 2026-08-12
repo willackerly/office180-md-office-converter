@@ -236,10 +236,11 @@ function normalizeNode(node: Vector180Node): unknown {
     exportMode: node.exportMode,
     elementName: node.elementName,
     classes: node.classes,
-    attributes: node.attributes,
+    attributes: normalizedNodeAttributes(node),
     parentId: node.parentId,
     children: node.children.map(normalizeNode),
     ...(node.text === undefined ? {} : { text: node.text }),
+    ...(node.resource === undefined ? {} : { resource: node.resource }),
     opaque: node.opaque,
     sourceRange: node.sourceRange,
     openTagRange: node.openTagRange,
@@ -247,6 +248,22 @@ function normalizeNode(node: Vector180Node): unknown {
       ? {}
       : { directTextRange: node.directTextRange }),
   };
+}
+
+function normalizedNodeAttributes(
+  node: Vector180Node,
+): Readonly<Record<string, string>> {
+  return Object.fromEntries(
+    Object.entries(node.attributes).filter(([name, value]) => {
+      const normalized = name.toLowerCase();
+      const resourceReference =
+        normalized === "href" || normalized === "xlink:href";
+      return !(
+        resourceReference &&
+        (node.resource !== undefined || /^data:/iu.test(value))
+      );
+    }),
+  );
 }
 
 function normalizeRangeMap(

@@ -18,6 +18,7 @@ import {
   wireCssTokenPrefix,
   type VisualDialect,
 } from "./dialect.js";
+import { parseVector180InlinePngDataUri } from "./inline-png.js";
 import { PROFILE_ID_PATTERN, STABLE_ID_PATTERN } from "./manifest.js";
 import { materializeSource, sha256Hex, SourceMapper } from "./source.js";
 import type {
@@ -295,7 +296,7 @@ async function scanHtml(
   } else {
     inspectStructureLimits(html, mapper, diagnostics, sourceOffset, options);
     if (!diagnostics.some((diagnostic) => diagnostic.severity === "fatal")) {
-      inspectSecurity(html, mapper, diagnostics, sourceOffset);
+      inspectSecurity(html, mapper, diagnostics, sourceOffset, dialect);
       rejectDeckAtomMetadataMarkers(html, mapper, diagnostics, sourceOffset);
       validateContainerAttributes(
         html,
@@ -436,7 +437,7 @@ function scanSvg(
   }
 
   inspectStructureLimits(svg, mapper, diagnostics, sourceOffset, options);
-  inspectSecurity(svg, mapper, diagnostics, sourceOffset);
+  inspectSecurity(svg, mapper, diagnostics, sourceOffset, dialect);
   validateAtomMetadataMarkers(svg, mapper, diagnostics, sourceOffset, dialect);
   validateAtomRoot(svg, mapper, diagnostics, sourceOffset, dialect);
   validateAtomStyleAuthority(svg, mapper, diagnostics, sourceOffset, dialect);
@@ -1247,6 +1248,7 @@ function inspectSecurity(
   mapper: SourceMapper,
   diagnostics: Diagnostic[],
   sourceOffset: number,
+  dialect: VisualDialect,
 ): void {
   walk(root, (node) => {
     if (!isElement(node)) return;
@@ -1272,6 +1274,16 @@ function inspectSecurity(
         severity: "error",
         message:
           "Executable script elements are forbidden outside the recognized top-level Vector180 control blocks.",
+        ...(range === undefined ? {} : { range }),
+      });
+    }
+    const inlinePngError = inlinePngRasterElementError(node, dialect);
+    if (inlinePngError !== undefined) {
+      const range = locationRange(node, mapper, sourceOffset);
+      diagnostics.push({
+        code: "VECTOR180-SECURITY-URL",
+        severity: "error",
+        message: inlinePngError,
         ...(range === undefined ? {} : { range }),
       });
     }
@@ -1335,18 +1347,70 @@ function inspectSecurity(
         }
       }
       if (isUrlAttribute(node, qualifiedName)) {
-        const unsafeReason = unsafeUrlReason(attribute.value);
+        const unsafeReason = isAllowedInlinePngRasterAttribute(
+          node,
+          qualifiedName,
+          attribute.value,
+          dialect,
+        )
+          ? undefined
+          : unsafeUrlReason(attribute.value);
         if (unsafeReason !== undefined) {
           diagnostics.push({
             code: "VECTOR180-SECURITY-URL",
             severity: "error",
-            message: `${unsafeReason} in ${qualifiedName}=${JSON.stringify(attribute.value)}.`,
+            message: `${unsafeReason} in ${qualifiedName}=${diagnosticResourceReference(attribute.value)}.`,
             ...(range === undefined ? {} : { range }),
           });
         }
       }
     }
   });
+}
+
+function inlinePngRasterElementError(
+  element: ElementNode,
+  dialect: VisualDialect,
+): string | undefined {
+  if (!isCanonicalRasterImage(element, dialect)) return undefined;
+  const references = element.attrs.filter((attribute) => {
+    const name = qualifiedAttributeName(attribute).toLowerCase();
+    return name === "href" || name === "xlink:href";
+  });
+  if (!references.some((attribute) => attribute.value.startsWith("data:"))) {
+    return undefined;
+  }
+  if (references.length !== 1) {
+    return "An inline PNG raster asset requires exactly one href or xlink:href attribute.";
+  }
+  const parsed = parseVector180InlinePngDataUri(references[0]!.value);
+  return parsed.ok ? undefined : parsed.message;
+}
+
+function isAllowedInlinePngRasterAttribute(
+  element: ElementNode,
+  name: string,
+  value: string,
+  dialect: VisualDialect,
+): boolean {
+  const normalized = name.toLowerCase();
+  return (
+    (normalized === "href" || normalized === "xlink:href") &&
+    isCanonicalRasterImage(element, dialect) &&
+    parseVector180InlinePngDataUri(value).ok
+  );
+}
+
+function isCanonicalRasterImage(
+  element: ElementNode,
+  dialect: VisualDialect,
+): boolean {
+  return (
+    dialect.wireFamily === "vector180" &&
+    element.tagName === "image" &&
+    getAttribute(element, "data-vector180-role") === "asset" &&
+    getAttribute(element, "data-vector180-export") === "raster"
+  );
 }
 
 function isUrlAttribute(element: ElementNode, name: string): boolean {
@@ -1370,6 +1434,12 @@ function unsafeUrlReason(value: string): string | undefined {
   return value.startsWith("#")
     ? undefined
     : "Only same-document fragment references are allowed in self-contained Vector180 0.1";
+}
+
+function diagnosticResourceReference(value: string): string {
+  return /^data:/iu.test(value)
+    ? JSON.stringify("<inline-data-uri:redacted>")
+    : JSON.stringify(value);
 }
 
 async function validateReferenceRuntimes(

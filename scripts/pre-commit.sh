@@ -38,6 +38,12 @@ if [ -x "$BASE/check-contract-refs.sh" ]; then
 fi
 
 echo ""
+echo "Pre-commit: checking Office180 plugin mirrors..."
+if [ -x "$BASE/sync-office180-plugin.py" ]; then
+  "$BASE/sync-office180-plugin.py" --check || failed=$((failed + 1))
+fi
+
+echo ""
 echo "Pre-commit: checking ground truth metrics..."
 if [ -x "$BASE/check-ground-truth.sh" ]; then
   "$BASE/check-ground-truth.sh" || failed=$((failed + 1))

@@ -14,6 +14,7 @@ import {
   validateManifest,
 } from "./manifest.js";
 import { parseAtomMetadata } from "./metadata.js";
+import { parseVector180InlinePngDataUri } from "./inline-png.js";
 import { scanVector180Source } from "./scan.js";
 import { hasErrors, SourceMapper } from "./source.js";
 import type {
@@ -940,6 +941,13 @@ function parseObject(
       attribute.value,
     ]),
   );
+  const resource =
+    scope.wireFamily === "vector180" &&
+    element.tagName === "image" &&
+    role === "asset" &&
+    exportMode === "raster"
+      ? inlinePngResource(element)
+      : undefined;
   const classes = (getAttribute(element, "class") ?? "")
     .split(/\s+/)
     .filter(Boolean);
@@ -953,11 +961,24 @@ function parseObject(
     parentId,
     children,
     ...(text === undefined ? {} : { text }),
+    ...(resource === undefined ? {} : { resource }),
     opaque,
     sourceRange,
     openTagRange,
     ...(directTextRange === undefined ? {} : { directTextRange }),
   };
+}
+
+function inlinePngResource(
+  element: ElementNode,
+): Vector180Node["resource"] | undefined {
+  const references = element.attrs.filter((attribute) => {
+    const name = qualifiedAttributeName(attribute).toLowerCase();
+    return name === "href" || name === "xlink:href";
+  });
+  if (references.length !== 1) return undefined;
+  const parsed = parseVector180InlinePngDataUri(references[0]!.value);
+  return parsed.ok ? parsed.descriptor : undefined;
 }
 
 function invalidTextDescendants(element: ElementNode): ElementNode[] {

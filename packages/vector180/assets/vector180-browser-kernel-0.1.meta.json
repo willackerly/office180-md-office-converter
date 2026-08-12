@@ -8,8 +8,8 @@
   "output": "assets/vector180-browser-kernel-0.1.iife.js",
   "globalName": "Vector180BrowserKernel",
   "target": "es2022",
-  "sha256": "9c0b85b42b8eadbc6689c24517298f28c445b70e0fb0216eae4e2661d4cb6c3a",
-  "bytes": 788901,
+  "sha256": "38895c838e6b0cf7839051078fcdc4ae0403cbdbecd93fc496a5b1551f1e6be4",
+  "bytes": 814691,
   "inputs": [
     "../../node_modules/.pnpm/entities@8.0.0/node_modules/entities/dist/decode-codepoint.js",
     "../../node_modules/.pnpm/entities@8.0.0/node_modules/entities/dist/decode.js",
@@ -50,6 +50,7 @@
     "src/core/dialect.ts",
     "src/core/extract.ts",
     "src/core/index.ts",
+    "src/core/inline-png.ts",
     "src/core/manifest.ts",
     "src/core/metadata.ts",
     "src/core/resolved.ts",

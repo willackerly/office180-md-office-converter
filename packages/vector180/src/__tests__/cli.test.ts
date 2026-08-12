@@ -802,6 +802,130 @@ describe("Vector180 CLI", () => {
     expect(output).toContain("pptx-canary <deck.vector180.html>");
   });
 
+  it("provides accurate scoped help for every subcommand without other arguments", async () => {
+    const cases: readonly {
+      readonly argv: readonly string[];
+      readonly usage: string;
+    }[] = [
+      {
+        argv: ["new", "--help"],
+        usage:
+          "vector180 new atom --output PATH --id ID --title TITLE [--width N --height N]",
+      },
+      {
+        argv: ["new", "atom", "--help"],
+        usage:
+          "vector180 new atom --output PATH --id ID --title TITLE [--width N --height N]",
+      },
+      {
+        argv: ["new", "deck", "--help"],
+        usage: "vector180 new deck --output PATH --title TITLE",
+      },
+      {
+        argv: ["metadata", "--help"],
+        usage: "vector180 metadata <atom.vector180.svg> [--format text|json]",
+      },
+      {
+        argv: ["metadata-compare", "--help"],
+        usage:
+          "vector180 metadata-compare <left.vector180.svg> <right.vector180.svg> [--template-basis PATH] [--format text|json]",
+      },
+      {
+        argv: ["diff", "--help"],
+        usage:
+          "vector180 diff <left.vector180.svg> <right.vector180.svg> [--output PATH] [--format text|json]",
+      },
+      {
+        argv: ["migrate", "--help"],
+        usage:
+          "vector180 migrate <legacy.pptv.svg> --output PATH [--report PATH] [--format text|json]",
+      },
+      {
+        argv: ["outline", "--help"],
+        usage:
+          "vector180 outline <file.vector180.html|file.vector180.svg> [--format text|json]",
+      },
+      {
+        argv: ["validate", "--help"],
+        usage:
+          "vector180 validate <file.vector180.html|file.vector180.svg> [--format text|json]",
+      },
+      {
+        argv: ["resolve", "--help"],
+        usage:
+          "vector180 resolve <file.vector180.html|file.vector180.svg> [--format text|json]",
+      },
+      {
+        argv: ["extract", "--help"],
+        usage:
+          "vector180 extract <deck.vector180.html> --slide ID --output file.vector180.svg [--format text|json]",
+      },
+      {
+        argv: ["editor-pack", "--help"],
+        usage:
+          "vector180 editor-pack <file.vector180.html|file.vector180.svg> --output PATH [--font-map default|PATH] [--near-limit N] [--format text|json]",
+      },
+      {
+        argv: ["pptx-canary", "--help"],
+        usage:
+          "vector180 pptx-canary <deck.vector180.html> --output PATH [--format text|json]",
+      },
+      {
+        argv: ["compose", "--help"],
+        usage:
+          "vector180 compose <atom.vector180.svg> --placement X,Y,W,H --output PATH [--slide-id ID] [--policy identity|uniform-scale-translate] [--format text|json]",
+      },
+      {
+        argv: ["compile", "--help"],
+        usage:
+          "vector180 compile <atom.vector180.svg> --placement X,Y,W,H --output PATH --map PATH [--slide-id ID] [--policy identity|uniform-scale-translate] [--format text|json]",
+      },
+      {
+        argv: ["reconcile", "--help"],
+        usage:
+          "vector180 reconcile <edited.pptx> --source atom.vector180.svg --baseline atom.vector180.map.json [--native-baseline native-save.pptx] [--resolution reviewed-copy.json] --patch PATH --report PATH [--format text|json]",
+      },
+      {
+        argv: ["text-fit", "--help"],
+        usage:
+          "vector180 text-fit <file.vector180.html|file.vector180.svg> [--font-map default|PATH] [--near-limit N] [--format text|json]",
+      },
+      {
+        argv: ["text", "--help"],
+        usage:
+          "vector180 text <file.vector180.html|file.vector180.svg> [--slide ID] [--include-hidden] [--format text|json|jsonl]",
+      },
+      {
+        argv: ["show", "--help"],
+        usage:
+          "vector180 show <file.vector180.html|file.vector180.svg> <id> [--view semantic|editing] [--format json]",
+      },
+      {
+        argv: ["list", "--help"],
+        usage:
+          "vector180 list <file.vector180.html|file.vector180.svg> [--slide ID] [--role ROLE] [--class CLASS] [--text TEXT] [--view semantic|editing] [--format text|json|jsonl]",
+      },
+      {
+        argv: ["patch", "--help"],
+        usage: "vector180 patch SOURCE PATCH.json --check [--format text|json]",
+      },
+    ];
+
+    for (const testCase of cases) {
+      const capture = captureEnvironment();
+      const label = testCase.argv.slice(0, -1).join(" ");
+      expect(
+        await runCli(testCase.argv, capture.environment),
+        `${label} should return help`,
+      ).toBe(0);
+      expect(
+        capture.stdout.join(""),
+        `${label} should print its usage`,
+      ).toContain(`Usage:\n  ${testCase.usage}`);
+      expect(capture.stderr, `${label} should not print an error`).toEqual([]);
+    }
+  });
+
   it("provides task-scoped help for both scaffolds and canonical patching", async () => {
     const atom = captureEnvironment();
     const deck = captureEnvironment();

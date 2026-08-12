@@ -48,6 +48,22 @@ family/lineage finding and no patch. It never translates custom properties,
 map schemas, normalization IDs, or source hashes to make the chain appear
 current.
 
+### Scenario 4 — authenticate an unchanged picture without importing edits
+
+An edited descendant retains the exact mapped `p:pic`, image relationship,
+content-addressed PNG bytes, transform, painter order, and package inventory.
+C10 authenticates it as unchanged. Replacing, moving, resizing, deleting,
+reordering, cropping, repairing, or otherwise modifying that picture produces
+`review-required` with no raster patch; the first asset slice is immutable.
+
+### Scenario 5 — recover an authored baseline move
+
+PowerPoint changes only the mapped text body's signed `tIns`. C10 reconstructs
+the authored baseline from the shape offset, inset, and font size, then
+proposes one typed `set-text-frame` operation whose `lineAnchor.y` carries that
+baseline. A simultaneous frame move and inset move are summed exactly.
+Wrapping, autofit, side/bottom inset, or anchor changes remain unsupported.
+
 ## Interfaces
 
 ```ts
@@ -82,22 +98,24 @@ Canonical related IDs are:
 
 ## Behavioral Contracts
 
-| Behavior             | Specification                                                                                                                                                                                                                                                                                                                                                                                                                                       |
-| -------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Required family      | Exact canonical C4 2.0 atom, C9 2.0 `vector180-pptx-map/0.1`, and edited descendant carrying exact `vector180.*` lineage are required. Every family/schema/compiler/property must agree.                                                                                                                                                                                                                                                            |
-| Hash binding         | Source, metadata digest when present, composed deck, canonical serialized map, compiler/placement, generated baseline, optional comparison baseline, edited PPTX, occurrence fingerprints, unresolved reconciliation report, finding ID, and resolution hashes are checked before semantic comparison.                                                                                                                                              |
-| Persistent authority | Exact source, canonical C9 map, and authenticated before-side remain authority. Office producer/application metadata and atom descriptive metadata are evidence only.                                                                                                                                                                                                                                                                               |
-| Inspection           | OPC parts, relationships, stable `src.<id>` occurrences, within-parent order, text, geometry, endpoints, group transforms, and complete supported style are parsed without Office automation. Numeric IDs and proximity never establish identity.                                                                                                                                                                                                   |
-| Typed output         | Every automatically patchable difference maps to one C5 2.0 typed operation. There is no generic attribute, metadata, or namespace patch. Candidate application/regeneration/reinspection proves the complete transaction before `patchable`.                                                                                                                                                                                                       |
-| No partial patch     | Any invalid, ambiguous, unsupported, stale, privacy-sensitive, or review-required finding omits `patch`; supported independent candidates may remain in the report for agent context.                                                                                                                                                                                                                                                               |
-| Native baseline      | An authenticated exact PowerPoint no-op save may become the comparison before-side only after supported normalization proves semantic equivalence. It never replaces/weaken source or map lineage.                                                                                                                                                                                                                                                  |
-| Normalization rules  | Current rules are renamed `vector180-c10/content-type-set/1`, `relationship-graph/1`, `relationship-reference/1`, `view-properties-inert/1`, `table-styles-inert/1`, `slide-size-preset-omitted/1`, `root-zero-group-transform/1`, `theme-empty-defaults/1`, `presentation-property-defaults/1`, `end-paragraph-style-marker-omitted/1`, and `generated-metadata/1`. Their structural predicates and fail-closed boundaries remain exactly C10 1.2. |
-| Connector duplicate  | Duplicate identity refuses by default. One strict resolution is eligible only when exactly one of exactly two same-parent straight-connector occurrences remains baseline-equivalent and every other finding is resolved.                                                                                                                                                                                                                           |
-| Resolution proof     | Resolution binds the unresolved report digest (SHA-256 over duplicate-free, recursively key-sorted compact UTF-8 JSON) and finding ID, source/map/edited/comparison hashes, both occurrence fingerprints, classification `one-baseline-equivalent-copy`, fresh ID, explicit existing references, parent/order, inverse endpoints, and complete style. Stale/incomplete/mismatched proof refuses.                                                    |
-| Metadata             | C10 does not import or mutate atom metadata. Source/map hashes transitively bind it; a proposed C5 patch preserves it byte-for-byte.                                                                                                                                                                                                                                                                                                                |
-| Privacy              | Reports recursively redact creator/author/user/account/company/private paths and raw private XML. Digests and non-personal version identities may remain.                                                                                                                                                                                                                                                                                           |
-| Arbitrary import     | Baseline-free PPTX-to-Vector180 conversion, heuristic object matching, and unsupported structural recovery remain outside this contract.                                                                                                                                                                                                                                                                                                            |
-| Legacy chains        | C10 1.2 reports, maps, packages, and resolutions remain frozen historical evidence. The Vector180 package may inspect their declared identity but does not generate or apply a legacy patch; use source migration plus a fresh C9/C10 chain. Canonical and legacy components never cross.                                                                                                                                                           |
+| Behavior             | Specification                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
+| -------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Required family      | Exact canonical C4 2.0 atom, C9 2.0 `vector180-pptx-map/0.1`, and edited descendant carrying exact `vector180.*` lineage are required. Every family/schema/compiler/property must agree.                                                                                                                                                                                                                                                                                                                       |
+| Hash binding         | Source, metadata digest when present, composed deck, canonical serialized map, compiler/placement, generated baseline, optional comparison baseline, edited PPTX, occurrence fingerprints, unresolved reconciliation report, finding ID, and resolution hashes are checked before semantic comparison.                                                                                                                                                                                                         |
+| Persistent authority | Exact source, canonical C9 map, and authenticated before-side remain authority. Office producer/application metadata and atom descriptive metadata are evidence only.                                                                                                                                                                                                                                                                                                                                          |
+| Inspection           | OPC parts, relationships, stable `src.<id>` occurrences, within-parent order, text, authored baseline, geometry, endpoints, group transforms, complete supported style, mapped `p:pic` structure, image relationships, and content-addressed media digests are parsed without Office automation. Numeric IDs and proximity never establish identity.                                                                                                                                                           |
+| Authored baseline    | The exact mapped text body requires `wrap="none"`, zero left/right/bottom inset, top anchor, and exactly one `noAutofit`. C10 may compare the signed `tIns` channel and reconstruct `baselineYEmu = xfrm.offY + tIns + fontSizeHundredthPoints × 127`. A supported difference becomes `set-text-frame` with exact old/new frame and line anchor; frame and inset movement compose arithmetically. Wrapping, autofit, another anchor/inset, rich text, or out-of-range/non-integral values are review-required. |
+| Immutable PNG slice  | C10 authenticates mapped PNG media bytes/length/SHA-256, part inventory, slide relationship target/type, `p:pic` identity, aspect lock, blip/fill form, transform, rectangle geometry, and painter order. Exact baseline-equivalent pictures are accepted unchanged. Any picture byte, relationship, geometry, crop/effect, deletion, duplication, or reorder change is `review-required`/`VECTOR180-RECONCILE-UNSUPPORTED`; no candidate raster operation or partial patch is emitted.                        |
+| Typed output         | Every automatically patchable difference maps to one C5 2.0 typed operation. There is no generic attribute, metadata, namespace, media, or picture patch. Candidate application/regeneration/reinspection proves the complete transaction before `patchable`.                                                                                                                                                                                                                                                  |
+| No partial patch     | Any invalid, ambiguous, unsupported, stale, privacy-sensitive, or review-required finding omits `patch`; supported independent candidates may remain in the report for agent context.                                                                                                                                                                                                                                                                                                                          |
+| Native baseline      | An authenticated exact PowerPoint no-op save may become the comparison before-side only after supported normalization proves semantic equivalence. It never replaces or weakens source or map lineage.                                                                                                                                                                                                                                                                                                         |
+| Normalization rules  | Current rules are renamed `vector180-c10/content-type-set/1`, `relationship-graph/1`, `relationship-reference/1`, `view-properties-inert/1`, `table-styles-inert/1`, `slide-size-preset-omitted/1`, `root-zero-group-transform/1`, `theme-empty-defaults/1`, `presentation-property-defaults/1`, `end-paragraph-style-marker-omitted/1`, and `generated-metadata/1`. Their structural predicates and fail-closed boundaries remain exactly C10 1.2.                                                            |
+| Connector duplicate  | Duplicate identity refuses by default. One strict resolution is eligible only when exactly one of exactly two same-parent straight-connector occurrences remains baseline-equivalent and every other finding is resolved.                                                                                                                                                                                                                                                                                      |
+| Resolution proof     | Resolution binds the unresolved report digest (SHA-256 over duplicate-free, recursively key-sorted compact UTF-8 JSON) and finding ID, source/map/edited/comparison hashes, both occurrence fingerprints, classification `one-baseline-equivalent-copy`, fresh ID, explicit existing references, parent/order, inverse endpoints, and complete style. Stale/incomplete/mismatched proof refuses.                                                                                                               |
+| Metadata             | C10 does not import or mutate atom metadata. Source/map hashes transitively bind it; a proposed C5 patch preserves it byte-for-byte.                                                                                                                                                                                                                                                                                                                                                                           |
+| Privacy              | Reports recursively redact creator/author/user/account/company/private paths and raw private XML. Digests and non-personal version identities may remain.                                                                                                                                                                                                                                                                                                                                                      |
+| Arbitrary import     | Baseline-free PPTX-to-Vector180 conversion, heuristic object matching, and unsupported structural recovery remain outside this contract.                                                                                                                                                                                                                                                                                                                                                                       |
+| Legacy chains        | C10 1.2 reports, maps, packages, and resolutions remain frozen historical evidence. The Vector180 package may inspect their declared identity but does not generate or apply a legacy patch; use source migration plus a fresh C9/C10 chain. Canonical and legacy components never cross.                                                                                                                                                                                                                      |
 
 ## Error Contracts
 
@@ -108,7 +126,7 @@ Canonical related IDs are:
 | Stale source                   | Exact source hash differs from the map                                                 | `VECTOR180-RECONCILE-STALE-SOURCE`                                                                    |
 | Invalid PPTX                   | OPC/XML/relationship/identity package cannot be inspected safely                       | `VECTOR180-RECONCILE-INVALID-PPTX`                                                                    |
 | Missing/duplicate/ambiguous ID | Mapped stable identity is absent, repeated, or cannot be classified                    | `VECTOR180-RECONCILE-MISSING-ID`, `VECTOR180-RECONCILE-DUPLICATE-ID`, `VECTOR180-RECONCILE-AMBIGUOUS` |
-| Unsupported delta              | Changed value or structure lacks a contracted inverse                                  | `VECTOR180-RECONCILE-UNSUPPORTED`                                                                     |
+| Unsupported delta              | Changed value, raster picture, or structure lacks a contracted inverse                 | `VECTOR180-RECONCILE-UNSUPPORTED`                                                                     |
 | Resolution                     | Schema/hash/fingerprint/classification/reference/order/style proof is stale or invalid | `VECTOR180-RECONCILE-RESOLUTION`                                                                      |
 | Patch proof                    | Proposed C5 transaction fails validation/application/regeneration/reinspection         | `VECTOR180-RECONCILE-PATCH`                                                                           |
 
@@ -118,6 +136,9 @@ Canonical related IDs are:
 - Depends on: `CONTRACT:C5-PPTV-PATCH.2.0`.
 - Depends on: `CONTRACT:C6-PPTV-RESOLVED.2.0`.
 - Depends on: `CONTRACT:C9-PPTV-PPTX-BASELINE.2.0`.
+- Excludes: `vector180-pptx-deck-map/0.1` from
+  `CONTRACT:C13-VECTOR180-DECK-EXPORT.0.1`; deck reconciliation requires a
+  future successor and cannot reuse atom placement semantics.
 - Cross-checks: `CONTRACT:C11-OFFICE-VISUAL-EVIDENCE.1.2` binds separate native and visual evidence.
 - Schema: `schemas/vector180-pptx-reconciliation-0.1.schema.json`.
 - Schema: `schemas/vector180-reconcile-resolution-0.1.schema.json`.
@@ -129,10 +150,11 @@ Canonical related IDs are:
 
 ## Future evolution
 
-- Additional duplicate/object insertion, multiline text, assets, and native
-  normalizations require counterexamples, real native evidence, and matched
-  C5/C9/C10/C11 revisions.
+- Additional duplicate/object insertion, multiline text, mutable picture
+  replacement/geometry/order, SVG/JPEG media, and native normalizations require
+  counterexamples, real native evidence, and matched C5/C9/C10/C11 revisions.
 - Baseline-free import remains a separate measured project.
+- Complete-deck edit recovery remains separate from this atom-map contract.
 
 ## Retirement / supersession plan
 
@@ -158,11 +180,16 @@ Canonical related IDs are:
 - [ ] Every normalization rule retains exact structural positive/negative fixtures under its new ID.
 - [x] Reviewed connector resolution accepts only the one contracted classification and exact proof.
 - [x] Temporary patch/regenerate/reinspect proof reaches semantic equality before `patchable`.
+- [x] Authored-baseline `tIns` edits invert to exact typed line-anchor changes;
+      wrapping/autofit/body-shape drift refuses.
+- [x] Exact mapped PNG pictures authenticate as unchanged; media, relationship,
+      transform, deletion, and painter-order mutations remain review-required
+      with no partial patch.
 - [x] Historical C10 1.2 source/map/PPTX/report/patch bytes remain untouched.
 
 ## Change History
 
-| Version | Date       | Change                                                                                    | Migration                                               |
-| ------- | ---------- | ----------------------------------------------------------------------------------------- | ------------------------------------------------------- |
-| 1.2     | 2026-08-02 | Add proof-carrying PPTV native normalization and reviewed connector-copy resolution       | Superseded; complete legacy chains retained             |
-| 2.0     | 2026-08-02 | Bind inspection, normalization, reports, resolutions, and patches to Vector180 C9 lineage | Migrate source and regenerate the complete C9/C10 chain |
+| Version | Date       | Change                                                                                                    | Migration                                               |
+| ------- | ---------- | --------------------------------------------------------------------------------------------------------- | ------------------------------------------------------- |
+| 1.2     | 2026-08-02 | Add proof-carrying PPTV native normalization and reviewed connector-copy resolution                       | Superseded; complete legacy chains retained             |
+| 2.0     | 2026-08-05 | Bind C10 to Vector180 C9 lineage; add authored-baseline inversion and immutable static-PNG authentication | Migrate source and regenerate the complete C9/C10 chain |

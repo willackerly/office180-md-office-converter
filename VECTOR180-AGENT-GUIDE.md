@@ -5,8 +5,9 @@ test-accepted release candidate, not an npm-published release.
 It implements first-class deck/atom C4-C6 semantics, C5 2.0 typed patches
 including one exact reviewed connector clone, hydrated extraction, the
 writable trusted editor, the bounded C7 compiler, verified C8 2.0 text fit,
-and the C9/C10 2.0 atom-to-PPTX-to-atom path. That package result is not
-blanket contract verification: C4–C7 and C9–C12 remain `in-progress` on their
+the C9/C10 2.0 atom-to-PPTX-to-atom path, and C13 complete-deck PPTX/map plus
+trusted-editor derivatives. That package result is not
+blanket contract verification: C4–C7 and C9–C13 remain `in-progress` on their
 own outstanding corpus, family/refusal, independent-artifact, counterexample,
 native, or human-evidence rows. In particular, C7's canonical envelope,
 refusal, and determinism rows are covered, but its complete durable
@@ -14,8 +15,8 @@ OPC/XSD/independent-validity oracle and frozen-artifact gates remain open.
 Repository C11 1.2 tooling and its durable canonical bundle add browser/Quick
 Look evidence and a proven predecessor exact-path native no-op lifecycle;
 representative native Vector180 edits and human/native fidelity remain manual.
-Browser geometry/style/structure controls, general deck or multi-atom
-composition, baseline-free PowerPoint import, rich text, and source/profile
+Browser drag handles and general insertion/reparenting controls, external
+multi-atom composition, deck reconciliation, baseline-free PowerPoint import, rich text, and source/profile
 0.1.1 remain roadmap.
 **Profile identifier:** `vector180-agent/1`
 **Architecture:** [`VECTOR180-PROCESSING-API.md`](VECTOR180-PROCESSING-API.md)
@@ -545,9 +546,11 @@ vector180 editor-pack source.vector180.svg \
 ```
 
 The pack supports a deck or diagram. It exposes object selection, direct-text
-Apply, exact-source undo/redo, diagnostics, source inspection, and clean
-current-source download; deck packs additionally expose theme/order controls
-and hydrated selected-slide download. It never saves a reconstructed browser
+Apply, safe-default View/Edit modes, exact numeric C5 geometry/connector/group/
+one-line-frame/style/order/delete controls, exact-source undo/redo, diagnostics,
+source inspection, and clean current-source download. Authenticated raster
+assets render but remain protected. Deck packs additionally expose theme/order
+controls and hydrated selected-slide download. It never saves a reconstructed browser
 DOM. If the browser grants a file handle, later saves compare the on-disk hash
 with the last successful save and refuse stale overwrite. A pack whose
 embedded source does not match its expected hash is read-only.
@@ -555,11 +558,13 @@ embedded source does not match its expected hash is read-only.
 Treat `*.editable.html` as a generated build artifact rather than source.
 Do not commit it; add the pattern to the consuming repository's ignore rules.
 
-Geometry, connector, grouping, structured-line/rich-text, token-rule, and
-insertion/deletion controls are not implemented in the browser UI. Use a
-programmatic C5 typed transaction, including a C10-proposed transaction, for the
-bounded typed operations it supports. Use a raw source edit only when the task
-actually requires unsupported authoring and then rerun all applicable gates.
+The distinct `Export as` menu downloads hydrated selected-slide SVG,
+renderer-labelled PNG, complete-deck PPTX, and its separately paired
+descriptor-only map. Any successful edit/undo/redo invalidates the old map.
+Drag handles, grouping/insertion/reparenting, structured-line/rich-text, and
+token-rule controls are not implemented. Use a raw source edit only when the
+task actually requires unsupported authoring and then rerun all applicable
+gates. PDF is deferred.
 
 ### 8.5 Move a diagram node
 
@@ -745,6 +750,19 @@ vector180 compose diagram.vector180.svg \
 Neither command changes the authoritative atom, infers physical size, or
 silently stretches, crops, or letterboxes a mismatched aspect ratio.
 
+For a complete canonical HTML deck, use the distinct C13 path:
+
+```bash
+vector180 compile-deck deck.vector180.html \
+  --output deck.pptx \
+  --map deck.vector180.deck.map.json
+```
+
+This preserves manifest order and hidden state, authenticates/deduplicates
+inline PNG bytes across slides, and publishes a deterministic descriptor-only
+map bound to source/resolved/emitted/OPC identities. It is not accepted by C10;
+deck PowerPoint edit recovery remains future work.
+
 An edited file is reconciled against that exact source/map pair. When the
 comparison is the exact native no-op save that preceded later edits, supply it
 explicitly so C10 can prove and report only its named serializer
@@ -837,16 +855,16 @@ Do not claim a visual or native PowerPoint check occurred when it did not.
 
 ## 14. Current repository reality
 
-The repository now implements the bounded C4-C12 vertical slice plus C11
+The repository now implements the bounded C4-C13 vertical slice plus C11
 evidence automation in the local
 `@office180/vector180@0.1.0-alpha.5` release candidate and repository scripts.
 Only C8 2.0 has completed every successor acceptance row; implementation below
-does not imply promotion of C4–C7 or C9–C12:
+does not imply promotion of C4–C7 or C9–C13:
 
 - source units: a standalone `.vector180.svg` is the default independent diagram
   atom; `.vector180.html` is the deck/theme/viewer/C7 aggregation envelope;
 - commands: `new atom`, `new deck`, `outline`, `validate`, `resolve`, `extract`, `editor-pack`,
-  `pptx-canary`, `compose`, `compile`, `reconcile`, `text-fit`, `text`, `show`,
+  `pptx-canary`, `compose`, `compile`, `compile-deck`, `reconcile`, `text-fit`, `text`, `show`,
   `list`, `patch`, `metadata`, `metadata-compare`, `diff`, and `migrate`;
 - generic surfaces: read/query/resolve, patch, text-fit, and editor-pack accept
   either source kind without synthetic deck coercion;
@@ -870,7 +888,10 @@ does not imply promotion of C4–C7 or C9–C12:
 - reverse: authenticated supported DrawingML inspection, named native-save
   normalization proofs, agent-grade findings/candidates/options, optional
   strict reviewed connector resolution, minimal typed patch proposal, temporary
-  apply/recompile proof, and fail-closed classification; and
+  apply/recompile proof, and fail-closed classification;
+- deck export: complete canonical HTML deck to deterministic native PPTX plus
+  strict descriptor-only C13 map, shared byte-identically by browser and Node;
+  and
 - compatibility and comparison: pure PPTV 0.1 read support, explicit canonical
   migration, mixed-namespace refusal, inert lineage/style metadata projection,
   and C12 stable-ID semantic source diff.
@@ -886,9 +907,9 @@ environment-labeled browser evidence. C11 adds content-bound browser/Quick Look
 capture, deterministic comparison envelopes, and a bounded exact-path native
 no-op lifecycle while keeping representative Office validation distinct.
 
-Do not fabricate `theme`, `normalize`, or `render` commands, browser geometry
-controls, rich-text/multiline editing, arbitrary PPTX import, native fit parity,
-or general format fidelity. General deck/multi-atom composition, deck-mode C9,
+Do not fabricate `theme`, `normalize`, or `render` commands, browser drag
+handles, rich-text/multiline editing, arbitrary PPTX import, native fit parity,
+or general format fidelity. External multi-atom composition and deck reconciliation,
 general duplication/insertion/reparenting beyond the reviewed connector clone,
 group scaling, library expansion, canonical serialization, broader assets,
 baseline-free import, representative native edit automation, and the banked

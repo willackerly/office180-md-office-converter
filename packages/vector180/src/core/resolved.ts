@@ -23,6 +23,7 @@ import type {
   Vector180Node,
   Vector180Slide,
   Vector180MetadataProjection,
+  Vector180InlinePngResourceDescriptor,
   VisualWireFamily,
   SourceRange,
 } from "./types.js";
@@ -185,7 +186,7 @@ export interface Vector180ResolvedSvgAsset extends Vector180ResolvedObjectBase {
 
 export interface Vector180ResolvedRasterAsset extends Vector180ResolvedObjectBase {
   readonly kind: "raster-asset";
-  readonly resourceRef: string;
+  readonly resource: Vector180InlinePngResourceDescriptor;
 }
 
 export interface Vector180ResolvedTextLine {
@@ -1127,24 +1128,74 @@ function resolveRasterAsset(
 ): InternalResolvedRasterAsset | undefined {
   validateBoundaryAttributes(node, RASTER_ASSET_ATTRIBUTES, context);
   const bounds = parseDeclaredBounds(node, context);
-  const resourceRef =
-    getAttribute(node, "href") ?? getAttribute(node, "xlink:href");
-  if (resourceRef === undefined || resourceRef === "") {
-    pushNodeDiagnostic(
-      context,
-      node,
-      "VECTOR180-PROFILE-RESOURCE",
-      `Raster asset "${node.id}" has no separately resolvable static resource.`,
+  const x = requiredNumber(node, "x", false, context);
+  const y = requiredNumber(node, "y", false, context);
+  const width = requiredNumber(node, "width", true, context);
+  const height = requiredNumber(node, "height", true, context);
+  const href = getAttribute(node, "href");
+  const xlinkHref = getAttribute(node, "xlink:href");
+  const resource = node.resource;
+  const aspectMatches =
+    resource !== undefined &&
+    sameExactAspectRatio(
+      resource.widthPixels,
+      resource.heightPixels,
+      getAttribute(node, "width"),
+      getAttribute(node, "height"),
     );
-  } else {
+  if (
+    (href === undefined) === (xlinkHref === undefined) ||
+    resource === undefined
+  ) {
     pushNodeDiagnostic(
       context,
       node,
       "VECTOR180-PROFILE-RESOURCE",
-      `Raster asset "${node.id}" cannot be resolved by the dependency-free C6 resolver.`,
+      `Raster asset "${node.id}" requires exactly one validated inline PNG resource.`,
     );
   }
-  if (bounds === undefined || resourceRef === undefined) return undefined;
+  if (
+    bounds !== undefined &&
+    x !== undefined &&
+    y !== undefined &&
+    width !== undefined &&
+    height !== undefined &&
+    (x !== bounds.x ||
+      y !== bounds.y ||
+      width !== bounds.width ||
+      height !== bounds.height)
+  ) {
+    pushNodeDiagnostic(
+      context,
+      node,
+      "VECTOR180-PROFILE-GEOMETRY",
+      `Raster asset "${node.id}" x/y/width/height must equal its declared bounds.`,
+    );
+  }
+  if (resource !== undefined && !aspectMatches) {
+    pushNodeDiagnostic(
+      context,
+      node,
+      "VECTOR180-PROFILE-RESOURCE",
+      `Raster asset "${node.id}" intrinsic pixel ratio must exactly match its declared width and height.`,
+    );
+  }
+  if (
+    bounds === undefined ||
+    x === undefined ||
+    y === undefined ||
+    width === undefined ||
+    height === undefined ||
+    resource === undefined ||
+    (href === undefined) === (xlinkHref === undefined) ||
+    x !== bounds.x ||
+    y !== bounds.y ||
+    width !== bounds.width ||
+    height !== bounds.height ||
+    !aspectMatches
+  ) {
+    return undefined;
+  }
   const worldBounds = offsetBounds(bounds, worldOffset, node, context);
   if (worldBounds === undefined) return undefined;
   return {
@@ -1159,7 +1210,7 @@ function resolveRasterAsset(
       worldOffset,
       styleEntry,
     ),
-    resourceRef,
+    resource,
   };
 }
 
@@ -1513,6 +1564,27 @@ function exactDecimalDifference(
       scaleExactDecimal(current, commonExponent) -
         scaleExactDecimal(previous, commonExponent) ===
       scaleExactDecimal(step, commonExponent)
+    );
+  } catch {
+    return false;
+  }
+}
+
+function sameExactAspectRatio(
+  widthPixels: number,
+  heightPixels: number,
+  widthSource: string | undefined,
+  heightSource: string | undefined,
+): boolean {
+  if (widthSource === undefined || heightSource === undefined) return false;
+  const width = parseExactDecimal(widthSource);
+  const height = parseExactDecimal(heightSource);
+  if (width === undefined || height === undefined) return false;
+  const commonExponent = Math.min(width.exponent, height.exponent);
+  try {
+    return (
+      scaleExactDecimal(width, commonExponent) * BigInt(heightPixels) ===
+      scaleExactDecimal(height, commonExponent) * BigInt(widthPixels)
     );
   } catch {
     return false;
