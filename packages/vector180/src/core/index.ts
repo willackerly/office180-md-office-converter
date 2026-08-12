@@ -22,6 +22,11 @@ export {
   type Vector180AtomExtractionResult,
 } from "./extract.js";
 export {
+  MAX_VECTOR180_INLINE_PNG_BYTES,
+  MAX_VECTOR180_INLINE_PNG_PIXELS,
+  parseVector180InlinePngDataUri,
+} from "./inline-png.js";
+export {
   parseManifest,
   PROFILE_ID_PATTERN,
   slideId,

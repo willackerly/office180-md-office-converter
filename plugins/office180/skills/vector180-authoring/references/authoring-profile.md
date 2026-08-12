@@ -51,14 +51,15 @@ atom.section.component.part
 
 Use these current semantic pairs:
 
-| SVG element | Role | Export | Meaning |
-| --- | --- | --- | --- |
-| `rect` | `shape` | `native` | native rectangle |
-| `circle`, `ellipse` | `shape` | `native` | native ellipse |
-| `text` | `text` | `native` | explicit framed hard text |
-| `line` | `connector` | `native` | straight connector |
-| `g` | `group` | `native` | independently movable semantic group |
-| `g` | `asset` | `svg` | atomic vector picture with declared bounds |
+| SVG element         | Role        | Export   | Meaning                                           |
+| ------------------- | ----------- | -------- | ------------------------------------------------- |
+| `rect`              | `shape`     | `native` | native rectangle                                  |
+| `circle`, `ellipse` | `shape`     | `native` | native ellipse                                    |
+| `text`              | `text`      | `native` | explicit framed hard text                         |
+| `line`              | `connector` | `native` | straight connector                                |
+| `g`                 | `group`     | `native` | independently movable semantic group              |
+| `g`                 | `asset`     | `svg`    | atomic vector picture with declared bounds        |
+| `image`             | `asset`     | `raster` | strict inline static PNG with exact bounds/aspect |
 
 Declare roles with `data-vector180-role` and export intent with
 `data-vector180-export`. Use SVG sibling order as canonical back-to-front
@@ -73,6 +74,15 @@ transform lists in the supported native subset.
 Connector `data-vector180-from` and `data-vector180-to` values identify related
 objects. Explicit `x1/y1/x2/y2` endpoints remain authoritative and do not
 automatically follow a moved group.
+
+For an inline raster asset, use exactly one canonical whitespace-free
+`data:image/png;base64,...` `href`/`xlink:href`, explicit `x/y/width/height`
+numerically equal to `data-vector180-bounds`, and an authored aspect exactly
+matching the intrinsic pixels. The decoded static, non-interlaced, CRC-valid
+PNG is limited to 4 MiB and 16,777,216 pixels. APNG, trailing bytes, external
+URLs, JPEG/other formats, crop/stretch, and fallback media refuse. Exact SVG
+source retains the payload; semantic/editing/resolved/browser JSON exposes
+only the media type/SHA-256/byte-length/pixel-dimensions descriptor.
 
 ## Styling
 
@@ -111,6 +121,13 @@ character-count fit guesses. Use one direct line per text object for the
 current mapped native PPTX baseline. Group separate line objects when a visual
 paragraph needs multiple explicit lines.
 
+C7/C9 preserve the one-line authored baseline as signed DrawingML
+`tIns = (line.y - frame.y - fontSize) × 7620` EMU with zero side/bottom inset,
+top anchor, no wrap, and no autofit. C10 may recover a supported `tIns` move as
+an exact typed line-anchor change. Quick Look may substitute a host font; use
+native PowerPoint plus checked human review for final typography/position, and
+do not treat preview capture as native PDF evidence.
+
 The banked paragraph-intent design remains future syntax until promoted by
 successor contracts. Do not emit speculative text-intent attributes.
 
@@ -145,10 +162,12 @@ Deck slides remain exactly `viewBox="0 0 1600 900"`.
 
 ```html
 <template data-vector180-slide="architecture">
-  <svg id="architecture"
-       viewBox="0 0 1600 900"
-       data-vector180-layout="content"
-       xmlns="http://www.w3.org/2000/svg">
+  <svg
+    id="architecture"
+    viewBox="0 0 1600 900"
+    data-vector180-layout="content"
+    xmlns="http://www.w3.org/2000/svg"
+  >
     ...
   </svg>
 </template>
@@ -162,6 +181,12 @@ base stylesheet consumes.
 Do not copy/modify the fixed viewer by hand. Do not call template order slide
 order. Do not flatten themes merely to make a deck render; use extraction to
 hydrate one slide into an atom.
+
+A complete canonical deck may use the bounded C13 `compile-deck` path. Its
+PPTX/map are derivatives: HTML remains collection authority and each reusable
+visual should still originate as an independent hydrated atom. The compiler
+accepts only the strict native one-line subset plus authenticated immutable
+inline PNG pictures; unsupported content refuses the whole export.
 
 ## Trust and writes
 

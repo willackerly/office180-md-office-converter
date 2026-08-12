@@ -25,6 +25,10 @@ const LEGACY_URL = new URL(
   "../../../../examples/minimal-diagram.pptv.svg",
   import.meta.url,
 );
+const RED_PIXEL_PNG_BASE64 =
+  "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR4nGP4z8DwHwAFAAH/iZk9HQAAAABJRU5ErkJggg==";
+const BLUE_PIXEL_PNG_BASE64 =
+  "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR4nGNgYPj/HwADAgH/5ncLrgAAAABJRU5ErkJggg==";
 
 describe("C12 input-level source diff", () => {
   it("retains exact independent identities for valid canonical inputs", async () => {
@@ -332,6 +336,65 @@ describe("C12 input-level source diff", () => {
     expectSchemaShape(changedReport);
   });
 
+  it("reports same-bounds raster byte changes by digest without exposing base64", async () => {
+    const left = rasterAtomSource(RED_PIXEL_PNG_BASE64);
+    const right = rasterAtomSource(BLUE_PIXEL_PNG_BASE64);
+    const report = await diffVector180Inputs(
+      { kind: "text", text: left, name: "left.vector180.svg" },
+      { kind: "text", text: right, name: "right.vector180.svg" },
+    );
+
+    expect(report).toMatchObject({
+      classification: "changed",
+      lexical: { equal: false },
+      summary: {
+        unchangedObjects: 0,
+        changedObjects: 1,
+        resource: 1,
+        total: 1,
+      },
+      diagnostics: [],
+    });
+    expect(report.changes).toHaveLength(1);
+    expect(report.changes[0]).toMatchObject({
+      id: "resource-diff.background",
+      kind: "resource",
+      fieldPath: "/resource",
+      left: {
+        parentId: null,
+        order: 0,
+        snapshot: {
+          mediaType: "image/png",
+          sha256: nodeSha256(
+            Uint8Array.from(Buffer.from(RED_PIXEL_PNG_BASE64, "base64")),
+          ),
+          byteLength: 70,
+          widthPixels: 1,
+          heightPixels: 1,
+        },
+      },
+      right: {
+        parentId: null,
+        order: 0,
+        snapshot: {
+          mediaType: "image/png",
+          sha256: nodeSha256(
+            Uint8Array.from(Buffer.from(BLUE_PIXEL_PNG_BASE64, "base64")),
+          ),
+          byteLength: 70,
+          widthPixels: 1,
+          heightPixels: 1,
+        },
+      },
+    });
+    const serialized = JSON.stringify(report);
+    expect(serialized).not.toContain("data:image/png");
+    expect(serialized).not.toContain("base64");
+    expect(serialized).not.toContain(RED_PIXEL_PNG_BASE64);
+    expect(serialized).not.toContain(BLUE_PIXEL_PNG_BASE64);
+    expectSchemaShape(report);
+  });
+
   it("CLI writes and emits an incomparable report without mutating either source", async () => {
     const directory = await mkdtemp(join(tmpdir(), "vector180-diff-boundary-"));
     try {
@@ -400,6 +463,7 @@ function expectIncomparableShape(report: Vector180SourceDiff): void {
       parent: 0,
       order: 0,
       relationship: 0,
+      resource: 0,
       text: 0,
       geometry: 0,
       transform: 0,
@@ -442,6 +506,18 @@ function expectSchemaShape(report: Vector180SourceDiff): void {
       ),
     ).toBe(true);
   }
+}
+
+function rasterAtomSource(pngBase64: string): string {
+  return `<svg id="resource-diff" data-vector180-version="0.1"
+  viewBox="0 0 1 1" xmlns="http://www.w3.org/2000/svg">
+  <image id="resource-diff.background"
+    data-vector180-role="asset" data-vector180-export="raster"
+    data-vector180-bounds="0 0 1 1"
+    x="0" y="0" width="1" height="1"
+    href="data:image/png;base64,${pngBase64}"/>
+</svg>
+`;
 }
 
 function captureEnvironment(): {

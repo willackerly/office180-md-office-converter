@@ -1,6 +1,6 @@
 {
   "schema": "vector180-browser-text-calibration-evidence/0.1",
-  "capturedOn": "2026-08-03",
+  "capturedOn": "2026-08-09",
   "overallStatus": "pass-with-explicit-engine-and-platform-variance",
   "fixture": "browser-calibration.json",
   "method": {
@@ -15,8 +15,8 @@
   "toolchain": {
     "playwright": "1.62.0",
     "esbuild": "0.28.1",
-    "browserKernelSha256": "9c0b85b42b8eadbc6689c24517298f28c445b70e0fb0216eae4e2661d4cb6c3a",
-    "browserKernelBytes": 788901,
+    "browserKernelSha256": "38895c838e6b0cf7839051078fcdc4ae0403cbdbecd93fc496a5b1551f1e6be4",
+    "browserKernelBytes": 814691,
     "font": {
       "family": "ABeeZee",
       "sha256": "2901c8df256648cc2bb2e3afb381cb8d28e65ed3dbe11de20695ae4d5ffdeda9"
@@ -24,8 +24,8 @@
   },
   "captureInputs": {
     "browserKernel": {
-      "sha256": "9c0b85b42b8eadbc6689c24517298f28c445b70e0fb0216eae4e2661d4cb6c3a",
-      "bytes": 788901
+      "sha256": "38895c838e6b0cf7839051078fcdc4ae0403cbdbecd93fc496a5b1551f1e6be4",
+      "bytes": 814691
     },
     "calibration": {
       "sha256": "e7ad561d38bb16f3dd62fc348febf3d96a8d27e300491b9edd35aa166cb0c8a7",
@@ -40,8 +40,8 @@
       "bytes": 982
     },
     "testSource": {
-      "sha256": "3be02cb43eaafae52b38d532bfee309b6f6a61731f84b01ed5b2aae049a319cd",
-      "bytes": 18700
+      "sha256": "1939d5f9e870c3b97ff32095e4f5e4eb8448db700a88f15f4995f37aa92e92e8",
+      "bytes": 20163
     },
     "diagramFixture": {
       "sha256": "58d2c336ea0327ec11b2506a9053264a2f74b7053726e89853dbb5b77b27bbb2",

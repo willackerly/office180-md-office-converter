@@ -54,6 +54,7 @@ architecture/
   CONTRACT-C11-OFFICE-VISUAL-EVIDENCE.1.1.md # superseded legacy bound-evidence harness
   CONTRACT-C11-OFFICE-VISUAL-EVIDENCE.1.2.md # dual-family visual/native evidence
   CONTRACT-C12-VECTOR180-SOURCE-DIFF.1.0.md # stable-ID semantic source comparison
+  CONTRACT-C13-VECTOR180-DECK-EXPORT.0.1.md # mapped complete-deck/editor derivative export
 ```
 
 Superseded major versions remain beside their successors for migration and

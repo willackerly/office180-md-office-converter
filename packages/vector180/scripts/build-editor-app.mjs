@@ -75,7 +75,7 @@ if (check) {
 function assertPortableMetafile(metafile) {
   const inputPaths = Object.keys(metafile.inputs);
   const deniedPackages = inputPaths.filter((inputPath) =>
-    /(?:^|[/\\])(?:fontkit|jszip)(?:@|[/\\])/iu.test(inputPath),
+    /(?:^|[/\\])fontkit(?:@|[/\\])/iu.test(inputPath),
   );
   if (deniedPackages.length > 0) {
     throw new Error(
@@ -94,7 +94,7 @@ function assertPortableMetafile(metafile) {
     for (const imported of input.imports) {
       if (
         builtinNames.has(imported.path) ||
-        /(?:^|[/\\])(?:fontkit|jszip)(?:@|[/\\])/iu.test(imported.path)
+        /(?:^|[/\\])fontkit(?:@|[/\\])/iu.test(imported.path)
       ) {
         deniedImports.push(`${inputPath} -> ${imported.path}`);
       }
@@ -110,12 +110,18 @@ function assertPortableMetafile(metafile) {
     "src/browser/editor-app.ts",
     "src/browser/session.ts",
     "src/browser/text-measurer.ts",
+    "src/browser/derivative-export.ts",
+    "src/browser/trusted-raster.ts",
     "src/core/deck.ts",
+    "src/core/inline-png.ts",
     "src/core/resolved.ts",
     "src/core/text-fit.ts",
     "src/core/extract.ts",
     "src/ops/patch.ts",
     "src/ops/projections.ts",
+    "src/node/pptx-deck.ts",
+    "src/node/pptx-canary.ts",
+    "src/node/pptx-units.ts",
   ];
   for (const required of requiredSharedInputs) {
     if (

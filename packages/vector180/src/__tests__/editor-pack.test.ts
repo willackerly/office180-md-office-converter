@@ -16,6 +16,10 @@ const MINIMAL_DIAGRAM_URL = new URL(
   "../../../../examples/minimal-diagram.vector180.svg",
   import.meta.url,
 );
+const LEGACY_DIAGRAM_URL = new URL(
+  "../../../../examples/minimal-diagram.pptv.svg",
+  import.meta.url,
+);
 const FONT_URL = new URL(
   "../../test-fixtures/fonts/ABeeZee-Regular.ttf",
   import.meta.url,
@@ -42,7 +46,12 @@ describe("deterministic trusted editor pack", () => {
     expect(first.html).toContain("default-src 'none'");
     expect(first.html).toContain("connect-src 'none'");
     expect(first.html).toContain("font-src 'none'");
+    expect(first.html).toContain("img-src data: blob:");
     expect(first.html).toContain("vector180-editor/0.1");
+    expect(first.html).toContain('data-editor-mode="view"');
+    expect(first.html).toContain("data-mode-view");
+    expect(first.html).toContain("data-mode-edit");
+    expect(first.html).toContain("data-manipulation");
     expect(first.html).toContain("data-text-apply");
     expect(first.html).toContain("data-extract");
     expect(first.html).not.toContain(
@@ -190,6 +199,21 @@ describe("deterministic trusted editor pack", () => {
         { nearLimit: 1 },
       ),
     ).rejects.toThrow(/must be greater than 0 and less than 1/u);
+  });
+
+  it("refuses writable publication around legacy source", async () => {
+    const result = await createEditorPack({
+      kind: "text",
+      text: await readFile(LEGACY_DIAGRAM_URL, "utf8"),
+      name: "legacy.pptv.svg",
+    });
+
+    expect(result.html).toBeUndefined();
+    expect(result.documentKind).toBeUndefined();
+    expect(result.sourceSha256).toBeUndefined();
+    expect(result.diagnostics.map(({ code }) => code)).toContain(
+      "VECTOR180-EDITOR-WIRE-FAMILY",
+    );
   });
 
   it("keeps the generated editor IIFE byte-locked to its TypeScript entry", async () => {

@@ -33,3 +33,10 @@ export {
   type Vector180BrowserTextMeasureRequest,
   type Vector180PreparedBrowserTextMeasurer,
 } from "./text-measurer.js";
+export {
+  renderVector180PreviewPng,
+  Vector180DerivativeExportError,
+  type Vector180DerivativeFont,
+  type Vector180PngDerivative,
+  type Vector180PngDerivativeOptions,
+} from "./derivative-export.js";

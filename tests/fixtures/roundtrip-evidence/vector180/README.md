@@ -39,15 +39,15 @@ shasum -a 256 -c SHA256SUMS
   application produced the recovered atom, and a fresh C9 compile produced the
   regenerated PPTX/map.
 - The edited and regenerated slide XML parts are byte-identical at
-  `9f0c0d53f9e10499f0acf8f85b6cfc43b67068e868fd7d52b13714f43568ca8f`. A second C10 pass over the
+  `abe1d4c0fd79c7bfe25552f741895d975b5dfd01ed842ebba8c5283348198a7f`. A second C10 pass over the
   regenerated branch returned `unchanged`.
 - Original versus recovered Chromium comparison found
   `175295` changed pixels with exact bounds
   `[302,104,757,529]`, contained by
   the declared edit region `[240,45,940,640]`.
 - Baseline versus edited Quick Look comparison found
-  `175008` changed pixels with exact bounds
-  `[305,76,752,559]`.
+  `175011` changed pixels with exact bounds
+  `[305,101,752,534]`.
 - Edited versus regenerated Quick Look comparison passed with
   `0` changed pixels, changed fraction
   `0`, mean absolute error
@@ -65,20 +65,20 @@ shasum -a 256 -c SHA256SUMS
 
 | Artifact | SHA-256 | Bytes |
 |----------|---------|------:|
-| `generation-manifest.json` | `0d659e37ca2b46ff33f871b12fedef05279e1468ea5b0f4cd62a490eb1749d9d` | 13626 |
-| `supported-baseline-vs-edited.quicklook.comparison.evidence.json` | `634deefad1ff61ffe7d653cedc17eaedc8aae338e28a01c148fe55653604d23b` | 3415 |
-| `supported-baseline.pptx` | `72d67c949ac8a4a1f80285b7781ff03fdc50c663e57a20d41383fa7b61e3ba2c` | 26588 |
-| `supported-baseline.quicklook.evidence.json` | `8f230e6a56eb3231e1ab8d3b0a3c37da778f276a60d71fbdf558fff91aca8c2f` | 1890 |
-| `supported-baseline.quicklook.png` | `e85f46c222d5ad7bafcdde855601d5e5671aa4a67849846a7bde1b8182ddb498` | 97419 |
-| `supported-baseline.vector180.map.json` | `cee57ebd1cc59bddc0039d52dcb1ea702edb8f9c7f10bba1b6702cf920688162` | 59094 |
+| `generation-manifest.json` | `c3b5e599e40aa253a16af8aa5816400a4a47ae24203869707db67a3a4ddfe0a6` | 13627 |
+| `supported-baseline-vs-edited.quicklook.comparison.evidence.json` | `eb25ebeaddc8be446f2d7a340fc33bc159154af5f837c85b7e8b43d2698407f9` | 3416 |
+| `supported-baseline.pptx` | `2af29bc9e9ed96c21a891bda3ab8914e9bccefaa1fdfe1b9d6b82a692af7a945` | 26618 |
+| `supported-baseline.quicklook.evidence.json` | `d94d9ba4a86dcb01548edfde7ba440979388bb1b9df4ca9d2477461979e23cf8` | 1890 |
+| `supported-baseline.quicklook.png` | `ee92dae91e409c4178b03488aed8c83d11e1ccc0a6995f4d215224b1e43c3d7e` | 97361 |
+| `supported-baseline.vector180.map.json` | `aa3bf6364a67972d9ef605594eb7e9b9aae36b7bce5adbf010bb0f74d7e31c1f` | 59124 |
 | `supported-composed.vector180.html` | `3dd130d50a3fc7c0c5a202c7fdc8cce4dbcb147cc7287a1be84154c938c6ef9e` | 7038 |
-| `supported-edited-vs-regenerated.quicklook.comparison.evidence.json` | `168c4250766cd838b4db4edcc3f82408212678600c81d94e65dcf42fcf5e2c63` | 3346 |
-| `supported-edited-vs-regenerated.semantic-comparison.json` | `4f11ee8191f99fca5149c864adb70071032f38d89c20587cdb88ac1c3520d165` | 1361 |
-| `supported-edited.native-powerpoint.evidence.json` | `4560a6115e62247d03f9cafd5ed88762e002b87491afa473bf5a4abc88bad33f` | 2059 |
-| `supported-edited.pptx` | `65f0478c3fd7b76533e4025c2560821b6c9f8a73ad95a4e8e019d3c6d99d869a` | 26588 |
-| `supported-edited.quicklook.evidence.json` | `0803423339da175d05ea126f858768d60966bbedd210fb15922c6407de654805` | 1897 |
-| `supported-edited.quicklook.png` | `6b6e8c38094fb531e6369adcd93d9bd821cb37fca42534898d03837d4f58af36` | 95994 |
-| `supported-edited.reconcile.json` | `944cfaa83d03291756a58bc4186dee05b283c74c0aa166a73573e5f1027230ac` | 9360 |
+| `supported-edited-vs-regenerated.quicklook.comparison.evidence.json` | `dbaccff619d7aa8bacdb27f892447e510c7316a984a9e8bd683415da2f1af383` | 3346 |
+| `supported-edited-vs-regenerated.semantic-comparison.json` | `28db951cd7f7be62381366bc2c16b8af51f777b3e6bd1f54512c7c8cb314563e` | 1361 |
+| `supported-edited.native-powerpoint.evidence.json` | `0b45701b88840f49ffe967f98868d3dbe61c0a795cd4f7b74a1c8574da19966d` | 2059 |
+| `supported-edited.pptx` | `560dde4c446adcde5374de196b4ac9cc9d1d1a865c7f1979e6394380d7fd9a7a` | 26618 |
+| `supported-edited.quicklook.evidence.json` | `e98326b426caac4bd20a69f85203ed0912a47f06e8f6858730c0b0dcb005e820` | 1897 |
+| `supported-edited.quicklook.png` | `1568a9fbe21bb5ec998a58228e0d740e513b4def7ad0924c9a2b34a867124bd7` | 95937 |
+| `supported-edited.reconcile.json` | `e391649ccfdfac17909f31ddb790ed613fd7bd2b941c4e895a21bcc80c11028b` | 9360 |
 | `supported-font-map.json` | `541d0617a01367b7af5bcaba7f45dedfc090716dc440951aab8cb8483c47eb3e` | 274 |
 | `supported-original-vs-recovered.browser.comparison.evidence.json` | `a63bd0b105daf583a2040d647d754876bc840541847a76e7eb9b7ba2e1f2162e` | 4344 |
 | `supported-original.browser.evidence.json` | `1f8867e0ef0193f076a204181f40330c1b2956982955f73c6572c2911b04a8f9` | 2822 |
@@ -90,11 +90,11 @@ shasum -a 256 -c SHA256SUMS
 | `supported-recovered.text-fit.json` | `9c926409c0d50884ab20e5b1adc62fae809fe51fb2b7215f549f68968e77f809` | 4374 |
 | `supported-recovered.vector180.patch.json` | `ab6c6610bf075c109d97c642b99a3a34a5ae3aed8c3fea2db704128e6d7c0cfa` | 1135 |
 | `supported-recovered.vector180.svg` | `e5145ecdaf435d0a04abf92e3bd2e9a20d01396ba013dd6ab26bfa937d59dc8d` | 4624 |
-| `supported-regenerated.pptx` | `b915027a645b239ffd0acf973fe613fce035fa806b43c3669c0c924116e94206` | 26588 |
-| `supported-regenerated.quicklook.evidence.json` | `ad0114b645d9fd6522e4526e665f384b34c56860edb808e0cfb11d1b27e66857` | 1911 |
-| `supported-regenerated.quicklook.png` | `6b6e8c38094fb531e6369adcd93d9bd821cb37fca42534898d03837d4f58af36` | 95994 |
-| `supported-regenerated.reconcile.json` | `285eff3c6b10a2b1d8bf1b820dde7dfa80ff343e8eef7bdfe17dc23aca573f96` | 770 |
-| `supported-regenerated.vector180.map.json` | `cd9f8afbba0f56dbb93b38814f7fc43ec2e03a5b44ef3615521c6e0da23609a9` | 59092 |
+| `supported-regenerated.pptx` | `39c7c176f5a8a02cd4586a1f61da0f20e93c7ff8e9438a0c3e8a6d575aef20b2` | 26618 |
+| `supported-regenerated.quicklook.evidence.json` | `741ec8e1dd5cda74efade5d6cce899c61bac205be0160082315a3380ef7ec7bc` | 1911 |
+| `supported-regenerated.quicklook.png` | `1568a9fbe21bb5ec998a58228e0d740e513b4def7ad0924c9a2b34a867124bd7` | 95937 |
+| `supported-regenerated.reconcile.json` | `2d2b53dd1c8df8f577351128d570c0b7836cbdfbfbc06bf8c49e262480b61376` | 770 |
+| `supported-regenerated.vector180.map.json` | `f316a8edad179321793fd68baddd0222edacabe8d8ce60c5a469d8d5fe4f5243` | 59122 |
 
 ## Limitations
 

@@ -20,12 +20,13 @@ fidelity.
 
 C11 provides one renderer-neutral evidence envelope for Markdown/DOCX,
 canonical Vector180/PPTX, and legacy PPTV/PPTX round trips. It also defines a
-bounded local bridge for one native
-Office no-op save/reopen lifecycle without modifying the delivery artifact,
+bounded local bridge for one native Office no-op save/reopen lifecycle and one
+read-only PowerPoint-to-PDF render without modifying the delivery artifact,
 taking over unrelated documents, hanging indefinitely, or interacting with a
-file-access dialog. That lifecycle is useful structural evidence and a
-version-bound normalization baseline, but it does not prove representative
-editability or visual fidelity.
+file-access dialog. The lifecycle is useful structural evidence and a
+version-bound normalization baseline. A successful render proves only that the
+named PowerPoint build produced the bound PDF. Neither operation proves
+representative editability or reviewed visual fidelity.
 
 ## Who needs this
 
@@ -64,7 +65,15 @@ exact file without a grant dialog. Evidence records a bounded unavailable or
 failed state. The bridge never clicks or grants access, and Quick Look cannot
 substitute for native evidence.
 
-### Scenario 4 — reviewed renderer variance
+### Scenario 4 — bounded native PowerPoint PDF render
+
+PowerPoint exports a trusted generated PPTX to one private PDF from an
+application-container staging directory. The bridge validates the source
+package and PDF, proves the staged source bytes stayed unchanged, closes only
+that exact presentation without saving, and publishes the PDF/report pair only
+after exact absence is proven.
+
+### Scenario 5 — reviewed renderer variance
 
 Browser and PowerPoint antialiasing differ while geometry and line membership
 agree. Quantitative evidence records thresholds/masks, and a human review binds
@@ -130,9 +139,25 @@ def run_native_lifecycle(
     """Return one office180-native-office-bridge/0.1 report."""
 ```
 
+```python
+def run_native_render_pdf(
+    artifact: Path,
+    *,
+    output: Path,
+    root: Path,
+    trusted: bool,
+    timeout_seconds: float,
+) -> dict:
+    """Return one PowerPoint office180-native-office-bridge/0.1 report."""
+```
+
 ```text
 scripts/native-office-bridge.py lifecycle INPUT \
   --output SAVED_COPY --report REPORT.json \
+  --root REPOSITORY --trusted [--timeout SECONDS]
+
+scripts/native-office-bridge.py render-pdf INPUT.pptx \
+  --output RENDER.pdf --report REPORT.json \
   --root REPOSITORY --trusted [--timeout SECONDS]
 ```
 
@@ -141,8 +166,9 @@ The bridge report has:
 ```json
 {
   "schema": "office180-native-office-bridge/0.1",
+  "operation": "lifecycle",
   "status": "passed | failed | unavailable",
-  "phase": "preflight | open | attach | save | close | validate | reopen | publish | complete",
+  "phase": "preflight | copy | pre-open | handoff | open | attach | save | render | post-export | close | validate | reopen | publish | complete",
   "input": {},
   "application": {},
   "environment": {},
@@ -153,7 +179,8 @@ The bridge report has:
 }
 ```
 
-Input/output bind repository-relative paths, SHA-256, byte size, and Office
+Render reports set `operation: "render-pdf"` and contain `render` instead of
+`lifecycle`. Input/output bind repository-relative paths, SHA-256, byte size, and Office
 media kind. Application binds exact bundle ID, short version, and build.
 Lifecycle separates handoff, exact attachment, writable/saved state, forced
 dirty save, Save return, independent post-Save probe, quiescence, ZIP
@@ -164,6 +191,22 @@ collapse to one bounded summary.
 The bridge schema is `schemas/native-office-bridge-0.1.schema.json`. A passed
 report labels its scope `native-no-op-save-lifecycle`; representative
 editability and visual fidelity remain `not-tested`.
+
+`render-pdf` is PowerPoint-only. It stages the validated work copy and private
+PDF in one unique mode-`0700` directory beneath the current user's existing
+PowerPoint `Data/tmp` application-container directory. It validates the
+complete ancestry, ownership, modes, and absence of symlinks; secures staged
+files as single-link mode-`0600` regular files; and never creates or broadens
+the application container. The report exposes only the staging class and an
+opaque unique basename, never a home or absolute container path.
+
+A render pass requires exact attachment, a bounded PowerPoint PDF export,
+stable descriptor-bound PDF bytes, matching PPTX/PowerPoint/PDF page counts
+when the PDF count is available, an unchanged staged source identity/hash, an
+exact close without saving, and proven post-close absence. It then publishes
+the validated PDF followed by the report commit marker. Its evidence scope is
+`native-powerpoint-pdf-render`; editability and visual fidelity remain
+`not-tested`.
 
 ## Implemented browser capture profile
 
@@ -246,6 +289,19 @@ environment, and trusted validation is not a hostile-document sandbox.
 | Bridge privacy             | Reports and summaries contain repository-relative/redacted paths and hashes, never usernames, home paths, hostnames, text, requested absolute paths, Office metadata values, or raw helper/AppleScript output.                                                  |
 | Evidence composition       | `visual-evidence.py bind-native-bridge` binds an exact valid bridge-report digest/output identity into an existing passing capture while retaining `native_lifecycle.status=manual-required`, `editability_checked=false`, and `visual_fidelity_checked=false`. |
 
+### Native PowerPoint PDF render
+
+| Behavior               | Specification                                                                                                                                                                                                                                     |
+| ---------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| PowerPoint-only input  | `render-pdf` accepts one trusted repository-contained PPTX, validates the exact package and slide count, and refuses DOCX or any existing output/report.                                                                                          |
+| Private app staging    | Work PPTX/PDF paths are unique exact children of a private mode-`0700` directory under the existing current-user PowerPoint `Data/tmp`; full ancestry, ownership, modes, and symlink absence are checked before use and cleanup.                  |
+| Descriptor binding     | Staged inputs, generated PDF, and published bytes are no-follow, single-link regular-file snapshots with bounded sizes and stable identity/hash checks. Staged files are mode `0600`.                                                             |
+| Read-only source       | PowerPoint exports only the exact work presentation. The bridge never saves it and requires its identity, bytes, package validity, and hash to remain unchanged through export and close.                                                         |
+| PDF validation         | The output is non-empty, bounded, quiescent, begins with `%PDF-`, has a final marker, and has a bounded page-tree count when readable. Available PDF, source-package, and attached-PowerPoint page counts must agree.                             |
+| Exact close/cleanup    | The bridge closes only the exact presentation without saving. Parent-descriptor-anchored cleanup removes only the opaque staging child after exact absence is proven; unresolved handoff/cleanup preserves private state and publishes no output. |
+| Privacy-safe reporting | Reports record the staging class and opaque basename but never the absolute app-container path, username, home path, private text, or raw AppleScript/helper output.                                                                              |
+| Evidence scope         | A passed `native-powerpoint-pdf-render` report proves only that the exact named PowerPoint build produced the bound PDF. Quantitative comparison, representative edits, and human review remain separate gates.                                   |
+
 The binder verifies report/output relative path, hash, size, lane/application
 pairing, exact application identity, required lifecycle flags, bounded/redacted
 shape, and privacy. Its `evidence_scope` remains
@@ -293,6 +349,8 @@ No native error path publishes a partial Office output or passing report.
 - Depends on lane-specific C3, `CONTRACT:C9-PPTV-PPTX-BASELINE.2.0`, and
   `CONTRACT:C10-PPTV-PPTX-RECONCILIATION.2.0` package/semantic validation;
   C11 never substitutes for them.
+- Cross-checks `CONTRACT:C13-VECTOR180-DECK-EXPORT.0.1`: its browser PNG is a
+  labelled product derivative, not native Office or checked C11 evidence.
 - Legacy `pptv-pptx` evidence remains interpreted under C9 1.0/C10 1.2 and is
   never rewritten.
 - Configuration: capture profile, thresholds, masks, trust assertion, work
@@ -310,7 +368,8 @@ No native error path publishes a partial Office output or passing report.
 ## Future evolution
 
 - Add OpenDocKit, LibreOffice, Windows Open XML SDK, controlled-font browser,
-  PDF, and platform-specific native adapters without merging identities.
+  other PDF producers/rasterizers, and platform-specific native adapters
+  without merging identities.
 - Add a representative native-edit driver only with equally strict
   exact-document isolation and explicit edit verification.
 - A shared Rebar practice may consume this envelope after at least two adopters
@@ -366,6 +425,10 @@ No native error path publishes a partial Office output or passing report.
       case/diacritic attachment, Save/post-Save/reopen state, package safety,
       bounded polls, unresolved handoff preservation, lock-held cleanup, and
       commit-marker publication without launching Office.
+- [x] Unit tests cover PowerPoint-container render staging ancestry, ownership,
+      modes, symlinks, sibling preservation, exact PDF/source snapshots,
+      invalid/mutated output, bounded timeouts, privacy-safe reporting, and
+      commit-marker publication without launching Office.
 - [x] Native Word 16.111.2 no-op save, non-empty package validation, exact
       close/reopen, and embedded C2 source persistence.
 - [x] Native PowerPoint 16.111.2 no-op save, non-empty package validation,
@@ -377,6 +440,8 @@ No native error path publishes a partial Office output or passing report.
 - [x] Full native reports pass repository privacy validation.
 - [ ] Native Office representative supported edit/save/reopen is proven for
       both lanes.
+- [ ] A successful live PowerPoint PDF render is bound to exact source/PDF
+      hashes and reviewed against the intended same-renderer baseline.
 - [ ] Native full-page/slide and high-risk-crop visual fidelity receives
       hash-bound human review.
 
@@ -386,4 +451,4 @@ No native error path publishes a partial Office output or passing report.
 | ------- | ---------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------- |
 | 1.0     | 2026-08-01 | Initial renderer-neutral visual/native evidence envelope and bounded browser/Quick Look/compare slice                                                                             | No predecessor                                                                              |
 | 1.1     | 2026-08-02 | Bounded non-interactive native lifecycle bridge, exact save/reopen evidence, safe preserved handoff state, report commit marker, binder, and version-bound normalization baseline | Existing 0.1 manifests remain valid; native automation opts into the separate bridge report |
-| 1.2     | 2026-08-02 | Add canonical `vector180-pptx` lane and validator identity while preserving `pptv-pptx` as a frozen legacy evidence family                                                        | New evidence selects one family; old manifests remain byte-identical                        |
+| 1.2     | 2026-08-05 | Add canonical `vector180-pptx` lane and validator identity while preserving `pptv-pptx` as frozen legacy; add the bounded PowerPoint-container PDF render path                    | New evidence selects one family/operation; frozen legacy manifests remain byte-identical    |

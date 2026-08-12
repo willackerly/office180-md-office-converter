@@ -15,7 +15,7 @@
     "translateY": 0
   },
   "pptx": {
-    "byteLength": 26588,
+    "byteLength": 26618,
     "partNames": [
       "[Content_Types].xml",
       "_rels/.rels",
@@ -33,7 +33,7 @@
       "ppt/slides/slide1.xml",
       "ppt/theme/theme1.xml"
     ],
-    "sha256": "b915027a645b239ffd0acf973fe613fce035fa806b43c3669c0c924116e94206"
+    "sha256": "39c7c176f5a8a02cd4586a1f61da0f20e93c7ff8e9438a0c3e8a6d575aef20b2"
   },
   "resolvedSchema": "vector180-resolved-deck/0.1",
   "schema": "vector180-pptx-map/0.1",
@@ -255,7 +255,7 @@
                   "bottom": 0,
                   "left": 0,
                   "right": 0,
-                  "top": 0
+                  "top": 194310
                 },
                 "verticalAnchor": "top",
                 "wrap": "none"
@@ -475,7 +475,7 @@
                   "bottom": 0,
                   "left": 0,
                   "right": 0,
-                  "top": 0
+                  "top": 137160
                 },
                 "verticalAnchor": "top",
                 "wrap": "none"
@@ -834,7 +834,7 @@
                   "bottom": 0,
                   "left": 0,
                   "right": 0,
-                  "top": 0
+                  "top": 148590
                 },
                 "verticalAnchor": "top",
                 "wrap": "none"
@@ -1054,7 +1054,7 @@
                   "bottom": 0,
                   "left": 0,
                   "right": 0,
-                  "top": 0
+                  "top": 171450
                 },
                 "verticalAnchor": "top",
                 "wrap": "none"
@@ -1558,7 +1558,7 @@
                   "bottom": 0,
                   "left": 0,
                   "right": 0,
-                  "top": 0
+                  "top": 194310
                 },
                 "verticalAnchor": "top",
                 "wrap": "none"
@@ -1917,7 +1917,7 @@
                   "bottom": 0,
                   "left": 0,
                   "right": 0,
-                  "top": 0
+                  "top": 137160
                 },
                 "verticalAnchor": "top",
                 "wrap": "none"

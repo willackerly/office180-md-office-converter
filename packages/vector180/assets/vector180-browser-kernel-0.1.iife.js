@@ -1948,6 +1948,8 @@ var Vector180BrowserKernel = (() => {
   var conformance_entry_exports = {};
   __export(conformance_entry_exports, {
     EditorSession: () => EditorSession,
+    MAX_VECTOR180_INLINE_PNG_BYTES: () => MAX_VECTOR180_INLINE_PNG_BYTES,
+    MAX_VECTOR180_INLINE_PNG_PIXELS: () => MAX_VECTOR180_INLINE_PNG_PIXELS,
     PROFILE_ID_PATTERN: () => PROFILE_ID_PATTERN,
     STABLE_ID_PATTERN: () => STABLE_ID_PATTERN,
     SourceMapper: () => SourceMapper,
@@ -1982,6 +1984,7 @@ var Vector180BrowserKernel = (() => {
     outlineDeck: () => outlineDeck,
     outlineManifest: () => outlineManifest,
     parseManifest: () => parseManifest,
+    parseVector180InlinePngDataUri: () => parseVector180InlinePngDataUri,
     preflightAtomTextFit: () => preflightAtomTextFit,
     preflightDeckTextFit: () => preflightDeckTextFit,
     prepareVector180BrowserTextMeasurer: () => prepareVector180BrowserTextMeasurer,
@@ -12296,6 +12299,281 @@ var Vector180BrowserKernel = (() => {
     return value;
   }
 
+  // src/core/inline-png.ts
+  var MAX_VECTOR180_INLINE_PNG_BYTES = 4 * 1024 * 1024;
+  var MAX_VECTOR180_INLINE_PNG_PIXELS = 16 * 1024 * 1024;
+  var DATA_URI_PREFIX = "data:image/png;base64,";
+  var PNG_SIGNATURE = new Uint8Array([
+    137,
+    80,
+    78,
+    71,
+    13,
+    10,
+    26,
+    10
+  ]);
+  var MAX_PNG_DIMENSION = 2147483647;
+  var BASE64_VALUES = base64Values();
+  var CRC32_TABLE = crc32Table();
+  var VALID_DEPTHS_BY_COLOR_TYPE = /* @__PURE__ */ new Map([
+    [0, /* @__PURE__ */ new Set([1, 2, 4, 8, 16])],
+    [2, /* @__PURE__ */ new Set([8, 16])],
+    [3, /* @__PURE__ */ new Set([1, 2, 4, 8])],
+    [4, /* @__PURE__ */ new Set([8, 16])],
+    [6, /* @__PURE__ */ new Set([8, 16])]
+  ]);
+  var KNOWN_CRITICAL_CHUNKS = /* @__PURE__ */ new Set(["IHDR", "PLTE", "IDAT", "IEND"]);
+  var APNG_CHUNKS = /* @__PURE__ */ new Set(["acTL", "fcTL", "fdAT"]);
+  function parseVector180InlinePngDataUri(value) {
+    if (!value.startsWith(DATA_URI_PREFIX) || /[\u0000-\u0020\u007f]/u.test(value)) {
+      return failure(
+        "VECTOR180-INLINE-PNG-DATA-URI",
+        "Inline raster data must use the exact whitespace-free data:image/png;base64 form."
+      );
+    }
+    const encoded = value.slice(DATA_URI_PREFIX.length);
+    const decoded = decodeCanonicalBase64(encoded);
+    if (!decoded.ok) return decoded;
+    const png = inspectStaticPng(decoded.bytes);
+    if (!png.ok) return png;
+    const descriptor = Object.freeze({
+      mediaType: "image/png",
+      sha256: sha256HexSync(decoded.bytes),
+      byteLength: decoded.bytes.byteLength,
+      widthPixels: png.widthPixels,
+      heightPixels: png.heightPixels
+    });
+    return Object.freeze({
+      ok: true,
+      descriptor,
+      bytes: decoded.bytes
+    });
+  }
+  function decodeCanonicalBase64(encoded) {
+    if (encoded.length === 0 || encoded.length % 4 !== 0 || !/^[A-Za-z0-9+/]*={0,2}$/u.test(encoded)) {
+      return failure(
+        "VECTOR180-INLINE-PNG-DATA-URI",
+        "Inline PNG bytes must use canonical padded RFC 4648 base64."
+      );
+    }
+    const firstPadding = encoded.indexOf("=");
+    if (firstPadding >= 0 && firstPadding < encoded.length - (encoded.endsWith("==") ? 2 : 1)) {
+      return failure(
+        "VECTOR180-INLINE-PNG-DATA-URI",
+        "Inline PNG base64 padding is not canonical."
+      );
+    }
+    const padding = encoded.endsWith("==") ? 2 : encoded.endsWith("=") ? 1 : 0;
+    const byteLength = encoded.length / 4 * 3 - padding;
+    if (byteLength <= 0 || byteLength > MAX_VECTOR180_INLINE_PNG_BYTES) {
+      return failure(
+        "VECTOR180-INLINE-PNG-LIMIT",
+        `Inline PNG decoded length must be between 1 and ${MAX_VECTOR180_INLINE_PNG_BYTES} bytes.`
+      );
+    }
+    const bytes = new Uint8Array(byteLength);
+    let outputOffset = 0;
+    for (let inputOffset = 0; inputOffset < encoded.length; inputOffset += 4) {
+      const first = base64Value(encoded.charCodeAt(inputOffset));
+      const second = base64Value(encoded.charCodeAt(inputOffset + 1));
+      const thirdCharacter = encoded[inputOffset + 2];
+      const fourthCharacter = encoded[inputOffset + 3];
+      const third = thirdCharacter === "=" ? 0 : base64Value(thirdCharacter.charCodeAt(0));
+      const fourth = fourthCharacter === "=" ? 0 : base64Value(fourthCharacter.charCodeAt(0));
+      if (first < 0 || second < 0 || third < 0 || fourth < 0) {
+        return failure(
+          "VECTOR180-INLINE-PNG-DATA-URI",
+          "Inline PNG base64 contains an invalid alphabet character."
+        );
+      }
+      const finalQuartet = inputOffset + 4 === encoded.length;
+      if (!finalQuartet && (thirdCharacter === "=" || fourthCharacter === "=") || thirdCharacter === "=" && fourthCharacter !== "=" || finalQuartet && (padding === 2 && (second & 15) !== 0 || padding === 1 && (third & 3) !== 0)) {
+        return failure(
+          "VECTOR180-INLINE-PNG-DATA-URI",
+          "Inline PNG base64 has non-canonical padding bits."
+        );
+      }
+      const combined = first << 18 | second << 12 | third << 6 | fourth;
+      if (outputOffset < byteLength) bytes[outputOffset++] = combined >>> 16;
+      if (outputOffset < byteLength) bytes[outputOffset++] = combined >>> 8;
+      if (outputOffset < byteLength) bytes[outputOffset++] = combined;
+    }
+    return { ok: true, bytes };
+  }
+  function inspectStaticPng(bytes) {
+    if (bytes.byteLength < PNG_SIGNATURE.byteLength + 12 || PNG_SIGNATURE.some((byte, index) => bytes[index] !== byte)) {
+      return pngFailure(
+        "Inline raster bytes do not have the exact PNG signature."
+      );
+    }
+    let offset = PNG_SIGNATURE.byteLength;
+    let chunkIndex = 0;
+    let widthPixels = 0;
+    let heightPixels = 0;
+    let bitDepth = 0;
+    let colorType = -1;
+    let sawHeader = false;
+    let sawPalette = false;
+    let sawImageData = false;
+    let sawNonImageDataAfterImageData = false;
+    let imageDataBytes = 0;
+    while (offset < bytes.byteLength) {
+      if (bytes.byteLength - offset < 12) {
+        return pngFailure("Inline PNG ends inside a chunk frame.");
+      }
+      const length = readUint32(bytes, offset);
+      const typeOffset = offset + 4;
+      const dataOffset = typeOffset + 4;
+      const crcOffset = dataOffset + length;
+      const nextOffset = crcOffset + 4;
+      if (!Number.isSafeInteger(nextOffset) || nextOffset > bytes.byteLength || length > MAX_VECTOR180_INLINE_PNG_BYTES) {
+        return pngFailure("Inline PNG declares an out-of-bounds chunk.");
+      }
+      const type = chunkType(bytes, typeOffset);
+      if (type === void 0) {
+        return pngFailure(
+          "Inline PNG chunk types must contain four ASCII letters."
+        );
+      }
+      const expectedCrc = readUint32(bytes, crcOffset);
+      const actualCrc = pngCrc32(bytes, typeOffset, crcOffset);
+      if (expectedCrc !== actualCrc) {
+        return pngFailure(`Inline PNG chunk ${type} has an invalid CRC.`);
+      }
+      if (APNG_CHUNKS.has(type)) {
+        return pngFailure(
+          "Animated PNG chunks are outside the static asset profile."
+        );
+      }
+      if (type.charCodeAt(0) >= 65 && type.charCodeAt(0) <= 90) {
+        if (!KNOWN_CRITICAL_CHUNKS.has(type)) {
+          return pngFailure(
+            `Inline PNG uses unsupported critical chunk ${type}.`
+          );
+        }
+      }
+      if (chunkIndex === 0 && type !== "IHDR") {
+        return pngFailure("Inline PNG must begin with one IHDR chunk.");
+      }
+      if (type === "IHDR") {
+        if (sawHeader || chunkIndex !== 0 || length !== 13) {
+          return pngFailure(
+            "Inline PNG must contain exactly one 13-byte IHDR first."
+          );
+        }
+        widthPixels = readUint32(bytes, dataOffset);
+        heightPixels = readUint32(bytes, dataOffset + 4);
+        bitDepth = bytes[dataOffset + 8];
+        colorType = bytes[dataOffset + 9];
+        const compression = bytes[dataOffset + 10];
+        const filter = bytes[dataOffset + 11];
+        const interlace = bytes[dataOffset + 12];
+        if (widthPixels <= 0 || heightPixels <= 0 || widthPixels > MAX_PNG_DIMENSION || heightPixels > MAX_PNG_DIMENSION || widthPixels > Math.floor(MAX_VECTOR180_INLINE_PNG_PIXELS / heightPixels)) {
+          return pngFailure(
+            `Inline PNG dimensions must be positive and contain at most ${MAX_VECTOR180_INLINE_PNG_PIXELS} pixels.`
+          );
+        }
+        if (!VALID_DEPTHS_BY_COLOR_TYPE.get(colorType)?.has(bitDepth)) {
+          return pngFailure(
+            `Inline PNG bit depth ${bitDepth} is invalid for color type ${colorType}.`
+          );
+        }
+        if (compression !== 0 || filter !== 0 || interlace !== 0) {
+          return pngFailure(
+            "Inline PNG requires compression method 0, filter method 0, and non-interlaced storage."
+          );
+        }
+        sawHeader = true;
+      } else if (!sawHeader) {
+        return pngFailure("Inline PNG data appears before IHDR.");
+      } else if (type === "PLTE") {
+        if (sawPalette || sawImageData || length === 0 || length % 3 !== 0 || length > 768 || colorType === 3 && length / 3 > 2 ** bitDepth || colorType === 0 || colorType === 4) {
+          return pngFailure("Inline PNG has an invalid or misplaced PLTE chunk.");
+        }
+        sawPalette = true;
+      } else if (type === "IDAT") {
+        if (sawNonImageDataAfterImageData || length === 0) {
+          return pngFailure(
+            "Inline PNG IDAT chunks must be consecutive and non-empty."
+          );
+        }
+        sawImageData = true;
+        imageDataBytes += length;
+        if (!Number.isSafeInteger(imageDataBytes) || imageDataBytes > MAX_VECTOR180_INLINE_PNG_BYTES) {
+          return pngFailure("Inline PNG image data exceeds the resource limit.");
+        }
+      } else if (type === "IEND") {
+        if (length !== 0 || !sawImageData || imageDataBytes === 0 || colorType === 3 && !sawPalette) {
+          return pngFailure("Inline PNG has an invalid terminal IEND state.");
+        }
+        if (nextOffset !== bytes.byteLength) {
+          return pngFailure("Inline PNG contains trailing bytes after IEND.");
+        }
+        return {
+          ok: true,
+          widthPixels,
+          heightPixels
+        };
+      } else if (sawImageData) {
+        sawNonImageDataAfterImageData = true;
+      }
+      offset = nextOffset;
+      chunkIndex += 1;
+    }
+    return pngFailure("Inline PNG is missing its terminal IEND chunk.");
+  }
+  function base64Values() {
+    const values = new Int16Array(128);
+    values.fill(-1);
+    const alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
+    for (let index = 0; index < alphabet.length; index += 1) {
+      values[alphabet.charCodeAt(index)] = index;
+    }
+    return values;
+  }
+  function base64Value(codePoint) {
+    return codePoint >= 0 && codePoint < BASE64_VALUES.length ? BASE64_VALUES[codePoint] ?? -1 : -1;
+  }
+  function chunkType(bytes, offset) {
+    let result = "";
+    for (let index = 0; index < 4; index += 1) {
+      const value = bytes[offset + index];
+      if (!(value >= 65 && value <= 90 || value >= 97 && value <= 122)) {
+        return void 0;
+      }
+      result += String.fromCharCode(value);
+    }
+    return result;
+  }
+  function readUint32(bytes, offset) {
+    return (bytes[offset] << 24 | bytes[offset + 1] << 16 | bytes[offset + 2] << 8 | bytes[offset + 3]) >>> 0;
+  }
+  function crc32Table() {
+    const table = new Uint32Array(256);
+    for (let index = 0; index < table.length; index += 1) {
+      let value = index;
+      for (let bit = 0; bit < 8; bit += 1) {
+        value = (value & 1) !== 0 ? 3988292384 ^ value >>> 1 : value >>> 1;
+      }
+      table[index] = value >>> 0;
+    }
+    return table;
+  }
+  function pngCrc32(bytes, start, end) {
+    let crc = 4294967295;
+    for (let offset = start; offset < end; offset += 1) {
+      crc = (CRC32_TABLE[(crc ^ bytes[offset]) & 255] ?? 0) ^ crc >>> 8;
+    }
+    return (crc ^ 4294967295) >>> 0;
+  }
+  function pngFailure(message) {
+    return failure("VECTOR180-INLINE-PNG-FORMAT", message);
+  }
+  function failure(code, message) {
+    return Object.freeze({ ok: false, code, message });
+  }
+
   // src/core/scan.ts
   var import_saxes = __toESM(require_saxes(), 1);
   var SECTION_RANK = {
@@ -12511,7 +12789,7 @@ var Vector180BrowserKernel = (() => {
     } else {
       inspectStructureLimits(html, mapper, diagnostics, sourceOffset, options);
       if (!diagnostics.some((diagnostic) => diagnostic.severity === "fatal")) {
-        inspectSecurity(html, mapper, diagnostics, sourceOffset);
+        inspectSecurity(html, mapper, diagnostics, sourceOffset, dialect);
         rejectDeckAtomMetadataMarkers(html, mapper, diagnostics, sourceOffset);
         validateContainerAttributes(
           html,
@@ -12616,7 +12894,7 @@ var Vector180BrowserKernel = (() => {
       };
     }
     inspectStructureLimits(svg, mapper, diagnostics, sourceOffset, options);
-    inspectSecurity(svg, mapper, diagnostics, sourceOffset);
+    inspectSecurity(svg, mapper, diagnostics, sourceOffset, dialect);
     validateAtomMetadataMarkers(svg, mapper, diagnostics, sourceOffset, dialect);
     validateAtomRoot(svg, mapper, diagnostics, sourceOffset, dialect);
     validateAtomStyleAuthority(svg, mapper, diagnostics, sourceOffset, dialect);
@@ -13219,7 +13497,7 @@ var Vector180BrowserKernel = (() => {
       ...matching[1] === void 0 ? {} : { range: matching[1].range }
     });
   }
-  function inspectSecurity(root, mapper, diagnostics, sourceOffset) {
+  function inspectSecurity(root, mapper, diagnostics, sourceOffset, dialect) {
     walk(root, (node) => {
       if (!isElement(node)) return;
       const normalizedTagName = node.tagName.toLowerCase();
@@ -13238,6 +13516,16 @@ var Vector180BrowserKernel = (() => {
           code: "VECTOR180-SECURITY-EXECUTABLE",
           severity: "error",
           message: "Executable script elements are forbidden outside the recognized top-level Vector180 control blocks.",
+          ...range === void 0 ? {} : { range }
+        });
+      }
+      const inlinePngError = inlinePngRasterElementError(node, dialect);
+      if (inlinePngError !== void 0) {
+        const range = locationRange(node, mapper, sourceOffset);
+        diagnostics.push({
+          code: "VECTOR180-SECURITY-URL",
+          severity: "error",
+          message: inlinePngError,
           ...range === void 0 ? {} : { range }
         });
       }
@@ -13292,18 +13580,45 @@ var Vector180BrowserKernel = (() => {
           }
         }
         if (isUrlAttribute(node, qualifiedName)) {
-          const unsafeReason = unsafeUrlReason(attribute.value);
+          const unsafeReason = isAllowedInlinePngRasterAttribute(
+            node,
+            qualifiedName,
+            attribute.value,
+            dialect
+          ) ? void 0 : unsafeUrlReason(attribute.value);
           if (unsafeReason !== void 0) {
             diagnostics.push({
               code: "VECTOR180-SECURITY-URL",
               severity: "error",
-              message: `${unsafeReason} in ${qualifiedName}=${JSON.stringify(attribute.value)}.`,
+              message: `${unsafeReason} in ${qualifiedName}=${diagnosticResourceReference(attribute.value)}.`,
               ...range === void 0 ? {} : { range }
             });
           }
         }
       }
     });
+  }
+  function inlinePngRasterElementError(element, dialect) {
+    if (!isCanonicalRasterImage(element, dialect)) return void 0;
+    const references = element.attrs.filter((attribute) => {
+      const name = qualifiedAttributeName(attribute).toLowerCase();
+      return name === "href" || name === "xlink:href";
+    });
+    if (!references.some((attribute) => attribute.value.startsWith("data:"))) {
+      return void 0;
+    }
+    if (references.length !== 1) {
+      return "An inline PNG raster asset requires exactly one href or xlink:href attribute.";
+    }
+    const parsed = parseVector180InlinePngDataUri(references[0].value);
+    return parsed.ok ? void 0 : parsed.message;
+  }
+  function isAllowedInlinePngRasterAttribute(element, name, value, dialect) {
+    const normalized = name.toLowerCase();
+    return (normalized === "href" || normalized === "xlink:href") && isCanonicalRasterImage(element, dialect) && parseVector180InlinePngDataUri(value).ok;
+  }
+  function isCanonicalRasterImage(element, dialect) {
+    return dialect.wireFamily === "vector180" && element.tagName === "image" && getAttribute(element, "data-vector180-role") === "asset" && getAttribute(element, "data-vector180-export") === "raster";
   }
   function isUrlAttribute(element, name) {
     const normalized = name.toLowerCase();
@@ -13314,6 +13629,9 @@ var Vector180BrowserKernel = (() => {
       return "Control characters and whitespace are forbidden in resource references";
     }
     return value.startsWith("#") ? void 0 : "Only same-document fragment references are allowed in self-contained Vector180 0.1";
+  }
+  function diagnosticResourceReference(value) {
+    return /^data:/iu.test(value) ? JSON.stringify("<inline-data-uri:redacted>") : JSON.stringify(value);
   }
   async function validateReferenceRuntimes(source, sections, diagnostics, dialect) {
     for (const section of sections) {
@@ -14187,6 +14505,7 @@ var Vector180BrowserKernel = (() => {
         attribute.value
       ])
     );
+    const resource = scope.wireFamily === "vector180" && element.tagName === "image" && role === "asset" && exportMode === "raster" ? inlinePngResource(element) : void 0;
     const classes = (getAttribute2(element, "class") ?? "").split(/\s+/).filter(Boolean);
     return {
       id,
@@ -14198,11 +14517,21 @@ var Vector180BrowserKernel = (() => {
       parentId,
       children,
       ...text === void 0 ? {} : { text },
+      ...resource === void 0 ? {} : { resource },
       opaque,
       sourceRange,
       openTagRange,
       ...directTextRange === void 0 ? {} : { directTextRange }
     };
+  }
+  function inlinePngResource(element) {
+    const references = element.attrs.filter((attribute) => {
+      const name = qualifiedAttributeName2(attribute).toLowerCase();
+      return name === "href" || name === "xlink:href";
+    });
+    if (references.length !== 1) return void 0;
+    const parsed = parseVector180InlinePngDataUri(references[0].value);
+    return parsed.ok ? parsed.descriptor : void 0;
   }
   function invalidTextDescendants(element) {
     const invalid = [];
@@ -16176,23 +16505,46 @@ var Vector180BrowserKernel = (() => {
   function resolveRasterAsset(node, scope, parentId, order, worldOffset, styleEntry, context) {
     validateBoundaryAttributes(node, RASTER_ASSET_ATTRIBUTES, context);
     const bounds = parseDeclaredBounds(node, context);
-    const resourceRef = getAttribute4(node, "href") ?? getAttribute4(node, "xlink:href");
-    if (resourceRef === void 0 || resourceRef === "") {
+    const x = requiredNumber(node, "x", false, context);
+    const y = requiredNumber(node, "y", false, context);
+    const width = requiredNumber(node, "width", true, context);
+    const height = requiredNumber(node, "height", true, context);
+    const href = getAttribute4(node, "href");
+    const xlinkHref = getAttribute4(node, "xlink:href");
+    const resource = node.resource;
+    const aspectMatches = resource !== void 0 && sameExactAspectRatio(
+      resource.widthPixels,
+      resource.heightPixels,
+      getAttribute4(node, "width"),
+      getAttribute4(node, "height")
+    );
+    if (href === void 0 === (xlinkHref === void 0) || resource === void 0) {
       pushNodeDiagnostic(
         context,
         node,
         "VECTOR180-PROFILE-RESOURCE",
-        `Raster asset "${node.id}" has no separately resolvable static resource.`
-      );
-    } else {
-      pushNodeDiagnostic(
-        context,
-        node,
-        "VECTOR180-PROFILE-RESOURCE",
-        `Raster asset "${node.id}" cannot be resolved by the dependency-free C6 resolver.`
+        `Raster asset "${node.id}" requires exactly one validated inline PNG resource.`
       );
     }
-    if (bounds === void 0 || resourceRef === void 0) return void 0;
+    if (bounds !== void 0 && x !== void 0 && y !== void 0 && width !== void 0 && height !== void 0 && (x !== bounds.x || y !== bounds.y || width !== bounds.width || height !== bounds.height)) {
+      pushNodeDiagnostic(
+        context,
+        node,
+        "VECTOR180-PROFILE-GEOMETRY",
+        `Raster asset "${node.id}" x/y/width/height must equal its declared bounds.`
+      );
+    }
+    if (resource !== void 0 && !aspectMatches) {
+      pushNodeDiagnostic(
+        context,
+        node,
+        "VECTOR180-PROFILE-RESOURCE",
+        `Raster asset "${node.id}" intrinsic pixel ratio must exactly match its declared width and height.`
+      );
+    }
+    if (bounds === void 0 || x === void 0 || y === void 0 || width === void 0 || height === void 0 || resource === void 0 || href === void 0 === (xlinkHref === void 0) || x !== bounds.x || y !== bounds.y || width !== bounds.width || height !== bounds.height || !aspectMatches) {
+      return void 0;
+    }
     const worldBounds = offsetBounds(bounds, worldOffset, node, context);
     if (worldBounds === void 0) return void 0;
     return {
@@ -16207,7 +16559,7 @@ var Vector180BrowserKernel = (() => {
         worldOffset,
         styleEntry
       ),
-      resourceRef
+      resource
     };
   }
   function resolveText(node, scope, parentId, order, worldOffset, styleEntry, context) {
@@ -16455,6 +16807,18 @@ var Vector180BrowserKernel = (() => {
     );
     try {
       return scaleExactDecimal(current, commonExponent) - scaleExactDecimal(previous, commonExponent) === scaleExactDecimal(step, commonExponent);
+    } catch {
+      return false;
+    }
+  }
+  function sameExactAspectRatio(widthPixels, heightPixels, widthSource, heightSource) {
+    if (widthSource === void 0 || heightSource === void 0) return false;
+    const width = parseExactDecimal(widthSource);
+    const height = parseExactDecimal(heightSource);
+    if (width === void 0 || height === void 0) return false;
+    const commonExponent = Math.min(width.exponent, height.exponent);
+    try {
+      return scaleExactDecimal(width, commonExponent) * BigInt(heightPixels) === scaleExactDecimal(height, commonExponent) * BigInt(widthPixels);
     } catch {
       return false;
     }
@@ -20173,13 +20537,14 @@ var Vector180BrowserKernel = (() => {
     parent: 3,
     order: 4,
     relationship: 5,
-    text: 6,
-    geometry: 7,
-    transform: 8,
-    frame: 9,
-    style: 10,
-    "export-intent": 11,
-    metadata: 12
+    resource: 6,
+    text: 7,
+    geometry: 8,
+    transform: 9,
+    frame: 10,
+    style: 11,
+    "export-intent": 12,
+    metadata: 13
   };
   var MAX_CHANGES = 1e5;
   var MAX_REPORT_BYTES = 8 * 1024 * 1024;
@@ -20338,6 +20703,16 @@ var Vector180BrowserKernel = (() => {
         "/relationship",
         relationshipSnapshot(leftObject.object),
         relationshipSnapshot(rightObject.object),
+        leftNode,
+        rightNode
+      );
+      compareField(
+        changes,
+        id,
+        "resource",
+        "/resource",
+        resourceSnapshot(leftObject.object),
+        resourceSnapshot(rightObject.object),
         leftNode,
         rightNode
       );
@@ -20555,6 +20930,15 @@ var Vector180BrowserKernel = (() => {
       toId: object.toId ?? null
     } : null;
   }
+  function resourceSnapshot(object) {
+    return object.kind === "raster-asset" ? {
+      mediaType: object.resource.mediaType,
+      sha256: object.resource.sha256,
+      byteLength: object.resource.byteLength,
+      widthPixels: object.resource.widthPixels,
+      heightPixels: object.resource.heightPixels
+    } : null;
+  }
   function textSnapshot(object) {
     return object.kind === "text" ? object.lines.map((line) => ({ text: line.text, x: line.x, y: line.y })) : null;
   }
@@ -20639,6 +21023,7 @@ var Vector180BrowserKernel = (() => {
     return {
       exportIntent: exportSnapshot(node),
       relationship: relationshipSnapshot(object),
+      resource: resourceSnapshot(object),
       text: textSnapshot(object),
       geometry: geometrySnapshot(object),
       transform: transformSnapshot(object),
@@ -20665,6 +21050,7 @@ var Vector180BrowserKernel = (() => {
       parent: count("parent"),
       order: count("order"),
       relationship: count("relationship"),
+      resource: count("resource"),
       text: count("text"),
       geometry: count("geometry"),
       transform: count("transform"),
@@ -20699,6 +21085,7 @@ var Vector180BrowserKernel = (() => {
         parent: 0,
         order: 0,
         relationship: 0,
+        resource: 0,
         text: 0,
         geometry: 0,
         transform: 0,
@@ -21203,15 +21590,25 @@ ${VECTOR180_ATOM_DISCOVERY_COMMENT2}`
       export: node.exportMode,
       element: node.elementName,
       ...node.text === void 0 ? {} : { text: node.text },
+      ...node.resource === void 0 ? {} : { resource: node.resource },
       children: node.children.map(
         (child) => projectObject(child, view, wireFamily)
       ),
       ...view === "editing" ? {
         classes: [...node.classes],
-        attributes: { ...node.attributes },
+        attributes: projectionAttributes(node),
         sourceRange: { ...node.sourceRange }
       } : {}
     };
+  }
+  function projectionAttributes(node) {
+    return Object.fromEntries(
+      Object.entries(node.attributes).filter(([name, value]) => {
+        const normalized = name.toLowerCase();
+        const resourceReference = normalized === "href" || normalized === "xlink:href";
+        return !(resourceReference && (node.resource !== void 0 || /^data:/iu.test(value)));
+      })
+    );
   }
   function inventoryObject(node) {
     return {
@@ -21410,15 +21807,25 @@ ${VECTOR180_ATOM_DISCOVERY_COMMENT2}`
       exportMode: node.exportMode,
       elementName: node.elementName,
       classes: node.classes,
-      attributes: node.attributes,
+      attributes: normalizedNodeAttributes(node),
       parentId: node.parentId,
       children: node.children.map(normalizeNode),
       ...node.text === void 0 ? {} : { text: node.text },
+      ...node.resource === void 0 ? {} : { resource: node.resource },
       opaque: node.opaque,
       sourceRange: node.sourceRange,
       openTagRange: node.openTagRange,
       ...node.directTextRange === void 0 ? {} : { directTextRange: node.directTextRange }
     };
+  }
+  function normalizedNodeAttributes(node) {
+    return Object.fromEntries(
+      Object.entries(node.attributes).filter(([name, value]) => {
+        const normalized = name.toLowerCase();
+        const resourceReference = normalized === "href" || normalized === "xlink:href";
+        return !(resourceReference && (node.resource !== void 0 || /^data:/iu.test(value)));
+      })
+    );
   }
   function normalizeRangeMap(ranges) {
     return [...ranges.entries()].sort(([left], [right]) => left.localeCompare(right)).map(([key, range]) => ({ key, range }));
@@ -21675,6 +22082,43 @@ ${VECTOR180_ATOM_DISCOVERY_COMMENT2}`
         diagnostics: []
       };
     }
+    if (intent.kind === "set-child-order") {
+      const resolved2 = resolveIntentState(document);
+      const parent = resolved2.state?.objects.get(intent.parentId);
+      const children = resolved2.state?.roots.get(intent.parentId) ?? (parent?.kind === "group" ? parent.children : void 0);
+      if (children === void 0) {
+        return unresolvedIntent(
+          intent.parentId,
+          `No native container has stable ID "${intent.parentId}".`,
+          resolved2.diagnostics
+        );
+      }
+      const sourceChildren = findContainerNodes(document, intent.parentId);
+      const movesProtectedChild = sourceChildren?.some(
+        (child, index) => !isEntirelyNative(child) && intent.order.indexOf(child.id) !== index
+      );
+      if (movesProtectedChild) {
+        return {
+          diagnostics: [
+            {
+              code: "VECTOR180-EDITOR-TARGET",
+              severity: "error",
+              message: `Container "${intent.parentId}" order cannot move an opaque or non-native child.`,
+              objectId: intent.parentId
+            }
+          ]
+        };
+      }
+      return {
+        operation: {
+          op: "set-child-order",
+          parentId: intent.parentId,
+          oldOrder: children.map(({ id }) => id),
+          order: [...intent.order]
+        },
+        diagnostics: []
+      };
+    }
     const node = findObject2(document, intent.id);
     if (node === void 0) {
       return {
@@ -21688,26 +22132,255 @@ ${VECTOR180_ATOM_DISCOVERY_COMMENT2}`
         ]
       };
     }
-    if (node.role !== "text") {
+    if (intent.kind === "set-text") {
+      if (node.role !== "text" || node.exportMode !== "native" || node.opaque) {
+        return {
+          diagnostics: [
+            {
+              code: "VECTOR180-EDITOR-TARGET",
+              severity: "error",
+              message: `Object "${intent.id}" is not editable native text.`,
+              objectId: intent.id
+            }
+          ]
+        };
+      }
+      return {
+        operation: {
+          op: "set-text",
+          id: intent.id,
+          oldText: node.text ?? "",
+          value: intent.value
+        },
+        diagnostics: []
+      };
+    }
+    if (node.exportMode !== "native" || node.opaque) {
       return {
         diagnostics: [
           {
             code: "VECTOR180-EDITOR-TARGET",
             severity: "error",
-            message: `Object "${intent.id}" is not editable text.`,
+            message: `Object "${intent.id}" is opaque or non-native and cannot accept a native editor intent.`,
             objectId: intent.id
           }
         ]
       };
     }
+    const resolved = resolveIntentState(document);
+    const object = resolved.state?.objects.get(intent.id);
+    if (object === void 0) {
+      return unresolvedIntent(
+        intent.id,
+        `Object "${intent.id}" does not have a complete native resolved model.`,
+        resolved.diagnostics
+      );
+    }
+    if (intent.kind === "set-object-geometry") {
+      const oldGeometry = objectGeometry(object);
+      if (oldGeometry === void 0) {
+        return wrongResolvedKind(intent.id, "a native rect or ellipse");
+      }
+      return {
+        operation: {
+          op: "set-object-geometry",
+          id: intent.id,
+          oldGeometry,
+          geometry: intent.geometry
+        },
+        diagnostics: []
+      };
+    }
+    if (intent.kind === "set-connector-endpoints") {
+      if (object.kind !== "line") {
+        return wrongResolvedKind(intent.id, "a native connector");
+      }
+      return {
+        operation: {
+          op: "set-connector-endpoints",
+          id: intent.id,
+          oldEndpoints: {
+            x1: object.x1,
+            y1: object.y1,
+            x2: object.x2,
+            y2: object.y2
+          },
+          endpoints: intent.endpoints
+        },
+        diagnostics: []
+      };
+    }
+    if (intent.kind === "set-group-translation") {
+      if (object.kind !== "group") {
+        return wrongResolvedKind(intent.id, "a native group");
+      }
+      if (!isEntirelyNative(node)) {
+        return wrongResolvedKind(
+          intent.id,
+          "an entirely native group with no protected asset subtree"
+        );
+      }
+      return {
+        operation: {
+          op: "set-group-translation",
+          id: intent.id,
+          oldTranslation: { x: object.translateX, y: object.translateY },
+          translation: intent.translation
+        },
+        diagnostics: []
+      };
+    }
+    if (intent.kind === "set-text-frame") {
+      const line = object.kind === "text" ? object.lines[0] : void 0;
+      if (object.kind !== "text" || object.lines.length !== 1 || line === void 0) {
+        return wrongResolvedKind(intent.id, "one direct native hard text line");
+      }
+      return {
+        operation: {
+          op: "set-text-frame",
+          id: intent.id,
+          oldFrame: { ...object.frame },
+          frame: intent.frame,
+          oldLineAnchor: { x: line.x, y: line.y },
+          lineAnchor: intent.lineAnchor
+        },
+        diagnostics: []
+      };
+    }
+    if (intent.kind === "delete-object") {
+      if (!isEntirelyNative(node)) {
+        return {
+          diagnostics: [
+            {
+              code: "VECTOR180-EDITOR-TARGET",
+              severity: "error",
+              message: `Object "${intent.id}" contains an opaque or non-native subtree and cannot be deleted by the trusted editor.`,
+              objectId: intent.id
+            }
+          ]
+        };
+      }
+      return {
+        operation: {
+          op: "delete-object",
+          id: intent.id,
+          oldParentId: object.parentId,
+          oldOrder: object.order
+        },
+        diagnostics: []
+      };
+    }
     return {
       operation: {
-        op: "set-text",
+        op: "set-native-style",
         id: intent.id,
-        oldText: node.text ?? "",
-        value: intent.value
+        oldStyle: concreteStyle(object.style),
+        style: intent.style
       },
       diagnostics: []
+    };
+  }
+  function isEntirelyNative(node) {
+    return node.exportMode === "native" && !node.opaque && node.children.every(isEntirelyNative);
+  }
+  function findContainerNodes(document, parentId) {
+    if (document.sourceKind === "svg") {
+      if (document.id === parentId) return document.children;
+      const parent = findNode3(document.children, parentId);
+      return parent?.role === "group" ? parent.children : void 0;
+    }
+    const slide = document.slides.get(parentId);
+    if (slide !== void 0) return slide.children;
+    for (const candidate of document.slides.values()) {
+      const parent = findNode3(candidate.children, parentId);
+      if (parent?.role === "group") return parent.children;
+    }
+    return void 0;
+  }
+  function resolveIntentState(document) {
+    const result = document.sourceKind === "html" ? resolveVector180Deck(document) : resolveVector180Atom(document);
+    if (result.model === void 0) return { diagnostics: result.diagnostics };
+    const objects = /* @__PURE__ */ new Map();
+    const roots = /* @__PURE__ */ new Map();
+    if (result.model.schema === "vector180-resolved-deck/0.1") {
+      for (const slide of result.model.slides) {
+        roots.set(slide.id, slide.objects);
+        indexResolvedIntentObjects(slide.objects, objects);
+      }
+    } else {
+      roots.set(result.model.atomId, result.model.objects);
+      indexResolvedIntentObjects(result.model.objects, objects);
+    }
+    return { state: { objects, roots }, diagnostics: result.diagnostics };
+  }
+  function indexResolvedIntentObjects(values, target) {
+    for (const value of values) {
+      target.set(value.id, value);
+      if (value.kind === "group") {
+        indexResolvedIntentObjects(value.children, target);
+      }
+    }
+  }
+  function objectGeometry(object) {
+    if (object.kind === "rect") {
+      return {
+        kind: "rect",
+        x: object.x,
+        y: object.y,
+        width: object.width,
+        height: object.height
+      };
+    }
+    if (object.kind === "ellipse") {
+      return {
+        kind: "ellipse",
+        cx: object.cx,
+        cy: object.cy,
+        rx: object.rx,
+        ry: object.ry
+      };
+    }
+    return void 0;
+  }
+  function concreteStyle(style) {
+    return {
+      fill: style.fill,
+      stroke: style.stroke,
+      strokeWidth: style.strokeWidth,
+      opacity: style.opacity,
+      ...style.fontFamily === void 0 ? {} : { fontFamily: style.fontFamily },
+      ...style.fontSize === void 0 ? {} : { fontSize: style.fontSize },
+      fontWeight: style.fontWeight,
+      fontStyle: style.fontStyle,
+      textAnchor: style.textAnchor
+    };
+  }
+  function unresolvedIntent(objectId, message, relatedDiagnostics) {
+    return {
+      diagnostics: [
+        {
+          code: "VECTOR180-EDITOR-RESOLVED",
+          severity: "error",
+          message,
+          objectId,
+          related: relatedDiagnostics.map((diagnostic) => ({
+            message: `${diagnostic.code}: ${diagnostic.message}`,
+            ...diagnostic.range === void 0 ? {} : { range: diagnostic.range }
+          }))
+        }
+      ]
+    };
+  }
+  function wrongResolvedKind(id, expected) {
+    return {
+      diagnostics: [
+        {
+          code: "VECTOR180-EDITOR-TARGET",
+          severity: "error",
+          message: `Object "${id}" is not ${expected}.`,
+          objectId: id
+        }
+      ]
     };
   }
   function snapshot(document) {

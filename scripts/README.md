@@ -30,6 +30,11 @@ Each script is standalone, runs in a few seconds, and exits 0 (pass) or 1 (fail)
 | `sync-office180-plugin.py --check` | Installable plugin skills, DOCX converters, and themes are exact mirrors of repository authority |
 | `steward.sh` | Contract lifecycle, implementation, testing, and enforcement health |
 
+`steward.sh` feeds its potentially large contract/action/enforcement JSON to
+`jq` through process-substitution file descriptors. Do not move those payloads
+back into `--argjson`: the full inventory exceeds Linux process argument limits
+even when it succeeds on macOS.
+
 ## Composite / Setup
 
 | Script | When to Run |
@@ -46,8 +51,9 @@ Each script is standalone, runs in a few seconds, and exits 0 (pass) or 1 (fail)
 `visual-evidence.py` creates and validates the content-bound C11 evidence
 envelope. Its renderer classes stay separate: a Quick Look or browser pass
 does not imply native Word or PowerPoint evidence. C11 1.2's separate native
-bridge can prove a bounded no-op save/close/reopen lifecycle, but still does
-not claim representative edits or native visual fidelity.
+bridge can prove a bounded no-op save/close/reopen lifecycle and can produce a
+bounded native PowerPoint PDF render. Neither operation claims representative
+edits, cross-renderer equality, or human-reviewed visual fidelity.
 
 | Command | Purpose |
 |---------|---------|
@@ -119,7 +125,7 @@ Python target:
 pnpm test:python
 ```
 
-### Native Office lifecycle bridge
+### Native Office lifecycle and PowerPoint PDF bridge
 
 On macOS, run one trusted DOCX or PPTX through the bounded native bridge:
 
@@ -131,12 +137,23 @@ On macOS, run one trusted DOCX or PPTX through the bounded native bridge:
   --root . --trusted --timeout 90
 ```
 
-The input, new output, new report, ignored work root, and lock must resolve
-inside the repository. The bridge descriptor-binds the input before copying,
-hands one unique work copy to Word or PowerPoint through non-interactive
-`NSWorkspace`, and locates it only by exact case/diacritic-sensitive POSIX
-path. It never activates or quits Office, targets an unrelated document,
-clicks a dialog, types into UI, grants file access, or uses Save As.
+Render one trusted PPTX with native PowerPoint to one new PDF:
+
+```bash
+.venv/bin/python scripts/native-office-bridge.py render-pdf \
+  path/to/input.pptx \
+  --output .office180-native-work/input.native-powerpoint.pdf \
+  --report .office180-native-work/input.native-powerpoint.bridge.json \
+  --root . --trusted --timeout 90
+```
+
+The input, new output, new report, ignored coordination root, and lock must
+resolve inside the repository. The bridge descriptor-binds the input before
+copying, hands one unique work copy to Word or PowerPoint through
+non-interactive `NSWorkspace`, and locates it only by exact
+case/diacritic-sensitive POSIX path. It never activates or quits Office,
+targets an unrelated document, clicks a dialog, types into UI, or grants file
+access.
 
 Success requires a writable exact attachment, a forced-dirty ordinary Save
 whose event and independent post-save probe both report saved, bounded hash/
@@ -148,6 +165,43 @@ partial Office output. The privacy-safe `office180-native-office-bridge/0.1`
 report binds the exact Office bundle, short/build version, OS/architecture,
 artifact hashes, bounded command digests, lifecycle facts, and actionable
 diagnostics.
+
+`render-pdf` is PowerPoint-only. The repository work root still owns
+serialization and publication, but the work PPTX and private PDF are staged in
+one unique mode-`0700` directory beneath the current user's existing
+PowerPoint `Data/tmp` application-container directory. Before use, every
+ancestor and the staging target must be real directories with accepted
+ownership, no group/world write permission, and a private container target;
+the bridge never creates or broadens the application container itself. Staged
+files are single-link regular files secured to mode `0600`.
+
+The operation validates the private PPTX package before handoff, exports the
+exact presentation reference to a unique private path using PowerPoint's
+`save as PDF` file type, confirms the exact PPTX attachment survived export,
+and snapshots the PDF through no-follow file descriptors until stable. It
+closes only the work copy without saving and proves the PPTX work-copy bytes
+and identity did not change. It then requires a bounded `%PDF-`
+signature/final marker and compares the safely readable PDF page-tree count
+with both the PPTX slide inventory and PowerPoint's attached slide count when
+that PDF count is available. Only the descriptor-verified PDF and
+last-published report commit marker leave private work state.
+
+The render report uses the same
+`office180-native-office-bridge/0.1` envelope with
+`operation: "render-pdf"` and
+`render.evidence_scope: "native-powerpoint-pdf-render"`. A pass proves the exact
+named PowerPoint build
+produced that PDF. It does not establish editability, compare the PDF with a
+browser/Quick Look render, or replace the separately required quantitative and
+human visual review. The source PPTX is never opened directly, saved, or
+overwritten. The report records only the application-container staging class
+and an opaque unique directory basename; it never discloses the absolute
+container or home path. The exact unique staging directory is removed through
+its revalidated parent descriptor only after exact presentation absence is
+proven, while unrelated siblings remain untouched. A denied or unresolved
+render attachment preserves that directory in PowerPoint's private `Data/tmp`
+for safe manual dismissal; lifecycle work remains under
+`.office180-native-work`. The bridge never interacts with a permission dialog.
 
 The checked 2026-08-02 host run passed this structural lifecycle for Word and
 PowerPoint 16.111.2. See

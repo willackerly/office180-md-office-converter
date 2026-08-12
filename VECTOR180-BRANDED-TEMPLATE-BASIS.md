@@ -1,8 +1,9 @@
 # Vector180 branded template bases
 
-<!-- freshness: 2026-08-04 -->
+<!-- freshness: 2026-08-08 -->
 
-**Status:** proposal and privacy-safe extraction playbook
+**Status:** proposal and privacy-safe extraction playbook with an implemented
+bounded inline-PNG asset slice
 **Audience:** template authors, agents, compiler implementers, and brand owners
 
 ## 1. Outcome
@@ -113,16 +114,20 @@ Capture only a small, reviewed set of reusable decisions:
 - concrete fill, stroke, and text colors;
 - title, body, caption, and numeric typography;
 - repeated node/connector grammar; and
-- optional media-slot bounds without embedding media.
+- optional media-slot bounds and only independently approved immutable PNG
+  assets.
 
 Rebuild flat backgrounds, bands, rules, and simple marks as native tokenized
-geometry. Do not copy layout XML or rasterize a full slide into an opaque
-background. Rare slide structures remain custom atoms rather than forcing
-every historical layout into the basis set.
+geometry. Do not copy layout XML or use a screenshot of a full slide to hide
+otherwise inspectable geometry. An independently approved image-based
+background may instead be one explicit canonical inline PNG when its
+immutability is intentional. Rare slide structures remain custom atoms rather
+than forcing every historical layout into the basis set.
 
-Current compiler-grade bases use the supported native primitive subset. A
-rounded corner, arrowhead, raster resource, or opaque brand asset stays an
-explicit counterexample until the relevant C9 source/compiler/reconciliation
+Current compiler-grade bases use the supported native primitive subset plus
+the strict inline static-PNG raster slice. A rounded corner, arrowhead, opaque
+SVG, JPEG/other raster resource, external URL, or mutable/cropped picture stays
+an explicit counterexample until the relevant C9/C10/C13 source/compiler/reconciliation
 surface accepts it. It is never silently downgraded.
 
 ## 6. Font policy
@@ -163,16 +168,30 @@ geometry, not permission to recover media from a reference deck.
 
 When a brand owner supplies an independently approved logo:
 
-- prefer an exact vector source with documented redistribution rights;
-- preserve it as one opaque, stable asset object when independent child
-  editing is not required;
+- prefer native geometry when the design is genuinely simple geometry;
+- otherwise use an exact approved static PNG with documented redistribution
+  rights and preserve it as one opaque, stable raster asset when independent
+  child editing is not required;
 - keep a native-geometry alternative for simple backgrounds and rules; and
-- require explicit source/compiler/reconciliation support before claiming the
-  asset is editable in PowerPoint.
+- describe the first native picture as immutable, not editable.
 
-Embedded `data:` resources are outside strict Vector180 0.1. A future static
-resource table needs dependency hashes, media type, capability declarations,
-fallback behavior, and a separate contract.
+The current wire admits exactly one canonical whitespace-free
+`data:image/png;base64,...` payload on
+`<image data-vector180-role="asset" data-vector180-export="raster">`. Its
+explicit placement must equal declared bounds and exactly match the intrinsic
+pixel aspect. Source retains exact bytes; semantic projections expose only
+media type, SHA-256, byte length, and pixel dimensions. C9 packages the
+authenticated bytes once as a content-addressed native `p:pic`; C10 accepts the
+unchanged picture and refuses replacement, move/resize, crop/effects, deletion,
+duplication, or reorder without a partial patch. C13 can authenticate and
+deduplicate the same approved bytes across a complete deck while retaining
+only descriptors/relationships in its map; the trusted editor reconstructs
+the preview from exact bytes but keeps the picture protected.
+
+External URLs, JPEG/other media, APNG, trailing data, crop/stretch, and fetched
+resource tables remain outside strict 0.1. A future broader resource table
+still needs dependency hashes, media type, capability declarations, fallback
+behavior, and a separate contract.
 
 ## 8. Extraction workflow
 
@@ -187,7 +206,8 @@ The repeatable, privacy-safe workflow is:
 5. have a human select four to six archetypes;
 6. author new content-free atoms from reviewed geometry and tokens;
 7. validate, resolve, run exact-font text-fit, and verify basis lineage;
-8. compile only supported native objects;
+8. compile supported atoms through C9 and complete decks through C13 using only
+   native objects and immutable inline PNG assets;
 9. compare private local renders without committing them; and
 10. publish only approved synthetic fixtures and aggregate evidence.
 
@@ -204,10 +224,13 @@ Build the reusable basis in increments:
 3. A blank diagram basis using rectangles, ellipses, straight connectors,
    groups, stable IDs, and exact text-fit evidence.
 4. Approved, digest-locked OFL typography with all required license files.
-5. A synthetic asset counterexample proving the current C9 refusal.
-6. A synthetic multi-atom deck/PPTX with browser and native-render evidence.
+5. An approved synthetic inline-PNG background/logo proving descriptor,
+   content-addressed `p:pic`, de-duplication, and unchanged C10 authentication.
+6. A synthetic multi-atom C13 deck/PPTX/map with browser/Node byte parity,
+   editor background rendering, and native-render evidence.
 7. Negative tests for wrong template hash, wrong font hash, missing face,
-   missing glyph, unsupported asset, and style-family-only false confidence.
+   missing glyph, external/JPEG/mutable picture assets, and style-family-only
+   false confidence.
 
 Private paired visual review stays local and manual until the brand owner
 explicitly approves a publishable fixture.

@@ -1,0 +1,383 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://office180.dev/schemas/vector180-pptx-deck-map-0.1.schema.json",
+  "title": "Vector180 PPTX Deck Map 0.1",
+  "description": "Deterministic descriptor-only mapping from one complete canonical Vector180 HTML deck to its exact native PPTX package.",
+  "type": "object",
+  "required": [
+    "schema",
+    "source",
+    "compiler",
+    "sourceResolvedSchema",
+    "pptx",
+    "slides"
+  ],
+  "properties": {
+    "schema": { "const": "vector180-pptx-deck-map/0.1" },
+    "source": { "$ref": "#/$defs/source" },
+    "compiler": { "const": "office180-vector180-pptx-deck/0.1" },
+    "sourceResolvedSchema": { "const": "vector180-resolved-deck/0.1" },
+    "pptx": { "$ref": "#/$defs/pptx" },
+    "slides": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "$ref": "#/$defs/slide" }
+    }
+  },
+  "additionalProperties": false,
+  "$defs": {
+    "sha256": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$"
+    },
+    "stableId": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 128,
+      "pattern": "^[A-Za-z][A-Za-z0-9._:-]*$"
+    },
+    "nonNegativeInteger": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "positiveInteger": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "source": {
+      "type": "object",
+      "required": [
+        "family",
+        "kind",
+        "sha256",
+        "byteLength",
+        "profile",
+        "activeTheme",
+        "slideOrder"
+      ],
+      "properties": {
+        "family": { "const": "vector180" },
+        "kind": { "const": "deck" },
+        "sha256": { "$ref": "#/$defs/sha256" },
+        "byteLength": { "$ref": "#/$defs/nonNegativeInteger" },
+        "profile": { "const": "0.1" },
+        "title": { "type": "string" },
+        "activeTheme": { "$ref": "#/$defs/stableId" },
+        "slideOrder": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": { "$ref": "#/$defs/stableId" }
+        }
+      },
+      "additionalProperties": false
+    },
+    "pptx": {
+      "type": "object",
+      "required": ["sha256", "byteLength", "partNames", "relationships"],
+      "properties": {
+        "sha256": { "$ref": "#/$defs/sha256" },
+        "byteLength": { "$ref": "#/$defs/positiveInteger" },
+        "partNames": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": { "type": "string", "minLength": 1 }
+        },
+        "relationships": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/relationship" }
+        }
+      },
+      "additionalProperties": false
+    },
+    "relationship": {
+      "type": "object",
+      "required": ["source", "id", "type", "target"],
+      "properties": {
+        "source": {
+          "oneOf": [{ "type": "null" }, { "type": "string", "minLength": 1 }]
+        },
+        "id": { "type": "string", "pattern": "^rId[1-9][0-9]*$" },
+        "type": { "type": "string", "minLength": 1 },
+        "target": { "type": "string", "minLength": 1 }
+      },
+      "additionalProperties": false
+    },
+    "sourceRange": {
+      "type": "object",
+      "required": [
+        "byteStart",
+        "byteEnd",
+        "charStart",
+        "charEnd",
+        "lineStart",
+        "columnStart",
+        "lineEnd",
+        "columnEnd"
+      ],
+      "properties": {
+        "byteStart": { "$ref": "#/$defs/nonNegativeInteger" },
+        "byteEnd": { "$ref": "#/$defs/nonNegativeInteger" },
+        "charStart": { "$ref": "#/$defs/nonNegativeInteger" },
+        "charEnd": { "$ref": "#/$defs/nonNegativeInteger" },
+        "lineStart": { "$ref": "#/$defs/positiveInteger" },
+        "columnStart": { "$ref": "#/$defs/positiveInteger" },
+        "lineEnd": { "$ref": "#/$defs/positiveInteger" },
+        "columnEnd": { "$ref": "#/$defs/positiveInteger" }
+      },
+      "additionalProperties": false
+    },
+    "bounds": {
+      "type": "object",
+      "required": ["x", "y", "width", "height"],
+      "properties": {
+        "x": { "type": "number" },
+        "y": { "type": "number" },
+        "width": { "type": "number", "minimum": 0 },
+        "height": { "type": "number", "minimum": 0 }
+      },
+      "additionalProperties": false
+    },
+    "point": {
+      "type": "object",
+      "required": ["x", "y"],
+      "properties": {
+        "x": { "type": "number" },
+        "y": { "type": "number" }
+      },
+      "additionalProperties": false
+    },
+    "style": {
+      "type": "object",
+      "required": [
+        "fill",
+        "stroke",
+        "strokeWidth",
+        "opacity",
+        "fontWeight",
+        "fontStyle",
+        "textAnchor"
+      ],
+      "properties": {
+        "fill": { "type": "string" },
+        "stroke": { "type": "string" },
+        "strokeWidth": { "type": "number", "minimum": 0 },
+        "opacity": { "const": 1 },
+        "fontWeight": { "enum": [400, 700] },
+        "fontStyle": { "enum": ["normal", "italic"] },
+        "textAnchor": { "enum": ["start", "middle", "end"] },
+        "fontFamily": { "type": "string", "minLength": 1 },
+        "fontSize": { "type": "number", "exclusiveMinimum": 0 }
+      },
+      "additionalProperties": false
+    },
+    "resource": {
+      "type": "object",
+      "required": [
+        "mediaType",
+        "sha256",
+        "byteLength",
+        "widthPixels",
+        "heightPixels"
+      ],
+      "properties": {
+        "mediaType": { "const": "image/png" },
+        "sha256": { "$ref": "#/$defs/sha256" },
+        "byteLength": { "$ref": "#/$defs/positiveInteger" },
+        "widthPixels": { "$ref": "#/$defs/positiveInteger" },
+        "heightPixels": { "$ref": "#/$defs/positiveInteger" }
+      },
+      "additionalProperties": false
+    },
+    "jsonValue": {
+      "oneOf": [
+        { "type": "null" },
+        { "type": "boolean" },
+        { "type": "number" },
+        { "type": "string" },
+        {
+          "type": "array",
+          "items": { "$ref": "#/$defs/jsonValue" }
+        },
+        {
+          "type": "object",
+          "additionalProperties": { "$ref": "#/$defs/jsonValue" }
+        }
+      ]
+    },
+    "resolved": {
+      "type": "object",
+      "required": [
+        "kind",
+        "localBounds",
+        "worldBounds",
+        "worldOffset",
+        "style",
+        "geometry"
+      ],
+      "properties": {
+        "kind": { "$ref": "#/$defs/objectKind" },
+        "localBounds": { "$ref": "#/$defs/bounds" },
+        "worldBounds": { "$ref": "#/$defs/bounds" },
+        "worldOffset": { "$ref": "#/$defs/point" },
+        "style": { "$ref": "#/$defs/style" },
+        "geometry": {
+          "type": "object",
+          "additionalProperties": { "$ref": "#/$defs/jsonValue" }
+        }
+      },
+      "additionalProperties": false
+    },
+    "objectKind": {
+      "enum": ["rect", "ellipse", "line", "text", "group", "raster-asset"]
+    },
+    "sourceObject": {
+      "type": "object",
+      "required": [
+        "element",
+        "role",
+        "exportMode",
+        "parentId",
+        "order",
+        "attributes",
+        "sourceRange"
+      ],
+      "properties": {
+        "element": { "type": "string", "minLength": 1 },
+        "role": {
+          "enum": ["shape", "text", "connector", "group", "asset"]
+        },
+        "exportMode": { "enum": ["native", "raster"] },
+        "parentId": {
+          "oneOf": [{ "type": "null" }, { "$ref": "#/$defs/stableId" }]
+        },
+        "order": { "$ref": "#/$defs/nonNegativeInteger" },
+        "attributes": {
+          "type": "object",
+          "propertyNames": {
+            "not": {
+              "pattern": "^(?:[Hh][Rr][Ee][Ff]|[Xx][Ll][Ii][Nn][Kk]:[Hh][Rr][Ee][Ff])$"
+            }
+          },
+          "additionalProperties": { "type": "string" }
+        },
+        "text": { "type": "string" },
+        "resource": { "$ref": "#/$defs/resource" },
+        "sourceRange": { "$ref": "#/$defs/sourceRange" }
+      },
+      "additionalProperties": false
+    },
+    "emitted": {
+      "type": "object",
+      "required": ["partName", "element", "cNvPrName", "cNvPrNumericId"],
+      "properties": {
+        "partName": {
+          "type": "string",
+          "pattern": "^ppt/slides/slide[1-9][0-9]*\\.xml$"
+        },
+        "element": { "enum": ["p:sp", "p:cxnSp", "p:grpSp", "p:pic"] },
+        "cNvPrName": { "type": "string", "pattern": "^src\\..+" },
+        "cNvPrNumericId": { "$ref": "#/$defs/positiveInteger" },
+        "imageRelationship": {
+          "type": "object",
+          "required": ["relationshipId", "partName"],
+          "properties": {
+            "relationshipId": {
+              "type": "string",
+              "pattern": "^rId[1-9][0-9]*$"
+            },
+            "partName": {
+              "type": "string",
+              "pattern": "^ppt/media/[a-f0-9]{64}\\.png$"
+            }
+          },
+          "additionalProperties": false
+        }
+      },
+      "additionalProperties": false
+    },
+    "capability": {
+      "type": "object",
+      "required": ["classification", "exportMode", "compilerCapability"],
+      "properties": {
+        "classification": { "enum": ["native", "atomic-raster"] },
+        "exportMode": { "enum": ["native", "raster"] },
+        "compilerCapability": {
+          "enum": ["deck-native-primitive/0.1", "deck-static-png-picture/0.1"]
+        }
+      },
+      "additionalProperties": false
+    },
+    "object": {
+      "type": "object",
+      "required": [
+        "id",
+        "kind",
+        "parentId",
+        "order",
+        "source",
+        "resolved",
+        "emitted",
+        "capability"
+      ],
+      "properties": {
+        "id": { "$ref": "#/$defs/stableId" },
+        "kind": { "$ref": "#/$defs/objectKind" },
+        "parentId": {
+          "oneOf": [{ "type": "null" }, { "$ref": "#/$defs/stableId" }]
+        },
+        "order": { "$ref": "#/$defs/nonNegativeInteger" },
+        "source": { "$ref": "#/$defs/sourceObject" },
+        "resolved": { "$ref": "#/$defs/resolved" },
+        "emitted": { "$ref": "#/$defs/emitted" },
+        "capability": { "$ref": "#/$defs/capability" }
+      },
+      "additionalProperties": false
+    },
+    "slide": {
+      "type": "object",
+      "required": [
+        "id",
+        "order",
+        "hidden",
+        "sourceRange",
+        "partName",
+        "presentationRelationshipId",
+        "presentationNumericId",
+        "layoutRelationship",
+        "objects"
+      ],
+      "properties": {
+        "id": { "$ref": "#/$defs/stableId" },
+        "order": { "$ref": "#/$defs/nonNegativeInteger" },
+        "hidden": { "type": "boolean" },
+        "layout": { "$ref": "#/$defs/stableId" },
+        "sourceRange": { "$ref": "#/$defs/sourceRange" },
+        "partName": {
+          "type": "string",
+          "pattern": "^ppt/slides/slide[1-9][0-9]*\\.xml$"
+        },
+        "presentationRelationshipId": {
+          "type": "string",
+          "pattern": "^rId[1-9][0-9]*$"
+        },
+        "presentationNumericId": { "$ref": "#/$defs/positiveInteger" },
+        "layoutRelationship": {
+          "type": "object",
+          "required": ["relationshipId", "partName"],
+          "properties": {
+            "relationshipId": { "const": "rId1" },
+            "partName": { "const": "ppt/slideLayouts/slideLayout1.xml" }
+          },
+          "additionalProperties": false
+        },
+        "objects": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/object" }
+        }
+      },
+      "additionalProperties": false
+    }
+  }
+}

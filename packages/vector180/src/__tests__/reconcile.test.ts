@@ -47,6 +47,8 @@ const UNIFORM_PLACEMENT: Vector180Placement = {
 const TITLE = "Standalone Vector180 diagram";
 const TITLE_ID = "system-overview.title";
 const SLIDE_PART = "ppt/slides/slide1.xml";
+const ONE_PIXEL_PNG_BASE64 =
+  "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=";
 
 interface BaselineFixture {
   readonly sourceText: string;
@@ -371,6 +373,75 @@ async function typedFixture(
   };
 }
 
+async function rasterFixture(): Promise<BaselineFixture> {
+  const sourceText = `<svg xmlns="http://www.w3.org/2000/svg"
+  data-vector180-version="0.1" id="raster-diagram" viewBox="0 0 100 100">
+  <image id="raster.background" data-vector180-role="asset"
+    data-vector180-export="raster" data-vector180-bounds="0 0 100 100"
+    x="0" y="0" width="100" height="100"
+    href="data:image/png;base64,${ONE_PIXEL_PNG_BASE64}"/>
+  <rect id="raster.foreground" data-vector180-role="shape"
+    data-vector180-export="native" x="20" y="20" width="60" height="60"
+    fill="#112233"/>
+</svg>`;
+  const diagram = await loadAtom({
+    kind: "text",
+    text: sourceText,
+    name: "raster-diagram.vector180.svg",
+  });
+  return {
+    sourceText,
+    diagram,
+    atom: diagram,
+    artifact: await compilePptxBaseline(diagram, {
+      placement: {
+        slideId: "raster-slide",
+        x: 0,
+        y: 0,
+        width: 100,
+        height: 100,
+        policy: "identity",
+      },
+    }),
+  };
+}
+
+async function nestedRasterFixture(): Promise<BaselineFixture> {
+  const sourceText = `<svg xmlns="http://www.w3.org/2000/svg"
+  data-vector180-version="0.1" id="nested-raster-diagram" viewBox="0 0 100 100">
+  <g id="nested-raster.group" data-vector180-role="group"
+    data-vector180-export="native" transform="translate(0 0)">
+    <image id="nested-raster.background" data-vector180-role="asset"
+      data-vector180-export="raster" data-vector180-bounds="0 0 100 100"
+      x="0" y="0" width="100" height="100"
+      href="data:image/png;base64,${ONE_PIXEL_PNG_BASE64}"/>
+  </g>
+  <rect id="nested-raster.foreground" data-vector180-role="shape"
+    data-vector180-export="native" x="20" y="20" width="60" height="60"
+    fill="#112233"/>
+</svg>`;
+  const diagram = await loadAtom({
+    kind: "text",
+    text: sourceText,
+    name: "nested-raster-diagram.vector180.svg",
+  });
+  return {
+    sourceText,
+    diagram,
+    atom: diagram,
+    artifact: await compilePptxBaseline(diagram, {
+      placement: {
+        slideId: "nested-raster-slide",
+        x: 0,
+        y: 0,
+        width: 100,
+        height: 100,
+        policy: "identity",
+      },
+    }),
+  };
+}
+
 function appendCentralDirectoryAlias(
   bytes: Uint8Array,
   sourceName: string,
@@ -531,6 +602,111 @@ describe("C10 bounded PPTX reconciliation", () => {
     expect(normalized.changes).toEqual([]);
     expect(normalized.patch).toBeUndefined();
     expect(normalized.editedPptxSha256).toBe(sha256(recompressed));
+  });
+
+  it("authenticates unchanged PNG pictures and makes every picture mutation review-required", async () => {
+    const { diagram, artifact } = await rasterFixture();
+    const exactInspection = await inspectPptxForReconciliation(
+      artifact.pptxBytes,
+      artifact.map,
+    );
+    expect(exactInspection.diagnostics).toEqual([]);
+    expect(exactInspection.inspection).toBeDefined();
+    const exact = await reconcilePptx(
+      diagram,
+      artifact.map,
+      artifact.pptxBytes,
+    );
+    expect(exact.status).toBe("unchanged");
+    expect(exact.diagnostics).toEqual([]);
+
+    const raster = artifact.map.slides[0]!.objects.find(
+      (object) => object.id === "raster.background",
+    )!;
+    const mediaPart = `ppt/media/${raster.source.resource!.sha256}.png`;
+    const changedMedia = await rewritePackage(
+      artifact.pptxBytes,
+      async (zip) => {
+        const bytes = await zip.file(mediaPart)!.async("uint8array");
+        const changed = new Uint8Array(bytes);
+        changed[changed.length - 1] = changed[changed.length - 1]! ^ 1;
+        zip.file(mediaPart, changed, { createFolders: false });
+      },
+    );
+    const moved = await rewriteMappedObject(
+      artifact.pptxBytes,
+      artifact.map,
+      "raster.background",
+      (block) =>
+        block.replace('<a:off x="0" y="0"/>', '<a:off x="7620" y="0"/>'),
+    );
+    const deleted = await removeMappedObjects(
+      artifact.pptxBytes,
+      artifact.map,
+      ["raster.background"],
+    );
+    const reordered = await swapMappedObjects(
+      artifact.pptxBytes,
+      artifact.map,
+      "raster.background",
+      "raster.foreground",
+    );
+
+    for (const [label, edited] of [
+      ["replacement", changedMedia],
+      ["movement", moved],
+      ["deletion", deleted],
+      ["reorder", reordered],
+    ] as const) {
+      const result = await reconcilePptx(diagram, artifact.map, edited);
+      expect(result.status, label).toBe("review-required");
+      expect(result.patch, label).toBeUndefined();
+      expect(codes(result), label).toContain("VECTOR180-RECONCILE-UNSUPPORTED");
+      expect(
+        result.findings.some(
+          (finding) =>
+            finding.disposition === "review-required" &&
+            JSON.stringify(finding).includes("raster"),
+        ),
+        label,
+      ).toBe(true);
+    }
+  });
+
+  it("refuses picture deletion, movement, or reorder through an ancestor group", async () => {
+    const { diagram, artifact } = await nestedRasterFixture();
+    const movedAncestor = await rewriteMappedObject(
+      artifact.pptxBytes,
+      artifact.map,
+      "nested-raster.group",
+      (block) =>
+        block.replace('<a:off x="0" y="0"/>', '<a:off x="7620" y="0"/>'),
+    );
+    const deletedAncestor = await removeMappedObjects(
+      artifact.pptxBytes,
+      artifact.map,
+      ["nested-raster.group"],
+    );
+    const reorderedAncestor = await swapMappedObjects(
+      artifact.pptxBytes,
+      artifact.map,
+      "nested-raster.group",
+      "nested-raster.foreground",
+    );
+
+    for (const [label, edited] of [
+      ["ancestor movement", movedAncestor],
+      ["ancestor deletion", deletedAncestor],
+      ["ancestor reorder", reorderedAncestor],
+    ] as const) {
+      const result = await reconcilePptx(diagram, artifact.map, edited);
+      expect(result.status, label).toBe("review-required");
+      expect(result.patch, label).toBeUndefined();
+      expect(codes(result), label).toContain("VECTOR180-RECONCILE-UNSUPPORTED");
+      expect(JSON.stringify(result), label).toContain(
+        "nested-raster.background",
+      );
+    }
   });
 
   it("proves the exact native-save envelope and emits a deterministic agent-grade report", async () => {
@@ -1262,6 +1438,96 @@ describe("C10 bounded PPTX reconciliation", () => {
         placement: TYPED_PLACEMENT,
       }),
     ).toBeDefined();
+  });
+
+  it("round-trips a direct authored text-baseline shift through DrawingML tIns", async () => {
+    const { diagram, artifact } = await typedFixture();
+    const edited = await rewriteMappedObject(
+      artifact.pptxBytes,
+      artifact.map,
+      "typed.text",
+      (block) =>
+        block.replace(
+          /tIns="(\d+)"/u,
+          (_match, value: string) => `tIns="${Number(value) + 7620}"`,
+        ),
+    );
+
+    const result = await reconcilePptx(diagram, artifact.map, edited);
+    expect(result.status).toBe("patchable");
+    expect(result.patch?.ops).toEqual([
+      {
+        op: "set-text-frame",
+        id: "typed.text",
+        oldFrame: { x: 80, y: 210, width: 300, height: 70 },
+        frame: { x: 80, y: 210, width: 300, height: 70 },
+        oldLineAnchor: { x: 90, y: 252 },
+        lineAnchor: { x: 90, y: 253 },
+      },
+    ]);
+    const applied = await applyPatch(diagram, result.patch);
+    expect(applied.applied).toBe(true);
+    expect(
+      await compilePptxBaseline(applied.atom!, {
+        placement: TYPED_PLACEMENT,
+      }),
+    ).toBeDefined();
+  });
+
+  it("sums text-frame and authored-baseline movements exactly", async () => {
+    const { diagram, artifact } = await typedFixture();
+    const edited = await rewriteMappedObject(
+      artifact.pptxBytes,
+      artifact.map,
+      "typed.text",
+      (block) =>
+        block
+          .replace(
+            /<a:off x="(-?\d+)" y="(-?\d+)"\/>/u,
+            (_match, x: string, y: string) =>
+              `<a:off x="${x}" y="${Number(y) + 7620}"/>`,
+          )
+          .replace(
+            /tIns="(-?\d+)"/u,
+            (_match, value: string) => `tIns="${Number(value) + 7620}"`,
+          ),
+    );
+
+    const result = await reconcilePptx(diagram, artifact.map, edited);
+    expect(result.status).toBe("patchable");
+    expect(result.patch?.ops).toMatchObject([
+      {
+        op: "set-text-frame",
+        id: "typed.text",
+        frame: { x: 80, y: 211, width: 300, height: 70 },
+        lineAnchor: { x: 90, y: 254 },
+      },
+    ]);
+  });
+
+  it("refuses native wrapping or autofit in a mapped hard-line text object", async () => {
+    const { diagram, artifact } = await typedFixture();
+    for (const mutate of [
+      (block: string) => block.replace('wrap="none"', 'wrap="square"'),
+      (block: string) => block.replace("<a:noAutofit/>", "<a:spAutoFit/>"),
+    ]) {
+      const edited = await rewriteMappedObject(
+        artifact.pptxBytes,
+        artifact.map,
+        "typed.text",
+        mutate,
+      );
+      const result = await reconcilePptx(diagram, artifact.map, edited);
+      expect(result.status).toBe("review-required");
+      expect(result.diagnostics).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({
+            code: "VECTOR180-RECONCILE-UNSUPPORTED",
+            objectId: "typed.text",
+          }),
+        ]),
+      );
+    }
   });
 
   it("round-trips direct concrete native style without a generic attribute path", async () => {

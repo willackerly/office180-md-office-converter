@@ -46,9 +46,33 @@ authority, emits only canonical Vector180 controls and local concrete style,
 records immediate hydration metadata, then independently reloads/resolves the
 new atom before exposing bytes.
 
+### Scenario 4 — resolve an inline PNG without leaking its bytes
+
+A canonical raster `<image>` has explicit `x`, `y`, `width`, and `height`
+equal to its declared `data-vector180-bounds`. Its validated intrinsic pixel
+ratio exactly matches the authored width/height ratio. C6 returns one
+`raster-asset` with the C4 digest descriptor, never the data URI or decoded
+bytes; a missing resource, stretch, crop, or implicit geometry prevents a
+model.
+
 ## Interfaces
 
 ```ts
+interface Vector180InlinePngResourceDescriptor {
+  readonly mediaType: "image/png";
+  readonly sha256: string;
+  readonly byteLength: number;
+  readonly widthPixels: number;
+  readonly heightPixels: number;
+}
+
+interface Vector180ResolvedRasterAsset {
+  readonly kind: "raster-asset";
+  readonly localBounds: Vector180Bounds;
+  readonly worldBounds: Vector180Bounds;
+  readonly resource: Vector180InlinePngResourceDescriptor;
+}
+
 interface Vector180ResolvedAtom {
   readonly schema: "vector180-resolved-atom/0.1";
   readonly sourceWireFamily: "vector180" | "pptv-legacy";
@@ -125,6 +149,9 @@ Metadata helper results use
 | Atom canvas             | Atom `viewBox` retains arbitrary finite origin/dimensions/aspect ratio. No EMU, inch, point, DPI, slide-size, or default physical mapping is inferred.                                                                                                                                                                                                                                                                                                                                                                                                                      |
 | Deck canvas             | Deck slides remain exactly `0 0 1600 900` and map one SVG unit to 7620 EMU. Another ratio remains outside this profile.                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
 | Canonical styling       | Atoms accept only defaults, supported `data-vector180-*` controls, presentation attributes, and local inline declarations. Deck themes use complete `--vector180-*` token sets.                                                                                                                                                                                                                                                                                                                                                                                             |
+| Raster geometry         | A C4-validated `<image data-vector180-role="asset" data-vector180-export="raster">` requires explicit finite `x`, `y`, positive `width`, and positive `height`; those four numeric values must equal `data-vector180-bounds`. Its intrinsic `widthPixels:heightPixels` must equal the authored `width:height` by exact decimal cross multiplication. C6 never infers dimensions, DPI, crop, stretch, letterbox, or another placement policy.                                                                                                                                |
+| Raster resolved model   | A resolved raster object has `kind: "raster-asset"` and carries only the immutable C4 descriptor `{mediaType:"image/png", sha256, byteLength, widthPixels, heightPixels}`. URI/base64 and decoded bytes are absent from resolved, semantic, editing, and browser JSON. Exact source remains separately hash-bound and byte-preserving.                                                                                                                                                                                                                                      |
+| Raster refusal boundary | Exactly one C4-validated inline PNG resource is required. A fragment reference, absent/duplicate resource, missing image geometry, geometry/bounds mismatch, intrinsic-aspect mismatch, invalid or oversized PNG, APNG, external URL, or unsupported raster format yields no resolved model. Resolution performs no fetch, decode fallback, image conversion, font lookup, browser layout, or content sniffing.                                                                                                                                                             |
 | Metadata separation     | Parsed metadata and `metadataSha256` are projected adjacent to the resolved model but never participate in style/geometry/text/identity resolution. Invalid recognized metadata prevents a model through C4.                                                                                                                                                                                                                                                                                                                                                                |
 | Template comparison     | `templateLineage` equality compares generator profile, template ID, and lowercase SHA-256 of the immutable input template-basis artifact exactly. It never hashes the current atom. Equal declarations with no basis input classify `matching-asserted-template`. When the caller supplies exact `templateBasisBytes` and their SHA-256 matches both equal declarations, classification is `exact-verified-template`. Supplied bytes that fail either declaration produce `insufficient-evidence` plus `VECTOR180-METADATA-VERIFICATION`, never a false `different` result. |
 | Basis input boundary    | Basis verification accepts at most 8 MiB of bytes in memory, copies them before asynchronous work, and hashes that immutable snapshot. C6 performs no path, package, host, network, template registry, or system discovery and never stores the supplied basis bytes in source, projections, or comparison output.                                                                                                                                                                                                                                                          |
@@ -142,6 +169,7 @@ Metadata helper results use
 | Invalid source/family | C4 source is incomplete, mixed, ambiguous, or disallowed for the requested output | `VECTOR180-RESOLVED-INVALID-SOURCE`                                                         |
 | Canvas/geometry       | Canvas, numeric value, transform, bounds, or object kind lies outside the profile | `VECTOR180-PROFILE-VIEWBOX`, `VECTOR180-PROFILE-GEOMETRY`, `VECTOR180-PROFILE-TRANSFORM`    |
 | Style/resource        | CSS/token/property/font/paint/resource behavior is unsupported or unresolved      | `VECTOR180-PROFILE-STYLE`, `VECTOR180-PROFILE-FONT`, `VECTOR180-PROFILE-RESOURCE`           |
+| Raster geometry       | Explicit image geometry differs from declared bounds                              | `VECTOR180-PROFILE-GEOMETRY`                                                                |
 | Text                  | Frame, baseline, hard-line, richness, or anchor state is invalid                  | `VECTOR180-PROFILE-TEXT`                                                                    |
 | Metadata comparison   | Claimed verification bytes do not match declared template/style hashes            | `VECTOR180-METADATA-VERIFICATION`                                                           |
 | Hydration source      | Deck/slide/theme is missing, incomplete, or unresolved                            | `VECTOR180-EXTRACT-INVALID-BASE`, `VECTOR180-EXTRACT-SLIDE`, `VECTOR180-EXTRACT-UNRESOLVED` |
@@ -163,9 +191,9 @@ complete immutable model.
 
 ## Future evolution
 
-- Paragraph intent, reliable/editable PPTX frame policy, raster resources,
-  additional transforms, and other physical deck ratios require successor
-  source/resolved contracts and fixtures.
+- Paragraph intent, reliable/editable PPTX frame policy, additional raster
+  formats or placement policies, additional transforms, and other physical
+  deck ratios require successor source/resolved contracts and fixtures.
 
 ## Retirement / supersession plan
 
@@ -176,6 +204,7 @@ complete immutable model.
 ## Implementing Files
 
 - `packages/vector180/src/core/resolved.ts`
+- `packages/vector180/src/core/inline-png.ts`
 - `packages/vector180/src/core/styles.ts`
 - `packages/vector180/src/core/extract.ts`
 - `packages/vector180/src/browser/runtime.ts`
@@ -189,11 +218,13 @@ complete immutable model.
 - [ ] Equal asserted lineage, exact supplied-basis verification, mismatched
       basis refusal, and no-discovery behavior have distinct fixtures.
 - [ ] Hydration from both dialects emits canonical independently reloadable atoms.
+- [x] Inline PNG raster objects require exact bounds/aspect and expose only the
+      immutable digest descriptor in Node/browser resolved projections.
 - [x] Existing finite geometry, style, group, relationship, order, asset, and explicit-text refusals remain covered.
 
 ## Change History
 
-| Version | Date       | Change                                                                                                                | Migration                                        |
-| ------- | ---------- | --------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------ |
-| 1.1     | 2026-07-30 | Add PPTV standalone-diagram resolved profile and hydration                                                            | Superseded; retained for legacy evidence         |
-| 2.0     | 2026-08-02 | Add Vector180 atom/deck resolved schemas, inert lineage projection, derived palette identity, and canonical hydration | Adopt new schemas; do not rewrite legacy results |
+| Version | Date       | Change                                                                                                                          | Migration                                        |
+| ------- | ---------- | ------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------ |
+| 1.1     | 2026-07-30 | Add PPTV standalone-diagram resolved profile and hydration                                                                      | Superseded; retained for legacy evidence         |
+| 2.0     | 2026-08-05 | Add Vector180 atom/deck schemas, inert lineage, derived palette identity, canonical hydration, and strict inline PNG resolution | Adopt new schemas; do not rewrite legacy results |

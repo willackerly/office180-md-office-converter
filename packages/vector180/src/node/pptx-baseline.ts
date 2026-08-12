@@ -12,7 +12,8 @@ import { readFile } from "node:fs/promises";
 
 import JSZip from "jszip";
 
-import { loadDeck } from "../core/deck.js";
+import { loadAtom, loadDeck, Vector180LoadError } from "../core/deck.js";
+import { parseVector180InlinePngDataUri } from "../core/inline-png.js";
 import { STABLE_ID_PATTERN } from "../core/manifest.js";
 import {
   resolveVector180Deck,
@@ -30,12 +31,15 @@ import type {
   Vector180Deck,
   Vector180Atom,
   Vector180Node,
+  Vector180InlinePngResourceDescriptor,
   SourceRange,
 } from "../core/types.js";
 import {
   compilePptxCanaryWithLineage,
   PptxCanaryCompileError,
+  type PptxCanaryRasterResource,
 } from "./pptx-canary.js";
+import { scaleOoxmlInteger } from "./pptx-units.js";
 
 const COMPILER = "office180-vector180-pptx-baseline/0.1" as const;
 const MAP_SCHEMA = "vector180-pptx-map/0.1" as const;
@@ -43,6 +47,7 @@ const SLIDE_WIDTH = 1600;
 const SLIDE_HEIGHT = 900;
 const EMU_PER_UNIT = 7_620;
 const HUNDREDTH_POINTS_PER_UNIT = 60;
+const MAX_TEXT_INSET_EMU = 51_206_400;
 const MAX_SIGNED_INT_31 = 0x7fffffff;
 const RUNTIME_URL = new URL(
   "../../assets/vector180-browser-0.1.script.html",
@@ -112,11 +117,12 @@ export interface Vector180PptxMapObject {
   readonly source: {
     readonly element: string;
     readonly role: Vector180Node["role"];
-    readonly exportMode: "native";
+    readonly exportMode: "native" | "raster";
     readonly parentId: string | null;
     readonly order: number;
     readonly attributes: Readonly<Record<string, string>>;
     readonly text?: string;
+    readonly resource?: Vector180InlinePngResourceDescriptor;
     readonly sourceRange: SourceRange;
   };
   readonly resolved: Vector180PptxMapObjectSnapshot;
@@ -128,15 +134,16 @@ export interface Vector180PptxMapObject {
   };
   readonly emitted: {
     readonly partName: string;
-    readonly element: "p:sp" | "p:cxnSp" | "p:grpSp";
+    readonly element: "p:sp" | "p:cxnSp" | "p:grpSp" | "p:pic";
     readonly cNvPrName: string;
     readonly cNvPrNumericId: number;
     readonly drawingMl: Readonly<Record<string, unknown>>;
   };
   readonly capability: {
-    readonly classification: "native";
-    readonly exportMode: "native";
-    readonly compilerCapability: "c9-native-primitive/0.1";
+    readonly classification: "native" | "atomic-raster";
+    readonly exportMode: "native" | "raster";
+    readonly compilerCapability:
+      "c9-native-primitive/0.1" | "c9-static-png-picture/0.1";
   };
 }
 
@@ -228,6 +235,14 @@ export async function composeVector180AtomDeck(
       "Composition accepts one standalone .vector180.svg atom only.",
     );
   }
+  const trustedSource = await authenticateSourceAtom(source);
+  return composeAuthenticatedVector180AtomDeck(trustedSource, placementInput);
+}
+
+async function composeAuthenticatedVector180AtomDeck(
+  source: Vector180Atom,
+  placementInput: Vector180Placement,
+): Promise<Vector180AtomCompositionArtifact> {
   const transform = validatePlacement(source, placementInput);
   validateSourceCapability(source);
   const sourceResolution = resolveVector180Atom(source);
@@ -311,8 +326,18 @@ export async function compilePptxBaseline(
       "A standalone diagram requires an explicit target placement.",
     );
   }
+  if (source.wireFamily !== "vector180") {
+    baselineFail(
+      "VECTOR180-BASELINE-FAMILY",
+      "Compilation requires one canonical Vector180 atom; migrate legacy PPTV source first.",
+    );
+  }
 
-  const composition = await composeVector180AtomDeck(source, options.placement);
+  const trustedSource = await authenticateSourceAtom(source);
+  const composition = await composeAuthenticatedVector180AtomDeck(
+    trustedSource,
+    options.placement,
+  );
   const {
     placement,
     scale,
@@ -321,17 +346,23 @@ export async function compilePptxBaseline(
     sourceResolved,
     resolved: composed,
   } = composition;
+  const rasterResources = collectRasterPackageResources(
+    trustedSource,
+    composed,
+    placement.slideId,
+  );
   const packageOptions = {
     compiler: COMPILER,
-    coreTitle: `Vector180 baseline: ${source.id}`,
+    coreTitle: `Vector180 baseline: ${trustedSource.id}`,
     customProperties: {
       "vector180.mapSchema": MAP_SCHEMA,
       "vector180.placement": canonicalPlacement(placement),
-      "vector180.atomSha256": source.source.sha256,
-      "vector180.sourceId": source.id,
+      "vector180.atomSha256": trustedSource.source.sha256,
+      "vector180.sourceId": trustedSource.id,
       "vector180.sourceKind": "atom",
       "vector180.sourceResolvedSchema": sourceResolved.schema,
     },
+    rasterResources,
   } as const;
 
   let canary;
@@ -346,7 +377,7 @@ export async function compilePptxBaseline(
 
   const pptxSha256 = canary.sha256;
   const objectMap = buildObjectMap(
-    source,
+    trustedSource,
     sourceResolved,
     composed.slides[0]!.objects,
     scale,
@@ -358,12 +389,12 @@ export async function compilePptxBaseline(
     source: {
       family: "vector180",
       kind: "atom",
-      id: source.id,
-      sha256: source.source.sha256,
+      id: trustedSource.id,
+      sha256: trustedSource.source.sha256,
       profile: "0.1",
-      ...(source.metadataSha256 === undefined
+      ...(trustedSource.metadataSha256 === undefined
         ? {}
-        : { metadataSha256: source.metadataSha256 }),
+        : { metadataSha256: trustedSource.metadataSha256 }),
     },
     composition: {
       placement,
@@ -418,6 +449,92 @@ export function serializeVector180PptxMap(map: Vector180PptxMap): string {
   return `${JSON.stringify(canonicalJsonValue(map), null, 2)}\n`;
 }
 
+/**
+ * Reconstruct the semantic atom from retained source bytes and compare every
+ * source-derived field consumed by composition or compilation. The exact SVG
+ * bytes remain authority even when a caller spreads the frozen load result and
+ * substitutes forged nodes, metadata, source ranges, or canvas state.
+ */
+async function authenticateSourceAtom(
+  source: Vector180Atom,
+): Promise<Vector180Atom> {
+  let trusted: Vector180Atom;
+  try {
+    trusted = await loadAtom({
+      kind: "bytes",
+      bytes: source.source.bytes,
+      ...(source.source.name === undefined ? {} : { name: source.source.name }),
+    });
+  } catch (error) {
+    if (!(error instanceof Vector180LoadError)) throw error;
+    return baselineFail(
+      "VECTOR180-BASELINE-INVALID-SOURCE",
+      "The retained exact source bytes could not be reconstructed as one canonical Vector180 SVG atom.",
+    );
+  }
+  if (
+    trusted.source.sha256 !== source.source.sha256 ||
+    trusted.source.byteLength !== source.source.byteLength ||
+    trusted.source.charLength !== source.source.charLength ||
+    trusted.source.text !== source.source.text ||
+    atomCompilerInputSnapshot(trusted) !== atomCompilerInputSnapshot(source)
+  ) {
+    baselineFail(
+      "VECTOR180-BASELINE-IDENTITY",
+      "The supplied atom interpretation does not match the canonical snapshot reconstructed from its exact retained source bytes.",
+    );
+  }
+  return trusted;
+}
+
+function atomCompilerInputSnapshot(source: Vector180Atom): string {
+  return JSON.stringify(
+    canonicalJsonValue({
+      version: source.version,
+      sourceKind: source.sourceKind,
+      wireFamily: source.wireFamily,
+      id: source.id,
+      viewBox: [...source.viewBox],
+      children: source.children.map(snapshotSourceNodeForAuthentication),
+      ...(source.metadata === undefined ? {} : { metadata: source.metadata }),
+      ...(source.metadataSha256 === undefined
+        ? {}
+        : { metadataSha256: source.metadataSha256 }),
+      sourceRange: { ...source.sourceRange },
+      diagnostics: source.diagnostics.map((diagnostic) => ({ ...diagnostic })),
+      source: {
+        ...(source.source.wireFamily === undefined
+          ? {}
+          : { wireFamily: source.source.wireFamily }),
+        charLength: source.source.charLength,
+        byteLength: source.source.byteLength,
+        sha256: source.source.sha256,
+      },
+    }),
+  );
+}
+
+function snapshotSourceNodeForAuthentication(node: Vector180Node): unknown {
+  return {
+    id: node.id,
+    role: node.role,
+    exportMode: node.exportMode,
+    elementName: node.elementName,
+    classes: [...node.classes],
+    attributes: sortedRecord(node.attributes),
+    parentId: node.parentId,
+    children: node.children.map(snapshotSourceNodeForAuthentication),
+    ...(node.text === undefined ? {} : { text: node.text }),
+    ...(node.resource === undefined ? {} : { resource: { ...node.resource } }),
+    opaque: node.opaque,
+    sourceRange: { ...node.sourceRange },
+    openTagRange: { ...node.openTagRange },
+    ...(node.directTextRange === undefined
+      ? {}
+      : { directTextRange: { ...node.directTextRange } }),
+  };
+}
+
 interface ValidatedPlacement {
   readonly placement: Vector180Placement;
   readonly scale: number;
@@ -448,7 +565,8 @@ function validatePlacement(
   if (
     values.some(
       (value) =>
-        !Number.isFinite(value) || !Number.isSafeInteger(value * EMU_PER_UNIT),
+        !Number.isFinite(value) ||
+        scaleOoxmlInteger(value, EMU_PER_UNIT) === undefined,
     ) ||
     placement.x < 0 ||
     placement.y < 0 ||
@@ -521,13 +639,19 @@ function validateSourceCapability(diagram: Vector180Atom): void {
     );
   }
   visitSourceNodes(diagram.children, (node) => {
-    if (node.exportMode !== "native") {
+    const raster =
+      node.elementName === "image" &&
+      node.role === "asset" &&
+      node.exportMode === "raster" &&
+      node.opaque &&
+      node.resource !== undefined;
+    if (node.exportMode !== "native" && !raster) {
       baselineFail(
         "VECTOR180-BASELINE-UNSUPPORTED",
-        `Object "${node.id}" requests data-vector180-export="${node.exportMode}"; the bounded C9 slice admits native objects only.`,
+        `Object "${node.id}" requests data-vector180-export="${node.exportMode}"; C9 admits native primitives or one exact static inline PNG picture.`,
       );
     }
-    if (node.opaque) {
+    if (node.exportMode === "native" && node.opaque) {
       baselineFail(
         "VECTOR180-BASELINE-UNSUPPORTED",
         `Opaque object "${node.id}" is outside the bounded C9 native subset.`,
@@ -541,10 +665,10 @@ function validateResolvedCapability(model: Vector180ResolvedAtom): void {
   const maxX = originX + width;
   const maxY = originY + height;
   visitAtomObjects(model.objects, (object) => {
-    if (object.kind === "svg-asset" || object.kind === "raster-asset") {
+    if (object.kind === "svg-asset") {
       baselineFail(
         "VECTOR180-BASELINE-UNSUPPORTED",
-        `Asset object "${object.id}" is outside the bounded C9 native subset.`,
+        `SVG asset "${object.id}" is outside the bounded C9 subset.`,
       );
     }
     if (
@@ -670,17 +794,21 @@ function renderComposedObject(
   indentSize: number,
 ): string {
   const sourceEntry = sourceNodes.get(object.id);
-  if (sourceEntry === undefined || sourceEntry.node.exportMode !== "native") {
+  const expectedExport = object.kind === "raster-asset" ? "raster" : "native";
+  if (
+    sourceEntry === undefined ||
+    sourceEntry.node.exportMode !== expectedExport
+  ) {
     return baselineFail(
       "VECTOR180-BASELINE-IDENTITY",
-      `Object "${object.id}" lacks one native source identity during composition.`,
+      `Object "${object.id}" lacks one exact ${expectedExport} source identity during composition.`,
     );
   }
   const indent = " ".repeat(indentSize);
   const common = [
     ["id", object.id],
     ["data-vector180-role", sourceEntry.node.role],
-    ["data-vector180-export", "native"],
+    ["data-vector180-export", expectedExport],
   ] as Array<[string, string]>;
   const style = composedStyleAttributes(object.style, transform.scale);
   const x = (value: number): string =>
@@ -819,14 +947,127 @@ function renderComposedObject(
       return `${indent}<g${renderAttributes(attributes)}>\n${children}\n${indent}</g>`;
     }
     case "svg-asset":
-    case "raster-asset":
       return baselineFail(
         "VECTOR180-BASELINE-UNSUPPORTED",
-        `Asset object "${object.id}" cannot be composed in the C9 native subset.`,
+        `SVG asset "${object.id}" cannot be composed in the bounded C9 subset.`,
       );
+    case "raster-asset": {
+      const href = exactInlinePngHref(sourceEntry.node);
+      const bounds = object.localBounds;
+      return emptySvgElement(
+        "image",
+        [
+          ...common,
+          [
+            "data-vector180-bounds",
+            [
+              x(bounds.x),
+              y(bounds.y),
+              length(bounds.width),
+              length(bounds.height),
+            ].join(" "),
+          ],
+          ["x", x(bounds.x)],
+          ["y", y(bounds.y)],
+          ["width", length(bounds.width)],
+          ["height", length(bounds.height)],
+          ["href", href],
+        ],
+        indent,
+      );
+    }
     default:
       return assertNever(object);
   }
+}
+
+function exactInlinePngHref(node: Vector180Node): string {
+  const references = Object.entries(node.attributes).filter(([name]) => {
+    const normalized = name.toLowerCase();
+    return normalized === "href" || normalized === "xlink:href";
+  });
+  if (references.length !== 1) {
+    return baselineFail(
+      "VECTOR180-BASELINE-UNSUPPORTED",
+      `Raster asset "${node.id}" requires exactly one inline PNG href.`,
+    );
+  }
+  const value = references[0]![1];
+  const parsed = parseVector180InlinePngDataUri(value);
+  if (
+    !parsed.ok ||
+    node.resource === undefined ||
+    !sameRasterDescriptor(parsed.descriptor, node.resource)
+  ) {
+    return baselineFail(
+      "VECTOR180-BASELINE-UNSUPPORTED",
+      `Raster asset "${node.id}" no longer matches its validated PNG descriptor.`,
+    );
+  }
+  return value;
+}
+
+function collectRasterPackageResources(
+  source: Vector180Atom,
+  composed: Vector180ResolvedDeck,
+  slideId: string,
+): readonly PptxCanaryRasterResource[] {
+  const sourceNodes = new Map<string, { node: Vector180Node; order: number }>();
+  indexSourceNodes(source.children, sourceNodes);
+  const slide = composed.slides[0];
+  if (
+    slide === undefined ||
+    composed.slides.length !== 1 ||
+    slide.id !== slideId
+  ) {
+    return baselineFail(
+      "VECTOR180-BASELINE-IDENTITY",
+      "Raster packaging requires the exact one-slide C9 composition.",
+    );
+  }
+  const resources: PptxCanaryRasterResource[] = [];
+  for (const object of indexObjects(slide.objects).values()) {
+    if (object.kind !== "raster-asset") continue;
+    const node = sourceNodes.get(object.id)?.node;
+    if (node === undefined) {
+      return baselineFail(
+        "VECTOR180-BASELINE-IDENTITY",
+        `Raster asset "${object.id}" has no exact source node.`,
+      );
+    }
+    const parsed = parseVector180InlinePngDataUri(exactInlinePngHref(node));
+    if (
+      !parsed.ok ||
+      !sameRasterDescriptor(parsed.descriptor, object.resource)
+    ) {
+      return baselineFail(
+        "VECTOR180-BASELINE-UNSUPPORTED",
+        `Raster asset "${object.id}" source, resolved descriptor, and package bytes disagree.`,
+      );
+    }
+    resources.push(
+      Object.freeze({
+        slideId,
+        objectId: object.id,
+        descriptor: object.resource,
+        bytes: new Uint8Array(parsed.bytes),
+      }),
+    );
+  }
+  return Object.freeze(resources);
+}
+
+function sameRasterDescriptor(
+  left: Vector180InlinePngResourceDescriptor,
+  right: Vector180InlinePngResourceDescriptor,
+): boolean {
+  return (
+    left.mediaType === right.mediaType &&
+    left.sha256 === right.sha256 &&
+    left.byteLength === right.byteLength &&
+    left.widthPixels === right.widthPixels &&
+    left.heightPixels === right.heightPixels
+  );
 }
 
 function composedStyleAttributes(
@@ -954,16 +1195,39 @@ function buildObjectMap(
   const numericIds = allocateObjectNumericIds(
     resolvedObjects.map((object) => object.id),
   );
+  const rasterRelationships = new Map(
+    resolvedObjects
+      .filter(
+        (
+          object,
+        ): object is Extract<
+          Vector180ResolvedAtomObject,
+          { readonly kind: "raster-asset" }
+        > => object.kind === "raster-asset",
+      )
+      .map(
+        (object, index) =>
+          [
+            object.id,
+            {
+              relationshipId: `rId${index + 2}`,
+              partName: `ppt/media/${object.resource.sha256}.png`,
+            },
+          ] as const,
+      ),
+  );
   return Object.freeze(
     resolvedObjects.map((object): Vector180PptxMapObject => {
       const sourceEntry = sourceNodes.get(object.id);
       const composedObject = composed.get(object.id);
       const numericId = numericIds.get(object.id);
+      const expectedExport =
+        object.kind === "raster-asset" ? "raster" : "native";
       if (
         sourceEntry === undefined ||
         composedObject === undefined ||
         numericId === undefined ||
-        sourceEntry.node.exportMode !== "native"
+        sourceEntry.node.exportMode !== expectedExport
       ) {
         baselineFail(
           "VECTOR180-BASELINE-MAP",
@@ -990,13 +1254,16 @@ function buildObjectMap(
         source: {
           element: sourceEntry.node.elementName,
           role: sourceEntry.node.role,
-          exportMode: "native",
+          exportMode: expectedExport,
           parentId: sourceEntry.node.parentId,
           order: sourceEntry.order,
-          attributes: sortedRecord(sourceEntry.node.attributes),
+          attributes: sourceMapAttributes(sourceEntry.node),
           ...(sourceEntry.node.text === undefined
             ? {}
             : { text: sourceEntry.node.text }),
+          ...(sourceEntry.node.resource === undefined
+            ? {}
+            : { resource: sourceEntry.node.resource }),
           sourceRange: { ...sourceEntry.node.sourceRange },
         },
         resolved: snapshotObject(object),
@@ -1011,12 +1278,19 @@ function buildObjectMap(
           element: emittedElement(object.kind),
           cNvPrName: `src.${object.id}`,
           cNvPrNumericId: numericId,
-          drawingMl: drawingMlSnapshot(composedObject),
+          drawingMl: drawingMlSnapshot(
+            composedObject,
+            rasterRelationships.get(object.id),
+          ),
         },
         capability: {
-          classification: "native",
-          exportMode: "native",
-          compilerCapability: "c9-native-primitive/0.1",
+          classification:
+            object.kind === "raster-asset" ? "atomic-raster" : "native",
+          exportMode: expectedExport,
+          compilerCapability:
+            object.kind === "raster-asset"
+              ? "c9-static-png-picture/0.1"
+              : "c9-native-primitive/0.1",
         },
       };
     }),
@@ -1101,7 +1375,7 @@ function geometrySnapshot(
     case "svg-asset":
       return {};
     case "raster-asset":
-      return { resourceRef: object.resourceRef };
+      return { resource: { ...object.resource } };
     default:
       return assertNever(object);
   }
@@ -1109,6 +1383,10 @@ function geometrySnapshot(
 
 function drawingMlSnapshot(
   object: Vector180ResolvedObject,
+  rasterRelationship?: {
+    readonly relationshipId: string;
+    readonly partName: string;
+  },
 ): Readonly<Record<string, unknown>> {
   const numeric = (value: number): number => exactScaled(value, EMU_PER_UNIT);
   switch (object.kind) {
@@ -1174,8 +1452,20 @@ function drawingMlSnapshot(
         );
       }
       const frameX = numeric(object.frame.x);
+      const frameY = numeric(object.frame.y);
       const frameWidth = numeric(object.frame.width);
       const anchorX = numeric(line.x);
+      const topInset = numeric(line.y) - frameY - numeric(fontSize);
+      if (
+        !Number.isSafeInteger(topInset) ||
+        topInset < -MAX_TEXT_INSET_EMU ||
+        topInset > MAX_TEXT_INSET_EMU
+      ) {
+        return baselineFail(
+          "VECTOR180-BASELINE-MAP",
+          `Text "${object.id}" authored baseline requires an unsupported DrawingML top inset.`,
+        );
+      }
       const margins = paragraphMargins(
         object.anchor,
         anchorX - frameX,
@@ -1185,7 +1475,7 @@ function drawingMlSnapshot(
         presetGeometry: "rect",
         transform: {
           offXEmu: frameX,
-          offYEmu: numeric(object.frame.y),
+          offYEmu: frameY,
           extCxEmu: frameWidth,
           extCyEmu: numeric(object.frame.height),
         },
@@ -1194,7 +1484,7 @@ function drawingMlSnapshot(
         body: {
           wrap: "none",
           autofit: "none",
-          marginsEmu: { left: 0, top: 0, right: 0, bottom: 0 },
+          marginsEmu: { left: 0, top: topInset, right: 0, bottom: 0 },
           verticalAnchor: "top",
         },
         paragraph: {
@@ -1248,11 +1538,36 @@ function drawingMlSnapshot(
       };
     }
     case "svg-asset":
-    case "raster-asset":
       return baselineFail(
         "VECTOR180-BASELINE-MAP",
         `Unsupported asset "${object.id}" reached DrawingML mapping.`,
       );
+    case "raster-asset":
+      if (rasterRelationship === undefined) {
+        return baselineFail(
+          "VECTOR180-BASELINE-MAP",
+          `Raster asset "${object.id}" lacks its deterministic image relationship.`,
+        );
+      }
+      return {
+        transform: {
+          offXEmu: numeric(object.localBounds.x),
+          offYEmu: numeric(object.localBounds.y),
+          extCxEmu: numeric(object.localBounds.width),
+          extCyEmu: numeric(object.localBounds.height),
+        },
+        picture: {
+          relationshipId: rasterRelationship.relationshipId,
+          partName: rasterRelationship.partName,
+          mediaType: object.resource.mediaType,
+          sha256: object.resource.sha256,
+          byteLength: object.resource.byteLength,
+          widthPixels: object.resource.widthPixels,
+          heightPixels: object.resource.heightPixels,
+          stretch: "fillRect",
+          lockAspect: true,
+        },
+      };
     default:
       return assertNever(object);
   }
@@ -1279,10 +1594,14 @@ async function validateMapAgainstPackage(
   const presentationRels = await zip
     .file("ppt/_rels/presentation.xml.rels")
     ?.async("string");
+  const slideRels = await zip
+    .file("ppt/slides/_rels/slide1.xml.rels")
+    ?.async("string");
   if (
     slideXml === undefined ||
     presentationXml === undefined ||
-    presentationRels === undefined
+    presentationRels === undefined ||
+    slideRels === undefined
   ) {
     baselineFail(
       "VECTOR180-BASELINE-OPC",
@@ -1319,6 +1638,37 @@ async function validateMapAgainstPackage(
       "VECTOR180-BASELINE-MAP",
       "The mapped slide part, relationship ID, and presentation order do not agree.",
     );
+  }
+  const rasterObjects = slide.objects.filter(
+    (object) => object.kind === "raster-asset",
+  );
+  for (const [index, object] of rasterObjects.entries()) {
+    const descriptor = object.source.resource;
+    const relationshipId = `rId${index + 2}`;
+    if (descriptor === undefined) {
+      baselineFail(
+        "VECTOR180-BASELINE-MAP",
+        `Mapped raster asset "${object.id}" lacks its exact PNG descriptor.`,
+      );
+    }
+    const partName = `ppt/media/${descriptor.sha256}.png`;
+    const target = `../media/${descriptor.sha256}.png`;
+    const mediaBytes = await zip.file(partName)?.async("uint8array");
+    if (
+      object.emitted.element !== "p:pic" ||
+      !slideXml.includes(`<a:blip r:embed="${relationshipId}"/>`) ||
+      !slideRels.includes(
+        `<Relationship Id="${relationshipId}" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="${target}"/>`,
+      ) ||
+      mediaBytes === undefined ||
+      mediaBytes.byteLength !== descriptor.byteLength ||
+      sha256(mediaBytes) !== descriptor.sha256
+    ) {
+      baselineFail(
+        "VECTOR180-BASELINE-MAP",
+        `Mapped raster asset "${object.id}" does not match its picture, relationship, and content-addressed media part.`,
+      );
+    }
   }
 }
 
@@ -1407,10 +1757,11 @@ function stableHash(value: string): number {
 
 function emittedElement(
   kind: Vector180ResolvedAtomObject["kind"],
-): "p:sp" | "p:cxnSp" | "p:grpSp" {
+): "p:sp" | "p:cxnSp" | "p:grpSp" | "p:pic" {
   if (kind === "line") return "p:cxnSp";
   if (kind === "group") return "p:grpSp";
-  if (kind === "svg-asset" || kind === "raster-asset") {
+  if (kind === "raster-asset") return "p:pic";
+  if (kind === "svg-asset") {
     return baselineFail(
       "VECTOR180-BASELINE-MAP",
       `Unsupported ${kind} reached the emitted inventory.`,
@@ -1449,14 +1800,14 @@ function paragraphMargins(
 }
 
 function exactScaled(value: number, factor: number): number {
-  const result = value * factor;
-  if (!Number.isSafeInteger(result)) {
+  const result = scaleOoxmlInteger(value, factor);
+  if (result === undefined) {
     baselineFail(
       "VECTOR180-BASELINE-MAP",
       `Resolved value ${String(value)} does not map exactly by factor ${factor}.`,
     );
   }
-  return Object.is(result, -0) ? 0 : result;
+  return result;
 }
 
 function sortedRecord(
@@ -1464,6 +1815,20 @@ function sortedRecord(
 ): Readonly<Record<string, string>> {
   return Object.fromEntries(
     Object.entries(record).sort(([left], [right]) => compareText(left, right)),
+  );
+}
+
+function sourceMapAttributes(
+  node: Vector180Node,
+): Readonly<Record<string, string>> {
+  if (node.resource === undefined) return sortedRecord(node.attributes);
+  return sortedRecord(
+    Object.fromEntries(
+      Object.entries(node.attributes).filter(([name]) => {
+        const normalized = name.toLowerCase();
+        return normalized !== "href" && normalized !== "xlink:href";
+      }),
+    ),
   );
 }
 

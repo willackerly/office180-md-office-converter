@@ -8,11 +8,11 @@
         "1600",
         "-o",
         "$TEMP",
-        "$TEMP/input-b915027a645b239f.pptx"
+        "$TEMP/input-39c7c176f5a8a02c.pptx"
       ],
       "exit_code": 0,
       "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-      "stdout_sha256": "c343afa299aedfe34949eff8670ad52100057f0a7254730d6e78f91edeb02bc7",
+      "stdout_sha256": "e1d0a2e73525c6f2b2ec41004f98c6efef174435a0977d4871fab25b8dbac54f",
       "timeout_seconds": 45.0
     },
     "diagnostic": null,
@@ -36,10 +36,10 @@
       "media_type": "image/png",
       "page_count": 1,
       "page_sha256": [
-        "6b6e8c38094fb531e6369adcd93d9bd821cb37fca42534898d03837d4f58af36"
+        "1568a9fbe21bb5ec998a58228e0d740e513b4def7ad0924c9a2b34a867124bd7"
       ],
       "path": "supported-regenerated.quicklook.png",
-      "sha256": "6b6e8c38094fb531e6369adcd93d9bd821cb37fca42534898d03837d4f58af36",
+      "sha256": "1568a9fbe21bb5ec998a58228e0d740e513b4def7ad0924c9a2b34a867124bd7",
       "width_px": 1600
     },
     "renderer": {
@@ -51,11 +51,11 @@
     "renderer_class": "quick-look",
     "status": "passed"
   },
-  "evidence_sha256": "f8ed86647e20b7f7982621c10cdb9de7b99491c3a946c6d6b91ea24b45890656",
+  "evidence_sha256": "85b6b5dc8461cfc6c31de45b786a5138fa40089d4803c21d6b8a8801fc22db72",
   "schema": "office180-visual-evidence/0.1",
   "subject": {
     "artifact_path": "supported-regenerated.pptx",
-    "artifact_sha256": "b915027a645b239ffd0acf973fe613fce035fa806b43c3669c0c924116e94206",
+    "artifact_sha256": "39c7c176f5a8a02cd4586a1f61da0f20e93c7ff8e9438a0c3e8a6d575aef20b2",
     "checkpoint": "regenerated-from-recovered-vector180",
     "lane": "vector180-pptx"
   }

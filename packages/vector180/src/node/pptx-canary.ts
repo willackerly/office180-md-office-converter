@@ -6,10 +6,9 @@
  * CONTRACT:C9-PPTV-PPTX-BASELINE.2.0
  */
 
-import { createHash } from "node:crypto";
-
 import JSZip from "jszip";
 
+import { sha256HexSync } from "../core/source.js";
 import type {
   Vector180Bounds,
   Vector180ResolvedDeck,
@@ -22,6 +21,8 @@ import type {
   Vector180ResolvedStyle,
   Vector180ResolvedText,
 } from "../core/resolved.js";
+import type { Vector180InlinePngResourceDescriptor } from "../core/types.js";
+import { scaleOoxmlInteger } from "./pptx-units.js";
 
 const FIXED_DATE_ISO = "2000-01-01T00:00:00Z";
 const EMU_PER_UNIT = 7_620;
@@ -54,6 +55,7 @@ const CONTENT_TYPES = {
     "application/vnd.openxmlformats-officedocument.presentationml.presProps+xml",
   presentation:
     "application/vnd.openxmlformats-officedocument.presentationml.presentation.main+xml",
+  png: "image/png",
   slide:
     "application/vnd.openxmlformats-officedocument.presentationml.slide+xml",
   theme: "application/vnd.openxmlformats-officedocument.theme+xml",
@@ -67,6 +69,8 @@ const RELATIONSHIP_TYPES = {
     "http://schemas.openxmlformats.org/officeDocument/2006/relationships/extended-properties",
   layout:
     "http://schemas.openxmlformats.org/officeDocument/2006/relationships/slideLayout",
+  image:
+    "http://schemas.openxmlformats.org/officeDocument/2006/relationships/image",
   master:
     "http://schemas.openxmlformats.org/officeDocument/2006/relationships/slideMaster",
   office:
@@ -142,17 +146,51 @@ interface PptxPackageArtifact extends Omit<
   "compiler"
 > {
   readonly compiler: string;
+  readonly relationships: readonly PptxCanaryRelationship[];
 }
 
 /** @internal C9 package lineage; not re-exported from the public Node entry. */
 export interface PptxCanaryPackageLineage {
   /**
-   * Optional package lineage used by C9. Omitting every field preserves the
-   * byte-exact C7 canary package.
+   * Optional package lineage used by C9. Omitting every field produces the
+   * canonical C7 package graph and compiler identity.
    */
   readonly compiler?: string;
   readonly coreTitle?: string;
   readonly customProperties?: Readonly<Record<string, string>>;
+  readonly rasterResources?: readonly PptxCanaryRasterResource[];
+}
+
+/** @internal Exact bytes for one C9-authenticated raster asset. */
+export interface PptxCanaryRasterResource {
+  readonly slideId: string;
+  readonly objectId: string;
+  readonly descriptor: Vector180InlinePngResourceDescriptor;
+  readonly bytes: Uint8Array;
+}
+
+export type PptxCanaryEmittedElement = "p:sp" | "p:cxnSp" | "p:grpSp" | "p:pic";
+
+/** Exact package identities allocated by the shared C7 engine. */
+export interface PptxCanaryObjectBinding {
+  readonly id: string;
+  readonly element: PptxCanaryEmittedElement;
+  readonly cNvPrName: string;
+  readonly cNvPrNumericId: number;
+  readonly imageRelationship?: {
+    readonly relationshipId: string;
+    readonly partName: string;
+  };
+}
+
+/** Exact slide/relationship identities allocated by the shared C7 engine. */
+export interface PptxCanarySlideBinding {
+  readonly id: string;
+  readonly order: number;
+  readonly partName: string;
+  readonly presentationRelationshipId: string;
+  readonly presentationNumericId: number;
+  readonly objects: readonly PptxCanaryObjectBinding[];
 }
 
 interface SlideInfo {
@@ -166,6 +204,22 @@ interface SlideInfo {
 interface RenderContext {
   readonly slideId: string;
   readonly numericIds: ReadonlyMap<string, number>;
+  readonly rasterRelationships: ReadonlyMap<
+    string,
+    {
+      readonly relationshipId: string;
+      readonly partName: string;
+    }
+  >;
+}
+
+interface RasterPackageState {
+  readonly mediaParts: readonly PptxCanaryPart[];
+  readonly renderRelationshipsBySlide: ReadonlyMap<
+    string,
+    RenderContext["rasterRelationships"]
+  >;
+  readonly relationships: readonly PptxCanaryRelationship[];
 }
 
 export async function compileVector180PptxCanary(
@@ -173,8 +227,12 @@ export async function compileVector180PptxCanary(
 ): Promise<Vector180PptxCanaryArtifact> {
   const artifact = await compilePptxCanaryPackage(input, {});
   return Object.freeze({
-    ...artifact,
+    schema: artifact.schema,
     compiler: CANARY_COMPILER,
+    sourceSha256: artifact.sourceSha256,
+    bytes: artifact.bytes,
+    sha256: artifact.sha256,
+    parts: artifact.parts,
   });
 }
 
@@ -253,12 +311,13 @@ async function compilePptxCanaryPackage(
     compiler,
     sourceSha256: model.sourceSha256,
     bytes,
-    sha256: createHash("sha256").update(bytes).digest("hex"),
+    sha256: sha256HexSync(bytes),
     parts: Object.freeze(
       packageParts.map((part) =>
         Object.freeze({ name: part.name, bytes: part.bytes }),
       ),
     ),
+    relationships: graph.relationships,
   });
 }
 
@@ -268,6 +327,53 @@ export function createPptxCanaryGraph(
   return createPptxCanaryGraphWithLineage(model, {});
 }
 
+/**
+ * Project the deterministic native identities used by C7 without parsing a
+ * generated package. Mapped compiler callers use this instead of reimplementing
+ * slide-part, relationship, and numeric-ID allocation.
+ */
+export function describePptxCanaryBindings(
+  model: Vector180ResolvedDeck,
+): readonly PptxCanarySlideBinding[] {
+  validateResolvedDeck(model);
+  const slideInfos = createSlideInfos(model.slides);
+  return Object.freeze(
+    slideInfos.map((info): PptxCanarySlideBinding => {
+      const flattened = flattenObjects(info.slide.objects);
+      const numericIds = allocateNumericIds(
+        flattened.map((object) => object.id),
+        `slide "${info.slide.id}"`,
+      );
+      let rasterIndex = 0;
+      const objects = flattened.map((object): PptxCanaryObjectBinding => {
+        const numericId = requiredMap(numericIds, object.id);
+        const imageRelationship =
+          object.kind === "raster-asset"
+            ? {
+                relationshipId: `rId${(rasterIndex += 1) + 1}`,
+                partName: `ppt/media/${object.resource.sha256}.png`,
+              }
+            : undefined;
+        return Object.freeze({
+          id: object.id,
+          element: emittedElementForKind(object),
+          cNvPrName: `src.${object.id}`,
+          cNvPrNumericId: numericId,
+          ...(imageRelationship === undefined ? {} : { imageRelationship }),
+        });
+      });
+      return Object.freeze({
+        id: info.slide.id,
+        order: info.slide.order,
+        partName: info.partName,
+        presentationRelationshipId: info.relationshipId,
+        presentationNumericId: info.numericId,
+        objects: Object.freeze(objects),
+      });
+    }),
+  );
+}
+
 function createPptxCanaryGraphWithLineage(
   model: Vector180ResolvedDeck,
   lineage: PptxCanaryPackageLineage,
@@ -275,6 +381,7 @@ function createPptxCanaryGraphWithLineage(
   validateResolvedDeck(model);
   validatePackageLineage(lineage);
   const slideInfos = createSlideInfos(model.slides);
+  const rasterState = createRasterPackageState(model, lineage);
   const parts: PptxCanaryPart[] = [];
   const relationships: PptxCanaryRelationship[] = [];
   const addXml = (name: string, contentType: string, xml: string): void => {
@@ -317,9 +424,17 @@ function createPptxCanaryGraphWithLineage(
     renderSlideMaster(),
   );
   addXml("ppt/theme/theme1.xml", CONTENT_TYPES.theme, renderTheme());
+  parts.push(...rasterState.mediaParts);
 
   for (const info of slideInfos) {
-    addXml(info.partName, CONTENT_TYPES.slide, renderSlide(info.slide));
+    addXml(
+      info.partName,
+      CONTENT_TYPES.slide,
+      renderSlide(
+        info.slide,
+        rasterState.renderRelationshipsBySlide.get(info.slide.id) ?? new Map(),
+      ),
+    );
   }
 
   relationships.push(
@@ -405,6 +520,7 @@ function createPptxCanaryGraphWithLineage(
       target: "../slideLayouts/slideLayout1.xml",
     });
   }
+  relationships.push(...rasterState.relationships);
 
   return Object.freeze({
     parts: Object.freeze(parts),
@@ -431,12 +547,26 @@ export function validatePptxCanaryGraph(graph: PptxCanaryGraph): void {
     if (!(part.bytes instanceof Uint8Array) || part.bytes.byteLength === 0) {
       graphFail(`Part "${part.name}" must contain non-empty bytes.`);
     }
+    const mediaDigest = /^ppt\/media\/([0-9a-f]{64})\.png$/u.exec(
+      part.name,
+    )?.[1];
+    if (
+      mediaDigest !== undefined &&
+      sha256HexSync(part.bytes) !== mediaDigest
+    ) {
+      graphFail(
+        `Content-addressed PNG part "${part.name}" does not match its filename digest.`,
+      );
+    }
     parts.set(part.name, part);
   }
 
   const slidePartNames = [...parts.keys()]
     .filter((name) => /^ppt\/slides\/slide[1-9]\d*\.xml$/u.test(name))
     .sort(partNameOrder);
+  const mediaPartNames = [...parts.keys()]
+    .filter((name) => /^ppt\/media\/[0-9a-f]{64}\.png$/u.test(name))
+    .sort(compareText);
   for (const [index, name] of slidePartNames.entries()) {
     if (name !== `ppt/slides/slide${index + 1}.xml`) {
       graphFail("Slide part numbers must be contiguous from slide1.xml.");
@@ -455,6 +585,7 @@ export function validatePptxCanaryGraph(graph: PptxCanaryGraph): void {
     "ppt/slideMasters/slideMaster1.xml",
     "ppt/theme/theme1.xml",
     ...slidePartNames,
+    ...mediaPartNames,
   ]);
   if (
     parts.size !== expectedParts.size ||
@@ -496,6 +627,56 @@ export function validatePptxCanaryGraph(graph: PptxCanaryGraph): void {
     const siblings = relationshipsBySource.get(relationship.source) ?? [];
     siblings.push(relationship);
     relationshipsBySource.set(relationship.source, siblings);
+  }
+
+  const slideImageRelationships: PptxCanaryRelationship[] = [];
+  for (const slidePartNameValue of slidePartNames) {
+    const imageRelationships = (
+      relationshipsBySource.get(slidePartNameValue) ?? []
+    )
+      .filter((relationship) => relationship.type === RELATIONSHIP_TYPES.image)
+      .sort(
+        (left, right) =>
+          relationshipIdNumber(left.id) - relationshipIdNumber(right.id),
+      );
+    for (const [index, relationship] of imageRelationships.entries()) {
+      if (
+        relationship.id !== `rId${index + 2}` ||
+        !/^\.\.\/media\/[0-9a-f]{64}\.png$/u.test(relationship.target)
+      ) {
+        graphFail(
+          `Slide image relationships for "${slidePartNameValue}" must be contiguous from rId2 and target content-addressed PNG media.`,
+        );
+      }
+    }
+    const slideXml = new TextDecoder("utf-8", { fatal: true }).decode(
+      requiredMap(parts, slidePartNameValue).bytes,
+    );
+    const embeddedIds = [
+      ...slideXml.matchAll(/<a:blip r:embed="(rId[1-9]\d*)"\/>/gu),
+    ].map((match) => match[1]);
+    const relationshipIds = imageRelationships.map(
+      (relationship) => relationship.id,
+    );
+    if (
+      embeddedIds.length !== relationshipIds.length ||
+      embeddedIds.some((id, index) => id !== relationshipIds[index])
+    ) {
+      graphFail(
+        `Slide "${slidePartNameValue}" picture embeds do not exactly match its image relationships in painter order.`,
+      );
+    }
+    slideImageRelationships.push(...imageRelationships);
+  }
+  for (const [source, sourceRelationships] of relationshipsBySource) {
+    if (
+      (source === null || !/^ppt\/slides\/slide[1-9]\d*\.xml$/u.test(source)) &&
+      sourceRelationships.some(
+        (relationship) => relationship.type === RELATIONSHIP_TYPES.image,
+      )
+    ) {
+      graphFail("Image relationships may originate only from slide parts.");
+    }
   }
 
   const expectedRelationships: PptxCanaryRelationship[] = [
@@ -571,6 +752,7 @@ export function validatePptxCanaryGraph(graph: PptxCanaryGraph): void {
       type: RELATIONSHIP_TYPES.layout,
       target: "../slideLayouts/slideLayout1.xml",
     })),
+    ...slideImageRelationships,
   ];
   const actualRelationSet = new Set(graph.relationships.map(relationshipKey));
   const expectedRelationSet = new Set(
@@ -843,7 +1025,15 @@ function validateObjectGeometry(object: Vector180ResolvedObject): void {
       }
       return;
     case "svg-asset":
+      return;
     case "raster-asset":
+      positive(object.localBounds.width, `${object.id} width`);
+      positive(object.localBounds.height, `${object.id} height`);
+      if (!validRasterDescriptor(object.resource)) {
+        invalidModel(
+          `Raster asset "${object.id}" lacks a valid PNG descriptor.`,
+        );
+      }
       return;
     default:
       return assertNever(object);
@@ -930,6 +1120,165 @@ function createSlideInfos(
         numericId: requiredMap(numericIds, slide.id),
       });
     }),
+  );
+}
+
+function createRasterPackageState(
+  model: Vector180ResolvedDeck,
+  lineage: PptxCanaryPackageLineage,
+): RasterPackageState {
+  const provided = new Map<string, PptxCanaryRasterResource>();
+  for (const entry of lineage.rasterResources ?? []) {
+    const key = rasterResourceKey(entry.slideId, entry.objectId);
+    if (provided.has(key)) {
+      fail(
+        "VECTOR180-PPTX-INVALID-MODEL",
+        `Raster bytes are duplicated for object "${entry.objectId}" on slide "${entry.slideId}".`,
+      );
+    }
+    if (
+      entry.slideId.length === 0 ||
+      entry.objectId.length === 0 ||
+      !validRasterDescriptor(entry.descriptor) ||
+      !(entry.bytes instanceof Uint8Array) ||
+      entry.bytes.byteLength !== entry.descriptor.byteLength ||
+      sha256HexSync(entry.bytes) !== entry.descriptor.sha256
+    ) {
+      fail(
+        "VECTOR180-PPTX-INVALID-MODEL",
+        `Raster bytes for object "${entry.objectId}" do not match their exact PNG descriptor.`,
+      );
+    }
+    provided.set(key, entry);
+  }
+
+  const used = new Set<string>();
+  const media = new Map<string, PptxCanaryPart>();
+  const renderRelationshipsBySlide = new Map<
+    string,
+    RenderContext["rasterRelationships"]
+  >();
+  const relationships: PptxCanaryRelationship[] = [];
+  for (const slide of model.slides) {
+    const rasterObjects = flattenObjects(slide.objects).filter(
+      (
+        object,
+      ): object is Extract<
+        Vector180ResolvedObject,
+        { readonly kind: "raster-asset" }
+      > => object.kind === "raster-asset",
+    );
+    const byObject = new Map<
+      string,
+      { readonly relationshipId: string; readonly partName: string }
+    >();
+    for (const [index, object] of rasterObjects.entries()) {
+      const key = rasterResourceKey(slide.id, object.id);
+      const entry = provided.get(key);
+      if (
+        entry === undefined ||
+        !sameRasterDescriptor(entry.descriptor, object.resource)
+      ) {
+        fail(
+          "VECTOR180-PPTX-UNSUPPORTED-OBJECT",
+          `Raster asset "${object.id}" requires exact authenticated PNG bytes in the package lineage.`,
+        );
+      }
+      used.add(key);
+      const partName = `ppt/media/${object.resource.sha256}.png`;
+      const existing = media.get(partName);
+      if (
+        existing !== undefined &&
+        (existing.bytes.byteLength !== entry.bytes.byteLength ||
+          sha256HexSync(existing.bytes) !== object.resource.sha256)
+      ) {
+        fail(
+          "VECTOR180-PPTX-INVALID-MODEL",
+          `Content-addressed PNG part "${partName}" has inconsistent bytes.`,
+        );
+      }
+      if (existing === undefined) {
+        media.set(partName, {
+          name: partName,
+          contentType: CONTENT_TYPES.png,
+          bytes: new Uint8Array(entry.bytes),
+        });
+      }
+      const relationshipId = `rId${index + 2}`;
+      byObject.set(object.id, { relationshipId, partName });
+      relationships.push({
+        source: slidePartName(model.slides, slide.id),
+        id: relationshipId,
+        type: RELATIONSHIP_TYPES.image,
+        target: `../media/${object.resource.sha256}.png`,
+      });
+    }
+    renderRelationshipsBySlide.set(slide.id, byObject);
+  }
+  if (
+    used.size !== provided.size ||
+    [...provided.keys()].some((key) => !used.has(key))
+  ) {
+    fail(
+      "VECTOR180-PPTX-INVALID-MODEL",
+      "Raster package lineage contains bytes not consumed by one resolved raster asset.",
+    );
+  }
+  return Object.freeze({
+    mediaParts: Object.freeze(
+      [...media.values()].sort((left, right) =>
+        compareText(left.name, right.name),
+      ),
+    ),
+    renderRelationshipsBySlide,
+    relationships: Object.freeze(relationships),
+  });
+}
+
+function slidePartName(
+  slides: readonly Vector180ResolvedSlide[],
+  slideId: string,
+): string {
+  const sorted = slides.map((slide) => slide.id).sort(compareText);
+  const index = sorted.indexOf(slideId);
+  if (index < 0) {
+    fail(
+      "VECTOR180-PPTX-INVALID-MODEL",
+      `Raster relationship refers to unknown slide "${slideId}".`,
+    );
+  }
+  return `ppt/slides/slide${index + 1}.xml`;
+}
+
+function rasterResourceKey(slideId: string, objectId: string): string {
+  return `${slideId}\0${objectId}`;
+}
+
+function validRasterDescriptor(
+  descriptor: Vector180InlinePngResourceDescriptor,
+): boolean {
+  return (
+    descriptor.mediaType === "image/png" &&
+    /^[0-9a-f]{64}$/u.test(descriptor.sha256) &&
+    Number.isSafeInteger(descriptor.byteLength) &&
+    descriptor.byteLength > 0 &&
+    Number.isSafeInteger(descriptor.widthPixels) &&
+    descriptor.widthPixels > 0 &&
+    Number.isSafeInteger(descriptor.heightPixels) &&
+    descriptor.heightPixels > 0
+  );
+}
+
+function sameRasterDescriptor(
+  left: Vector180InlinePngResourceDescriptor,
+  right: Vector180InlinePngResourceDescriptor,
+): boolean {
+  return (
+    left.mediaType === right.mediaType &&
+    left.sha256 === right.sha256 &&
+    left.byteLength === right.byteLength &&
+    left.widthPixels === right.widthPixels &&
+    left.heightPixels === right.heightPixels
   );
 }
 
@@ -1177,11 +1526,15 @@ function renderTheme(): string {
 </a:theme>`);
 }
 
-function renderSlide(slide: Vector180ResolvedSlide): string {
+function renderSlide(
+  slide: Vector180ResolvedSlide,
+  rasterRelationships: RenderContext["rasterRelationships"],
+): string {
   const objectIds = collectObjectIds(slide.objects);
   const context: RenderContext = {
     slideId: slide.id,
     numericIds: allocateNumericIds(objectIds, `slide "${slide.id}"`),
+    rasterRelationships,
   };
   const shapes = slide.objects
     .map((object) => renderObject(object, context, "    "))
@@ -1221,7 +1574,32 @@ function renderObject(
     case "group":
       return renderGroup(object, context, indent);
     case "svg-asset":
+      return fail(
+        "VECTOR180-PPTX-UNSUPPORTED-OBJECT",
+        `C7 cannot compile ${object.kind} object "${object.id}".`,
+      );
     case "raster-asset":
+      return renderRasterAsset(object, context, indent);
+    default:
+      return assertNever(object);
+  }
+}
+
+function emittedElementForKind(
+  object: Vector180ResolvedObject,
+): PptxCanaryEmittedElement {
+  switch (object.kind) {
+    case "rect":
+    case "ellipse":
+    case "text":
+      return "p:sp";
+    case "line":
+      return "p:cxnSp";
+    case "group":
+      return "p:grpSp";
+    case "raster-asset":
+      return "p:pic";
+    case "svg-asset":
       return fail(
         "VECTOR180-PPTX-UNSUPPORTED-OBJECT",
         `C7 cannot compile ${object.kind} object "${object.id}".`,
@@ -1229,6 +1607,49 @@ function renderObject(
     default:
       return assertNever(object);
   }
+}
+
+function renderRasterAsset(
+  object: Extract<Vector180ResolvedObject, { readonly kind: "raster-asset" }>,
+  context: RenderContext,
+  indent: string,
+): string {
+  const relationship = context.rasterRelationships.get(object.id);
+  if (relationship === undefined) {
+    return fail(
+      "VECTOR180-PPTX-UNSUPPORTED-OBJECT",
+      `Raster asset "${object.id}" has no authenticated image relationship.`,
+    );
+  }
+  const numericId = requiredMap(context.numericIds, object.id);
+  const bounds = {
+    x: coordinateEmu(object.localBounds.x, `${object.id}.bounds.x`),
+    y: coordinateEmu(object.localBounds.y, `${object.id}.bounds.y`),
+    width: positiveExtentEmu(
+      object.localBounds.width,
+      `${object.id}.bounds.width`,
+    ),
+    height: positiveExtentEmu(
+      object.localBounds.height,
+      `${object.id}.bounds.height`,
+    ),
+  };
+  return `${indent}<p:pic>
+${indent}  <p:nvPicPr>
+${indent}    <p:cNvPr id="${numericId}" name="${xmlAttribute(`src.${object.id}`)}"/>
+${indent}    <p:cNvPicPr><a:picLocks noChangeAspect="1"/></p:cNvPicPr>
+${indent}    <p:nvPr/>
+${indent}  </p:nvPicPr>
+${indent}  <p:blipFill>
+${indent}    <a:blip r:embed="${relationship.relationshipId}"/>
+${indent}    <a:stretch><a:fillRect/></a:stretch>
+${indent}  </p:blipFill>
+${indent}  <p:spPr>
+${renderTransform(bounds, `${indent}    `)}
+${indent}    <a:prstGeom prst="rect"><a:avLst/></a:prstGeom>
+${indent}  </p:spPr>
+${indent}</p:pic>
+`;
 }
 
 function renderRect(
@@ -1384,12 +1805,24 @@ function renderText(
     height: positiveExtentEmu(object.frame.height, `${object.id}.frame.height`),
   };
   const anchorX = coordinateEmu(line.x, `${object.id}.line.x`);
-  coordinateEmu(line.y, `${object.id}.line.y`);
+  const baselineY = coordinateEmu(line.y, `${object.id}.line.y`);
   const lineStep = spacingHundredthPoints(
     object.lineStep,
     `${object.id}.lineStep`,
   );
   const fontSizePoints = fontHundredthPoints(fontSize, `${object.id}.fontSize`);
+  const fontSizeEmu = positiveExtentEmu(fontSize, `${object.id}.fontSizeEmu`);
+  const topInset = baselineY - frame.y - fontSizeEmu;
+  if (
+    !Number.isSafeInteger(topInset) ||
+    topInset < -MAX_TEXT_MARGIN_EMU ||
+    topInset > MAX_TEXT_MARGIN_EMU
+  ) {
+    return fail(
+      "VECTOR180-PPTX-UNSUPPORTED-GEOMETRY",
+      `Text "${object.id}" authored baseline requires unsupported top inset ${topInset} EMU.`,
+    );
+  }
   const relativeX = anchorX - frame.x;
   if (relativeX < 0 || relativeX > frame.width) {
     return fail(
@@ -1414,7 +1847,7 @@ ${indent}    <a:noFill/>
 ${indent}    <a:ln><a:noFill/></a:ln>
 ${indent}  </p:spPr>
 ${indent}  <p:txBody>
-${indent}    <a:bodyPr wrap="none" lIns="0" tIns="0" rIns="0" bIns="0" anchor="t"><a:noAutofit/></a:bodyPr>
+${indent}    <a:bodyPr wrap="none" lIns="0" tIns="${topInset}" rIns="0" bIns="0" anchor="t"><a:noAutofit/></a:bodyPr>
 ${indent}    <a:lstStyle/>
 ${indent}    <a:p>
 ${indent}      <a:pPr algn="${alignment}" marL="${margins.left}" marR="${margins.right}" indent="0">
@@ -1710,8 +2143,11 @@ function expectedContentType(name: string): string | undefined {
     case "ppt/theme/theme1.xml":
       return CONTENT_TYPES.theme;
     default:
-      return /^ppt\/slides\/slide[1-9]\d*\.xml$/u.test(name)
-        ? CONTENT_TYPES.slide
+      if (/^ppt\/slides\/slide[1-9]\d*\.xml$/u.test(name)) {
+        return CONTENT_TYPES.slide;
+      }
+      return /^ppt\/media\/[0-9a-f]{64}\.png$/u.test(name)
+        ? CONTENT_TYPES.png
         : undefined;
   }
 }
@@ -1808,6 +2244,20 @@ function collectObjectIds(
   };
   visit(objects);
   return ids;
+}
+
+function flattenObjects(
+  objects: readonly Vector180ResolvedObject[],
+): readonly Vector180ResolvedObject[] {
+  const result: Vector180ResolvedObject[] = [];
+  const visit = (siblings: readonly Vector180ResolvedObject[]): void => {
+    for (const object of siblings) {
+      result.push(object);
+      if (object.kind === "group") visit(object.children);
+    }
+  };
+  visit(objects);
+  return result;
 }
 
 function allocateNumericIds(
@@ -1958,14 +2408,14 @@ function scaledInteger(
   if (!Number.isFinite(value)) {
     fail("VECTOR180-PPTX-INVALID-MODEL", `${label} must be finite.`);
   }
-  const result = value * factor;
-  if (!Number.isSafeInteger(result)) {
+  const result = scaleOoxmlInteger(value, factor);
+  if (result === undefined) {
     fail(
       code,
       `${label}=${canonicalNumber(value)} does not map exactly by factor ${factor}.`,
     );
   }
-  return Object.is(result, -0) ? 0 : result;
+  return result;
 }
 
 function validateBounds(bounds: Vector180Bounds, label: string): void {

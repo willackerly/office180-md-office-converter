@@ -620,6 +620,9 @@ function compareInspections(
     const afterById = new Map(
       afterSlide.objects.map((object) => [object.id, object] as const),
     );
+    const immutableRasterSubtrees = indexImmutableRasterSubtrees(
+      mapSlide.objects,
+    );
     const missingIds = new Set(
       afterSlide.identities
         .filter((identity) => identity.status === "missing")
@@ -652,6 +655,7 @@ function compareInspections(
         changes,
         operations,
         diagnostics,
+        immutableRasterSubtrees,
       );
       if (
         mapObject.kind === "text" &&
@@ -675,7 +679,14 @@ function compareInspections(
         });
       }
     }
-    planDeletions(mapSlide.objects, missingIds, changes, operations);
+    planDeletions(
+      mapSlide.objects,
+      missingIds,
+      changes,
+      operations,
+      diagnostics,
+      immutableRasterSubtrees,
+    );
     planChildOrders(
       map.source.id,
       mapSlide.objects,
@@ -683,6 +694,8 @@ function compareInspections(
       missingIds,
       changes,
       operations,
+      diagnostics,
+      immutableRasterSubtrees,
     );
   }
 }
@@ -694,18 +707,28 @@ function compareObjectSemantics(
   changes: Vector180OfficeChange[],
   operations: Vector180Operation[],
   diagnostics: Diagnostic[],
+  immutableRasterSubtrees: ReadonlyMap<string, readonly string[]>,
 ): void {
   if (
     before.geometry !== undefined &&
     after.geometry !== undefined &&
     !sameJson(before.geometry, after.geometry)
   ) {
-    const operation = geometryOperation(mapObject, after.geometry);
+    const immutableRasterIds =
+      mapObject.kind === "group"
+        ? (immutableRasterSubtrees.get(mapObject.id) ?? [])
+        : [];
+    const operation =
+      immutableRasterIds.length === 0
+        ? geometryOperation(mapObject, after.geometry)
+        : undefined;
     if (operation === undefined) {
       pushUnsupportedObject(
         mapObject.id,
         "geometry",
-        "DrawingML geometry does not have one exact supported inverse mapping.",
+        immutableRasterIds.length === 0
+          ? "DrawingML geometry does not have one exact supported inverse mapping."
+          : `Group geometry changed above immutable atomic raster media (${immutableRasterIds.map((id) => `src.${id}`).join(", ")}); indirect picture movement or resize remains review-required.`,
         changes,
         diagnostics,
       );
@@ -849,10 +872,18 @@ function geometryOperation(
       geometry.anchorXEmu === undefined
         ? undefined
         : inverseCoordinate(geometry.anchorXEmu, "x", mapObject);
-    if (old === undefined || frame === undefined || anchorX === undefined) {
+    const baselineY =
+      geometry.baselineYEmu === undefined
+        ? undefined
+        : inverseCoordinate(geometry.baselineYEmu, "y", mapObject);
+    if (
+      old === undefined ||
+      frame === undefined ||
+      anchorX === undefined ||
+      baselineY === undefined
+    ) {
       return undefined;
     }
-    const relativeBaseline = cleanNumber(old.oldLineAnchor.y - old.oldFrame.y);
     return {
       op: "set-text-frame",
       id: mapObject.id,
@@ -861,7 +892,7 @@ function geometryOperation(
       oldLineAnchor: old.oldLineAnchor,
       lineAnchor: {
         x: anchorX,
-        y: cleanNumber(frame.y + relativeBaseline),
+        y: baselineY,
       },
     };
   }
@@ -925,12 +956,31 @@ function planDeletions(
   missingIds: ReadonlySet<string>,
   changes: Vector180OfficeChange[],
   operations: Vector180Operation[],
+  diagnostics: Diagnostic[],
+  immutableRasterSubtrees: ReadonlyMap<string, readonly string[]>,
 ): void {
   for (const object of mapObjects) {
     if (
       !missingIds.has(object.id) ||
       (object.parentId !== null && missingIds.has(object.parentId))
     ) {
+      continue;
+    }
+    const immutableRasterIds = immutableRasterSubtrees.get(object.id) ?? [];
+    if (immutableRasterIds.length > 0) {
+      const message = `Object "src.${object.id}" was deleted with immutable atomic raster media (${immutableRasterIds.map((id) => `src.${id}`).join(", ")}); direct or indirect picture deletion remains review-required in the C9/C10 PNG slice.`;
+      changes.push({
+        kind: "unsupported",
+        scope: "object",
+        field: "deletion",
+        objectId: object.id,
+        message,
+        patchable: false,
+      });
+      diagnostics.push({
+        ...unsupportedDiagnostic(message),
+        objectId: object.id,
+      });
       continue;
     }
     operations.push({
@@ -960,6 +1010,8 @@ function planChildOrders(
   missingIds: ReadonlySet<string>,
   changes: Vector180OfficeChange[],
   operations: Vector180Operation[],
+  diagnostics: Diagnostic[],
+  immutableRasterSubtrees: ReadonlyMap<string, readonly string[]>,
 ): void {
   const parents = new Set(mapObjects.map((object) => object.parentId));
   for (const parentId of parents) {
@@ -985,6 +1037,27 @@ function planChildOrders(
     const oldOrder = beforeChildren.map((object) => object.id);
     const order = afterChildren.map((object) => object.id);
     if (sameStringArray(oldOrder, order)) continue;
+    const immutableRasterIds = [
+      ...new Set(
+        beforeChildren.flatMap(
+          (object) => immutableRasterSubtrees.get(object.id) ?? [],
+        ),
+      ),
+    ];
+    if (immutableRasterIds.length > 0) {
+      const rasterIds = immutableRasterIds.map((id) => `src.${id}`).join(", ");
+      const message = `Painter order changed in a scope containing immutable atomic raster media (${rasterIds}); picture reordering remains review-required.`;
+      changes.push({
+        kind: "unsupported",
+        scope: "object",
+        field: "order",
+        objectId: immutableRasterIds[0]!,
+        message,
+        patchable: false,
+      });
+      diagnostics.push(unsupportedDiagnostic(message));
+      continue;
+    }
     const operationParentId = parentId ?? rootId;
     operations.push({
       op: "set-child-order",
@@ -1001,6 +1074,38 @@ function planChildOrders(
       patchable: true,
     });
   }
+}
+
+function indexImmutableRasterSubtrees(
+  mapObjects: Vector180PptxMap["slides"][number]["objects"],
+): ReadonlyMap<string, readonly string[]> {
+  const objectById = new Map(
+    mapObjects.map((object) => [object.id, object] as const),
+  );
+  const mutable = new Map<string, string[]>();
+  for (const raster of mapObjects) {
+    if (raster.kind !== "raster-asset") continue;
+    let current:
+      Vector180PptxMap["slides"][number]["objects"][number] | undefined =
+      raster;
+    const visited = new Set<string>();
+    while (current !== undefined && !visited.has(current.id)) {
+      visited.add(current.id);
+      const ids = mutable.get(current.id) ?? [];
+      ids.push(raster.id);
+      mutable.set(current.id, ids);
+      current =
+        current.parentId === null
+          ? undefined
+          : objectById.get(current.parentId);
+    }
+  }
+  return new Map(
+    [...mutable.entries()].map(([id, rasterIds]) => [
+      id,
+      Object.freeze([...rasterIds]),
+    ]),
+  );
 }
 
 function inverseBounds(

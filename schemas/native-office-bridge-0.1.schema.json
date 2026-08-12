@@ -11,7 +11,6 @@
     "input",
     "application",
     "environment",
-    "lifecycle",
     "commands",
     "output",
     "cleanup",
@@ -29,6 +28,9 @@
       "type": "string",
       "minLength": 1
     },
+    "operation": {
+      "enum": ["lifecycle", "render-pdf"]
+    },
     "input": {
       "$ref": "#/$defs/input"
     },
@@ -40,6 +42,9 @@
     },
     "lifecycle": {
       "$ref": "#/$defs/lifecycle"
+    },
+    "render": {
+      "$ref": "#/$defs/render"
     },
     "commands": {
       "type": "array",
@@ -269,6 +274,159 @@
         }
       }
     },
+    "render": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "method",
+        "timeout_seconds",
+        "evidence_scope",
+        "representative_editability",
+        "visual_fidelity",
+        "staging_scope",
+        "staging_ancestors_validated",
+        "staging_path_disclosed",
+        "source_package_valid",
+        "handoff_attempts",
+        "handoff_accepted",
+        "exact_path_attachment",
+        "read_only",
+        "export_event_completed",
+        "post_export_exact_path_attachment",
+        "source_bytes_unchanged",
+        "pdf_quiescent",
+        "pdf_valid",
+        "source_slide_count",
+        "native_slide_count",
+        "expected_page_count",
+        "pdf_page_count",
+        "page_count_checked",
+        "page_count_matches",
+        "closed_without_saving"
+      ],
+      "properties": {
+        "method": {
+          "const": "non-interactive-nsworkspace+applescript-save-as-pdf+powerpoint-container-staging"
+        },
+        "timeout_seconds": {
+          "type": "number",
+          "minimum": 10,
+          "maximum": 300
+        },
+        "evidence_scope": {
+          "const": "native-powerpoint-pdf-render"
+        },
+        "representative_editability": {
+          "const": "not-tested"
+        },
+        "visual_fidelity": {
+          "const": "not-reviewed"
+        },
+        "staging_scope": {
+          "const": "powerpoint-container-data-tmp"
+        },
+        "staging_ancestors_validated": {
+          "type": "boolean"
+        },
+        "staging_path_disclosed": {
+          "const": false
+        },
+        "staging_directory_name": {
+          "type": "string",
+          "pattern": "^office180-render-[0-9a-f]{32}$"
+        },
+        "source_package_valid": {
+          "type": "boolean"
+        },
+        "source_part_count": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "source_uncompressed_bytes": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "handoff_attempts": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "handoff_accepted": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "exact_path_attachment": {
+          "type": "boolean"
+        },
+        "read_only": {
+          "type": ["boolean", "null"]
+        },
+        "export_event_completed": {
+          "type": "boolean"
+        },
+        "post_export_exact_path_attachment": {
+          "type": "boolean"
+        },
+        "source_bytes_unchanged": {
+          "type": "boolean"
+        },
+        "pdf_quiescent": {
+          "type": "boolean"
+        },
+        "pdf_valid": {
+          "type": "boolean"
+        },
+        "pdf_size": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "pdf_sha256": {
+          "$ref": "#/$defs/sha256"
+        },
+        "pdf_version": {
+          "type": "string",
+          "pattern": "^(?:1|2)\\.[0-9]$"
+        },
+        "quiescence_observations": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "quiescence_polls": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "source_slide_count": {
+          "type": ["integer", "null"],
+          "minimum": 0,
+          "maximum": 10000
+        },
+        "native_slide_count": {
+          "type": ["integer", "null"],
+          "minimum": 0,
+          "maximum": 10000
+        },
+        "expected_page_count": {
+          "type": ["integer", "null"],
+          "minimum": 0,
+          "maximum": 10000
+        },
+        "pdf_page_count": {
+          "type": ["integer", "null"],
+          "minimum": 0,
+          "maximum": 10000
+        },
+        "page_count_checked": {
+          "type": "boolean"
+        },
+        "page_count_matches": {
+          "type": ["boolean", "null"]
+        },
+        "closed_without_saving": {
+          "type": "boolean"
+        }
+      }
+    },
     "commandCore": {
       "type": "object",
       "required": [
@@ -418,7 +576,7 @@
           "minimum": 1
         },
         "media_kind": {
-          "enum": ["docx", "pptx"]
+          "enum": ["docx", "pptx", "pdf"]
         }
       }
     },
@@ -494,6 +652,68 @@
     }
   },
   "allOf": [
+    {
+      "oneOf": [
+        {
+          "required": ["lifecycle"],
+          "not": {
+            "required": ["render"]
+          },
+          "properties": {
+            "operation": {
+              "const": "lifecycle"
+            },
+            "output": {
+              "properties": {
+                "media_kind": {
+                  "enum": ["docx", "pptx"]
+                }
+              }
+            }
+          }
+        },
+        {
+          "required": ["operation", "render"],
+          "not": {
+            "required": ["lifecycle"]
+          },
+          "properties": {
+            "operation": {
+              "const": "render-pdf"
+            },
+            "input": {
+              "properties": {
+                "media_kind": {
+                  "const": "pptx"
+                }
+              }
+            },
+            "application": {
+              "properties": {
+                "name": {
+                  "const": "Microsoft PowerPoint"
+                },
+                "renderer_class": {
+                  "const": "native-powerpoint"
+                }
+              }
+            },
+            "output": {
+              "properties": {
+                "media_kind": {
+                  "const": "pdf"
+                }
+              }
+            },
+            "cleanup": {
+              "not": {
+                "required": ["work_directory"]
+              }
+            }
+          }
+        }
+      ]
+    },
     {
       "if": {
         "properties": {

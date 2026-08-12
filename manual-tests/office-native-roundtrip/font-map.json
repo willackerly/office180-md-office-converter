@@ -1,0 +1,11 @@
+{
+  "schema": "pptv-font-map/0.1",
+  "faces": [
+    {
+      "family": "Arial",
+      "weight": 400,
+      "style": "normal",
+      "path": "/System/Library/Fonts/Supplemental/Arial.ttf"
+    }
+  ]
+}

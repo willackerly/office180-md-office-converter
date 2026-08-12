@@ -33,6 +33,7 @@ export type Vector180ChangeKind =
   | "parent"
   | "order"
   | "relationship"
+  | "resource"
   | "text"
   | "geometry"
   | "transform"
@@ -75,6 +76,7 @@ export interface Vector180DiffSummary {
   readonly parent: number;
   readonly order: number;
   readonly relationship: number;
+  readonly resource: number;
   readonly text: number;
   readonly geometry: number;
   readonly transform: number;
@@ -129,13 +131,14 @@ const CHANGE_ORDER: Readonly<Record<Vector180ChangeKind, number>> = {
   parent: 3,
   order: 4,
   relationship: 5,
-  text: 6,
-  geometry: 7,
-  transform: 8,
-  frame: 9,
-  style: 10,
-  "export-intent": 11,
-  metadata: 12,
+  resource: 6,
+  text: 7,
+  geometry: 8,
+  transform: 9,
+  frame: 10,
+  style: 11,
+  "export-intent": 12,
+  metadata: 13,
 };
 const MAX_CHANGES = 100_000;
 const MAX_REPORT_BYTES = 8 * 1024 * 1024;
@@ -349,6 +352,16 @@ export function diffVector180Atoms(
       "/relationship",
       relationshipSnapshot(leftObject.object),
       relationshipSnapshot(rightObject.object),
+      leftNode,
+      rightNode,
+    );
+    compareField(
+      changes,
+      id,
+      "resource",
+      "/resource",
+      resourceSnapshot(leftObject.object),
+      resourceSnapshot(rightObject.object),
       leftNode,
       rightNode,
     );
@@ -766,6 +779,18 @@ function relationshipSnapshot(object: Vector180ResolvedAtomObject): JsonValue {
     : null;
 }
 
+function resourceSnapshot(object: Vector180ResolvedAtomObject): JsonValue {
+  return object.kind === "raster-asset"
+    ? {
+        mediaType: object.resource.mediaType,
+        sha256: object.resource.sha256,
+        byteLength: object.resource.byteLength,
+        widthPixels: object.resource.widthPixels,
+        heightPixels: object.resource.heightPixels,
+      }
+    : null;
+}
+
 function textSnapshot(object: Vector180ResolvedAtomObject): JsonValue {
   return object.kind === "text"
     ? object.lines.map((line) => ({ text: line.text, x: line.x, y: line.y }))
@@ -864,6 +889,7 @@ function completeSnapshot(
   return {
     exportIntent: exportSnapshot(node),
     relationship: relationshipSnapshot(object),
+    resource: resourceSnapshot(object),
     text: textSnapshot(object),
     geometry: geometrySnapshot(object),
     transform: transformSnapshot(object),
@@ -899,6 +925,7 @@ function summarize(
     parent: count("parent"),
     order: count("order"),
     relationship: count("relationship"),
+    resource: count("resource"),
     text: count("text"),
     geometry: count("geometry"),
     transform: count("transform"),
@@ -945,6 +972,7 @@ function incomparable(
       parent: 0,
       order: 0,
       relationship: 0,
+      resource: 0,
       text: 0,
       geometry: 0,
       transform: 0,

@@ -363,6 +363,10 @@ build_aggregate() {
   impl_present="$(echo "$contracts_json" | jq '[.[] | select(.lifecycle == "impl-present")] | length')"
   open_discoveries="$(echo "$contracts_json" | jq '[.[].discoveries[]] | length')"
 
+  # Keep structured payloads off argv. The contract inventory can exceed
+  # Linux's per-process argument limit once implementation/test paths are
+  # included, even though the same scan succeeds on macOS. Process-substitution
+  # paths stay small while jq still receives exact JSON values.
   jq -n \
     --arg generated_at "$GENERATED_AT" \
     --argjson total "$total" \
@@ -373,12 +377,12 @@ build_aggregate() {
     --argjson open_discoveries "$open_discoveries" \
     --argjson passing "$ENFORCEMENT_PASSING" \
     --argjson enf_total "$ENFORCEMENT_TOTAL" \
-    --argjson contracts "$contracts_json" \
-    --argjson architect "$ACTION_ARCHITECT" \
-    --argjson englead "$ACTION_ENGLEAD" \
-    --argjson product "$ACTION_PRODUCT" \
-    --argjson dev "$ACTION_DEV" \
-    --argjson enforcement "$ENFORCEMENT_JSON" \
+    --slurpfile contracts <(printf '%s\n' "$contracts_json") \
+    --slurpfile architect <(printf '%s\n' "$ACTION_ARCHITECT") \
+    --slurpfile englead <(printf '%s\n' "$ACTION_ENGLEAD") \
+    --slurpfile product <(printf '%s\n' "$ACTION_PRODUCT") \
+    --slurpfile dev <(printf '%s\n' "$ACTION_DEV") \
+    --slurpfile enforcement <(printf '%s\n' "$ENFORCEMENT_JSON") \
     '{
       generated_at: $generated_at,
       summary: {
@@ -395,14 +399,14 @@ build_aggregate() {
           total: $enf_total
         }
       },
-      contracts: $contracts,
+      contracts: $contracts[0],
       action_items: {
-        architect: $architect,
-        englead: $englead,
-        product: $product,
-        dev: $dev
+        architect: $architect[0],
+        englead: $englead[0],
+        product: $product[0],
+        dev: $dev[0]
       },
-      enforcement: $enforcement
+      enforcement: $enforcement[0]
     }'
 }
 

@@ -5,11 +5,12 @@ C4-C8 source/editor foundation, C5 2.0 typed native-object patches plus one
 exact reviewed connector clone, bounded C9 standalone-atom composition/PPTX
 output, and C10 2.0 mapped-PPTX reconciliation. C11 1.2 supplies automated
 browser/Quick Look evidence and a proven exact-path native no-op lifecycle;
-C12 supplies stable-ID atom comparison. Browser geometry/style controls,
-arbitrary PPTX import, representative native edits, and native
+C12 supplies stable-ID atom comparison; and C13 0.1 supplies mapped complete-
+deck PPTX plus trusted-editor SVG/PNG/PPTX/map derivatives. Browser drag
+handles, arbitrary PPTX import, representative native edits, and native
 text/cross-renderer fidelity remain open.
-All current C4-C12 successor contracts remain `in-progress`; the implemented
-surfaces below do not imply contract promotion.
+C8 2.0 is verified. Current C4–C7 and C9–C13 successor contracts remain
+`in-progress`; the implemented surfaces below do not imply contract promotion.
 **Companion:** [`VECTOR180-HTML-CONTAINER.md`](VECTOR180-HTML-CONTAINER.md)
 **Reference inspiration:** [OpenDocKit](https://github.com/willackerly/opendockit)
 
@@ -63,10 +64,13 @@ hydrates one deck slide into an independent
 diagram atom and provides an exact-source browser session. Its generated
 trusted editor is writable, works offline for either source kind, downloads
 clean current source, extracts one hydrated deck slide as `.vector180.svg`, and
-refuses stale file-handle saves; its controls deliberately remain direct text
-plus deck theme/order only. The package also contains a strict fresh-package
+refuses stale file-handle saves. View is the safe default; Edit exposes exact
+C5-backed numeric controls for supported geometry, connectors, translated
+groups, one-line text frames/anchors, concrete style, sibling order, and safe
+deletion while protecting raster/non-native objects. The package also contains a strict fresh-package
 C7 PPTX canary, C9 explicit atom composition/mapped-PPTX output, C10
-baseline-aware proof-carrying reconciliation, and the Node CLI. C11
+baseline-aware proof-carrying reconciliation, C13 complete-deck PPTX/map and
+in-browser SVG/PNG/PPTX export, and the Node CLI. C11
 capture/comparison plus exact-path native no-op lifecycle tooling lives in
 repository scripts. General canonical serialization, structured-rich-text
 editing, arbitrary SVG/PPTX translation/import, representative native-edit
@@ -137,7 +141,7 @@ packages/vector180/                  @office180/vector180
   src/core/                     source, scan, deck, constrained styles/resolver
   src/ops/                      JSON-safe projections and patch engine
   src/browser/                  session, shared runtime/measurement, editor app
-  src/node/                     file I/O, font fit, pack, C7/C9/C10 PPTX paths
+  src/node/                     file I/O, font fit, pack, C7/C9/C10/C13 PPTX paths
   src/cli.ts                    Node command surface
   schemas/                      manifest and patch schemas
 ```
@@ -146,7 +150,7 @@ Public boundaries are the root package plus `@office180/vector180/core`,
 `@office180/vector180/ops`, `@office180/vector180/browser`, `@office180/vector180/node`, and
 versioned schema subpaths. Internal module names are not permission to publish
 seven speculative packages. A future split should follow actual
-browser/editor/PPTX consumers and keep one implementation of C4-C10/C12.
+browser/editor/PPTX consumers and keep one implementation of C4-C10/C12/C13.
 
 ### 4.1 Portable core
 
@@ -177,7 +181,7 @@ references/endpoints/style, and complete old/new order.
 The host reads exact bytes and writes only to an explicit destination through a
 temporary peer, fsync, and atomic rename or exclusive no-overwrite publication.
 The CLI exposes `new`, `outline`, `validate`, `resolve`, `extract`,
-`editor-pack`, `pptx-canary`, `compose`, `compile`, `reconcile`, `text-fit`,
+`editor-pack`, `pptx-canary`, `compose`, `compile`, `compile-deck`, `reconcile`, `text-fit`,
 `text`, `show`, `list`, `patch`, `metadata`, `metadata-compare`, `diff`, and
 `migrate`. Artifact-producing commands require explicit
 destinations. `extract` and `compose` refuse overwrite; `compile` publishes
@@ -189,7 +193,9 @@ OFL default when `--font-map` is omitted or equals `default`; a path selects
 only that caller map. Both accept a near-limit threshold. `patch` requires
 exactly one of `--check` or `--output`.
 C7 remains HTML-deck only. C9/C10 remain standalone-atom-only and require an
-explicit C9 placement/map lineage.
+explicit C9 placement/map lineage. C13 separately accepts a complete canonical
+HTML deck and publishes one PPTX plus `vector180-pptx-deck-map/0.1`; C10 does
+not accept that deck map.
 
 ### 4.4 Implemented boundaries and roadmap
 
@@ -198,10 +204,11 @@ exact-source editor session and trusted wrapper, environment-labeled plus
 exact-font non-mutating fit evidence, and strict PPTX compilation now live
 behind logical interfaces within this package. C5 typed supplies a typed
 programmatic geometry/style/order/deletion surface, C5 connector-clone adds the one
-connector-clone exception, and C9/C10 implement one authenticated
-atom-to-PPTX-and-back lane. The browser editor still exposes only direct-text,
-active-theme, and slide-order controls. Structured hard-line/rich text,
-theme-token editing, general insertion/reparenting, general visual authoring,
+connector-clone exception, C9/C10 implement one authenticated
+atom-to-PPTX-and-back lane, and C13 implements complete-deck PPTX/map plus
+browser SVG/PNG/PPTX downloads. The browser editor exposes the bounded C5
+numeric controls named above in addition to direct text and deck theme/order.
+Structured hard-line/rich text, drag handles, theme-token editing, general insertion/reparenting, general visual authoring,
 arbitrary PPTX import, and any PowerPoint/OpenDocKit adapter remain roadmap.
 The adapter must remain optional. Separate packages are warranted only when
 they provide a real dependency or runtime boundary.
@@ -461,8 +468,9 @@ inventing deck state. `validatePatch()` is also asynchronous but validates
 only the complete plan. General serialization and library writers are roadmap;
 the Node CLI owns explicit atomic filesystem output, while the trusted editor
 returns exact current bytes through download or an explicitly granted file
-handle. The patch API/CLI support typed operations; the browser editor UI does not yet expose
-its typed controls.
+handle. The browser editor exposes the supported typed operations through
+hash-bound numeric inspector forms; it intentionally has no generic attribute
+writer, drag geometry, insertion, or reparenting gesture.
 
 ### 6.4 C6 resolution and broader normalize/render roadmap
 
@@ -494,7 +502,7 @@ renderThumbnail(deck, slideId, options): Promise<Blob | Uint8Array>
 Normalization resolves authoring conveniences into deterministic compiler input
 but need not create additional files unless requested.
 
-### 6.5 C7 canary and bounded C9/C10 PowerPoint path
+### 6.5 C7 canary and bounded C9/C10/C13 PowerPoint paths
 
 The independent deck-only C7 canary remains implemented:
 
@@ -567,9 +575,27 @@ runs/effects, another blocking finding, and arbitrary packages fail closed with
 no partial patch. Reconciliation never mutates an input or applies its proposed
 patch.
 
-General deck compilation, arbitrary SVG/PPTX translation/import, and broader
-PowerPoint adaptation remain roadmap. No adapter may interpret browser runtime
-behavior as source meaning.
+C13 separately compiles one complete canonical HTML deck:
+
+```ts
+compileVector180PptxDeck(
+  deck: Vector180Deck
+): Promise<Vector180PptxDeckArtifact>
+```
+
+It preserves manifest order and hidden state, requires a one-to-one
+source/resolved/emitted inventory, reuses the C7 package engine, and emits
+native primitives plus authenticated immutable inline-PNG pictures. Identical
+PNG bytes deduplicate across slides. The canonical
+`vector180-pptx-deck-map/0.1` sidecar binds exact source and package bytes,
+source ranges, semantic snapshots, Office names/IDs, parts, and relationships
+without `href`, data URI, base64, or media bytes. The pure compile kernel runs
+in Node and the trusted browser editor; `compile-deck` provides distinct
+explicit no-overwrite CLI destinations. C10 deliberately refuses this map, so
+deck reconciliation remains roadmap.
+
+Arbitrary SVG/PPTX translation/import and broader PowerPoint adaptation remain
+roadmap. No adapter may interpret browser runtime behavior as source meaning.
 
 ## 7. Token-efficient agent interface
 
@@ -605,6 +631,8 @@ vector180 compose <atom.vector180.svg> --placement X,Y,W,H --output PATH
 vector180 compile <atom.vector180.svg> --placement X,Y,W,H --output PATH --map PATH
              [--slide-id ID] [--policy identity|uniform-scale-translate]
              [--format text|json]
+vector180 compile-deck <deck.vector180.html> --output PATH --map PATH
+             [--format text|json]
 vector180 reconcile <edited.pptx> --source atom.vector180.svg --baseline MAP
                --patch PATH --report PATH [--format text|json]
 vector180 text-fit <file> [--font-map default|PATH] [--near-limit N]
@@ -625,7 +653,10 @@ into a validated standalone atom and refuses overwrite; `pptx-canary` also
 accepts HTML decks only. `compose` and `compile` accept one standalone diagram
 and require explicit placement; their deterministic one-slide deck/PPTX
 artifacts never replace the atom as authority. `compile` publishes its PPTX and
-map together. `reconcile` accepts only an edited descendant of that exact map,
+map together. `compile-deck` accepts only one complete canonical HTML deck and
+publishes its native PPTX plus descriptor-only deck map together; the map is
+not a C10 reconciliation baseline. `reconcile` accepts only an edited
+descendant of an exact C9 atom map,
 writes a reconciliation report for every status, writes a patch only when
 `patchable`, and does not apply it. No command silently wraps or sizes a
 diagram.
@@ -690,10 +721,12 @@ embedded text are never trusted as agent instructions.
 
 The editor is a small application built from scratch around the Vector180 model.
 The implemented trusted MVP supports a deck or standalone diagram, while
-geometry handles, structured line/rich-text editing, token-rule editing, and
-general SVG authoring remain roadmap. C5 typed makes several of those source
-changes available through programmatic typed patches and C10 proposals; it
-does not make them editor controls.
+drag handles, structured line/rich-text editing, token-rule editing, insertion,
+reparenting, and general SVG authoring remain roadmap. View mode is the safe
+default. Edit mode exposes C5's supported geometry, connector endpoint, group
+translation, one-line frame/anchor, direct-style, same-parent order, and safe
+deletion operations as exact numeric forms. Raster/non-native assets remain
+visible but protected.
 
 ### 8.1 Editing architecture
 
@@ -717,8 +750,8 @@ Vector180 source spans (persistent)
 ```
 
 The editor never treats a browser-generated clone as canonical source. Every
-successful direct-text/theme/order intent commits through `EditorSession` and
-C5, reloads through C4, then regenerates outline, inventory, C6, and C8 views.
+successful text/theme/order/typed-object intent commits through `EditorSession`
+and C5, reloads through C4, then regenerates outline, inventory, C6, and C8 views.
 Failed edits add no history and leave exact source unchanged.
 
 ### 8.2 Pure SVG viewport
@@ -734,9 +767,9 @@ SVG overlay layer   selection, handles, guides, caret
 hidden input        keyboard and IME capture
 ```
 
-Canvas is appropriate only for thumbnails, export, measurement, or visual
-comparison. Drag handles, caret/IME capture, geometry changes, and hit-testing
-beyond supported object selection are not implemented.
+Canvas is used only for bounded PNG export, measurement, or visual comparison.
+Drag handles and caret/IME capture are not implemented; numeric inspector
+changes and supported object hit-testing are.
 
 ### 8.3 CSS-aware editing
 
@@ -754,9 +787,9 @@ A future style editor could let a user choose:
 - change the matched component rule; or
 - create a local override.
 
-The implemented editor exposes deck active-theme selection but no token,
-component-rule, or local-style editing. It must not flatten every computed
-style into inline declarations.
+The implemented editor exposes deck active-theme selection and directly
+represented concrete native style fields, but no token or component-rule
+editing. It must not flatten computed deck style into inline declarations.
 
 ### 8.4 Source and visual views
 
@@ -765,7 +798,10 @@ The implemented editor exposes:
 - conditional slide/diagram navigator;
 - visual SVG canvas;
 - semantic object tree;
+- safe-default View/Edit mode and selection overlay;
 - direct-text Apply;
+- bounded numeric geometry, connector, group, one-line frame/anchor, direct
+  style, same-parent order, and safe-deletion controls;
 - deck-only active-theme and slide-order controls;
 - exact-source undo/redo;
 - property inspector;
@@ -773,6 +809,8 @@ The implemented editor exposes:
 - diagnostics; and
 - clean source download;
 - deck-only hydrated single-slide `.vector180.svg` download; and
+- explicit derivative export of selected-slide SVG, browser-labelled PNG,
+  whole-deck PPTX, and its separately downloaded descriptor-only map; and
 - optional stale-safe File System Access save.
 
 A complete general HTML or CSS IDE is not required.
@@ -823,6 +861,12 @@ Rules:
   never the wrapper or DOM serialization;
 - one deck slide may be downloaded as a newly hydrated standalone atom only
   after theme/class dereferencing and independent C4/C6 diagram reload;
+- authenticated inline PNGs are reconstructed from exact retained source bytes
+  as revocable blob URLs; resolved/semantic JSON remains descriptor-only;
+- the distinct `Export as` menu offers selected-slide SVG, renderer-labelled
+  PNG, and complete-deck PPTX/map while keeping source save/download separate;
+- a source edit, undo, or redo invalidates any in-memory PPTX map, and every
+  async derivative checks the current source hash before download;
 - the wrapper declares its editor version and required digest;
 - arbitrary additional scripts remain invalid in strict mode; and
 - wrapper generation is deterministic.
@@ -841,7 +885,22 @@ opening executes embedded script before the portable library can validate it.
 Untrusted source must first pass non-executing validation and then be rendered
 inside an appropriate sandbox/CSP boundary.
 
-### 9.1 C11 visual evidence is a separate proof surface
+### 9.1 Product derivatives are not source or evidence
+
+Selected-slide SVG is a newly hydrated canonical atom; it is useful as a new
+independent source branch but does not mutate the deck. PNG clones the literal
+C6 preview, strips selection/fit/editor markers, restores exact authenticated
+raster data URIs, embeds the pack's exact font bytes, and uses bounded browser
+SVG/canvas rasterization. Its renderer identity is reported and it is not a
+native PowerPoint or C11 fidelity claim.
+
+Complete-deck PPTX calls the same C13 pure compiler used by Node. The editor
+downloads exact PPTX bytes first, then offers the canonical descriptor-only map
+as a separate paired artifact. Atom packs continue to use the C9 `compile`
+path outside the page; an HTML wrapper is not introduced merely to export one
+atom. PDF is intentionally deferred.
+
+### 9.2 C11 visual evidence is a separate proof surface
 
 Repository tooling implements hash-bound trusted browser-SVG capture, macOS
 Quick Look DOCX/PPTX preview capture, deterministic image comparison, schema
@@ -965,7 +1024,7 @@ acceptance-gate authority. This section is only the architecture summary.
 
 ### Phase 0: contracts and fixtures
 
-- **Implemented:** C4-C8 deck/diagram foundations, bounded C9/C10/C11
+- **Implemented:** C4-C8 deck/diagram foundations, bounded C9/C10/C11/C13
   contracts, manifest and C5 0.1 patch schemas, C10 reconciliation/
   resolution schemas, C11 evidence/native-bridge schemas, exact
   source-range/hash policy, distinct physical-deck and logical-diagram C6
@@ -984,38 +1043,38 @@ acceptance-gate authority. This section is only the architecture summary.
   direct text in either kind plus deck-only active theme/slide order, all
   contracted C5 typed native-object writes, the exact one-connector C5 clone,
   and the `new`, `outline`, `validate`, `resolve`, `extract`, `editor-pack`,
-  `pptx-canary`, `compose`, `compile`, `reconcile`, `text-fit`, `text`, `show`,
+  `pptx-canary`, `compose`, `compile`, `compile-deck`, `reconcile`, `text-fit`, `text`, `show`,
   `list`, `metadata`, `metadata-compare`, `diff`, `migrate`, and `patch` CLI.
 - **Remaining:** rich-text and token edits, external dependencies, general
   insertion/reparenting/representation-changing operations, and canonical
   serialization.
 
 This implemented slice already delivers high-value agent workflows, the
-writable trusted editor/session, and a deliberately narrow C7 PPTX compiler
-canary without claiming a general converter.
+writable trusted editor/session, a deliberately narrow C7 PPTX compiler
+canary, and a distinct bounded C13 complete-deck export without claiming a
+general converter.
 
 ### Phase 2: fixed browser runtime
 
 - **Implemented:** the minimal fixture's trusted direct-open viewer and fixed
   runtime digest verification; a deterministic shared browser kernel; exact
   deck/diagram source sessions; trusted writable packs; scriptless semantic SVG
-  reconstruction; clean downloads; exact-font browser measurement; and
+  reconstruction; authenticated raster blob previews; clean source plus
+  hydrated SVG/browser-PNG/complete-deck PPTX/map downloads; exact-font browser measurement; and
   Chromium/Firefox/WebKit conformance tests.
 - **Remaining:** sandboxed untrusted intake follows the now-proven trusted
   lifecycle.
 
 ### Phase 3: native visual editor
 
-- **Implemented MVP:** deck/diagram navigation, object selection/tree,
-  direct-text Apply, deck theme/order controls, exact source/hash undo/redo,
+- **Implemented MVP:** deck/diagram navigation, safe-default View/Edit mode,
+  object selection/tree, direct-text Apply, exact numeric C5 geometry/connector/
+  group/frame/style/order/delete controls, deck theme/order controls, exact source/hash undo/redo,
   diagnostics/inspector/source views, conservative dual C8 overlays, clean
   download, hydrated per-slide SVG download, and stale-safe explicitly granted
   file save.
-- **Remaining:** interactive geometry, connector,
-  explicit-line/structured-text, grouping/order, style/token, and
-  insertion/deletion controls. C5 typed already implements the bounded protocol
-  for geometry, endpoints, translation, one-line frames, order, safe deletion,
-  and direct native style; this phase means interactive editor controls.
+- **Remaining:** drag handles, explicit-line/structured-text, grouping,
+  token-rule editing, insertion/reparenting, and richer visual authoring.
 
 ### Phase 4: early PowerPoint canary
 
@@ -1036,6 +1095,10 @@ canary without claiming a general converter.
   supported C5 typed patch proposal, strict reviewed one-connector C5 connector-clone
   resolution, exact inverse placement, temporary apply, and C9 regeneration
   equality.
+- **Implemented C13 deck/export path:** complete manifest-ordered HTML-deck
+  compilation, hidden-slide preservation, authenticated cross-slide PNG
+  deduplication, deterministic descriptor-only map, browser/Node byte parity,
+  and trusted-editor hydrated SVG, bounded PNG, PPTX, and map downloads.
 - **Implemented C11 automation:** trusted browser SVG and Quick Look capture,
   deterministic image comparison, checked evidence/privacy, and bounded
   exact-path native no-op lifecycle; Word and PowerPoint 16.111.2 passed
@@ -1047,8 +1110,8 @@ canary without claiming a general converter.
 
 ### Phase 5: editor/compiler expansion
 
-- browser controls for the already typed geometry, connector, translation,
-  child-order, text-frame, deletion, and native-style operations;
+- drag handles layered over the implemented exact numeric geometry, connector,
+  translation, child-order, text-frame, deletion, and native-style controls;
 - arrowheads and expanded connector behavior (straight connectors already
   compile in C7);
 - explicit multiline text;

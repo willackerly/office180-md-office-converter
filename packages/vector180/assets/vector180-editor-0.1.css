@@ -109,6 +109,76 @@ input:disabled {
   color: #a9f5ca;
 }
 
+.mode-toggle {
+  display: inline-flex;
+  gap: 2px;
+  border: 1px solid #3d4c45;
+  border-radius: 9px;
+  padding: 2px;
+  background: #111714;
+}
+
+.mode-toggle button {
+  border: 0;
+  padding: 5px 10px;
+  background: transparent;
+  font-size: 12px;
+}
+
+.mode-toggle button[aria-pressed="true"] {
+  background: #5a4da0;
+  color: #fff;
+}
+
+.export-menu {
+  position: relative;
+}
+
+.export-menu > summary {
+  border: 1px solid #3d4c45;
+  border-radius: 8px;
+  padding: 8px 12px;
+  background: #24312b;
+  cursor: pointer;
+  list-style: none;
+  white-space: nowrap;
+}
+
+.export-menu > summary::-webkit-details-marker {
+  display: none;
+}
+
+.export-menu[open] > summary,
+.export-menu > summary:hover {
+  background: #304239;
+}
+
+.export-menu__panel {
+  position: absolute;
+  z-index: 20;
+  top: calc(100% + 7px);
+  right: 0;
+  display: grid;
+  min-width: 190px;
+  gap: 6px;
+  border: 1px solid #3d4c45;
+  border-radius: 10px;
+  padding: 9px;
+  background: #17201c;
+  box-shadow: 0 14px 38px rgb(0 0 0 / 42%);
+}
+
+.export-menu__panel button {
+  width: 100%;
+  text-align: left;
+}
+
+.export-menu__panel small {
+  padding: 3px 4px 1px;
+  color: #9fb0a8;
+  font-size: 11px;
+}
+
 .operation-status {
   min-height: 30px;
   padding: 6px 16px;
@@ -251,8 +321,37 @@ input:disabled {
   cursor: pointer;
 }
 
-.vector180-preview [data-selected="true"] {
+.app[data-editor-mode="edit"]
+  .vector180-preview
+  [data-selected="true"]:not(.selection-overlay) {
   filter: drop-shadow(0 0 5px #ff4fd8);
+}
+
+.selection-overlay {
+  pointer-events: none;
+}
+
+.selection-overlay rect {
+  fill: none;
+  stroke: #ff4fd8;
+  stroke-width: 2;
+  stroke-dasharray: 7 5;
+  vector-effect: non-scaling-stroke;
+}
+
+.selection-overlay circle {
+  fill: #fff;
+  stroke: #ff4fd8;
+  stroke-width: 2;
+  vector-effect: non-scaling-stroke;
+}
+
+.raster-placeholder {
+  fill: #251f2c;
+  stroke: #ee6675;
+  stroke-width: 2;
+  stroke-dasharray: 8 6;
+  vector-effect: non-scaling-stroke;
 }
 
 .fit-overlay {
@@ -296,6 +395,76 @@ input:disabled {
 
 .text-editor {
   padding-bottom: 10px;
+}
+
+.manipulation {
+  padding: 8px 12px 14px;
+}
+
+.manipulation-section {
+  margin: 0 0 12px;
+  border: 1px solid #304039;
+  border-radius: 8px;
+  padding: 10px;
+  background: #111714;
+}
+
+.manipulation-section h3 {
+  margin: 0 0 8px;
+  color: #dce9e2;
+  font-size: 12px;
+}
+
+.field-form {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 7px;
+}
+
+.field-form label {
+  display: grid;
+  gap: 4px;
+  color: #9fb0a8;
+  font-size: 11px;
+}
+
+.field-form label[data-direct="false"] {
+  opacity: 0.55;
+}
+
+.field-form input,
+.field-form select {
+  width: 100%;
+  padding: 6px 7px;
+  font-size: 12px;
+}
+
+.field-form > button,
+.field-form > .manipulation-help {
+  grid-column: 1 / -1;
+}
+
+.manipulation-section > .button-row {
+  width: 100%;
+  margin: 0;
+}
+
+.manipulation-section > button {
+  width: 100%;
+}
+
+.manipulation-help {
+  display: block;
+  margin-top: 7px;
+  color: #9fb0a8;
+  font-size: 11px;
+  line-height: 1.4;
+}
+
+.danger-button {
+  border-color: #8e4450;
+  background: #4b2127;
+  color: #ffd6db;
 }
 
 .text-editor input {

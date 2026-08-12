@@ -1,6 +1,6 @@
 ---
 name: vector180-authoring
-description: PowerPoint, presentation, slides, slide deck, and PPTX creation or editing with strict no-reflow Vector180 diagrams and figures. Create, read, inspect, semantically compare, edit, validate, hydrate, migrate, compile, and reconcile visual assets. Default to a fully hydrated standalone Vector180 SVG atom for a diagram, figure, reusable visual, or slide-sized canvas; use Vector180 HTML only for an actual multi-slide deck/report or deck-only behavior. Use when Codex needs to author vector source, inspect metadata or template lineage, compare revisions by stable ID, migrate a legacy PPTV SVG atom or extract a legacy deck slide, audit text overflow, prepare a trusted editor, export an atom to editable PPTX, or recover supported PowerPoint edits.
+description: PowerPoint, presentation, slides, slide deck, and PPTX creation or editing with strict no-reflow Vector180 diagrams and figures. Create, read, inspect, semantically compare, edit, validate, hydrate, migrate, compile, and reconcile visual assets. Default to a fully hydrated standalone Vector180 SVG atom for a diagram, figure, reusable visual, or slide-sized canvas; use Vector180 HTML only for an actual multi-slide deck/report or deck-only behavior. Use when Codex needs to author vector source, inspect metadata or template lineage, compare revisions by stable ID, migrate a legacy PPTV SVG atom or extract a legacy deck slide, audit text overflow, prepare a trusted editor, export an atom or complete deck to editable PPTX, produce SVG/PNG derivatives, or recover supported atom PowerPoint edits.
 ---
 
 # Vector180 Authoring
@@ -41,8 +41,9 @@ features only.
 | Compare two atoms | `metadata-compare` for lineage → `diff` for stable-ID semantics |
 | Edit supported content | hash-bound `vector180-patch/0.1` → `--check` → new atom → gates |
 | Edit unsupported structure | narrow source edit → full validation/resolution/text-fit gates |
-| Work visually | generated trusted `editor-pack`; download clean atom bytes |
+| Work visually | generated trusted `editor-pack`; keep source save distinct from SVG/PNG/PPTX derivatives |
 | Export one visual to PowerPoint | direct `compile`; retain PPTX and map |
+| Export a complete deck | `compile-deck`; retain PPTX and descriptor-only deck map |
 | Recover PowerPoint edits | `reconcile` exact atom + map → review → patch a new atom |
 | Extract one deck slide | `extract`; treat the result as a newly hydrated atom |
 | Author a real deck/report | `vector180 new deck`; keep reusable visuals as atoms |
@@ -86,6 +87,17 @@ For a real deck/report:
 pnpm vector180 new deck \
   --output path/to/report.vector180.html --title "Report title"
 ```
+
+Compile that complete canonical deck without first extracting or flattening it:
+
+```bash
+pnpm vector180 compile-deck path/to/report.vector180.html \
+  --output path/to/report.pptx \
+  --map path/to/report.vector180.deck.map.json
+```
+
+The deck map is not accepted by atom-only `reconcile`; report deck PowerPoint
+edit recovery as future/manual rather than fabricating a C10 lineage.
 
 Do not wrap an atom in HTML merely to preview or compile it.
 
@@ -167,7 +179,9 @@ The helper validates, resolves, inspects outline/text/metadata, runs exact-font
 text fit with the verified bundled map by default, and builds a trusted editor
 pack. For an
 atom, C9/PPTX work runs only with explicit placement. For a deck it runs the
-deck-only canary. Omitted evidence is reported as a skip, never inferred.
+independent deck-only canary; use `compile-deck` separately when the mapped
+whole-deck deliverable is required. Omitted evidence is reported as a skip,
+never inferred.
 
 Retain deliverables in one pass with `--artifacts-dir PATH`. The helper refuses
 to overwrite any existing artifact.

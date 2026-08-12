@@ -9,6 +9,7 @@
  * CONTRACT:C8-PPTV-TEXT-FIT.2.0
  * CONTRACT:C9-PPTV-PPTX-BASELINE.2.0
  * CONTRACT:C10-PPTV-PPTX-RECONCILIATION.2.0
+ * CONTRACT:C13-VECTOR180-DECK-EXPORT.0.1
  */
 
 import { readFile } from "node:fs/promises";
@@ -41,6 +42,7 @@ import {
 import type {
   Diagnostic,
   ProjectionView,
+  Vector180Deck,
   Vector180Role,
 } from "./core/types.js";
 import { createEditorPack } from "./node/editor-pack.js";
@@ -65,6 +67,10 @@ import {
   type Vector180Placement,
   type Vector180PptxMap,
 } from "./node/pptx-baseline.js";
+import {
+  compileVector180PptxDeck,
+  Vector180PptxDeckCompileError,
+} from "./node/pptx-deck.js";
 import {
   compilePptxCanary,
   PptxCanaryCompileError,
@@ -156,6 +162,8 @@ export async function runCli(
       return await runCompose(argv.slice(1), environment);
     if (command === "compile")
       return await runCompile(argv.slice(1), environment);
+    if (command === "compile-deck")
+      return await runCompileDeck(argv.slice(1), environment);
     if (command === "reconcile")
       return await runReconcile(argv.slice(1), environment);
     if (command === "text-fit")
@@ -1140,6 +1148,135 @@ async function runCompile(
   }
 }
 
+async function runCompileDeck(
+  args: readonly string[],
+  environment: CliEnvironment,
+): Promise<number> {
+  const parsedArgs = parseArguments(
+    args,
+    {
+      "--output": "value",
+      "--map": "value",
+      "--format": "value",
+    },
+    1,
+    "compile-deck requires exactly one canonical Vector180 HTML deck path",
+  );
+  const path = parsedArgs.positionals[0]!;
+  const output = readOption(parsedArgs, "--output");
+  const mapOutput = readOption(parsedArgs, "--map");
+  const format = readFormat(parsedArgs, ["text", "json"]);
+  if (output === undefined || mapOutput === undefined) {
+    throw new InvocationError(
+      "compile-deck requires explicit --output PATH and --map PATH",
+    );
+  }
+  if (resolve(output) === resolve(mapOutput)) {
+    writeDiagnostics(
+      [
+        {
+          code: "VECTOR180-DECK-PPTX-EXISTS",
+          severity: "error",
+          message:
+            "compile-deck --output and --map destinations must be distinct.",
+        },
+      ],
+      format,
+      environment,
+    );
+    return 1;
+  }
+
+  let deck: Vector180Deck;
+  try {
+    deck = await loadDeck(await readVector180Path(path));
+  } catch (error) {
+    if (!(error instanceof Vector180LoadError)) throw error;
+    writeDiagnostics(
+      [
+        {
+          code: "VECTOR180-DECK-PPTX-INVALID-SOURCE",
+          severity: "error",
+          message: `compile-deck requires one complete canonical Vector180 HTML deck (${error.diagnostics.map((diagnostic) => diagnostic.code).join(", ") || "source load failed"}).`,
+        },
+        ...error.diagnostics,
+      ],
+      format,
+      environment,
+    );
+    return 1;
+  }
+  try {
+    const artifact = await compileVector180PptxDeck(deck);
+    try {
+      await writeFilesAtomicExclusive([
+        { path: output, contents: artifact.pptxBytes },
+        { path: mapOutput, contents: artifact.mapText },
+      ]);
+    } catch (error) {
+      const exists = isFileExistsError(error);
+      writeDiagnostics(
+        [
+          {
+            code: exists
+              ? "VECTOR180-DECK-PPTX-EXISTS"
+              : "VECTOR180-DECK-PPTX-PUBLISH",
+            severity: "error",
+            message: exists
+              ? "compile-deck refuses to overwrite an existing PPTX or sidecar-map destination."
+              : `compile-deck could not publish the paired PPTX/map transaction: ${error instanceof Error ? error.message : String(error)}`,
+          },
+        ],
+        format,
+        environment,
+      );
+      return 1;
+    }
+
+    const objectCount = artifact.map.slides.reduce(
+      (total, slide) => total + slide.objects.length,
+      0,
+    );
+    if (format === "json") {
+      writeJson(
+        {
+          schema: artifact.schema,
+          output,
+          map: mapOutput,
+          deckSha256: artifact.map.source.sha256,
+          pptxSha256: artifact.pptxSha256,
+          mapSha256: artifact.mapSha256,
+          partCount: artifact.map.pptx.partNames.length,
+          slideCount: artifact.map.slides.length,
+          objectCount,
+          diagnostics: artifact.diagnostics,
+        },
+        environment,
+      );
+    } else {
+      environment.stdout(
+        `wrote ${output} and ${mapOutput} (${artifact.map.slides.length} slides, ${objectCount} editable objects, ${artifact.pptxSha256})\n`,
+      );
+    }
+    return 0;
+  } catch (error) {
+    if (!(error instanceof Vector180PptxDeckCompileError)) throw error;
+    writeDiagnostics(
+      [
+        ...deck.diagnostics,
+        {
+          code: error.code,
+          severity: "error",
+          message: error.message,
+        },
+      ],
+      format,
+      environment,
+    );
+    return 1;
+  }
+}
+
 async function runCompose(
   args: readonly string[],
   environment: CliEnvironment,
@@ -1974,6 +2111,15 @@ comment. Existing output is never overwritten.`,
       "vector180 compile <atom.vector180.svg> --placement X,Y,W,H --output PATH --map PATH [--slide-id ID] [--policy identity|uniform-scale-translate] [--format text|json]",
     ],
   },
+  "compile-deck": {
+    summary:
+      "compile one canonical HTML deck to editable PPTX plus a hash-bound deck map",
+    usage: [
+      "vector180 compile-deck <deck.vector180.html> --output PATH --map PATH [--format text|json]",
+    ],
+    details:
+      "Manifest order is presentation order. The complete strict 1600×900 deck is compiled without inferred placement; existing destinations are never overwritten. This export map is not accepted by reconcile.",
+  },
   reconcile: {
     summary: "inspect supported PowerPoint edits and propose a source patch",
     usage: [
@@ -2036,6 +2182,7 @@ Usage:
   vector180 pptx-canary <deck.vector180.html> --output PATH [--format text|json]
   vector180 compose <atom.vector180.svg> --placement X,Y,W,H --output PATH [--slide-id ID] [--policy identity|uniform-scale-translate] [--format text|json]
   vector180 compile <atom.vector180.svg> --placement X,Y,W,H --output PATH --map PATH [--slide-id ID] [--policy identity|uniform-scale-translate] [--format text|json]
+  vector180 compile-deck <deck.vector180.html> --output PATH --map PATH [--format text|json]
   vector180 reconcile <edited.pptx> --source atom.vector180.svg --baseline atom.vector180.map.json [--native-baseline native-save.pptx] [--resolution reviewed-copy.json] --patch PATH --report PATH [--format text|json]
   vector180 text-fit <file.vector180.html|file.vector180.svg> [--font-map default|PATH] [--near-limit N] [--format text|json]
   vector180 text <file.vector180.html|file.vector180.svg> [--slide ID] [--include-hidden] [--format text|json|jsonl]

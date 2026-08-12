@@ -1,4 +1,5 @@
-// Tests: CONTRACT:C4-PPTV-SOURCE.2.0, CONTRACT:C5-PPTV-PATCH.2.0
+// Tests: CONTRACT:C4-PPTV-SOURCE.2.0, CONTRACT:C5-PPTV-PATCH.2.0,
+// CONTRACT:C9-PPTV-PPTX-BASELINE.2.0
 
 import { mkdtemp, readFile, readdir, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
@@ -6,7 +7,7 @@ import { join } from "node:path";
 
 import { describe, expect, it } from "vitest";
 
-import { writeFileAtomic } from "../node/io.js";
+import { writeFileAtomic, writeFilesAtomicExclusive } from "../node/io.js";
 
 async function withTempDirectory<T>(
   run: (directory: string) => Promise<T>,
@@ -65,6 +66,42 @@ describe("atomic filesystem writes", () => {
       expect(rejected[0]?.reason).toMatchObject({ code: "EEXIST" });
       expect(["first", "second"]).toContain(await readFile(path, "utf8"));
       expect(await readdir(directory)).toEqual(["diagram.vector180.svg"]);
+    });
+  });
+
+  it("rolls back every peer when one paired destination already exists", async () => {
+    await withTempDirectory(async (directory) => {
+      const pptx = join(directory, "deck.pptx");
+      const map = join(directory, "deck.map.json");
+      await writeFile(map, "existing-map");
+
+      await expect(
+        writeFilesAtomicExclusive([
+          { path: pptx, contents: Uint8Array.of(1, 2, 3) },
+          { path: map, contents: "new-map" },
+        ]),
+      ).rejects.toMatchObject({ code: "EEXIST" });
+
+      await expect(readFile(pptx)).rejects.toMatchObject({ code: "ENOENT" });
+      expect(await readFile(map, "utf8")).toBe("existing-map");
+      expect(await readdir(directory)).toEqual(["deck.map.json"]);
+    });
+  });
+
+  it("stages the complete pair before publishing either destination", async () => {
+    await withTempDirectory(async (directory) => {
+      const pptx = join(directory, "deck.pptx");
+      const missingMap = join(directory, "missing", "deck.map.json");
+
+      await expect(
+        writeFilesAtomicExclusive([
+          { path: pptx, contents: Uint8Array.of(1, 2, 3) },
+          { path: missingMap, contents: "map" },
+        ]),
+      ).rejects.toMatchObject({ code: "ENOENT" });
+
+      await expect(readFile(pptx)).rejects.toMatchObject({ code: "ENOENT" });
+      expect(await readdir(directory)).toEqual([]);
     });
   });
 });

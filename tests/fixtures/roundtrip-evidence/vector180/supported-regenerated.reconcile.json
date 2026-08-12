@@ -2,8 +2,8 @@
   "schema": "vector180-pptx-reconciliation/0.1",
   "status": "unchanged",
   "sourceSha256": "e5145ecdaf435d0a04abf92e3bd2e9a20d01396ba013dd6ab26bfa937d59dc8d",
-  "baselineMapSha256": "cd9f8afbba0f56dbb93b38814f7fc43ec2e03a5b44ef3615521c6e0da23609a9",
-  "editedPptxSha256": "b915027a645b239ffd0acf973fe613fce035fa806b43c3669c0c924116e94206",
+  "baselineMapSha256": "f316a8edad179321793fd68baddd0222edacabe8d8ce60c5a469d8d5fe4f5243",
+  "editedPptxSha256": "39c7c176f5a8a02cd4586a1f61da0f20e93c7ff8e9438a0c3e8a6d575aef20b2",
   "changes": [],
   "summary": {
     "highestDisposition": "auto-fixable",
