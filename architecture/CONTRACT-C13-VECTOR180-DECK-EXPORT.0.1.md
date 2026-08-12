@@ -154,7 +154,7 @@ source bytes.
 - Sibling: `CONTRACT:C9-PPTV-PPTX-BASELINE.2.0` remains the direct atom path.
 - Cross-checks: `CONTRACT:C11-OFFICE-VISUAL-EVIDENCE.1.2`; product derivatives
   do not themselves satisfy its native/human evidence requirements.
-- External: exact `jszip@3.10.1`; exact development-only `ajv@8.17.1` for
+- External: exact `jszip@3.10.1`; exact development-only `ajv@8.18.0` for
   strict sidecar-schema acceptance; the generated trusted editor runtime;
   browser `Blob`, SVG, canvas, and download APIs.
 

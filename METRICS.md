@@ -245,7 +245,7 @@ profiles.
   for browser-safe standalone SVG XML scanning, exact `jszip@3.10.1`, and exact
   `fontkit@2.0.4` behind the Node C8 adapter.
 - **TypeScript development/test:** TypeScript, Vitest, tsx, Prettier, Node type
-  definitions, `@types/fontkit`, exact `ajv@8.17.1` for strict C13 map-schema
+  definitions, `@types/fontkit`, exact `ajv@8.18.0` for strict C13 map-schema
   acceptance, exact `esbuild@0.28.1`, and exact `@playwright/test@1.62.0`.
 - **Browser font fixture:** OFL ABeeZee Regular at exact SHA-256
   `2901c8df256648cc2bb2e3afb381cb8d28e65ed3dbe11de20695ae4d5ffdeda9`;
@@ -256,8 +256,9 @@ profiles.
   C7 and native-saved C9 validation oracle plus optional future
   adapter/upstream-contribution target.
 - **Security vulnerabilities:** `pnpm audit --audit-level high` reported no
-  known runtime or development dependency vulnerabilities on 2026-08-02; no
-  automated dependency scan is configured yet.
+  known runtime or development dependency vulnerabilities on 2026-08-12 after
+  exact `ajv@8.18.0` and transitive `nanoid@3.3.18` resolution. CI runs the same
+  audit after package/build acceptance.
 
 ## Quality Metrics
 

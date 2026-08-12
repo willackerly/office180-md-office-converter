@@ -100,6 +100,9 @@ See `METRICS.md` for authoritative counts.
   ground-truth metrics, and rebar compliance.
 - `pnpm plugin:check` verifies the installable skill/converter/theme mirrors;
   CI also builds a Python wheel and exercises the declared Python 3.9 minimum.
+- `pnpm audit --audit-level high` is green after exact `ajv@8.18.0` and
+  transitive `nanoid@3.3.18`; CI runs the same audit after the build/package
+  gates.
 
 ## What's next
 
@@ -491,7 +494,7 @@ Dependencies:
 - Vector180 runtime: `parse5`, `jsonc-parser`, exact `saxes@6.0.0`, exact
   `jszip@3.10.1`, exact `fontkit@2.0.4`, Node.js 20+
 - TypeScript development: TypeScript, Vitest, tsx, Prettier, exact
-  `esbuild@0.28.1`, exact `@playwright/test@1.62.0`, exact `ajv@8.17.1` for
+  `esbuild@0.28.1`, exact `@playwright/test@1.62.0`, exact `ajv@8.18.0` for
   strict C13 map-schema acceptance, Node types, and `@types/fontkit@2.0.9`
 - External services/databases: none
 - OpenDocKit runtime dependency: none

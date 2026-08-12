@@ -394,7 +394,7 @@ The portable core does not depend on OpenDocKit, filesystem APIs, browser
 globals, or Office automation. Node-hosted C7/C9/C10 and portable C13 packaging
 use exact `jszip@3.10.1`; C8 uses exact `fontkit@2.0.4`; standalone XML is gated
 through exact `saxes@6.0.0`; and strict C13 map-schema acceptance uses exact
-development-only `ajv@8.17.1`. OpenDocKit remains an independent
+development-only `ajv@8.18.0`. OpenDocKit remains an independent
 reopen/inspection oracle and a future optional adapter/upstream collaboration
 target.
 

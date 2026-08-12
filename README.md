@@ -361,7 +361,7 @@ standalone XML well-formedness, exactly `jszip@3.10.1`, and exact
 `fontkit@2.0.4` for the explicit-font C8 Node adapter. Deterministic
 browser/editor bundles use exact `esbuild@0.28.1`; conformance uses exact
 `@playwright/test@1.62.0`; strict C13 map-schema acceptance uses exact
-development-only `ajv@8.17.1`. Run the installed Python commands through the
+development-only `ajv@8.18.0`. Run the installed Python commands through the
 local environment:
 
 ```bash

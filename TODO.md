@@ -25,6 +25,10 @@ Active tasks plus nearby completion checkpoints. Priority ordering lives in
       frozen PPTV alpha.4 practice. Upstream the watcher safety delta plus
       self-authored-notification suppression before this repository starts
       retaining outbound copies locally.
+- [ ] Refresh the GitHub Actions majors whose embedded Node 20 runtimes now
+      produce deprecation warnings on hosted runners. Keep the product's tested
+      Node 20+ floor distinct from the JavaScript runtime bundled inside
+      `actions/checkout`, setup actions, and the pnpm setup action.
 
 ## Vector180 next slice
 
