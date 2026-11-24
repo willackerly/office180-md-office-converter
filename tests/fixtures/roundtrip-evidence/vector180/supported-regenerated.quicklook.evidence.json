@@ -12,16 +12,16 @@
       ],
       "exit_code": 0,
       "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-      "stdout_sha256": "c343afa299aedfe34949eff8670ad52100057f0a7254730d6e78f91edeb02bc7",
+      "stdout_sha256": "ef2eb3c0e922503c8a1bb9636c4eda17eb7b74223d7bf39cf5544a04bcffc584",
       "timeout_seconds": 45.0
     },
     "diagnostic": null,
     "environment": {
       "architecture": "arm64",
       "display_scale": 1.0,
-      "locale": "C/C.UTF-8/C/C/C/C",
+      "locale": "C/en_US.UTF-8/C/C/C/C",
       "os": "Darwin",
-      "os_version": "26.5.2"
+      "os_version": "26.6.2"
     },
     "fonts": [],
     "input": {
@@ -51,7 +51,7 @@
     "renderer_class": "quick-look",
     "status": "passed"
   },
-  "evidence_sha256": "f8ed86647e20b7f7982621c10cdb9de7b99491c3a946c6d6b91ea24b45890656",
+  "evidence_sha256": "6bd8fd39fc5223b942fd5ab416cfb81e3c1142792d1534bab79e2aa0d6fee627",
   "schema": "office180-visual-evidence/0.1",
   "subject": {
     "artifact_path": "supported-regenerated.pptx",

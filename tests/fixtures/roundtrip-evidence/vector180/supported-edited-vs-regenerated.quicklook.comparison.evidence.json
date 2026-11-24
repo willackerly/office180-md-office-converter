@@ -12,16 +12,16 @@
       ],
       "exit_code": 0,
       "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-      "stdout_sha256": "c343afa299aedfe34949eff8670ad52100057f0a7254730d6e78f91edeb02bc7",
+      "stdout_sha256": "ef2eb3c0e922503c8a1bb9636c4eda17eb7b74223d7bf39cf5544a04bcffc584",
       "timeout_seconds": 45.0
     },
     "diagnostic": null,
     "environment": {
       "architecture": "arm64",
       "display_scale": 1.0,
-      "locale": "C/C.UTF-8/C/C/C/C",
+      "locale": "C/en_US.UTF-8/C/C/C/C",
       "os": "Darwin",
-      "os_version": "26.5.2"
+      "os_version": "26.6.2"
     },
     "fonts": [],
     "input": {
@@ -53,12 +53,12 @@
   },
   "comparison": {
     "baseline": {
-      "evidence_sha256": "86835db509e02451cbbdc4e3a415fcf8db4bf7da59f481b553cdc029da614e6c",
+      "evidence_sha256": "4486aa04188fd3d6bd8ff6c71346f5049bc72439cecd531049af76a899136f9f",
       "image_path": "supported-edited.quicklook.png",
       "image_sha256": "6b6e8c38094fb531e6369adcd93d9bd821cb37fca42534898d03837d4f58af36"
     },
     "candidate": {
-      "evidence_sha256": "f8ed86647e20b7f7982621c10cdb9de7b99491c3a946c6d6b91ea24b45890656",
+      "evidence_sha256": "6bd8fd39fc5223b942fd5ab416cfb81e3c1142792d1534bab79e2aa0d6fee627",
       "image_path": "supported-regenerated.quicklook.png",
       "image_sha256": "6b6e8c38094fb531e6369adcd93d9bd821cb37fca42534898d03837d4f58af36"
     },
@@ -73,7 +73,7 @@
     "implementation": {
       "executable_path": "/opt/homebrew/bin/magick",
       "name": "ImageMagick RGBA normalization",
-      "version": "Version: ImageMagick 7.1.2-13 Q16-HDRI aarch64 23522 https://imagemagick.org"
+      "version": "Version: ImageMagick 7.1.2-16 Q16-HDRI aarch64 23761 https://imagemagick.org"
     },
     "mask": null,
     "metrics": {
@@ -94,7 +94,7 @@
       "max_mean_absolute_error": 0.0
     }
   },
-  "evidence_sha256": "91e462b9b7ab0acfc890e62a3c4c5d87c0bbf58045e5419ca1fdf42dff4fc610",
+  "evidence_sha256": "d802b4aca68101d47f8f24d131a520208ee1264471f0a3d3602f9b3cc1787b21",
   "schema": "office180-visual-evidence/0.1",
   "subject": {
     "artifact_path": "supported-regenerated.pptx",
