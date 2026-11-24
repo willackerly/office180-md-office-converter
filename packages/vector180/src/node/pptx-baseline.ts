@@ -556,11 +556,21 @@ function validateResolvedCapability(model: Vector180ResolvedAtom): void {
         `Rounded rectangle "${object.id}" is outside the bounded C9 native subset.`,
       );
     }
-    if (object.kind === "text" && object.lines.length !== 1) {
-      baselineFail(
-        "VECTOR180-BASELINE-UNSUPPORTED",
-        `Text "${object.id}" has ${object.lines.length} hard lines; the bounded C9 slice accepts exactly one.`,
-      );
+    if (object.kind === "text") {
+      const first = object.lines[0];
+      if (first === undefined) {
+        baselineFail(
+          "VECTOR180-BASELINE-UNSUPPORTED",
+          `Text "${object.id}" has no hard line; the bounded C9 slice requires at least one.`,
+        );
+      }
+      const mixed = object.lines.findIndex((line) => line.x !== first.x);
+      if (mixed !== -1) {
+        baselineFail(
+          "VECTOR180-BASELINE-UNSUPPORTED",
+          `Text "${object.id}" hard line ${mixed + 1} anchors at x=${numberText(object.lines[mixed]!.x)} but hard line 1 anchors at x=${numberText(first.x)}; one native text box requires one shared anchor x for every hard line.`,
+        );
+      }
     }
     if (object.style.opacity !== 1) {
       baselineFail(
@@ -760,13 +770,13 @@ function renderComposedObject(
       );
     case "text": {
       const line = object.lines[0];
-      if (line === undefined || object.lines.length !== 1) {
+      if (line === undefined) {
         return baselineFail(
           "VECTOR180-BASELINE-UNSUPPORTED",
-          `Text "${object.id}" must contain exactly one hard line.`,
+          `Text "${object.id}" must contain at least one hard line.`,
         );
       }
-      const attributes = [
+      const frameAttributes = [
         ...common,
         [
           "data-vector180-frame",
@@ -778,11 +788,50 @@ function renderComposedObject(
           ].join(" "),
         ],
         ["data-vector180-line-step", length(object.lineStep)],
-        ["x", x(line.x)],
-        ["y", y(line.y)],
-        ...style,
       ] as Array<[string, string]>;
-      return `${indent}<text${renderAttributes(attributes)}>${htmlText(line.text)}</text>`;
+      if (object.lines.length === 1) {
+        const attributes = [
+          ...frameAttributes,
+          ["x", x(line.x)],
+          ["y", y(line.y)],
+          ...style,
+        ] as Array<[string, string]>;
+        return `${indent}<text${renderAttributes(attributes)}>${htmlText(line.text)}</text>`;
+      }
+      // C9 2.1: N hard lines stay N direct tspans. The placed baselines must
+      // remain exactly one placed line step apart; nothing is rounded.
+      const placedStep = length(object.lineStep);
+      const placedLines = object.lines.map((hardLine) => ({
+        x: x(hardLine.x),
+        y: y(hardLine.y),
+        text: hardLine.text,
+      }));
+      for (const [index, placed] of placedLines.entries()) {
+        const previous = placedLines[index - 1];
+        if (
+          previous !== undefined &&
+          !exactDecimalStep(
+            Number(previous.y),
+            Number(placed.y),
+            Number(placedStep),
+          )
+        ) {
+          return baselineFail(
+            "VECTOR180-BASELINE-UNSUPPORTED",
+            `Text "${object.id}" hard lines ${index} and ${index + 1} do not stay exactly one line step apart at placement scale ${numberText(transform.scale)} (baselines ${previous.y} and ${placed.y}, step ${placedStep}); C9 does not round hard-line positions.`,
+          );
+        }
+      }
+      const spans = placedLines
+        .map(
+          (placed) =>
+            `${indent}  <tspan${renderAttributes([
+              ["x", placed.x],
+              ["y", placed.y],
+            ])}>${htmlText(placed.text)}</tspan>`,
+        )
+        .join("\n");
+      return `${indent}<text${renderAttributes([...frameAttributes, ...style])}>\n${spans}\n${indent}</text>`;
     }
     case "group": {
       const translateX = cleanNumber(
@@ -1170,7 +1219,7 @@ function drawingMlSnapshot(
       ) {
         return baselineFail(
           "VECTOR180-BASELINE-MAP",
-          `Text "${object.id}" lacks its admitted single-line font values.`,
+          `Text "${object.id}" lacks its admitted hard-line font values.`,
         );
       }
       const frameX = numeric(object.frame.x);
@@ -1181,7 +1230,7 @@ function drawingMlSnapshot(
         anchorX - frameX,
         frameWidth,
       );
-      return {
+      const frame = {
         presetGeometry: "rect",
         transform: {
           offXEmu: frameX,
@@ -1197,36 +1246,53 @@ function drawingMlSnapshot(
           marginsEmu: { left: 0, top: 0, right: 0, bottom: 0 },
           verticalAnchor: "top",
         },
-        paragraph: {
-          alignment:
-            object.anchor === "start"
-              ? "left"
-              : object.anchor === "middle"
-                ? "center"
-                : "right",
-          marginLeftEmu: margins.left,
-          marginRightEmu: margins.right,
-          indentEmu: 0,
-          lineSpacingHundredthPoints: exactScaled(
-            object.lineStep,
-            HUNDREDTH_POINTS_PER_UNIT,
-          ),
-          spacingBeforeHundredthPoints: 0,
-          spacingAfterHundredthPoints: 0,
-          bullets: "none",
-        },
-        run: {
-          text: line.text,
-          fontFamily,
-          fontSizeHundredthPoints: exactScaled(
-            fontSize,
-            HUNDREDTH_POINTS_PER_UNIT,
-          ),
-          bold: object.style.fontWeight === 700,
-          italic: object.style.fontStyle === "italic",
-          fill: paintSnapshot(object.style.fill),
-          outline: lineSnapshot(object.style),
-        },
+      };
+      const paragraph = {
+        alignment:
+          object.anchor === "start"
+            ? "left"
+            : object.anchor === "middle"
+              ? "center"
+              : "right",
+        marginLeftEmu: margins.left,
+        marginRightEmu: margins.right,
+        indentEmu: 0,
+        lineSpacingHundredthPoints: exactScaled(
+          object.lineStep,
+          HUNDREDTH_POINTS_PER_UNIT,
+        ),
+        spacingBeforeHundredthPoints: 0,
+        spacingAfterHundredthPoints: 0,
+        bullets: "none",
+      };
+      const runStyle = {
+        fontFamily,
+        fontSizeHundredthPoints: exactScaled(
+          fontSize,
+          HUNDREDTH_POINTS_PER_UNIT,
+        ),
+        bold: object.style.fontWeight === 700,
+        italic: object.style.fontStyle === "italic",
+        fill: paintSnapshot(object.style.fill),
+        outline: lineSnapshot(object.style),
+      };
+      if (object.lines.length === 1) {
+        // Key order and content are the C9 2.0 one-line snapshot exactly.
+        return {
+          ...frame,
+          paragraph,
+          run: { text: line.text, ...runStyle },
+        };
+      }
+      // C9 2.1: one entry per emitted a:p, in hard-line order. An empty hard
+      // line is a run-less paragraph whose end-paragraph marker holds the style.
+      return {
+        ...frame,
+        paragraphs: object.lines.map((hardLine) =>
+          hardLine.text === ""
+            ? { paragraph, run: null, endParagraphMarker: runStyle }
+            : { paragraph, run: { text: hardLine.text, ...runStyle } },
+        ),
       };
     }
     case "group": {
@@ -1569,6 +1635,24 @@ function multiplyExactDecimals(
     coefficient: left.coefficient * right.coefficient,
     exponent: left.exponent + right.exponent,
   });
+}
+
+/** True only when `next - previous` equals `step` in exact decimal arithmetic. */
+function exactDecimalStep(
+  previous: number,
+  next: number,
+  step: number,
+): boolean {
+  const values = [
+    exactDecimal(previous),
+    exactDecimal(next),
+    exactDecimal(step),
+  ];
+  const exponent = Math.min(...values.map((value) => value.exponent));
+  const [left, right, delta] = values.map(
+    (value) => value.coefficient * 10n ** BigInt(value.exponent - exponent),
+  ) as [bigint, bigint, bigint];
+  return right - left === delta;
 }
 
 function normalizeExactDecimal(value: ExactDecimal): ExactDecimal {
