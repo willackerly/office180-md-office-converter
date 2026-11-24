@@ -1,7 +1,7 @@
 # Project Metrics
 
 <!-- FRESHNESS: Update this date every time you modify this file -->
-<!-- freshness: 2026-08-02 -->
+<!-- freshness: 2026-11-23 -->
 
 **Ground-truth metrics for the Python DOCX pair and canonical TypeScript
 Vector180 kernel.**
@@ -16,8 +16,8 @@ python_source_files = 2
 test_files = 3
 test_functions = 32
 typescript_source_files = 38
-typescript_test_files = 33
-typescript_test_cases = 257
+typescript_test_files = 34
+typescript_test_cases = 280
 contracts = 12
 published_schemas = 15
 shipped_themes = 3
@@ -59,14 +59,16 @@ shipped_themes = 3
   publication/rollback, three-way merge, visual capture/comparison/binding,
   bridge containment/locking/handoff/save/reopen/package/privacy behavior, link
   demotion, and `--no-footer`.
-- **TypeScript:** 314 passing runtime Vitest cases from 257 direct
+- **TypeScript:** 337 passing runtime Vitest cases from 280 direct
   `it()`/`test()` declarations (data-driven cases expand at runtime), covering
   exact UTF-8 source handling, BOM/non-BMP coordinates, non-executing security,
   strict HTML/XML/container/manifest validation, diagram/deck distinction,
   hierarchy/order, wire-family-bearing JSON-safe projections, atomic
   preserve-mode operations,
   deterministic slide hydration, exact-source browser sessions/editor packs,
-  C6 style/geometry/text resolution, C7 OPC/ZIP/OOXML mappings and failures, C8
+  C6 style/geometry/text resolution, C7 OPC/ZIP/OOXML mappings and failures,
+  C7/C9/C10 2.1 multi-line hard-line text boxes (one paragraph per line,
+  admission refusals, map snapshot, inspection, and reconcile boundary), C8
   anchor/measurement/font-map/CLI behavior, deterministic three-engine
   calibration evidence updates, C5 0.2 typed native-object operations plus C5
   0.3 connector cloning, C9 explicit atom composition/mapped PPTX baselines,
@@ -186,16 +188,19 @@ pnpm test
   PPTV reads and one unified `vector180-patch/0.1` transaction vocabulary.
 - `C6-PPTV-RESOLVED` 2.0 specifies browser-independent canonical atom/deck
   projections, deterministic metadata evidence, and canonical hydration.
-- `C7-PPTX-CANARY` 2.0 specifies the deterministic canonical strict-subset
-  PPTX writer; expanded native fixtures and quantitative fidelity remain.
+- `C7-PPTX-CANARY` 2.1 specifies the deterministic canonical strict-subset
+  PPTX writer, including one text box with one paragraph per hard line;
+  expanded native fixtures and quantitative fidelity remain.
 - `C8-PPTV-TEXT-FIT` 2.0 specifies pure non-mutating preflight, the packaged
   exact ABeeZee default, and exact-font Node/browser evidence; native
   PowerPoint text calibration remains.
-- `C9-PPTV-PPTX-BASELINE` 2.0 specifies explicit atom placement/composition,
-  mapped native PPTX output, and canonical metadata/source binding.
-- `C10-PPTV-PPTX-RECONCILIATION` 2.0 specifies baseline-aware edited-PPTX
-  inspection, proof-carrying normalization, one unified patch proposal, and
-  strict reviewed connector-copy resolution.
+- `C9-PPTV-PPTX-BASELINE` 2.1 specifies explicit atom placement/composition,
+  mapped native PPTX output including multi-line text boxes, and canonical
+  metadata/source binding.
+- `C10-PPTV-PPTX-RECONCILIATION` 2.1 specifies baseline-aware edited-PPTX
+  inspection, proof-carrying normalization, one unified patch proposal,
+  strict reviewed connector-copy resolution, and the refusal boundary for
+  edited multi-line text boxes.
 - `C11-OFFICE-VISUAL-EVIDENCE` specifies the in-progress cross-lane capture,
   quantitative comparison, native lifecycle, and human-review evidence
   envelope; browser/Quick Look/status/checksum/privacy bundles plus the bounded
@@ -204,7 +209,7 @@ pnpm test
   comparison for two complete standalone SVG atoms, including a distinct
   lexical-only result and fail-closed incomparable evidence.
 
-C1 remains `verified`. The current destination-neutral C4-C10 2.0, C11 1.2,
+C1 remains `verified`. The current destination-neutral C4-C10 2.x, C11 1.2,
 and C12 1.0 successors remain `in-progress` until their new acceptance
 matrices pass; this does not erase the retained verified historical evidence.
 C2/C3 also remain implemented/in-progress for their declared bounded profiles.

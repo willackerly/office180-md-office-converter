@@ -1,0 +1,164 @@
+<!doctype html>
+<html lang="en" data-vector180-version="0.1">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="vector180-agent-profile" content="vector180-agent/1">
+  <title>Multi-line hard-line text</title>
+</head>
+<body>
+
+<script id="vector180-manifest" type="application/vnd.office180.vector180+json">
+{
+  "vector180": "0.1",
+  "title": "Multi-line hard-line text",
+  "runtime": "vector180-browser/0.1",
+  "theme": "default",
+  "slides": [
+    "copy",
+    "anchors"
+  ],
+  "agentProfile": "vector180-agent/1"
+}
+</script>
+
+<main data-vector180-output></main>
+
+<template data-vector180-slide="copy">
+  <svg id="copy" viewBox="0 0 1600 900" data-vector180-layout="content" xmlns="http://www.w3.org/2000/svg">
+    <rect id="copy.background" class="slide-background" data-vector180-role="shape" data-vector180-export="native" x="0" y="0" width="1600" height="900"/>
+    <text id="copy.title" class="slide-title" data-vector180-role="text" data-vector180-export="native"
+      data-vector180-frame="100 60 1400 100" data-vector180-line-step="72"
+      x="100" y="130">One text box per text object</text>
+    <text id="copy.paragraph" class="body-copy" data-vector180-role="text" data-vector180-export="native"
+      data-vector180-frame="100 220 1400 150" data-vector180-line-step="48">
+      <tspan x="100" y="260">Every hard line stays exactly where it was authored,</tspan>
+      <tspan x="100" y="308">yet PowerPoint shows a single editable text box</tspan>
+      <tspan x="100" y="356">with one paragraph for each line.</tspan>
+    </text>
+    <text id="copy.list" class="body-copy" data-vector180-role="text" data-vector180-export="native"
+      data-vector180-frame="100 430 1400 200" data-vector180-line-step="48">
+      <tspan x="100" y="470">- Lines share one anchor and one style</tspan>
+      <tspan x="100" y="518">- Baselines advance by the declared line step</tspan>
+      <tspan x="100" y="566"></tspan>
+      <tspan x="100" y="614">- An empty hard line keeps its slot</tspan>
+    </text>
+  </svg>
+</template>
+
+<template data-vector180-slide="anchors">
+  <svg id="anchors" viewBox="0 0 1600 900" data-vector180-layout="content" xmlns="http://www.w3.org/2000/svg">
+    <rect id="anchors.background" class="slide-background" data-vector180-role="shape" data-vector180-export="native" x="0" y="0" width="1600" height="900"/>
+    <text id="anchors.centered" class="body-copy" data-vector180-role="text" data-vector180-export="native"
+      data-vector180-frame="200 120 1200 110" data-vector180-line-step="48"
+      text-anchor="middle">
+      <tspan x="800" y="160">Centered hard lines</tspan>
+      <tspan x="800" y="208">share the middle anchor</tspan>
+    </text>
+    <text id="anchors.right" class="body-copy" data-vector180-role="text" data-vector180-export="native"
+      data-vector180-frame="200 300 1200 110" data-vector180-line-step="48"
+      text-anchor="end">
+      <tspan x="1400" y="340">End-anchored hard lines</tspan>
+      <tspan x="1400" y="388">share the right edge</tspan>
+    </text>
+    <g id="anchors.card" data-vector180-role="group" data-vector180-export="native" transform="translate(40 20)">
+      <rect id="anchors.card.panel" class="card-panel" data-vector180-role="shape" data-vector180-export="native" x="160" y="480" width="1200" height="260"/>
+      <text id="anchors.card.copy" class="body-copy" data-vector180-role="text" data-vector180-export="native"
+        data-vector180-frame="200 520 1120 160" data-vector180-line-step="48">
+        <tspan x="200" y="560">A grouped card keeps its copy</tspan>
+        <tspan x="200" y="608">as one text box inside the group,</tspan>
+        <tspan x="200" y="656">  and boundary spaces stay exact. </tspan>
+      </text>
+    </g>
+  </svg>
+</template>
+
+<script type="text/css" data-vector180-style="base">
+.slide-background { fill: var(--vector180-background); }
+.slide-title {
+  fill: var(--vector180-text-primary);
+  font-family: var(--vector180-font-major);
+  font-size: 56px;
+  font-weight: 400;
+}
+.body-copy {
+  fill: var(--vector180-text-primary);
+  font-family: var(--vector180-font-major);
+  font-size: 32px;
+  font-weight: 400;
+}
+.card-panel {
+  fill: var(--vector180-surface);
+  stroke: var(--vector180-text-primary);
+  stroke-width: 2px;
+}
+</script>
+
+<script type="text/css" data-vector180-theme="default">
+:root {
+  --vector180-background: #ffffff;
+  --vector180-surface: #eef3f1;
+  --vector180-text-primary: #17211e;
+  --vector180-font-major: ABeeZee;
+}
+</script>
+
+<script data-vector180-runtime="vector180-browser/0.1">
+(() => {
+  "use strict";
+
+  const manifestNode = document.querySelector("#vector180-manifest");
+  const output = document.querySelector("[data-vector180-output]");
+  const manifest = JSON.parse(manifestNode.textContent);
+
+  const baseStyleNode = document.querySelector(
+    '[data-vector180-style="base"]'
+  );
+  if (!baseStyleNode) throw new Error("Missing Vector180 base style");
+
+  const themeNode = document.querySelector(
+    `[data-vector180-theme="${CSS.escape(manifest.theme)}"]`
+  );
+  if (!themeNode) {
+    throw new Error(`Unknown Vector180 theme: ${manifest.theme}`);
+  }
+
+  const viewerStyle = document.createElement("style");
+  viewerStyle.dataset.vector180ViewerChrome = "";
+  viewerStyle.textContent = `
+html, body { margin: 0; background: #dfe5e2; }
+[data-vector180-output] { display: grid; gap: 32px; padding: 32px; }
+.vector180-slide {
+  width: min(100%, 1280px);
+  margin: 0 auto;
+  box-shadow: 0 16px 48px rgb(0 0 0 / 24%);
+}
+.vector180-slide > svg { display: block; width: 100%; height: auto; }
+`;
+  document.head.append(viewerStyle);
+
+  const activeStyle = document.createElement("style");
+  activeStyle.dataset.vector180ActiveTheme = manifest.theme;
+  activeStyle.textContent =
+    `${baseStyleNode.textContent}\n${themeNode.textContent}`;
+  document.head.append(activeStyle);
+
+  for (const slideRef of manifest.slides) {
+    if (typeof slideRef === "object" && slideRef.hidden === true) continue;
+    const id = typeof slideRef === "string" ? slideRef : slideRef.id;
+    const source = document.querySelector(
+      `template[data-vector180-slide="${CSS.escape(id)}"]`
+    );
+    if (!source) throw new Error(`Unknown Vector180 slide: ${id}`);
+
+    const section = document.createElement("section");
+    section.className = "vector180-slide";
+    section.dataset.vector180RenderedSlide = id;
+    section.append(source.content.cloneNode(true));
+    output.append(section);
+  }
+})();
+</script>
+
+</body>
+</html>
