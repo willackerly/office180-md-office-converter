@@ -1,7 +1,7 @@
 /**
  * Deterministic, privacy-bounded agent report for C10 reconciliation.
  *
- * CONTRACT:C10-PPTV-PPTX-RECONCILIATION.2.0
+ * CONTRACT:C10-PPTV-PPTX-RECONCILIATION.2.1
  */
 
 import { createHash } from "node:crypto";

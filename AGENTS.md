@@ -89,10 +89,10 @@ successors remain `in-progress`.
 | `CONTRACT:C4-PPTV-SOURCE.2.0`               | Exact-source Vector180 scan, manifest, identity/order, semantic read model                            |
 | `CONTRACT:C5-PPTV-PATCH.2.0`                | Hash-bound typed transactions plus one exact reviewed connector clone                                 |
 | `CONTRACT:C6-PPTV-RESOLVED.2.0`             | Fixed-canvas compiler-grade style, geometry, group, and hard-line projection                          |
-| `CONTRACT:C7-PPTX-CANARY.2.0`               | Deterministic primitive-only fresh-PPTX canary and strict OPC graph                                   |
+| `CONTRACT:C7-PPTX-CANARY.2.1`               | Deterministic primitive-only fresh-PPTX canary and strict OPC graph                                   |
 | `CONTRACT:C8-PPTV-TEXT-FIT.2.0`             | Pure anchor-aware text-fit evidence and explicit exact-font adapter                                   |
-| `CONTRACT:C9-PPTV-PPTX-BASELINE.2.0`        | Supported editable-PPTX baseline, explicit atom placement, and source map                             |
-| `CONTRACT:C10-PPTV-PPTX-RECONCILIATION.2.0` | Proof-carrying native normalization, semantic diff, and reviewed connector-copy resolution            |
+| `CONTRACT:C9-PPTV-PPTX-BASELINE.2.1`        | Supported editable-PPTX baseline, explicit atom placement, and source map                             |
+| `CONTRACT:C10-PPTV-PPTX-RECONCILIATION.2.1` | Proof-carrying native normalization, semantic diff, and reviewed connector-copy resolution            |
 | `CONTRACT:C11-OFFICE-VISUAL-EVIDENCE.1.2`   | Cross-lane visual evidence plus bounded native Office lifecycle bridge                                |
 | `CONTRACT:C12-VECTOR180-SOURCE-DIFF.1.0`    | Stable-ID semantic atom comparison with lexical changes kept separate                                 |
 

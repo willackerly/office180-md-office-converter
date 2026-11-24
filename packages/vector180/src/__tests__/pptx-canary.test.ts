@@ -1,4 +1,4 @@
-// Tests: CONTRACT:C7-PPTX-CANARY.2.0
+// Tests: CONTRACT:C7-PPTX-CANARY.2.1
 
 import { spawnSync } from "node:child_process";
 import { createHash } from "node:crypto";

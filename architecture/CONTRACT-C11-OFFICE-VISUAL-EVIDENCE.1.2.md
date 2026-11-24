@@ -290,8 +290,8 @@ No native error path publishes a partial Office output or passing report.
 
 ## Dependencies
 
-- Depends on lane-specific C3, `CONTRACT:C9-PPTV-PPTX-BASELINE.2.0`, and
-  `CONTRACT:C10-PPTV-PPTX-RECONCILIATION.2.0` package/semantic validation;
+- Depends on lane-specific C3, `CONTRACT:C9-PPTV-PPTX-BASELINE.2.1`, and
+  `CONTRACT:C10-PPTV-PPTX-RECONCILIATION.2.1` package/semantic validation;
   C11 never substitutes for them.
 - Legacy `pptv-pptx` evidence remains interpreted under C9 1.0/C10 1.2 and is
   never rewritten.
@@ -350,7 +350,7 @@ No native error path publishes a partial Office output or passing report.
 - [x] Checked DOCX and PPTV generated/edited/recovered/regenerated bundles with
       bounded deliberate-change and zero-difference regeneration gates.
 - [x] Canonical `vector180-pptx` browser/native/round-trip evidence uses the
-      matching validator and C9/C10 2.0 lineage while legacy evidence remains
+      matching validator and C9/C10 2.1 lineage while legacy evidence remains
       byte-identical.
 - [ ] Every lane/suffix/validator/lineage cross-family pair refuses.
 - [ ] PDF page rasterization with producer and rasterizer identities separated.

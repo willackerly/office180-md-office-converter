@@ -1,9 +1,9 @@
 /**
  * Fail-closed PPTX inspection for baseline-aware reconciliation.
  *
- * CONTRACT:C7-PPTX-CANARY.2.0
- * CONTRACT:C9-PPTV-PPTX-BASELINE.2.0
- * CONTRACT:C10-PPTV-PPTX-RECONCILIATION.2.0
+ * CONTRACT:C7-PPTX-CANARY.2.1
+ * CONTRACT:C9-PPTV-PPTX-BASELINE.2.1
+ * CONTRACT:C10-PPTV-PPTX-RECONCILIATION.2.1
  */
 
 import { createHash } from "node:crypto";

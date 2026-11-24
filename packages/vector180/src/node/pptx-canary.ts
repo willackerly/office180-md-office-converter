@@ -2,8 +2,8 @@
  * Deterministic fresh-PPTX compiler canary for the strict C6 primitive subset.
  *
  * CONTRACT:C6-PPTV-RESOLVED.2.0
- * CONTRACT:C7-PPTX-CANARY.2.0
- * CONTRACT:C9-PPTV-PPTX-BASELINE.2.0
+ * CONTRACT:C7-PPTX-CANARY.2.1
+ * CONTRACT:C9-PPTV-PPTX-BASELINE.2.1
  */
 
 import { createHash } from "node:crypto";
