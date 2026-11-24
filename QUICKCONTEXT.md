@@ -1,8 +1,8 @@
 # Quick Context
 
 <!-- FRESHNESS: Update this date every time you modify this file -->
-<!-- freshness: 2026-08-02 -->
-<!-- last-synced: 2026-08-02 — verified against the current workspace -->
+<!-- freshness: 2026-11-23 -->
+<!-- last-synced: 2026-11-23 — verified against the current workspace -->
 
 **Current state for an agent starting a new session.**
 
@@ -35,7 +35,7 @@
   an actual deck/report aggregation or deck-only behavior. Generated
   `*.editable.html` is never source; a generated
   `*.composed.vector180.html` is a valid one-slide deck artifact but never
-  replaces its atom authority. C4–C10 2.0 and C12 1.0
+  replaces its atom authority. C4–C6 and C8 2.0, C7/C9/C10 2.1, and C12 1.0
   specify the canonical read/patch/resolve/text-fit/editor/PPTX,
   metadata/lineage, migration, and semantic-diff surface.
 - **Acceptance status:** the alpha.5 implementation has passed its current
@@ -90,9 +90,12 @@ This is the single source of truth for priority ordering:
 3. **Expose the typed C5 surface in the trusted browser editor:** add bounded
    move/resize/endpoints/frame/style/order/delete controls over the already
    contracted operations, retaining exact-source undo/redo and C6 revalidation.
-4. **Expand compiler and reverse support only in lockstep:** add multiline hard
-   lines, atomic assets, deck-mode C9, and selected native features only when
-   source, editor, PPTX, reconciliation, and visual fixtures all agree.
+4. **Expand compiler and reverse support only in lockstep:** multi-line hard
+   lines with one shared anchor x now compile to one text box per text object
+   (C7/C9/C10 2.1). Add the typed multi-line text/frame edit, per-line anchors,
+   native and renderer evidence for multi-paragraph boxes, atomic assets,
+   deck-mode C9, and selected native features only when source, editor, PPTX,
+   reconciliation, and visual fixtures all agree.
 5. **Promote 0.1.1 text resilience contract-first:** after native calibration,
    version the source/resolved/compiler seams for paragraph intent and explicit
    reliable/editable export policy; keep baseline-free import a separate,
@@ -178,15 +181,20 @@ above:
   breadcrumb, and emits no partial result
 - deterministic STORE-only C7 fresh-PPTX compilation with a strict OPC graph,
   stable native object names/IDs, provenance, native rectangles, ellipses,
-  connectors, translated groups, and one-line no-wrap/no-autofit text
+  connectors, translated groups, and no-wrap/no-autofit text boxes with one
+  exact-spacing paragraph per hard line (a multi-line object needs one shared
+  anchor x and an exact line step; empty hard lines are supported)
 - C9 explicit identity or exact-aspect uniform atom placement, deterministic
-  one-slide composition, mapped native PPTX lineage, and stable native object
-  identities
+  one-slide composition, mapped native PPTX lineage, stable native object
+  identities, and multi-line text composed as direct `tspan` lines with one
+  map entry per emitted paragraph
 - C10 hardened OPC/ZIP/DrawingML inspection, proof-carrying native-save
   normalization, deterministic identity/findings/candidates, optional exact
   native baseline, authenticated supported edit classification, minimal C5
   typed proposal, and strict C5 reviewed connector-copy resolution with
-  temporary apply/C9 recompile/exact semantic proof
+  temporary apply/C9 recompile/exact semantic proof; a multi-line text box is
+  inspected as ordered line strings, a uniform style change is recovered, and
+  an edited line or moved frame is refused without a patch
 - C11 evidence schema/harness, trusted standalone-SVG Chromium capture,
   DOCX/PPTX Quick Look capture, deterministic comparison, privacy validation,
   and a bounded non-interactive native Office bridge with exact-path
@@ -236,8 +244,9 @@ Explicitly not implemented:
   deck input
 - theme-rule edits
 - browser controls for the typed native-object operations; general insertion/
-  duplication, reparenting, group scale/rotation, rich/multiline text, and
-  canonical structural serialization. One strictly reviewed same-parent
+  duplication, reparenting, group scale/rotation, rich text, typed
+  multi-line text or frame edits (`set-text-lines`), per-line anchors inside
+  one text box, and canonical structural serialization. One strictly reviewed same-parent
   connector clone is the only current insertion exception.
 - automatic font discovery/substitution, native PowerPoint text calibration,
   or any automatic text-fit repair
@@ -287,7 +296,9 @@ Explicitly not implemented:
   ratios require a later versioned extension.
 - Executable 0.1 native text uses explicit hard lines and explicit
   typography/frame geometry. Wrapping, autofit, shrink-to-fit, and automatic
-  font-size changes remain out.
+  font-size changes remain out. One text object is one PowerPoint text box:
+  each hard line is its own no-wrap paragraph with exact line spacing, so a
+  paragraph or list is edited as one box and still cannot reflow.
 - Banked source/profile 0.1.1 may add paragraph intent without adding another
   text authority: SVG line membership stays explicit; future PPTX export may
   select a measured expanded `reliable` frame or authored tight `editable`
@@ -418,8 +429,10 @@ Dependencies:
    `pnpm legacy:build`, and all `scripts/check-*.sh` before handoff.
 6. Update this file, `TODO.md`, and `METRICS.md` when repository truth changes.
 
-**Last updated by:** the alpha.5 local release-candidate, contract-acceptance,
-durable-evidence, skill, and cold-start consistency pass (2026-08-02)
+**Last updated by:** the multi-line hard-line text-box change (C7/C9/C10 2.1,
+regenerated round-trip evidence, skill references, and the field-feedback
+inbox note; 2026-11-23). The alpha.5 inventory above was last fully reconciled
+on 2026-08-02.
 
 **Next review:** after another successor contract closes; then after
 representative native Word/PowerPoint edits, browser controls for C5 2.0,

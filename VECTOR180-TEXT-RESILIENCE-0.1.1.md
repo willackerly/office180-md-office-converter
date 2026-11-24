@@ -28,11 +28,18 @@ same text semantics untouched. It does not change:
 
 - the currently accepted source/container identifier `0.1`;
 - current `@office180/vector180@0.1.0-alpha.5` runtime behavior;
-- C4–C10 at their Vector180 2.0 revisions or C11 1.2;
+- C4–C10 at their Vector180 2.x revisions or C11 1.2;
 - the `vector180-resolved*/0.1`, `vector180-text-fit*/0.1`, browser, or compiler
   capability identifiers;
-- the current C7 one-line `wrap="none"` canary; or
+- the current C7 hard-line `wrap="none"` canary; or
 - any shipped schema, starter, example, skill, CLI, or runtime behavior.
+
+C7/C9 2.1 (2026-11-23) compile an ordinary multi-line hard-line object to one
+text box with one **non-wrapping paragraph per hard line**. That is the
+existing 0.1 hard-line profile mapped more compactly, not this design: it adds
+no source attribute, no wrapping, and no export policy. Paragraph intent below
+still means one wrapping-capable paragraph with explicit breaks and remains
+banked.
 
 ## 2. Canonical source authority
 

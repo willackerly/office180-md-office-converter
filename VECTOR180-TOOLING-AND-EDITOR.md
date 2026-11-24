@@ -3,7 +3,7 @@
 **Status:** `@office180/vector180` `0.1.0-alpha.5` implements the strict Vector180 0.1
 C4-C8 source/editor foundation, C5 2.0 typed native-object patches plus one
 exact reviewed connector clone, bounded C9 standalone-atom composition/PPTX
-output, and C10 2.0 mapped-PPTX reconciliation. C11 1.2 supplies automated
+output, and C10 2.1 mapped-PPTX reconciliation. C11 1.2 supplies automated
 browser/Quick Look evidence and a proven exact-path native no-op lifecycle;
 C12 supplies stable-ID atom comparison. Browser geometry/style controls,
 arbitrary PPTX import, representative native edits, and native
@@ -1020,8 +1020,8 @@ canary without claiming a general converter.
 ### Phase 4: early PowerPoint canary
 
 - **Implemented:** deterministic fresh two-slide package; native rectangles,
-  ellipses, straight connectors, translated groups, and one-line
-  no-wrap/no-autofit text; stable PowerPoint object names; source/compiler
+  ellipses, straight connectors, translated groups, and no-wrap/no-autofit
+  text boxes with one paragraph per hard line; stable PowerPoint object names; source/compiler
   provenance; a strict blank master/layout/theme graph; ISO/ECMA validation; and
   OpenDocKit reopen.
 - **Native smoke:** the minimal fixture opens in PowerPoint 16.111.2 without
@@ -1051,7 +1051,8 @@ canary without claiming a general converter.
   child-order, text-frame, deletion, and native-style operations;
 - arrowheads and expanded connector behavior (straight connectors already
   compile in C7);
-- explicit multiline text;
+- typed editing of explicit multi-line text (it already compiles to one text
+  box per object);
 - atomic SVG/raster assets; and
 - theme-token editing after CSS provenance exists.
 

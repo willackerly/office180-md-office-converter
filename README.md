@@ -78,7 +78,7 @@ TypeScript release candidate, with no server:
   writable trusted editor. Its Node boundary emits the C7 deck canary and the
   C9 standalone-atom path: explicit identity/uniform composition, native PPTX,
   complete sidecar map, and baseline-aware C10 patch proposal after supported
-  PowerPoint edits. C5 2.0/C10 2.0 can additionally recover one explicitly
+  PowerPoint edits. C5 2.0/C10 2.1 can additionally recover one explicitly
   reviewed same-parent connector copy through a hash/fingerprint-bound
   resolution document. It also projects inert template/style-family metadata,
   compares that metadata cheaply, and produces stable-ID semantic source
@@ -134,8 +134,9 @@ family and corpus rows close. The frozen predecessor already proved the
 underlying exact-source kernel under its PPTV identities, but that historical
 proof does not substitute for the remaining Vector180 acceptance rows.
 
-C7 2.0 remains intentionally deck-only and carries the strict primitive
-fresh-PPTX canary forward. Its predecessor's checked minimal artifact passed
+C7 2.1 remains intentionally deck-only and carries the strict primitive
+fresh-PPTX canary forward; a text object with several hard lines now compiles
+to one text box with one paragraph per line instead of being refused. Its predecessor's checked minimal artifact passed
 ISO/ECMA schema validation, independent OpenDocKit reopen, and native
 PowerPoint open/render without repair; OpenDocKit also independently reopened
 the predecessor's native-saved C9 artifact. The alpha.5 C7 implementation has
@@ -145,11 +146,12 @@ frozen-artifact gates still govern promotion; do not infer C7 acceptance from
 a generated PPTX alone. C8 2.0 is verified with anchor-aware, no-reflow
 evidence and the package-owned ABeeZee default.
 
-C9 2.0 defines explicit identity or aspect-preserving uniform atom placement,
+C9 2.1 defines explicit identity or aspect-preserving uniform atom placement,
 deterministic one-slide composition, a supported editable native PPTX, and a
-hash-bound object map. C10 2.0 defines authentication of that exact branch and
+hash-bound object map. C10 2.1 defines authentication of that exact branch and
 translation of the supported DrawingML edit subset into reviewable
-`vector180-patch/0.1` operations.
+`vector180-patch/0.1` operations; an edited line or moved frame of a
+multi-line text box is refused rather than guessed.
 One exact reviewed connector copy may produce a `vector180-patch/0.1`
 `clone-connector`; duplicates still refuse by default, and ambiguous or
 multiply changed copies produce rich recovery options with no partial patch.

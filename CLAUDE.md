@@ -1,7 +1,7 @@
 # Claude Code Configuration
 
 <!-- FRESHNESS: Update this date every time you modify this file -->
-<!-- freshness: 2026-08-02 -->
+<!-- freshness: 2026-11-23 -->
 
 Claude-specific orientation for the dual DOCX and Vector180 converter repository.
 Behavioral authority remains in `architecture/CONTRACT-*.md`; this file only
@@ -76,7 +76,9 @@ with the implementation.
 - Never introduce browser DOM, PowerPoint numeric IDs, array indexes, or a
   generated editor wrapper as competing authority.
 - Text is explicit-size, explicit-line, no-wrap, and no-autofit. Text-fit may
-  warn but never silently repair.
+  warn but never silently repair. One text object is one PowerPoint text box
+  with one paragraph per hard line; lines that do not share one anchor x and
+  an exact line step are refused, never approximated.
 - Vector180 source/profile 0.1.1 paragraph intent and its reliable/editable export
   policies are banked design only. Current loaders still accept exactly 0.1;
   do not emit proposed 0.1.1 syntax before successor contracts and fixtures.

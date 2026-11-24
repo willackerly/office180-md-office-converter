@@ -1,7 +1,7 @@
 # TODO
 
 <!-- FRESHNESS: Update this date every time you modify this file -->
-<!-- freshness: 2026-08-02 -->
+<!-- freshness: 2026-11-23 -->
 <!-- last-synced: 2026-08-02 — verified against the current workspace -->
 
 Active tasks plus nearby completion checkpoints. Priority ordering lives in
@@ -147,7 +147,7 @@ successor contract has completed its separate promotion matrix.
 - [x] Require standalone SVG to pass namespace-aware XML 1.0 well-formedness
       before semantic loading; HTML parser recovery is not atom authority.
 - [x] Build the first deterministic fresh-PPTX canary with native
-      rectangles/ellipses/connectors/translated groups/one-line text, exact
+      rectangles/ellipses/connectors/translated groups/hard-line text, exact
       stable-ID metadata, strict OPC graph validation, and atomic CLI output.
 - [x] Validate the minimal canary artifact against applicable ISO/ECMA XSDs,
       reopen/parse it through OpenDocKit, and native-open/render it in PowerPoint
@@ -170,9 +170,21 @@ successor contract has completed its separate promotion matrix.
       discovery fail-closed by default and block the complete transaction when
       zero/two baseline matches or any other review finding remains; implementation
       acceptance is part of the aggregate migration item.
-- [ ] Add multiline `set-text-lines` only with the matching source/resolved/
-      compiler contract successor; it must preserve explicit line authority and
-      must not smuggle in wrapping or autofit.
+- [x] Compile a multi-line hard-line text object to one native text box with
+      one exact no-wrap paragraph per line (C7 2.1 deck canary, C9 2.1 atom
+      composition/map, C10 2.1 inspection). Shared anchor x and exact line step
+      are required; empty hard lines are supported; everything else refuses.
+- [ ] Add multiline `set-text-lines` and a multi-line frame move as typed C5
+      operations with a matching C10 inverse; until then C10 2.1 refuses an
+      edited line or moved frame of a multi-line text box. They must preserve
+      explicit line authority and must not smuggle in wrapping or autofit.
+- [ ] Admit per-line anchor x (indentation carried by x, as code blocks need)
+      inside one text box only with matched C7/C9/C10 rules and renderer
+      evidence for centered and end-anchored paragraphs.
+- [ ] Record native PowerPoint open/save/reopen and C11 renderer comparison
+      for multi-paragraph hard-line boxes, including a run-less empty line and
+      a fractional-point line step (Quick Look advances 28.8 pt as 28 pt
+      between paragraphs; whole-point steps preview pixel-identical).
 - [ ] Extend the same canary with atomic SVG assets as the matching editor
       operation and static resource-table contract land. Native connectors,
       translated groups, and explicit lines already have compiler/unit coverage;
@@ -267,7 +279,7 @@ successor contract has completed its separate promotion matrix.
   bounded typed native-object operations above; and at most one exact reviewed
   same-parent connector clone. The implementation is in the alpha.5 candidate;
   C5's remaining family/full-corpus acceptance rows are open. Duplicate
-  discovery remains a refusal without a strict C10 2.0 resolution. The trusted
+  discovery remains a refusal without a strict C10 2.1 resolution. The trusted
   browser UI does not yet expose those new controls; rich text, CSS-rule
   rewriting, general insertion, reparenting, and group scaling fail explicitly.
 - The alpha.5 candidate resolves group hierarchy/order, translated world

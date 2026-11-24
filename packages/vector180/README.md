@@ -199,9 +199,18 @@ placement on the `1600 × 900` slide:
 - `identity` requires an exact coordinate match;
 - `uniform-scale-translate` requires the same aspect ratio and applies one
   finite positive scale plus translation;
-- stretching, cropping, letterboxing, inferred physical size, multiline text,
-  rounded rectangles, opacity, and raster/SVG assets are outside the current
-  native slice.
+- stretching, cropping, letterboxing, inferred physical size, rounded
+  rectangles, opacity, and raster/SVG assets are outside the current native
+  slice.
+
+A text object with several hard lines (direct `<tspan x y>` children that share
+one `x` and step by exactly `data-vector180-line-step`) compiles to one
+PowerPoint text box with one no-wrap paragraph per line, through both
+`compile` and `pptx-canary`. An empty `tspan` is a blank line. Lines with
+different `x` values are refused. `reconcile` reports such a box as unchanged
+or recovers a uniform style change; an edited line or moved frame is refused
+with `VECTOR180-RECONCILE-UNSUPPORTED`, and `patch set-text` /
+`set-text-frame` still accept one direct hard line only.
 
 The command publishes one native editable PPTX and
 `vector180-pptx-map/0.1` sidecar atomically. The map binds canonical atom and

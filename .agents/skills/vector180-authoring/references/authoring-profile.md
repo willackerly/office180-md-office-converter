@@ -107,9 +107,11 @@ Every native text object declares:
 - authored direct text or explicit hard-line `tspan` children.
 
 Never add wrapping, autofit, shrink-to-fit, automatic line breaking, or
-character-count fit guesses. Use one direct line per text object for the
-current mapped native PPTX baseline. Group separate line objects when a visual
-paragraph needs multiple explicit lines.
+character-count fit guesses. Write a paragraph or list as one text object with
+one direct `tspan` hard line per visible line; lines that share one `x` and
+step by exactly the line step compile to one PowerPoint text box with one
+paragraph per line. Keep a line with a different `x` or style as its own text
+object. See [text-fit.md](text-fit.md) for the exact syntax and limits.
 
 The banked paragraph-intent design remains future syntax until promoted by
 successor contracts. Do not emit speculative text-intent attributes.

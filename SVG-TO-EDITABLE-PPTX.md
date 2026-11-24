@@ -114,8 +114,10 @@ layout, colors, and meaningful diagram structure are editable while complex
 artwork remains crisp and stable.
 
 The current C9 compiler implements the strict native rectangle, true
-circle/ellipse, straight connector, translated-group, and one-hard-line text
-subset. Rounded rectangles, multiline text, opaque SVG/raster assets, non-unit
+circle/ellipse, straight connector, translated-group, and hard-line text
+subset: one text box per text object with one no-wrap paragraph per hard line.
+Rounded rectangles, hard lines without one shared anchor x, opaque SVG/raster
+assets, non-unit
 opacity, external resources, and other unsupported constructs fail closed; it
 never silently substitutes a rendered asset.
 
@@ -177,7 +179,7 @@ Rules:
 - The same semantic object keeps the same ID across regenerations.
 - Decorative fragments that must move together may be one embedded SVG with
   one ID.
-- A copied PowerPoint object initially duplicates its source ID. C10 2.0
+- A copied PowerPoint object initially duplicates its source ID. C10 2.1
   refuses duplicate identity by default and emits no partial patch. Its only
   automated exception is one copied mapped straight connector with exactly two
   occurrences, exactly one baseline-equivalent occurrence, and a strict
