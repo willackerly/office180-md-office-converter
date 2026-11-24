@@ -107,7 +107,13 @@ export interface PptxInspectedObject {
   readonly identityNormalizedStructureSignature: string;
   readonly geometry?: PptxInspectedGeometry;
   readonly style?: PptxInspectedStyle;
+  /** The one hard-line string of a one-line text box. */
   readonly text?: string;
+  /**
+   * Ordered hard-line strings of a mapped multi-line text box: one entry per
+   * `a:p`, with `""` for a run-less empty hard line. Absent for one-line text.
+   */
+  readonly textLines?: readonly string[];
   readonly textNodeCount: number;
   readonly normalizations: readonly PptxObjectNormalizationEvidence[];
 }
@@ -758,8 +764,11 @@ function inspectSlide(
     }
 
     const textElements = descendants(object.node, DRAWING, "t");
+    const hardLineCount =
+      expected.kind === "text" ? mappedHardLineCount(expected) : undefined;
     if (
       expected.kind === "text" &&
+      hardLineCount === 1 &&
       (textElements.length !== 1 ||
         /[\r\n\u2028\u2029]/u.test(
           textElements[0] === undefined ? "" : elementText(textElements[0]),
@@ -798,9 +807,14 @@ function inspectSlide(
         ? {}
         : { geometry: semantics.geometry }),
       ...(semantics.style === undefined ? {} : { style: semantics.style }),
-      ...(expected.kind === "text" && textElements.length === 1
+      ...(expected.kind === "text" &&
+      hardLineCount === 1 &&
+      textElements.length === 1
         ? { text: elementText(textElements[0]!) }
         : {}),
+      ...(semantics.textLines === undefined
+        ? {}
+        : { textLines: semantics.textLines }),
       textNodeCount: textElements.length,
       normalizations: semantics.normalizations,
     });
@@ -943,6 +957,7 @@ function inspectObjectIdentity(
 interface InspectedObjectSemantics {
   readonly geometry?: PptxInspectedGeometry;
   readonly style?: PptxInspectedStyle;
+  readonly textLines?: readonly string[];
   readonly normalizations: readonly PptxObjectNormalizationEvidence[];
   readonly maskedAttributes: WeakMap<XmlElement, ReadonlySet<string>>;
   readonly maskedElements: WeakMap<XmlElement, string>;
@@ -1054,7 +1069,14 @@ function inspectObjectSemantics(
     }
 
     if (expected.kind === "text") {
-      const text = inspectTextSemantics(root, transform, masks);
+      const hardLineCount = mappedHardLineCount(expected);
+      if (hardLineCount === undefined) {
+        throw new Error("authenticated map hard-line snapshot is invalid");
+      }
+      const text =
+        hardLineCount === 1
+          ? inspectTextSemantics(root, transform, masks)
+          : inspectHardLineParagraphs(root, transform, masks, hardLineCount);
       return {
         geometry: {
           kind: "text",
@@ -1065,15 +1087,16 @@ function inspectObjectSemantics(
           anchorXEmu: text.anchorX,
         },
         style: text.style,
+        ...(text.textLines === undefined ? {} : { textLines: text.textLines }),
         normalizations: Object.freeze(
-          text.endMarkerOmitted
+          text.endMarkersOmitted > 0
             ? [
                 {
                   ruleId:
                     "vector180-c10/end-paragraph-style-marker-omitted/1" as const,
                   partName: expected.emitted.partName,
                   objectId: expected.id,
-                  occurrenceCount: 1,
+                  occurrenceCount: text.endMarkersOmitted,
                   semanticScope: "existing-rendered-content" as const,
                   message:
                     "The omitted end-paragraph style marker affects future insertion defaults, not this complete existing run.",
@@ -1194,17 +1217,32 @@ function inspectTransform(
   };
 }
 
-function inspectTextSemantics(
-  root: XmlElement,
+interface InspectedTextSemantics {
+  readonly anchorX: number;
+  readonly style: PptxInspectedStyle;
+  readonly endMarkersOmitted: number;
+  readonly textLines?: readonly string[];
+}
+
+/**
+ * The authenticated map's composed snapshot states how many hard lines the
+ * text box was compiled from. Anything but a positive count is unusable.
+ */
+function mappedHardLineCount(
+  expected: Vector180PptxMapObject,
+): number | undefined {
+  const lines = expected.composed.geometry["lines"];
+  return Array.isArray(lines) && lines.length > 0 ? lines.length : undefined;
+}
+
+function inspectParagraphAnchor(
+  paragraph: XmlElement,
   transform: ReturnType<typeof inspectTransform>,
   masks: SemanticMasks,
 ): {
   readonly anchorX: number;
-  readonly style: PptxInspectedStyle;
-  readonly endMarkerOmitted: boolean;
+  readonly textAnchor: "start" | "middle" | "end";
 } {
-  const body = requireDirectElement(root, PRESENTATION, "txBody");
-  const paragraph = requireDirectElement(body, DRAWING, "p");
   const paragraphProperties = requireDirectElement(paragraph, DRAWING, "pPr");
   const alignment = attribute(paragraphProperties, "", "algn");
   const marginLeft = nonnegativeIntegerAttribute(paragraphProperties, "marL");
@@ -1238,6 +1276,21 @@ function inspectTextSemantics(
   ) {
     throw new Error("text paragraph margins do not encode one exact anchor");
   }
+  return { anchorX, textAnchor };
+}
+
+function inspectTextSemantics(
+  root: XmlElement,
+  transform: ReturnType<typeof inspectTransform>,
+  masks: SemanticMasks,
+): InspectedTextSemantics {
+  const body = requireDirectElement(root, PRESENTATION, "txBody");
+  const paragraph = requireDirectElement(body, DRAWING, "p");
+  const { anchorX, textAnchor } = inspectParagraphAnchor(
+    paragraph,
+    transform,
+    masks,
+  );
 
   const run = requireDirectElement(paragraph, DRAWING, "r");
   const runProperties = requireDirectElement(run, DRAWING, "rPr");
@@ -1261,7 +1314,115 @@ function inspectTextSemantics(
   return {
     anchorX,
     style: runStyle,
-    endMarkerOmitted: endProperties.length === 0,
+    endMarkersOmitted: endProperties.length === 0 ? 1 : 0,
+  };
+}
+
+/**
+ * C10 2.1: a mapped N-line text box must still be exactly N `a:p` hard-line
+ * paragraphs sharing one anchor and one complete style. A paragraph holds one
+ * run, or no run at all for an empty hard line whose end-paragraph marker
+ * then carries the style. Breaks, fields, extra runs, and per-paragraph
+ * divergence are refused.
+ */
+function inspectHardLineParagraphs(
+  root: XmlElement,
+  transform: ReturnType<typeof inspectTransform>,
+  masks: SemanticMasks,
+  hardLineCount: number,
+): InspectedTextSemantics {
+  const body = requireDirectElement(root, PRESENTATION, "txBody");
+  const paragraphs = directElements(body, DRAWING, "p");
+  if (paragraphs.length !== hardLineCount) {
+    throw new Error(
+      `text body has ${paragraphs.length} paragraphs where the baseline maps ${hardLineCount} hard lines`,
+    );
+  }
+  let shared:
+    | {
+        readonly anchorX: number;
+        readonly textAnchor: "start" | "middle" | "end";
+        readonly style: PptxInspectedStyle;
+      }
+    | undefined;
+  let endMarkersOmitted = 0;
+  const textLines: string[] = [];
+  for (const [index, paragraph] of paragraphs.entries()) {
+    const label = `hard-line paragraph ${index + 1}`;
+    if (
+      directElements(paragraph, DRAWING, "br").length > 0 ||
+      directElements(paragraph, DRAWING, "fld").length > 0
+    ) {
+      throw new Error(`${label} contains a line break or field`);
+    }
+    const { anchorX, textAnchor } = inspectParagraphAnchor(
+      paragraph,
+      transform,
+      masks,
+    );
+    const runs = directElements(paragraph, DRAWING, "r");
+    if (runs.length > 1) {
+      throw new Error(`${label} has more than one run`);
+    }
+    const endProperties = directElements(paragraph, DRAWING, "endParaRPr");
+    if (endProperties.length > 1) {
+      throw new Error(`${label} has multiple end-paragraph style markers`);
+    }
+    const endStyle =
+      endProperties.length === 1
+        ? inspectRunStyle(endProperties[0]!, textAnchor, masks, "end-paragraph")
+        : undefined;
+    let style: PptxInspectedStyle;
+    const run = runs[0];
+    if (run === undefined) {
+      if (endStyle === undefined) {
+        throw new Error(
+          `${label} is empty and has no end-paragraph style marker`,
+        );
+      }
+      style = endStyle;
+      textLines.push("");
+    } else {
+      style = inspectRunStyle(
+        requireDirectElement(run, DRAWING, "rPr"),
+        textAnchor,
+        masks,
+        "run",
+      );
+      if (
+        endStyle !== undefined &&
+        JSON.stringify(style) !== JSON.stringify(endStyle)
+      ) {
+        throw new Error(`${label} run and end-paragraph styles differ`);
+      }
+      if (endStyle === undefined) endMarkersOmitted += 1;
+      const value = elementText(requireDirectElement(run, DRAWING, "t"));
+      if (/[\r\n\u2028\u2029]/u.test(value)) {
+        throw new Error(`${label} text contains a line separator`);
+      }
+      textLines.push(value);
+    }
+    if (shared === undefined) {
+      shared = { anchorX, textAnchor, style };
+    } else if (
+      shared.anchorX !== anchorX ||
+      shared.textAnchor !== textAnchor ||
+      JSON.stringify(shared.style) !== JSON.stringify(style)
+    ) {
+      throw new Error(
+        `${label} does not share the anchor and style of hard-line paragraph 1`,
+      );
+    }
+    masks.canonicalEndParagraphs.add(paragraph);
+  }
+  if (shared === undefined) {
+    throw new Error("text body has no hard-line paragraph");
+  }
+  return {
+    anchorX: shared.anchorX,
+    style: shared.style,
+    endMarkersOmitted,
+    textLines: Object.freeze(textLines),
   };
 }
 

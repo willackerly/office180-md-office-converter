@@ -674,6 +674,22 @@ function compareInspections(
           value: after.text,
         });
       }
+      if (
+        mapObject.kind === "text" &&
+        before.textLines !== undefined &&
+        after.textLines !== undefined &&
+        !sameJson(before.textLines, after.textLines)
+      ) {
+        // C10 2.1: C5 contracts no multi-line text operation, so a changed
+        // hard line is reported and never approximated as a set-text.
+        pushUnsupportedObject(
+          mapObject.id,
+          "text",
+          "is a multi-line hard-line text box whose line text changed; C5 has no multi-line text operation, so edit the hard lines in the Vector180 source and recompile.",
+          changes,
+          diagnostics,
+        );
+      }
     }
     planDeletions(mapSlide.objects, missingIds, changes, operations);
     planChildOrders(
@@ -705,7 +721,9 @@ function compareObjectSemantics(
       pushUnsupportedObject(
         mapObject.id,
         "geometry",
-        "DrawingML geometry does not have one exact supported inverse mapping.",
+        before.textLines === undefined
+          ? "DrawingML geometry does not have one exact supported inverse mapping."
+          : "is a multi-line hard-line text box whose frame or anchor changed; C5 set-text-frame accepts exactly one direct hard line, so edit the frame in the Vector180 source and recompile.",
         changes,
         diagnostics,
       );
@@ -1369,6 +1387,7 @@ function sameSupportedSlideSemantics(
         leftObject.order === rightObject.order &&
         leftObject.structureSignature === rightObject.structureSignature &&
         leftObject.text === rightObject.text &&
+        sameJson(leftObject.textLines, rightObject.textLines) &&
         sameJson(leftObject.geometry, rightObject.geometry) &&
         sameJson(leftObject.style, rightObject.style)
       );
@@ -1775,6 +1794,7 @@ function sameInspectedObjectSemantics(
     left.order === right.order &&
     left.structureSignature === right.structureSignature &&
     left.text === right.text &&
+    sameJson(left.textLines, right.textLines) &&
     sameJson(left.geometry, right.geometry) &&
     sameJson(left.style, right.style)
   );
