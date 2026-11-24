@@ -1,6 +1,6 @@
 # CONTRACT-C7-PPTX-CANARY.1.1
 
-<!-- SUPERSEDED BY: CONTRACT-C7-PPTX-CANARY.2.0 -->
+<!-- SUPERSEDED BY: CONTRACT-C7-PPTX-CANARY.2.1 -->
 
 **Version:** 1.1
 **Status:** superseded

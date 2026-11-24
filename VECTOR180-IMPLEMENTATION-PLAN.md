@@ -3,7 +3,7 @@
 **Status:** active delivery roadmap; first-class standalone diagrams, shared
 browser conformance, the writable trusted editor MVP, C5 2.0 typed
 native-object patches plus one exact reviewed connector clone, C9 explicit atom
-composition/baselines, C10 2.0 proof-carrying reconciliation, and C11 1.2
+composition/baselines, C10 2.1 proof-carrying reconciliation, and C11 1.2
 browser/Quick Look plus exact-path native no-op lifecycle evidence are
 implemented; the hydrated SVG atom is now the documented default source,
 pre-production naming/lineage/diff gates are implemented, C7 through C11 retain
@@ -72,7 +72,7 @@ uniform-scale-plus-translation placement. C10 authenticates an edited
 descendant against that exact source/map/placement, records named proof for
 accepted native serializer normalizations, emits only typed C5 proposals, and
 proves a patchable result by temporary application, regeneration, and
-reinspection. Duplicate identity refuses by default. C10 2.0 accepts a strict
+reinspection. Duplicate identity refuses by default. C10 2.1 accepts a strict
 hash/fingerprint-bound review document only when one of exactly two occurrences
 of one mapped straight connector remains baseline-equivalent; the reviewer
 supplies the fresh ID, explicit source references, hashes, occurrence
@@ -134,7 +134,7 @@ kind from the SVG element.
 | Source boundary | Semantic/editor selection boundary | PowerPoint intent / current C7/C9 status |
 |---|---|---|
 | `rect`, `circle`, or `ellipse`; role `shape`, export `native` | Independent native primitive | Native shape; strict subset implemented in C7/C9 |
-| `text`; role `text`, export `native` | Explicit-line text frame | Native text box; one hard line implemented in C7/C9 |
+| `text`; role `text`, export `native` | Explicit-line text frame | Native text box; one paragraph per hard line implemented in C7/C9 2.1 |
 | `line`; role `connector`, export `native` | Independent straight edge | Native line/connector; straight form implemented in C7/C9 |
 | `g`; role `group`, export `native` | Addressable children plus one parent scope | Native PowerPoint group; translated subset implemented in C7/C9 |
 | `g`; role `asset`, export `svg` | One atomic vector image; internals are opaque | SVG picture plus PNG fallback; roadmap |
@@ -173,11 +173,11 @@ The first native text model makes reflow impossible by design:
   word to another line; and
 - styled runs, bullets, columns, text paths, and nested spans are deferred.
 
-The current C7 and C9 writers emit exactly one explicit paragraph with
-zero/contracted margins, `wrap="none"`, and `a:noAutofit`; they reject
-multiline text. A later multiline writer must emit one explicit
-paragraph/break per source hard line. A text frame resize changes only the
-frame; it does not reflow or resize text.
+The C7 2.1 and C9 2.1 writers emit one text box per text object with one
+explicit paragraph per source hard line: zero/contracted margins, exact point
+line spacing, `wrap="none"`, and `a:noAutofit`. Multi-line objects require one
+shared anchor x and an exact line step; anything else is refused. A text frame
+resize changes only the frame; it does not reflow or resize text.
 
 Compiler-grade text uses one concrete resolved font family rather than a
 browser fallback stack. The first profile supports the small set of font
@@ -318,10 +318,10 @@ Progress at the 2026-08-02 integration point:
   connector clone with a fresh ID and fully explicit semantic state/order.
 - C9's bounded atom path explicitly composes identity or aspect-preserving
   uniform placement into a deterministic one-slide deck, then emits a paired
-  native PPTX and complete hash-bound object map. Deck input, multiline text,
-  opaque/raster assets, rounded rectangles, and non-unit opacity remain
-  refused.
-- C10 2.0 authenticates exact atom, composed-deck, map, placement, and PPTX
+  native PPTX and complete hash-bound object map. Deck input, hard lines
+  without one shared anchor x, opaque/raster assets, rounded rectangles, and
+  non-unit opacity remain refused.
+- C10 2.1 authenticates exact atom, composed-deck, map, placement, and PPTX
   lineage; accepts native-save drift only through named structural proofs;
   emits deterministic findings, blocked candidates, and resolution options;
   and proves patchable results by C5 application and exact-placement C9
@@ -492,9 +492,10 @@ Deliver, before runtime implementation:
   attribute writer;
 - a versioned C6 projection carrying intent, authored frame, and explicit
   lines without performing layout;
-- a C7/compiler successor defining deterministic multiline DrawingML,
-  `reliable` expanded-frame and `editable` tight-frame policies, and output
-  provenance;
+- a C7/compiler successor defining paragraph-intent DrawingML (one wrapping
+  paragraph with explicit breaks, distinct from the implemented C7 2.1
+  one-no-wrap-paragraph-per-hard-line box), `reliable` expanded-frame and
+  `editable` tight-frame policies, and output provenance;
 - C8/native evidence sufficient to calibrate the reliability reserve while
   retaining C8's non-mutating boundary; and
 - a separate future-import contract for exact measurement, segmentation,
@@ -547,9 +548,10 @@ CSS/inline/inherited styles are not rewritten. Direct text/deck-control
 drag/resize/style controls have not
 yet been built over this vocabulary.
 
-The planned `set-text-lines` operation remains deliberately unimplemented
-because source/profile 0.1.1 paragraph intent and multiline compiler behavior
-are still banked. Apart from the exact one-connector same-parent clone,
+The planned `set-text-lines` operation remains deliberately unimplemented.
+C7/C9 2.1 compile multi-line hard-line text and C10 2.1 inspects it, but a
+typed multi-line text or frame edit still needs its own C5 successor, and
+source/profile 0.1.1 paragraph intent is still banked. Apart from the exact one-connector same-parent clone,
 insertion, duplication, group creation/ungrouping, reparenting, group
 scale/rotation, and their canonical structural serialization remain deferred;
 safe deletion is no longer in that list.
@@ -559,11 +561,13 @@ C9 is the corresponding second compiler baseline for one standalone atom. It:
 - composes an explicit identity or aspect-preserving uniform placement into a
   newly validated one-slide deck;
 - compiles the C7 native rectangle, circle/ellipse, straight-connector,
-  translated-group, and one-hard-line text subset;
+  translated-group, and hard-line text subset (one text box per text object,
+  one paragraph per hard line);
 - emits a paired complete map bound to the exact atom, composed-deck, placement,
   native objects, and PPTX hashes; and
-- refuses multiline text, rounded rectangles, non-unit opacity, opaque/raster
-  assets, deck input, or any unsupported source before publishing artifacts.
+- refuses hard lines without one shared anchor x or one exact placed line
+  step, rounded rectangles, non-unit opacity, opaque/raster assets, deck input,
+  or any unsupported source before publishing artifacts.
 
 The typed-operation, exact-preservation, deterministic composition,
 map-inventory, strict OPC, independent-reopen, C10 regeneration, and C11
@@ -579,7 +583,8 @@ Expand only where the same conformance fixture works in browser and PowerPoint:
 - solid shape styling and approved rounded rectangles;
 - straight connectors and arrowheads;
 - native translated groups;
-- explicit multiline text and approved font styles;
+- per-line anchors and approved font styles for explicit multi-line text
+  (the shared-anchor form compiles since C7/C9 2.1);
 - atomic SVG/raster assets;
 - theme token editing after provenance is implemented;
 - C9 standalone-atom source-map generation and verification (implemented); and

@@ -12,16 +12,16 @@
       ],
       "exit_code": 0,
       "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-      "stdout_sha256": "b10dd5af413797816860f8904c0772dd92a6498fedd0f9198540c59f89dc7358",
+      "stdout_sha256": "f042737296f13ab9551e5eda1cf7d2946ac7d9b210f249bd17a1cb39ff1a89d6",
       "timeout_seconds": 45.0
     },
     "diagnostic": null,
     "environment": {
       "architecture": "arm64",
       "display_scale": 1.0,
-      "locale": "C/C.UTF-8/C/C/C/C",
+      "locale": "C/en_US.UTF-8/C/C/C/C",
       "os": "Darwin",
-      "os_version": "26.5.2"
+      "os_version": "26.6.2"
     },
     "fonts": [],
     "input": {
@@ -51,7 +51,7 @@
     "renderer_class": "quick-look",
     "status": "passed"
   },
-  "evidence_sha256": "afaa8436539c76b9ffe63ef7135d75cd0d8269b258e0831b1c08719d2fe8e8f4",
+  "evidence_sha256": "a14bb02597d978341d4d8217c7c28d0bbc493fef5e96798731c782f612c08e7f",
   "schema": "office180-visual-evidence/0.1",
   "subject": {
     "artifact_path": "supported-baseline.pptx",

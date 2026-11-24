@@ -3,7 +3,7 @@
 **Status:** 0.1 standalone diagram atom, HTML deck aggregation, C5 2.0 typed
 source-preserving edits plus one exact reviewed connector clone, C6
 resolution/hydration, browser conformance, writable trusted editor, C9 explicit
-atom placement/baseline, C10 2.0 proof-carrying reconciliation, and C11 1.2
+atom placement/baseline, C10 2.1 proof-carrying reconciliation, and C11 1.2
 browser/Quick Look plus exact-path native no-op lifecycle evidence implemented;
 C7 through C11 retain their remaining promotion gates; 0.1.1 text resilience
 is banked design only
@@ -94,7 +94,7 @@ to PowerPoint profile, not an implemented file-version alias. In 0.1:
 - one supported standalone atom can be explicitly composed and compiled under
   C9 with identity or aspect-preserving uniform placement into a deterministic
   one-slide deck plus paired PPTX/map;
-- C10 2.0 can inspect an authenticated edited descendant, prove named
+- C10 2.1 can inspect an authenticated edited descendant, prove named
   native-save normalizations, propose only supported typed C5 reverse
   operations, and accept a strict reviewed resolution for one unambiguous
   copied connector; and
@@ -201,8 +201,8 @@ remain prohibited.
 The output is a new deterministic self-contained one-slide deck that
 independently reloads through C4 and resolves through C6. C9 does not add an
 atom to an existing deck and currently refuses deck input, external
-dependencies, multiline text, opaque SVG/raster assets, rounded rectangles,
-and non-unit opacity. Broader composition remains separate from 0.1.1 text
+dependencies, hard lines without one shared anchor x, opaque SVG/raster assets,
+rounded rectangles, and non-unit opacity. Broader composition remains separate from 0.1.1 text
 resilience.
 
 ## Author annotations
@@ -410,7 +410,7 @@ C6 rejects:
 - ambiguous or duplicate IDs; and
 - unsupported content outside an opaque asset boundary.
 
-## Explicit-line text model (C6; C7/C9 direct-line subset)
+## Explicit-line text model (C6; C7/C9 hard-line subset)
 
 Executable 0.1 native Vector180 text is positioned authoring data, not a browser
 paragraph-layout request.
@@ -426,11 +426,17 @@ paragraph-layout request.
   word, shrinks, changes font size, or resizes geometry automatically.
 - Styled runs, bullets, columns, text paths, and nested spans are deferred.
 
-The current C7 and C9 writers accept exactly one hard line and emit one
-explicit paragraph with contracted/zero margins, `wrap="none"`, and
-`a:noAutofit`. Concrete source syntax for frame/bounds and line step is defined
-by C6. Both writers reject multiline text until its native mapping and fidelity
-fixtures land.
+The C7 2.1 and C9 2.1 writers emit one native text box per text object with
+one explicit paragraph per hard line: contracted/zero margins, exact point line
+spacing equal to the declared line step, `wrap="none"`, and `a:noAutofit`.
+Concrete source syntax for frame/bounds and line step is defined by C6. A
+multi-line object is admitted only when every hard line shares one anchor x and
+consecutive baselines are exactly one line step apart; an empty hard line is a
+supported run-less paragraph. A differing per-line x is refused rather than
+approximated. C10 2.1 inspects such a box and recovers a uniform style change,
+but an edited line or a moved frame has no typed inverse yet and is refused.
+Native PowerPoint and cross-renderer fidelity fixtures for multi-paragraph
+boxes remain open.
 
 The banked 0.1.1 extension adds intent, not a second text authority. A planned
 `data-vector180-text-intent="paragraph"` object still serializes every visible line
@@ -457,7 +463,7 @@ Office-generated numeric shape IDs are implementation details and must never
 be used for semantic matching.
 
 Copying a shape in PowerPoint initially copies its semantic name. Duplicate
-`src.*` names refuse by default. C10 2.0 has one narrow recovery path: exactly
+`src.*` names refuse by default. C10 2.1 has one narrow recovery path: exactly
 one copied mapped straight connector may receive a reviewer-chosen fresh SVG ID
 when exactly one of its two occurrences remains baseline-equivalent and the
 strict resolution binds all hashes, fingerprints, source references,
@@ -529,8 +535,8 @@ one-atom capability:
 4. emit the supported native objects and complete object baseline map; and
 5. bind exact atom, composed-deck, map, and PPTX identities.
 
-C9 refuses HTML-deck input, multiline text, rounded rectangles, non-unit
-opacity, opaque SVG/raster assets, and external resources. Template-backed
+C9 refuses HTML-deck input, hard lines without one shared anchor x, rounded
+rectangles, non-unit opacity, opaque SVG/raster assets, and external resources. Template-backed
 compilation, asset fallbacks, C9 deck input, and general PPTX generation remain
 roadmap. None is performed implicitly by `pptx-canary` or `compile`. C11's
 no-op bridge is a separate structural acceptance action; representative

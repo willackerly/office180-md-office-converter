@@ -1,7 +1,7 @@
 /**
  * Narrow, proof-carrying PowerPoint package-save normalization.
  *
- * CONTRACT:C10-PPTV-PPTX-RECONCILIATION.2.0
+ * CONTRACT:C10-PPTV-PPTX-RECONCILIATION.2.1
  *
  * These rules are structural predicates. Producer metadata is evidence only
  * and never selects or weakens a rule.

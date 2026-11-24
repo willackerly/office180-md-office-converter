@@ -2,7 +2,7 @@
   "capture": {
     "command": {
       "argv": [
-        "/opt/homebrew/Cellar/node/25.1.0_1/bin/node",
+        "/opt/homebrew/Cellar/node/25.2.1/bin/node",
         "$TOOL/capture-browser-svg.mjs",
         "--artifact",
         "$ROOT/supported-original.vector180.svg",
@@ -30,7 +30,7 @@
       "display_scale": 1.0,
       "locale": "en-US",
       "os": "Darwin",
-      "os_version": "26.5.2",
+      "os_version": "26.6.2",
       "rendering_flags": [
         "--disable-background-networking",
         "--disable-component-update",
@@ -75,7 +75,7 @@
     "renderer_class": "browser",
     "status": "passed"
   },
-  "evidence_sha256": "2573ff7de6d025edbd091f8fe17db3b055d71dd8629229347a29871e26812e5a",
+  "evidence_sha256": "3cadbf8f6b17d1e5a0ccf8e354b4613f2f149d832da4a75c47947be8ce0ce8f4",
   "schema": "office180-visual-evidence/0.1",
   "subject": {
     "artifact_path": "supported-original.vector180.svg",

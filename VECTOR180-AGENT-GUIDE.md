@@ -5,7 +5,7 @@ test-accepted release candidate, not an npm-published release.
 It implements first-class deck/atom C4-C6 semantics, C5 2.0 typed patches
 including one exact reviewed connector clone, hydrated extraction, the
 writable trusted editor, the bounded C7 compiler, verified C8 2.0 text fit,
-and the C9/C10 2.0 atom-to-PPTX-to-atom path. That package result is not
+and the C9/C10 2.1 atom-to-PPTX-to-atom path. That package result is not
 blanket contract verification: C4–C7 and C9–C12 remain `in-progress` on their
 own outstanding corpus, family/refusal, independent-artifact, counterexample,
 native, or human-evidence rows. In particular, C7's canonical envelope,
@@ -312,8 +312,10 @@ retains its arbitrary finite logical viewBox and uses supported local
 presentation declarations. Both resolve finite primitive/group geometry,
 connectors, explicit hard-line text, and declared opaque-asset bounds without
 fetching or interpreting external resources. C6 accepts direct one-line text
-or explicit direct `tspan` lines; the current C7 and C9 compiler subsets
-require one line per text object. Resolved output may be substantially larger.
+or explicit direct `tspan` lines; the C7 and C9 compilers turn either form into
+one PowerPoint text box with one paragraph per hard line, provided every line
+of a multi-line object shares one `x` and baselines step by exactly the line
+step. Resolved output may be substantially larger.
 
 ### Compare two standalone SVG atoms
 
@@ -711,8 +713,10 @@ vector180 pptx-canary deck.vector180.html --output deck.pptx
 ```
 
 It produces a deterministic fresh package for supported native rectangles,
-ellipses, straight lines/connectors, translated groups, and one-line explicit
-text. It fails closed on unsupported semantics. Native PowerPoint evidence
+ellipses, straight lines/connectors, translated groups, and explicit hard-line
+text: one text box per text object, one paragraph per hard line. It fails
+closed on unsupported semantics, including a multi-line object whose lines do
+not share one anchor x. Native PowerPoint evidence
 must be reported only when that separate check was actually performed.
 
 `pptx-canary` accepts HTML decks only. A standalone `.vector180.svg` remains an
@@ -887,7 +891,8 @@ capture, deterministic comparison envelopes, and a bounded exact-path native
 no-op lifecycle while keeping representative Office validation distinct.
 
 Do not fabricate `theme`, `normalize`, or `render` commands, browser geometry
-controls, rich-text/multiline editing, arbitrary PPTX import, native fit parity,
+controls, rich-text or typed multi-line text editing, arbitrary PPTX import,
+native fit parity,
 or general format fidelity. General deck/multi-atom composition, deck-mode C9,
 general duplication/insertion/reparenting beyond the reviewed connector clone,
 group scaling, library expansion, canonical serialization, broader assets,

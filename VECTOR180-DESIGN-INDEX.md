@@ -81,7 +81,7 @@ successor contract:
 - explicit C9 identity or uniform-scale-plus-translation placement of one
   standalone atom into a deterministic self-contained one-slide deck, plus a
   paired native PPTX and hash-bound source/object baseline map;
-- authenticated C10 2.0 inspection of an edited descendant of that C9
+- authenticated C10 2.1 inspection of an edited descendant of that C9
   baseline, producing named native-save normalization proofs, deterministic
   findings/candidates/resolution options, bounded typed C5 proposals, and one
   strict hash/fingerprint-bound reviewed connector-copy path; patchable results
@@ -103,8 +103,8 @@ Contracts
 and
 [`CONTRACT-C5-PPTV-PATCH.2.0.md`](architecture/CONTRACT-C5-PPTV-PATCH.2.0.md),
 the C6–C8 contracts, and
-[`CONTRACT-C9-PPTV-PPTX-BASELINE.2.0.md`](architecture/CONTRACT-C9-PPTV-PPTX-BASELINE.2.0.md),
-[`CONTRACT-C10-PPTV-PPTX-RECONCILIATION.2.0.md`](architecture/CONTRACT-C10-PPTV-PPTX-RECONCILIATION.2.0.md),
+[`CONTRACT-C9-PPTV-PPTX-BASELINE.2.1.md`](architecture/CONTRACT-C9-PPTV-PPTX-BASELINE.2.1.md),
+[`CONTRACT-C10-PPTV-PPTX-RECONCILIATION.2.1.md`](architecture/CONTRACT-C10-PPTV-PPTX-RECONCILIATION.2.1.md),
 and
 [`CONTRACT-C11-OFFICE-VISUAL-EVIDENCE.1.2.md`](architecture/CONTRACT-C11-OFFICE-VISUAL-EVIDENCE.1.2.md),
 together with the shipped schemas, implementation, and fixtures, are normative
@@ -329,7 +329,8 @@ per slide.
 
 The first native text surface is explicit-line text with explicit typography
 and frame geometry. The editor may expose a paragraph-like multiline field, but
-source and PowerPoint output retain hard lines. Wrapping, autofit,
+source and PowerPoint output retain hard lines: since C7/C9 2.1 a multi-line
+text object is one PowerPoint text box with one no-wrap paragraph per line. Wrapping, autofit,
 shrink-to-fit, and font-size adjustment are outside the profile.
 
 The banked
@@ -367,8 +368,8 @@ never silently stretches, crops, letterboxes, or infers physical size from an
 arbitrary atom viewBox.
 
 This is not general deck assembly: C9 currently refuses deck input, external
-dependencies, multiline text, opaque SVG/raster assets, rounded rectangles,
-and non-unit opacity. Capability, qualified-ID, dependency-hash, multi-root,
+dependencies, hard lines without one shared anchor x, opaque SVG/raster assets,
+rounded rectangles, and non-unit opacity. Capability, qualified-ID, dependency-hash, multi-root,
 and cycle rules remain future external-composition work. C7 remains the
 separate deck-only canary.
 
@@ -565,7 +566,7 @@ placement, C10's authenticated typed reverse boundary, and C11's
 renderer-specific evidence identities plus exact-path no-op lifecycle are
 decided. The 0.1.1
 paragraph-intent/resilience direction is banked but not executable.
-The destination-neutral C8 2.0 successor is verified. C4–C7 2.0, C9–C10 2.0,
+The destination-neutral C8 2.0 successor is verified. C4–C6 2.0, C7 2.1, C9–C10 2.1,
 C11 1.2, and C12 1.0 are implemented/`in-progress` authorities pending their
 declared acceptance gates. Broader behavior still requires promotion through
 contracts and fixtures.

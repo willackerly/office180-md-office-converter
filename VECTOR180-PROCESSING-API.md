@@ -4,7 +4,7 @@
 deck/atom kernel, the unified C5 `vector180-patch/0.1` protocol, C6/C8
 projections, trusted
 browser editor, C7 deck canary, bounded C9 atom composition/PPTX compilation,
-and C10 2.0 mapped-PPTX reconciliation; C11 1.2 automates browser/Quick Look
+and C10 2.1 mapped-PPTX reconciliation; C11 1.2 automates browser/Quick Look
 evidence and a bounded exact-path native no-op lifecycle, while general
 authoring/import, representative native edits, and native text/cross-renderer
 fidelity remain open.
@@ -91,11 +91,11 @@ Behavioral authority lives in
 [`CONTRACT:C4-PPTV-SOURCE.2.0`](architecture/CONTRACT-C4-PPTV-SOURCE.2.0.md),
 [`CONTRACT:C5-PPTV-PATCH.2.0`](architecture/CONTRACT-C5-PPTV-PATCH.2.0.md),
 [`CONTRACT:C6-PPTV-RESOLVED.2.0`](architecture/CONTRACT-C6-PPTV-RESOLVED.2.0.md),
-[`CONTRACT:C7-PPTX-CANARY.2.0`](architecture/CONTRACT-C7-PPTX-CANARY.2.0.md),
+[`CONTRACT:C7-PPTX-CANARY.2.1`](architecture/CONTRACT-C7-PPTX-CANARY.2.1.md),
 and
 [`CONTRACT:C8-PPTV-TEXT-FIT.2.0`](architecture/CONTRACT-C8-PPTV-TEXT-FIT.2.0.md),
-[`CONTRACT:C9-PPTV-PPTX-BASELINE.2.0`](architecture/CONTRACT-C9-PPTV-PPTX-BASELINE.2.0.md),
-[`CONTRACT:C10-PPTV-PPTX-RECONCILIATION.2.0`](architecture/CONTRACT-C10-PPTV-PPTX-RECONCILIATION.2.0.md),
+[`CONTRACT:C9-PPTV-PPTX-BASELINE.2.1`](architecture/CONTRACT-C9-PPTV-PPTX-BASELINE.2.1.md),
+[`CONTRACT:C10-PPTV-PPTX-RECONCILIATION.2.1`](architecture/CONTRACT-C10-PPTV-PPTX-RECONCILIATION.2.1.md),
 [`CONTRACT:C11-OFFICE-VISUAL-EVIDENCE.1.2`](architecture/CONTRACT-C11-OFFICE-VISUAL-EVIDENCE.1.2.md),
 and
 [`CONTRACT:C12-VECTOR180-SOURCE-DIFF.1.0`](architecture/CONTRACT-C12-VECTOR180-SOURCE-DIFF.1.0.md).
@@ -1856,7 +1856,8 @@ unrelated CSS, paths, assets, runtime code, or slides.
 
 - **Implemented deck-only C7 canary:** deterministic fresh two-slide package,
   minimum valid master/layout/theme graph, native
-  primitives/connectors/translated groups, one-line no-wrap/no-autofit text,
+  primitives/connectors/translated groups, no-wrap/no-autofit text boxes with
+  one paragraph per hard line,
   strict OPC/ZIP validation, typed capability errors, ISO/ECMA XSD validation,
   and independent OpenDocKit reopen.
 - **Native evidence:** the minimal fixture opens without repair and exports a
@@ -1875,7 +1876,8 @@ unrelated CSS, paths, assets, runtime code, or slides.
   capture, deterministic comparison, checked evidence envelopes/privacy, and
   bounded exact-path native no-op lifecycle; Word and PowerPoint 16.111.2
   passed save/close/reopen on 2026-08-02.
-- **Remaining:** atomic assets, multiline hard lines, broader source forms,
+- **Remaining:** atomic assets, per-line anchors and typed multi-line text
+  edits, broader source forms,
   arbitrary PPTX import, expanded cross-renderer quantitative evidence,
   controlled-font visual capture, human review, and reliable representative
   native PowerPoint edit/save/reopen. Bound evidence remains manual-required;

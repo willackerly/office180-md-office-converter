@@ -1,6 +1,6 @@
 // Tests: CONTRACT:C5-PPTV-PATCH.2.0,
-// CONTRACT:C9-PPTV-PPTX-BASELINE.2.0,
-// CONTRACT:C10-PPTV-PPTX-RECONCILIATION.2.0
+// CONTRACT:C9-PPTV-PPTX-BASELINE.2.1,
+// CONTRACT:C10-PPTV-PPTX-RECONCILIATION.2.1
 
 import { createHash } from "node:crypto";
 import { mkdtemp, readFile, rm, writeFile } from "node:fs/promises";

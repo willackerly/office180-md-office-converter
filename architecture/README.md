@@ -44,13 +44,13 @@ architecture/
   CONTRACT-C6-PPTV-RESOLVED.1.1.md  # superseded legacy resolved profiles
   CONTRACT-C6-PPTV-RESOLVED.2.0.md  # Vector180 atom/deck resolved profiles and hydration
   CONTRACT-C7-PPTX-CANARY.1.1.md    # superseded legacy PPTX canary
-  CONTRACT-C7-PPTX-CANARY.2.0.md    # Vector180 deterministic primitive-only PPTX canary
+  CONTRACT-C7-PPTX-CANARY.2.1.md    # Vector180 deterministic primitive-only PPTX canary
   CONTRACT-C8-PPTV-TEXT-FIT.1.1.md  # superseded legacy text-fit evidence
   CONTRACT-C8-PPTV-TEXT-FIT.2.0.md  # Vector180 atom/deck exact-font evidence
   CONTRACT-C9-PPTV-PPTX-BASELINE.1.0.md # superseded legacy compiler/map
-  CONTRACT-C9-PPTV-PPTX-BASELINE.2.0.md # Vector180 compiler/composition/map
+  CONTRACT-C9-PPTV-PPTX-BASELINE.2.1.md # Vector180 compiler/composition/map
   CONTRACT-C10-PPTV-PPTX-RECONCILIATION.1.2.md # superseded legacy reconciliation
-  CONTRACT-C10-PPTV-PPTX-RECONCILIATION.2.0.md # Vector180 PPTX reconciliation
+  CONTRACT-C10-PPTV-PPTX-RECONCILIATION.2.1.md # Vector180 PPTX reconciliation
   CONTRACT-C11-OFFICE-VISUAL-EVIDENCE.1.1.md # superseded legacy bound-evidence harness
   CONTRACT-C11-OFFICE-VISUAL-EVIDENCE.1.2.md # dual-family visual/native evidence
   CONTRACT-C12-VECTOR180-SOURCE-DIFF.1.0.md # stable-ID semantic source comparison

@@ -76,7 +76,9 @@ line geometry:
 
 - `data-vector180-frame="x y width height"` declares the audit/export box.
 - `data-vector180-line-step` declares the baseline step.
-- `x`/`y` and direct text or direct `<tspan>` children declare exact baselines.
+- `x`/`y` with direct text declare one hard line. Several hard lines are
+  direct `<tspan x y>` children that share one `x` and step by exactly the
+  line step; they export as one PowerPoint text box (see `text-fit.md`).
 - One authored line stays one authored line. Do not enable autofit or infer
   browser wrapping.
 - Use ABeeZee Regular (`font-weight="400"`) unless a separately verified exact

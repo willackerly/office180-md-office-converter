@@ -3,7 +3,7 @@
 **Status:** `@office180/vector180@0.1.0-alpha.5` implements the source/container 0.1
 deck and diagram surfaces through C4-C8, C5 2.0 typed patches including one
 exact reviewed connector clone, bounded C9 atom composition/PPTX compilation,
-and C10 2.0 mapped-PPTX reconciliation. Repository C11 1.2 tooling adds
+and C10 2.1 mapped-PPTX reconciliation. Repository C11 1.2 tooling adds
 browser/Quick Look evidence and a proven exact-path native no-op lifecycle.
 The browser editor UI remains direct-text plus deck theme/order only; general
 deck or multi-atom composition, baseline-free PPTX import, representative
@@ -68,7 +68,7 @@ remain outside the implemented contract.
 C7 remains the strict deck-only fresh-PPTX canary, while C8 provides
 non-mutating exact-font text-fit evidence. C9 explicitly composes one
 standalone atom into one deterministic one-slide deck or compiles that same
-placement to a mapped native PPTX. C10 2.0 reconciles only an edited descendant
+placement to a mapped native PPTX. C10 2.1 reconciles only an edited descendant
 of that exact atom/map baseline into a reviewable C5 proposal and may recover
 one copied same-parent straight connector only through a strict reviewed
 resolution. C11 supplies content-bound trusted-SVG browser capture, Quick Look

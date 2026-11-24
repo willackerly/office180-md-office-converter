@@ -2,8 +2,8 @@
  * Deterministic fresh-PPTX compiler canary for the strict C6 primitive subset.
  *
  * CONTRACT:C6-PPTV-RESOLVED.2.0
- * CONTRACT:C7-PPTX-CANARY.2.0
- * CONTRACT:C9-PPTV-PPTX-BASELINE.2.0
+ * CONTRACT:C7-PPTX-CANARY.2.1
+ * CONTRACT:C9-PPTV-PPTX-BASELINE.2.1
  */
 
 import { createHash } from "node:crypto";
@@ -21,6 +21,7 @@ import type {
   Vector180ResolvedSlide,
   Vector180ResolvedStyle,
   Vector180ResolvedText,
+  Vector180ResolvedTextLine,
 } from "../core/resolved.js";
 
 const FIXED_DATE_ISO = "2000-01-01T00:00:00Z";
@@ -800,10 +801,10 @@ function validateObjectGeometry(object: Vector180ResolvedObject): void {
       return;
     }
     case "text": {
-      if (object.lines.length !== 1) {
+      if (object.lines.length === 0) {
         fail(
           "VECTOR180-PPTX-UNSUPPORTED-OBJECT",
-          `Text "${object.id}" has ${object.lines.length} hard lines; C7 accepts exactly one.`,
+          `Text "${object.id}" has no hard line; C7 requires at least one.`,
         );
       }
       if (
@@ -825,16 +826,18 @@ function validateObjectGeometry(object: Vector180ResolvedObject): void {
       if (!sameBounds(object.localBounds, object.frame)) {
         invalidModel(`Text frame differs from bounds for "${object.id}".`);
       }
-      const line = object.lines[0];
       if (
-        line === undefined ||
-        line.x < object.frame.x ||
-        line.x > object.frame.x + object.frame.width ||
-        line.y < object.frame.y ||
-        line.y > object.frame.y + object.frame.height
+        object.lines.some(
+          (line) =>
+            line.x < object.frame.x ||
+            line.x > object.frame.x + object.frame.width ||
+            line.y < object.frame.y ||
+            line.y > object.frame.y + object.frame.height,
+        )
       ) {
         invalidModel(`Text line lies outside frame for "${object.id}".`);
       }
+      admittedHardLines(object);
       return;
     }
     case "group":
@@ -1351,24 +1354,57 @@ ${indent}</p:cxnSp>
 `;
 }
 
+/**
+ * C7 2.1 hard-line admission. One native text box carries one paragraph per
+ * hard line only when every line shares one anchor x and consecutive
+ * baselines are exactly one declared line step apart; anything else is
+ * refused rather than approximated.
+ */
+function admittedHardLines(
+  object: Vector180ResolvedText,
+): readonly [Vector180ResolvedTextLine, ...Vector180ResolvedTextLine[]] {
+  const first = object.lines[0];
+  if (first === undefined) {
+    return fail(
+      "VECTOR180-PPTX-UNSUPPORTED-OBJECT",
+      `Text "${object.id}" has no hard line; C7 requires at least one.`,
+    );
+  }
+  if (object.lines.length === 1) return [first];
+  const lineStepEmu = scaledEmu(object.lineStep, `${object.id}.lineStep`);
+  let previous = first;
+  let previousBaselineEmu = coordinateEmu(first.y, `${object.id}.line[1].y`);
+  for (const [index, line] of object.lines.entries()) {
+    if (index === 0) continue;
+    if (line.x !== first.x) {
+      return fail(
+        "VECTOR180-PPTX-UNSUPPORTED-OBJECT",
+        `Text "${object.id}" hard line ${index + 1} anchors at x=${canonicalNumber(line.x)} but hard line 1 anchors at x=${canonicalNumber(first.x)}; one native text box requires one shared anchor x for every hard line.`,
+      );
+    }
+    const baselineEmu = coordinateEmu(
+      line.y,
+      `${object.id}.line[${index + 1}].y`,
+    );
+    if (baselineEmu - previousBaselineEmu !== lineStepEmu) {
+      return fail(
+        "VECTOR180-PPTX-UNSUPPORTED-OBJECT",
+        `Text "${object.id}" hard lines ${index} and ${index + 1} have baselines y=${canonicalNumber(previous.y)} and y=${canonicalNumber(line.y)}, which are not exactly one declared line step (${canonicalNumber(object.lineStep)}) apart.`,
+      );
+    }
+    previous = line;
+    previousBaselineEmu = baselineEmu;
+  }
+  return [first, ...object.lines.slice(1)];
+}
+
 function renderText(
   object: Vector180ResolvedText,
   context: RenderContext,
   indent: string,
 ): string {
-  if (object.lines.length !== 1) {
-    return fail(
-      "VECTOR180-PPTX-UNSUPPORTED-OBJECT",
-      `Text "${object.id}" has ${object.lines.length} hard lines; C7 accepts exactly one.`,
-    );
-  }
-  const line = object.lines[0];
-  if (line === undefined) {
-    return fail(
-      "VECTOR180-PPTX-INVALID-MODEL",
-      `Text "${object.id}" has no hard line.`,
-    );
-  }
+  const lines = admittedHardLines(object);
+  const line = lines[0];
   const fontFamily = object.style.fontFamily;
   const fontSize = object.style.fontSize;
   if (fontFamily === undefined || fontSize === undefined) {
@@ -1401,6 +1437,38 @@ function renderText(
   const alignment =
     object.anchor === "start" ? "l" : object.anchor === "middle" ? "ctr" : "r";
   const numericId = requiredMap(context.numericIds, object.id);
+  const runProperties = (element: "rPr" | "endParaRPr", pad: string): string =>
+    `${pad}<a:${element} lang="en-US" sz="${fontSizePoints}" b="${object.style.fontWeight === 700 ? 1 : 0}" i="${object.style.fontStyle === "italic" ? 1 : 0}" dirty="0">
+${renderTextOutline(object.style, `${pad}  `)}
+${renderFill(object.style, `${pad}  `)}
+${pad}  <a:latin typeface="${xmlAttribute(fontFamily)}"/>
+${pad}  <a:ea typeface="${xmlAttribute(fontFamily)}"/>
+${pad}  <a:cs typeface="${xmlAttribute(fontFamily)}"/>
+${pad}</a:${element}>
+`;
+  // One paragraph per hard line. A one-line object keeps its C7 2.0 bytes;
+  // an empty hard line of a multi-line object is the run-less paragraph
+  // PowerPoint itself writes, and still advances exactly one line step.
+  const paragraphs = lines
+    .map((hardLine) => {
+      const run =
+        lines.length > 1 && hardLine.text === ""
+          ? ""
+          : `${indent}      <a:r>
+${runProperties("rPr", `${indent}        `)}${indent}        <a:t${drawingTextSpaceAttribute(hardLine.text)}>${xmlText(hardLine.text)}</a:t>
+${indent}      </a:r>
+`;
+      return `${indent}    <a:p>
+${indent}      <a:pPr algn="${alignment}" marL="${margins.left}" marR="${margins.right}" indent="0">
+${indent}        <a:lnSpc><a:spcPts val="${lineStep}"/></a:lnSpc>
+${indent}        <a:spcBef><a:spcPts val="0"/></a:spcBef>
+${indent}        <a:spcAft><a:spcPts val="0"/></a:spcAft>
+${indent}        <a:buNone/>
+${indent}      </a:pPr>
+${run}${runProperties("endParaRPr", `${indent}      `)}${indent}    </a:p>
+`;
+    })
+    .join("");
   return `${indent}<p:sp>
 ${indent}  <p:nvSpPr>
 ${indent}    <p:cNvPr id="${numericId}" name="${xmlAttribute(`src.${object.id}`)}"/>
@@ -1416,32 +1484,7 @@ ${indent}  </p:spPr>
 ${indent}  <p:txBody>
 ${indent}    <a:bodyPr wrap="none" lIns="0" tIns="0" rIns="0" bIns="0" anchor="t"><a:noAutofit/></a:bodyPr>
 ${indent}    <a:lstStyle/>
-${indent}    <a:p>
-${indent}      <a:pPr algn="${alignment}" marL="${margins.left}" marR="${margins.right}" indent="0">
-${indent}        <a:lnSpc><a:spcPts val="${lineStep}"/></a:lnSpc>
-${indent}        <a:spcBef><a:spcPts val="0"/></a:spcBef>
-${indent}        <a:spcAft><a:spcPts val="0"/></a:spcAft>
-${indent}        <a:buNone/>
-${indent}      </a:pPr>
-${indent}      <a:r>
-${indent}        <a:rPr lang="en-US" sz="${fontSizePoints}" b="${object.style.fontWeight === 700 ? 1 : 0}" i="${object.style.fontStyle === "italic" ? 1 : 0}" dirty="0">
-${renderTextOutline(object.style, `${indent}          `)}
-${renderFill(object.style, `${indent}          `)}
-${indent}          <a:latin typeface="${xmlAttribute(fontFamily)}"/>
-${indent}          <a:ea typeface="${xmlAttribute(fontFamily)}"/>
-${indent}          <a:cs typeface="${xmlAttribute(fontFamily)}"/>
-${indent}        </a:rPr>
-${indent}        <a:t${drawingTextSpaceAttribute(line.text)}>${xmlText(line.text)}</a:t>
-${indent}      </a:r>
-${indent}      <a:endParaRPr lang="en-US" sz="${fontSizePoints}" b="${object.style.fontWeight === 700 ? 1 : 0}" i="${object.style.fontStyle === "italic" ? 1 : 0}" dirty="0">
-${renderTextOutline(object.style, `${indent}        `)}
-${renderFill(object.style, `${indent}        `)}
-${indent}        <a:latin typeface="${xmlAttribute(fontFamily)}"/>
-${indent}        <a:ea typeface="${xmlAttribute(fontFamily)}"/>
-${indent}        <a:cs typeface="${xmlAttribute(fontFamily)}"/>
-${indent}      </a:endParaRPr>
-${indent}    </a:p>
-${indent}  </p:txBody>
+${paragraphs}${indent}  </p:txBody>
 ${indent}</p:sp>
 `;
 }

@@ -123,12 +123,14 @@ pnpm vector180 patch source.vector180.svg change.vector180.patch.json \
   --output source.updated.vector180.svg
 ```
 
-The current patch surface covers direct text, supported native geometry,
-connector endpoints, group translation, a single-line text frame/anchor,
-sibling painter order, safe deletion, concrete native presentation style, and
-one exact reviewed same-parent connector clone. Deck theme/order operations
+The current patch surface covers direct one-line text, supported native
+geometry, connector endpoints, group translation, a single-line text
+frame/anchor, sibling painter order, safe deletion, concrete native
+presentation style, and one exact reviewed same-parent connector clone. Deck theme/order operations
 remain deck-only. Generic attributes, general insertion, reparenting,
-arbitrary transforms, rich text, and inferred references remain unsupported.
+arbitrary transforms, rich text, multi-line text edits, and inferred
+references remain unsupported. A multi-line text object compiles to one
+PowerPoint text box, but its lines change only through a source edit.
 
 Always write a new output. Reload and resolve the complete candidate before
 success. The browser UI may expose less than the underlying patch vocabulary;

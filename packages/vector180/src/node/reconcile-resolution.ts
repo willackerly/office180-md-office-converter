@@ -2,7 +2,7 @@
  * Strict, hash-bound review input for one copied native connector.
  *
  * CONTRACT:C5-PPTV-PATCH.2.0
- * CONTRACT:C10-PPTV-PPTX-RECONCILIATION.2.0
+ * CONTRACT:C10-PPTV-PPTX-RECONCILIATION.2.1
  */
 
 import { createHash } from "node:crypto";
