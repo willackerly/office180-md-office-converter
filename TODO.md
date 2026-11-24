@@ -311,6 +311,20 @@ successor contract has completed its separate promotion matrix.
   discovery or substitution is implied.
 - The minimal fixture has one base/component style block plus complete
   token-only themes. Theme token editing remains a typed-operation follow-up.
+- The GitHub `verify` job fails on Linux at "Rebar Tier 3 gates" regardless of
+  content: vendored `scripts/steward.sh` passes the aggregate contract JSON to
+  `jq --argjson` on the command line, and that one argument grows with the
+  checkout path. At the runner path it is about 135 KB for `97202df` and
+  138 KB after the multi-line text change, above Linux's 131,072-byte
+  single-argument limit (`jq: Argument list too long`); macOS has no such
+  limit, so the gate passes locally. Every later CI step is skipped, so Linux
+  CI currently runs no format, type, test, or build step. Remedy: hand the
+  JSON to `jq` through a file or stdin (`--slurpfile`) and upstream that to
+  Rebar. Measured 2026-11-23.
+- `pnpm audit --audit-level high`, the last `verify` step, reports three high
+  advisories in development dependencies as of 2026-11-23 (`nanoid` and
+  `source-map-js` under `vitest → vite → postcss`, and `vite`). Upgrading
+  Vitest/Vite needs the lockfile and the dependency notes updated together.
 - Relative link targets are intentionally not recoverable in the current DOCX
   round trip (C3 Scenario 2).
 - The Python regex parser's supported profile excludes nested/underscore emphasis,
